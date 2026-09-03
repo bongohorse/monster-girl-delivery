@@ -6,6 +6,7 @@
 *.js text eol=lf
 *.yml text eol=lf
 *.yaml text eol=lf
+*.sh text eol=lf
 
 # Large source assets handled by Git LFS when configured
 *.psd filter=lfs diff=lfs merge=lfs -text
