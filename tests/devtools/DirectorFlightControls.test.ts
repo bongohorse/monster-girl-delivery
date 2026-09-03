@@ -95,7 +95,7 @@ describe('DirectorFlightControls', () => {
     const { objects, scene } = createSceneFake();
     const tuning = new FlightTuningConfig();
     const input = new InputService();
-    const controls = new DirectorFlightControls(scene, tuning, input);
+    new DirectorFlightControls(scene, tuning, input);
     const interactive = objects.find((entry) => entry.object.setInteractive.mock.calls.length > 0);
 
     expect(interactive).toBeDefined();
