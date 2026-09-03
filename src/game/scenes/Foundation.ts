@@ -4,9 +4,11 @@ import { PhaserLifecycleAdapter } from '../../core/PhaserLifecycleAdapter';
 import { readSafeAreaInsets, ViewportService } from '../../core/ViewportService';
 import { DirectorFlightControls } from '../../devtools/DirectorFlightControls';
 import { DirectorPanel } from '../../devtools/DirectorPanel';
+import { createDirectorResponsiveLayout } from '../../devtools/DirectorResponsiveLayout';
 import { PrototypePlayerPresentation } from '../../entities/PrototypePlayerPresentation';
 import { PhaserInputAdapter } from '../../input/PhaserInputAdapter';
 import {
+  constrainVerticalFlightState,
   stepVerticalFlight,
   type VerticalFlightState,
 } from '../../systems/VerticalFlightSimulation';
@@ -113,16 +115,44 @@ export class Foundation extends Scene {
       gameSize.height,
       readSafeAreaInsets(document.getElementById('safe-area-probe')),
     );
-    this.layout(this.viewportService.getSnapshot());
+    const viewport = this.viewportService.getSnapshot();
+    this.flightState = constrainVerticalFlightState(
+      this.flightState,
+      createPrototypeFlightBounds(viewport),
+    );
+    this.layout(viewport);
   };
 
   private layout(viewport: ReturnType<ViewportService['getSnapshot']>): void {
-    const titleSize = Math.round(Math.max(26, Math.min(48, viewport.width * 0.065)));
+    const safeLeft = Math.min(viewport.width, viewport.safeArea.left);
+    const safeRight = Math.min(viewport.width - safeLeft, viewport.safeArea.right);
+    const safeTop = Math.min(viewport.height, viewport.safeArea.top);
+    const safeBottomInset = Math.min(viewport.height - safeTop, viewport.safeArea.bottom);
+    const safeRightEdge = viewport.width - safeRight;
+    const safeBottom = viewport.height - safeBottomInset;
+    const safeWidth = Math.max(0, safeRightEdge - safeLeft);
+    const centerX = safeLeft + safeWidth / 2;
+    const titleSize = Math.round(Math.max(24, Math.min(42, safeWidth * 0.065)));
+    const directorLayout = createDirectorResponsiveLayout(viewport);
+    const directorBottom = Math.max(
+      directorLayout.diagnostics.y + directorLayout.diagnostics.height,
+      directorLayout.flightControls.y + directorLayout.flightControls.height,
+    );
+    const contentTop = Math.min(safeBottom, Math.max(safeTop, directorBottom + 16));
+    const contentHeight = Math.max(0, safeBottom - contentTop);
+    const titleY =
+      contentHeight >= 100
+        ? contentTop + contentHeight * 0.32
+        : Math.max(safeTop + 24, safeBottom - 72);
+    const instructionsY =
+      contentHeight >= 100
+        ? contentTop + contentHeight * 0.72
+        : Math.max(safeTop + 56, safeBottom - 30);
 
-    this.title?.setFontSize(titleSize).setPosition(viewport.width / 2, viewport.height * 0.48);
+    this.title?.setFontSize(titleSize).setPosition(centerX, titleY);
     this.instructions
-      ?.setPosition(viewport.width / 2, viewport.height * 0.58)
-      .setWordWrapWidth(Math.max(180, viewport.width - 48));
+      ?.setPosition(centerX, instructionsY)
+      .setWordWrapWidth(Math.max(120, safeWidth - 32));
     this.playerPresentation?.setPosition(getPrototypePlayerX(viewport), this.flightState.positionY);
     this.directorPanel?.layout(viewport);
     this.directorFlightControls?.layout(viewport);
