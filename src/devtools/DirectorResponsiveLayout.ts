@@ -1,0 +1,57 @@
+import type { ViewportSnapshot } from '../core/ViewportService';
+
+const PANEL_MARGIN = 12;
+const PANEL_GAP = 12;
+const PANEL_MAX_WIDTH = 360;
+const MIN_SIDE_BY_SIDE_PANEL_WIDTH = 250;
+
+export const DIRECTOR_DIAGNOSTICS_PANEL_HEIGHT = 164;
+export const DIRECTOR_FLIGHT_CONTROLS_PANEL_HEIGHT = 196;
+
+export interface DirectorPanelPlacement {
+  height: number;
+  width: number;
+  x: number;
+  y: number;
+}
+
+export interface DirectorResponsiveLayout {
+  diagnostics: DirectorPanelPlacement;
+  flightControls: DirectorPanelPlacement;
+  sideBySide: boolean;
+}
+
+/** Keeps temporary Director tooling inside the safe viewport without preferring an orientation. */
+export const createDirectorResponsiveLayout = (
+  viewport: ViewportSnapshot,
+): DirectorResponsiveLayout => {
+  const safeLeft = Math.min(viewport.width, viewport.safeArea.left);
+  const safeRight = Math.min(viewport.width - safeLeft, viewport.safeArea.right);
+  const safeWidth = Math.max(0, viewport.width - safeLeft - safeRight);
+  const availableWidth = Math.max(0, safeWidth - PANEL_MARGIN * 2);
+  const sideBySideWidth = (availableWidth - PANEL_GAP) / 2;
+  const sideBySide =
+    viewport.orientation === 'landscape' && sideBySideWidth >= MIN_SIDE_BY_SIDE_PANEL_WIDTH;
+  const panelWidth = Math.min(
+    PANEL_MAX_WIDTH,
+    sideBySide ? sideBySideWidth : Math.max(160, availableWidth),
+  );
+  const x = safeLeft + PANEL_MARGIN;
+  const y = viewport.safeArea.top + PANEL_MARGIN;
+
+  return {
+    diagnostics: {
+      x,
+      y,
+      width: panelWidth,
+      height: DIRECTOR_DIAGNOSTICS_PANEL_HEIGHT,
+    },
+    flightControls: {
+      x: sideBySide ? x + panelWidth + PANEL_GAP : x,
+      y: sideBySide ? y : y + DIRECTOR_DIAGNOSTICS_PANEL_HEIGHT + PANEL_GAP,
+      width: panelWidth,
+      height: DIRECTOR_FLIGHT_CONTROLS_PANEL_HEIGHT,
+    },
+    sideBySide,
+  };
+};

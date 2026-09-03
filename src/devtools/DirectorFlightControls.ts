@@ -2,6 +2,7 @@ import type { Scene } from 'phaser';
 import type { FlightTuningConfig, FlightTuningValues } from '../config/FlightTuningConfig';
 import type { ViewportSnapshot } from '../core/ViewportService';
 import type { InputService } from '../input/InputService';
+import { createDirectorResponsiveLayout } from './DirectorResponsiveLayout';
 
 type FlightTuningKey = keyof FlightTuningValues;
 type AdjustmentDirection = -1 | 1;
@@ -23,12 +24,6 @@ interface ControlRow {
 interface PointerEventData {
   stopPropagation?: () => void;
 }
-
-const PANEL_MARGIN = 12;
-const PANEL_GAP = 12;
-const DIAGNOSTICS_PANEL_HEIGHT = 164;
-const PANEL_HEIGHT = 196;
-const PANEL_MAX_WIDTH = 360;
 
 const CONTROLS: readonly ControlDefinition[] = [
   { key: 'gravity', label: 'Gravity', step: 100, unit: 'px/s²' },
@@ -53,7 +48,7 @@ export class DirectorFlightControls {
     private readonly inputService: InputService,
   ) {
     this.background = scene.add
-      .rectangle(0, 0, PANEL_MAX_WIDTH, PANEL_HEIGHT, 0x080a14, 0.88)
+      .rectangle(0, 0, 360, 196, 0x080a14, 0.88)
       .setOrigin(0)
       .setScrollFactor(0)
       .setDepth(10_000);
@@ -100,21 +95,17 @@ export class DirectorFlightControls {
       return;
     }
 
-    const availableWidth = Math.max(
-      160,
-      viewport.width - viewport.safeArea.left - viewport.safeArea.right - PANEL_MARGIN * 2,
-    );
-    const panelWidth = Math.min(PANEL_MAX_WIDTH, availableWidth);
-    const x = viewport.safeArea.left + PANEL_MARGIN;
-    const y = viewport.safeArea.top + PANEL_MARGIN + DIAGNOSTICS_PANEL_HEIGHT + PANEL_GAP;
-    const buttonLeft = x + panelWidth - 72;
+    const { flightControls } = createDirectorResponsiveLayout(viewport);
+    const buttonLeft = flightControls.x + flightControls.width - 72;
 
-    this.background.setPosition(x, y).setSize(panelWidth, PANEL_HEIGHT);
-    this.title.setPosition(x + 12, y + 10);
+    this.background
+      .setPosition(flightControls.x, flightControls.y)
+      .setSize(flightControls.width, flightControls.height);
+    this.title.setPosition(flightControls.x + 12, flightControls.y + 10);
 
     this.rows.forEach((row, index) => {
-      const rowY = y + 44 + index * 34;
-      row.label.setPosition(x + 12, rowY);
+      const rowY = flightControls.y + 44 + index * 34;
+      row.label.setPosition(flightControls.x + 12, rowY);
       row.minus.setPosition(buttonLeft, rowY - 4);
       row.plus.setPosition(buttonLeft + 38, rowY - 4);
     });
