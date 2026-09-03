@@ -1,14 +1,15 @@
 import type { Scene } from 'phaser';
 import type { FlightTuningConfig, FlightTuningValues } from '../config/FlightTuningConfig';
+import type { RunMotionConfig, RunMotionValues } from '../config/RunMotionConfig';
 import type { ViewportSnapshot } from '../core/ViewportService';
 import type { InputService } from '../input/InputService';
 import { createDirectorResponsiveLayout } from './DirectorResponsiveLayout';
 
-type FlightTuningKey = keyof FlightTuningValues;
+type TuningKey = keyof FlightTuningValues | keyof RunMotionValues;
 type AdjustmentDirection = -1 | 1;
 
 interface ControlDefinition {
-  key: FlightTuningKey;
+  key: TuningKey;
   label: string;
   step: number;
   unit: string;
@@ -25,18 +26,20 @@ interface PointerEventData {
   stopPropagation?: () => void;
 }
 
+/** Prototype adjustment steps for rapid Director playtesting. */
 const CONTROLS: readonly ControlDefinition[] = [
   { key: 'gravity', label: 'Gravity', step: 100, unit: 'px/s²' },
   { key: 'thrust', label: 'Thrust', step: 100, unit: 'px/s²' },
   { key: 'maxFallVelocity', label: 'Max fall', step: 25, unit: 'px/s' },
   { key: 'maxRiseVelocity', label: 'Max rise', step: 25, unit: 'px/s' },
+  { key: 'baseScrollSpeed', label: 'Scroll', step: 25, unit: 'px/s' },
 ];
 
 /**
- * Temporary M1 Director controls for live PROTOTYPE flight tuning.
- * The shared FlightTuningConfig remains the single source of truth.
+ * Temporary Director controls for live PROTOTYPE flight and run-motion tuning.
+ * The shared runtime configs remain the single sources of truth.
  */
-export class DirectorFlightControls {
+export class DirectorTuningControls {
   private readonly background: Phaser.GameObjects.Rectangle;
   private readonly title: Phaser.GameObjects.Text;
   private readonly rows: ControlRow[];
@@ -45,15 +48,16 @@ export class DirectorFlightControls {
   constructor(
     private readonly scene: Scene,
     private readonly flightTuning: FlightTuningConfig,
+    private readonly runMotion: RunMotionConfig,
     private readonly inputService: InputService,
   ) {
     this.background = scene.add
-      .rectangle(0, 0, 360, 196, 0x080a14, 0.88)
+      .rectangle(0, 0, 360, 230, 0x080a14, 0.88)
       .setOrigin(0)
       .setScrollFactor(0)
       .setDepth(10_000);
     this.title = scene.add
-      .text(0, 0, 'M1 FLIGHT TUNING — PROTOTYPE', {
+      .text(0, 0, 'DIRECTOR TUNING — PROTOTYPE', {
         color: '#ffffff',
         fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
         fontSize: '13px',
@@ -80,12 +84,16 @@ export class DirectorFlightControls {
   }
 
   /** Rejects invalid values instead of allowing non-finite simulation configuration. */
-  setValue(key: FlightTuningKey, value: number): boolean {
+  setValue(key: TuningKey, value: number): boolean {
     if (this.destroyed || !Number.isFinite(value) || value < 0) {
       return false;
     }
 
-    this.flightTuning.update({ [key]: value });
+    if (key === 'baseScrollSpeed') {
+      this.runMotion.update({ baseScrollSpeed: value });
+    } else {
+      this.flightTuning.update({ [key]: value });
+    }
     this.refreshValues();
     return true;
   }
@@ -95,17 +103,17 @@ export class DirectorFlightControls {
       return;
     }
 
-    const { flightControls } = createDirectorResponsiveLayout(viewport);
-    const buttonLeft = flightControls.x + flightControls.width - 72;
+    const { tuningControls } = createDirectorResponsiveLayout(viewport);
+    const buttonLeft = tuningControls.x + tuningControls.width - 72;
 
     this.background
-      .setPosition(flightControls.x, flightControls.y)
-      .setSize(flightControls.width, flightControls.height);
-    this.title.setPosition(flightControls.x + 12, flightControls.y + 10);
+      .setPosition(tuningControls.x, tuningControls.y)
+      .setSize(tuningControls.width, tuningControls.height);
+    this.title.setPosition(tuningControls.x + 12, tuningControls.y + 10);
 
     this.rows.forEach((row, index) => {
-      const rowY = flightControls.y + 44 + index * 34;
-      row.label.setPosition(flightControls.x + 12, rowY);
+      const rowY = tuningControls.y + 44 + index * 34;
+      row.label.setPosition(tuningControls.x + 12, rowY);
       row.minus.setPosition(buttonLeft, rowY - 4);
       row.plus.setPosition(buttonLeft + 38, rowY - 4);
     });
@@ -161,7 +169,7 @@ export class DirectorFlightControls {
     ): void => {
       event?.stopPropagation?.();
       blockGameplay();
-      const current = this.flightTuning.getSnapshot()[definition.key];
+      const current = this.getValue(definition.key);
       const next = Math.max(0, current + definition.step * direction);
       this.setValue(definition.key, next);
     };
@@ -188,12 +196,16 @@ export class DirectorFlightControls {
       return;
     }
 
-    const values = this.flightTuning.getSnapshot();
-
     for (const row of this.rows) {
       row.label.setText(
-        `${row.definition.label}: ${values[row.definition.key]} ${row.definition.unit}`,
+        `${row.definition.label}: ${this.getValue(row.definition.key)} ${row.definition.unit}`,
       );
     }
+  }
+
+  private getValue(key: TuningKey): number {
+    return key === 'baseScrollSpeed'
+      ? this.runMotion.getSnapshot().baseScrollSpeed
+      : this.flightTuning.getSnapshot()[key];
   }
 }

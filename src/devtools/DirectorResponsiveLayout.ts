@@ -6,7 +6,7 @@ const PANEL_MAX_WIDTH = 360;
 const MIN_SIDE_BY_SIDE_PANEL_WIDTH = 250;
 
 export const DIRECTOR_DIAGNOSTICS_PANEL_HEIGHT = 164;
-export const DIRECTOR_FLIGHT_CONTROLS_PANEL_HEIGHT = 196;
+export const DIRECTOR_TUNING_CONTROLS_PANEL_HEIGHT = 230;
 
 export interface DirectorPanelPlacement {
   height: number;
@@ -17,7 +17,7 @@ export interface DirectorPanelPlacement {
 
 export interface DirectorResponsiveLayout {
   diagnostics: DirectorPanelPlacement;
-  flightControls: DirectorPanelPlacement;
+  tuningControls: DirectorPanelPlacement;
   sideBySide: boolean;
 }
 
@@ -46,11 +46,11 @@ export const createDirectorResponsiveLayout = (
       width: panelWidth,
       height: DIRECTOR_DIAGNOSTICS_PANEL_HEIGHT,
     },
-    flightControls: {
+    tuningControls: {
       x: sideBySide ? x + panelWidth + PANEL_GAP : x,
       y: sideBySide ? y : y + DIRECTOR_DIAGNOSTICS_PANEL_HEIGHT + PANEL_GAP,
       width: panelWidth,
-      height: DIRECTOR_FLIGHT_CONTROLS_PANEL_HEIGHT,
+      height: DIRECTOR_TUNING_CONTROLS_PANEL_HEIGHT,
     },
     sideBySide,
   };

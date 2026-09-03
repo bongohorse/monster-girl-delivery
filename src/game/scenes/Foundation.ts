@@ -2,9 +2,9 @@ import { Scale, Scene, Scenes } from 'phaser';
 import type { AppServices } from '../../core/AppServices';
 import { PhaserLifecycleAdapter } from '../../core/PhaserLifecycleAdapter';
 import { readSafeAreaInsets, ViewportService } from '../../core/ViewportService';
-import { DirectorFlightControls } from '../../devtools/DirectorFlightControls';
 import { DirectorPanel } from '../../devtools/DirectorPanel';
 import { createDirectorResponsiveLayout } from '../../devtools/DirectorResponsiveLayout';
+import { DirectorTuningControls } from '../../devtools/DirectorTuningControls';
 import { PrototypePlayerPresentation } from '../../entities/PrototypePlayerPresentation';
 import { PhaserInputAdapter } from '../../input/PhaserInputAdapter';
 import {
@@ -19,7 +19,7 @@ export class Foundation extends Scene {
   private instructions?: Phaser.GameObjects.Text;
   private viewportService?: ViewportService;
   private directorPanel?: DirectorPanel;
-  private directorFlightControls?: DirectorFlightControls;
+  private directorTuningControls?: DirectorTuningControls;
   private inputAdapter?: PhaserInputAdapter;
   private lifecycleAdapter?: PhaserLifecycleAdapter;
   private playerPresentation?: PrototypePlayerPresentation;
@@ -43,9 +43,10 @@ export class Foundation extends Scene {
 
     if (this.directorMode) {
       this.directorPanel = new DirectorPanel(this);
-      this.directorFlightControls = new DirectorFlightControls(
+      this.directorTuningControls = new DirectorTuningControls(
         this,
         this.services.flightTuning,
+        this.services.runMotion,
         this.services.input,
       );
     }
@@ -141,11 +142,11 @@ export class Foundation extends Scene {
     const titleSize = Math.round(Math.max(24, Math.min(42, safeWidth * 0.065)));
     let contentTop = safeTop;
 
-    if (this.directorPanel && this.directorFlightControls) {
+    if (this.directorPanel && this.directorTuningControls) {
       const directorLayout = createDirectorResponsiveLayout(viewport);
       const directorBottom = Math.max(
         directorLayout.diagnostics.y + directorLayout.diagnostics.height,
-        directorLayout.flightControls.y + directorLayout.flightControls.height,
+        directorLayout.tuningControls.y + directorLayout.tuningControls.height,
       );
       contentTop = Math.min(safeBottom, Math.max(safeTop, directorBottom + 16));
     }
@@ -166,7 +167,7 @@ export class Foundation extends Scene {
       .setWordWrapWidth(Math.max(120, safeWidth - 32));
     this.playerPresentation?.setPosition(getPrototypePlayerX(viewport), this.flightState.positionY);
     this.directorPanel?.layout(viewport);
-    this.directorFlightControls?.layout(viewport);
+    this.directorTuningControls?.layout(viewport);
   }
 
   private readonly handleShutdown = (): void => {
@@ -176,8 +177,8 @@ export class Foundation extends Scene {
 
     this.shutdownHandled = true;
     this.scale.off(Scale.Events.RESIZE, this.handleResize);
-    this.directorFlightControls?.destroy();
-    this.directorFlightControls = undefined;
+    this.directorTuningControls?.destroy();
+    this.directorTuningControls = undefined;
     this.directorPanel = undefined;
     this.playerPresentation?.destroy();
     this.playerPresentation = undefined;
