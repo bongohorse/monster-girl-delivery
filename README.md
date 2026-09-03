@@ -18,9 +18,9 @@
 
 ## Current status
 
-**Pre-Production / M0 Foundation**
+**Pre-Production / M1 Flight Prototype**
 
-The first coding milestone is intentionally about project foundation, not gameplay.
+M0 Foundation is complete. The current milestone is M1 Flight Prototype.
 
 ## Current stack
 

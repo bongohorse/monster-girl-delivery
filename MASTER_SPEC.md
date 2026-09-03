@@ -1,8 +1,8 @@
 # MONSTER GIRL DELIVERY — MASTER SPEC
 
-**Status:** Pre-Production / Foundation
+**Status:** Pre-Production / Flight Prototype
 **Document status:** Living specification
-**Current milestone:** M0 — Foundation
+**Current milestone:** M1 — Flight Prototype
 **Role of human:** Game Director / Product Owner
 **Role of coding agents:** Implementation / Engineering
 
