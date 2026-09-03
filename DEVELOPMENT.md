@@ -205,3 +205,44 @@ Future:
 - Desktop wrapper for Steam evaluation.
 
 Do not add Cloudflare infrastructure unless a real product requirement appears.
+
+## 16. Milestone closeout
+
+Completed milestones must have a factual closeout report under `docs/milestones/`.
+
+The closeout report is historical evidence, not a rewrite of the original plan. It must clearly distinguish:
+
+- what the milestone planned to do;
+- what actually landed;
+- architecture/product decisions made;
+- automated validation performed;
+- manual/device evidence actually observed;
+- deferred/open work;
+- supporting maintenance completed during the milestone but outside its product scope;
+- main Issues/PRs;
+- why the milestone was allowed to exit;
+- what the next milestone inherits.
+
+Use [`docs/milestones/TEMPLATE.md`](docs/milestones/TEMPLATE.md) as the standard format.
+
+Before moving the documented current milestone forward, either:
+
+1. merge the completed milestone's closeout report first; or
+2. include the closeout report in the same focused documentation transition PR.
+
+Accuracy rules:
+
+- never claim unperformed manual/device checks;
+- never turn planned scope into historical fact merely because it appeared in an Issue;
+- keep `PROTOTYPE`, `TBD`, `EXPERIMENT`, `FUTURE`, and deferred states explicit;
+- automated coverage does not substitute for manual evidence;
+- maintenance work must not be presented as milestone gameplay scope.
+
+The same standard repository validation applies to milestone closeout documentation:
+
+```bash
+bun run ci:check
+bun run typecheck
+bun run test
+bun run build
+```
