@@ -22,17 +22,20 @@ const createFoundationHarness = () => {
   const foundation = new Foundation(services);
   const viewportService = new ViewportService(400, 800);
   const directorPanel = { layout: vi.fn(), update: vi.fn() };
+  const directorFlightControls = { destroy: vi.fn(), layout: vi.fn() };
   const playerPresentation = { destroy: vi.fn(), setPosition: vi.fn() };
   const scaleOff = vi.fn();
 
   Reflect.set(foundation, 'viewportService', viewportService);
   Reflect.set(foundation, 'directorPanel', directorPanel);
+  Reflect.set(foundation, 'directorFlightControls', directorFlightControls);
   Reflect.set(foundation, 'playerPresentation', playerPresentation);
   Reflect.set(foundation, 'flightState', { positionY: 400, velocityY: 0 });
   Reflect.set(foundation, 'game', { loop: { actualFps: 60 } });
   Reflect.set(foundation, 'scale', { off: scaleOff });
 
   return {
+    directorFlightControls,
     directorPanel,
     foundation,
     playerPresentation,
@@ -83,12 +86,19 @@ describe('Foundation scene flight orchestration', () => {
   });
 
   it('cleans scene-owned integration once while keeping application time reusable', () => {
-    const { foundation, playerPresentation, scaleOff, services } = createFoundationHarness();
+    const {
+      directorFlightControls,
+      foundation,
+      playerPresentation,
+      scaleOff,
+      services,
+    } = createFoundationHarness();
     const inputAdapter = { destroy: vi.fn() };
     const lifecycleAdapter = { destroy: vi.fn() };
     Reflect.set(foundation, 'inputAdapter', inputAdapter);
     Reflect.set(foundation, 'lifecycleAdapter', lifecycleAdapter);
     services.input.pressPointer(1, 'touch');
+    services.input.setGameplayBlocked(true);
     services.time.update(16);
 
     const handleShutdown: unknown = Reflect.get(foundation, 'handleShutdown');
@@ -98,13 +108,19 @@ describe('Foundation scene flight orchestration', () => {
       throw new TypeError('Foundation shutdown handler is unavailable.');
     }
 
+    directorFlightControls.destroy.mockImplementation(() => {
+      services.input.setGameplayBlocked(false);
+    });
+
     handleShutdown();
     handleShutdown();
 
     expect(scaleOff).toHaveBeenCalledOnce();
+    expect(directorFlightControls.destroy).toHaveBeenCalledOnce();
     expect(playerPresentation.destroy).toHaveBeenCalledOnce();
     expect(inputAdapter.destroy).toHaveBeenCalledOnce();
     expect(lifecycleAdapter.destroy).toHaveBeenCalledOnce();
+    expect(services.input.getSnapshot().gameplayBlocked).toBe(false);
     expect(services.input.isThrustHeld()).toBe(false);
     expect(services.lifecycle.isPaused()).toBe(false);
     expect(services.time.isPaused()).toBe(false);
