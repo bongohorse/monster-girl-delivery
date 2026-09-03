@@ -3,7 +3,13 @@ import type { AppServices } from '../../core/AppServices';
 import { PhaserLifecycleAdapter } from '../../core/PhaserLifecycleAdapter';
 import { readSafeAreaInsets, ViewportService } from '../../core/ViewportService';
 import { DirectorPanel } from '../../devtools/DirectorPanel';
+import { PrototypePlayerPresentation } from '../../entities/PrototypePlayerPresentation';
 import { PhaserInputAdapter } from '../../input/PhaserInputAdapter';
+import {
+  stepVerticalFlight,
+  type VerticalFlightState,
+} from '../../systems/VerticalFlightSimulation';
+import { createPrototypeFlightBounds, getPrototypePlayerX } from '../PrototypeFlightLayout';
 
 export class Foundation extends Scene {
   private title?: Phaser.GameObjects.Text;
@@ -12,18 +18,34 @@ export class Foundation extends Scene {
   private directorPanel?: DirectorPanel;
   private inputAdapter?: PhaserInputAdapter;
   private lifecycleAdapter?: PhaserLifecycleAdapter;
+  private playerPresentation?: PrototypePlayerPresentation;
+  private flightState: VerticalFlightState = { positionY: 0, velocityY: 0 };
+  private shutdownHandled = false;
 
   constructor(private readonly services: AppServices) {
     super('Foundation');
   }
 
   create() {
+    this.shutdownHandled = false;
     const safeArea = readSafeAreaInsets(document.getElementById('safe-area-probe'));
 
     this.viewportService = new ViewportService(this.scale.width, this.scale.height, safeArea);
     this.inputAdapter = new PhaserInputAdapter(this, this.services.input);
     this.lifecycleAdapter = new PhaserLifecycleAdapter(this.game, this.services.lifecycle);
     this.directorPanel = new DirectorPanel(this);
+
+    const viewport = this.viewportService.getSnapshot();
+    const bounds = createPrototypeFlightBounds(viewport);
+    this.flightState = {
+      positionY: (bounds.ceilingY + bounds.floorY) / 2,
+      velocityY: 0,
+    };
+    this.playerPresentation = new PrototypePlayerPresentation(
+      this,
+      getPrototypePlayerX(viewport),
+      this.flightState.positionY,
+    );
 
     this.cameras.main.setBackgroundColor(0x121426);
     this.title = this.add
@@ -34,7 +56,7 @@ export class Foundation extends Scene {
       })
       .setOrigin(0.5);
     this.instructions = this.add
-      .text(0, 0, 'M0 foundation\nHold touch, mouse, or Space to inspect input state.', {
+      .text(0, 0, 'M1 flight prototype\nHold touch, mouse, or Space to thrust.', {
         align: 'center',
         color: '#b9c8ec',
         fontFamily: 'Arial, sans-serif',
@@ -45,19 +67,32 @@ export class Foundation extends Scene {
 
     this.scale.on(Scale.Events.RESIZE, this.handleResize);
     this.events.once(Scenes.Events.SHUTDOWN, this.handleShutdown);
-    this.layout(this.viewportService.getSnapshot());
+    this.layout(viewport);
   }
 
   update(_time: number, delta: number) {
-    if (!this.viewportService || !this.directorPanel) {
+    if (!this.viewportService || !this.directorPanel || !this.playerPresentation) {
       return;
     }
 
-    this.services.time.update(delta);
+    const simulationDeltaSeconds = this.services.time.update(delta);
+    const viewport = this.viewportService.getSnapshot();
+    this.flightState = stepVerticalFlight(
+      this.flightState,
+      simulationDeltaSeconds,
+      this.services.input.isThrustHeld(),
+      this.services.flightTuning.getSnapshot(),
+      createPrototypeFlightBounds(viewport),
+    );
+    this.playerPresentation.setPosition(
+      getPrototypePlayerX(viewport),
+      this.flightState.positionY,
+    );
+
     this.directorPanel.update(
       delta,
       this.game.loop.actualFps,
-      this.viewportService.getSnapshot(),
+      viewport,
       this.services.input.getSnapshot(),
       this.services.lifecycle.getSnapshot(),
     );
@@ -84,13 +119,26 @@ export class Foundation extends Scene {
     this.instructions
       ?.setPosition(viewport.width / 2, viewport.height * 0.58)
       .setWordWrapWidth(Math.max(180, viewport.width - 48));
+    this.playerPresentation?.setPosition(
+      getPrototypePlayerX(viewport),
+      this.flightState.positionY,
+    );
     this.directorPanel?.layout(viewport);
   }
 
   private readonly handleShutdown = (): void => {
+    if (this.shutdownHandled) {
+      return;
+    }
+
+    this.shutdownHandled = true;
     this.scale.off(Scale.Events.RESIZE, this.handleResize);
+    this.playerPresentation?.destroy();
+    this.playerPresentation = undefined;
     this.inputAdapter?.destroy();
+    this.inputAdapter = undefined;
     this.lifecycleAdapter?.destroy();
+    this.lifecycleAdapter = undefined;
     this.services.input.releaseAll();
   };
 }
