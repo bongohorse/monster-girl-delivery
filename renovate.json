@@ -4,7 +4,7 @@
   "dependencyDashboard": true,
   "labels": ["dependencies"],
   "rangeStrategy": "auto",
-  "rebaseWhen": "conflicted",
+  "rebaseWhen": "behind-base-branch",
   "prConcurrentLimit": 5,
   "prHourlyLimit": 2,
   "packageRules": [
