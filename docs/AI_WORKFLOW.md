@@ -81,4 +81,4 @@ Review, CI, merge, and Issue closure follow separately. An implementation agent 
 
 If useful work is discovered outside the Issue scope, create a new Issue instead of expanding the current PR.
 
-Jules and Renovate use their own GitHub App permissions. Codespace coding agents use the repository Git credential for Git operations and `GH_TOKEN` for GitHub CLI/API operations.
+Jules and Renovate use their own GitHub App permissions. Codespace coding agents use the repository Git credential for Git operations and the `MGD_GH_TOKEN` Codespaces secret, exported by the devcontainer as `GH_TOKEN`, for GitHub CLI/API operations.

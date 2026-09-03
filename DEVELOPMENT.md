@@ -62,6 +62,8 @@ A new Codespace should:
 4. install project dependencies;
 5. make the Vite development port available.
 
+Configure GitHub CLI access through the `MGD_GH_TOKEN` Codespaces secret. The devcontainer exports it as `GH_TOKEN` for shell sessions.
+
 Do not store secrets in `devcontainer.json`.
 
 ## 6. Browser testing

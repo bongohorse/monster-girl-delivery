@@ -1,15 +1,13 @@
 ---
 name: v4-new-features
-description: "Use this skill when learning about new features, game objects, components, and rendering capabilities added in Phaser 4. Covers Filters, RenderNodes, CaptureFrame, Gradient, Noise, SpriteGPULayer, TilemapGPULayer, Lighting component, RenderSteps, and new tint modes. Triggers on: new in v4, Phaser 4 features, RenderNode, SpriteGPULayer, CaptureFrame, Gradient game object, Noise game object, new tint modes. For migrating v3 code to v4, see the v3-to-v4-migration skill instead."
+description: "Use this skill when learning about new features, game objects, components, and rendering capabilities added in Phaser 4. Covers Filters, RenderNodes, CaptureFrame, Gradient, Noise, SpriteGPULayer, TilemapGPULayer, Lighting component, RenderSteps, and new tint modes. Triggers on: new in v4, Phaser 4 features, RenderNode, SpriteGPULayer, CaptureFrame, Gradient game object, Noise game object, new tint modes."
 ---
 
 # Phaser 4 New Features
 
 > New features and capabilities in Phaser 4: Filters (replacing FX/BitmapMask), RenderNodes (replacing Pipelines), CaptureFrame, Gradient, Noise game objects, SpriteGPULayer, TilemapGPULayer, Lighting component, RenderSteps, and new tint modes.
 
-**Related skills:** ../v3-to-v4-migration/SKILL.md, ../filters-and-postfx/SKILL.md, ../game-object-components/SKILL.md, ../tilemaps/SKILL.md
-
-> **Migrating from v3?** See the [v3 to v4 Migration Guide](../v3-to-v4-migration/SKILL.md) for step-by-step code changes, removed APIs, and a migration checklist.
+**Related skills:** ../filters-and-postfx/SKILL.md, ../game-object-components/SKILL.md, ../tilemaps/SKILL.md
 
 ## Overview: What Changed in v4
 
