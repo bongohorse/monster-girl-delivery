@@ -84,10 +84,7 @@ export class Foundation extends Scene {
       this.services.flightTuning.getSnapshot(),
       createPrototypeFlightBounds(viewport),
     );
-    this.playerPresentation.setPosition(
-      getPrototypePlayerX(viewport),
-      this.flightState.positionY,
-    );
+    this.playerPresentation.setPosition(getPrototypePlayerX(viewport), this.flightState.positionY);
 
     this.directorPanel.update(
       delta,
@@ -119,10 +116,7 @@ export class Foundation extends Scene {
     this.instructions
       ?.setPosition(viewport.width / 2, viewport.height * 0.58)
       .setWordWrapWidth(Math.max(180, viewport.width - 48));
-    this.playerPresentation?.setPosition(
-      getPrototypePlayerX(viewport),
-      this.flightState.positionY,
-    );
+    this.playerPresentation?.setPosition(getPrototypePlayerX(viewport), this.flightState.positionY);
     this.directorPanel?.layout(viewport);
   }
 
