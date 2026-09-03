@@ -92,6 +92,5 @@ export class Foundation extends Scene {
     this.inputAdapter?.destroy();
     this.lifecycleAdapter?.destroy();
     this.services.input.releaseAll();
-    this.services.time.pause();
   };
 }
