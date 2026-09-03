@@ -86,13 +86,8 @@ describe('Foundation scene flight orchestration', () => {
   });
 
   it('cleans scene-owned integration once while keeping application time reusable', () => {
-    const {
-      directorFlightControls,
-      foundation,
-      playerPresentation,
-      scaleOff,
-      services,
-    } = createFoundationHarness();
+    const { directorFlightControls, foundation, playerPresentation, scaleOff, services } =
+      createFoundationHarness();
     const inputAdapter = { destroy: vi.fn() };
     const lifecycleAdapter = { destroy: vi.fn() };
     Reflect.set(foundation, 'inputAdapter', inputAdapter);
