@@ -136,10 +136,14 @@ describe('PhaserLifecycleAdapter', () => {
     const { events, game } = createGame();
     const services = createAppServices();
     const adapter = new PhaserLifecycleAdapter(game, services.lifecycle);
+    const gameOff = vi.spyOn(events, 'off');
+    const removeBrowserListener = vi.spyOn(browserWindow, 'removeEventListener');
 
     adapter.destroy();
     adapter.destroy();
 
+    expect(gameOff).toHaveBeenCalledTimes(5);
+    expect(removeBrowserListener).toHaveBeenCalledTimes(2);
     expect(events.listenerCount('destroy')).toBe(0);
     expect(browserWindow.listenerCount('pagehide')).toBe(0);
     expect(browserWindow.listenerCount('pageshow')).toBe(0);

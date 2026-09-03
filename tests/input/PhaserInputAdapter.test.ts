@@ -47,12 +47,20 @@ describe('PhaserInputAdapter', () => {
   it('routes touch cancellation through the active pointer identity', () => {
     const { input, scene } = createScene();
     const inputService = new InputService();
+    const cancelPointer = vi
+      .spyOn(inputService, 'cancelPointer')
+      .mockImplementation((pointerId) => {
+        InputService.prototype.releasePointer.call(inputService, pointerId);
+      });
+    const releasePointer = vi.spyOn(inputService, 'releasePointer');
     new PhaserInputAdapter(scene, inputService);
 
     input.emit('pointerdown', pointer(4));
     input.emit('pointerdown', pointer(8));
     input.emit('pointerup', pointer(8, { wasCanceled: true }));
 
+    expect(cancelPointer).toHaveBeenCalledExactlyOnceWith(8);
+    expect(releasePointer).not.toHaveBeenCalled();
     expect(inputService.getSnapshot()).toMatchObject({
       activePointerId: 4,
       pointerHeld: true,
@@ -60,6 +68,8 @@ describe('PhaserInputAdapter', () => {
     });
 
     input.emit('pointerup', pointer(4, { wasCanceled: true }));
+    expect(cancelPointer).toHaveBeenNthCalledWith(2, 4);
+    expect(releasePointer).not.toHaveBeenCalled();
     expect(inputService.isThrustHeld()).toBe(false);
   });
 
