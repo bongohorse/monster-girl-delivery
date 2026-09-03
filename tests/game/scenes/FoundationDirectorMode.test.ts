@@ -63,6 +63,13 @@ vi.mock('../../../src/entities/PrototypePlayerPresentation', () => ({
   },
 }));
 
+vi.mock('../../../src/entities/PrototypeScrollingWorldPresentation', () => ({
+  PrototypeScrollingWorldPresentation: class {
+    destroy() {}
+    render() {}
+  },
+}));
+
 vi.mock('../../../src/devtools/DirectorPanel', () => ({
   DirectorPanel: class {
     constructor() {
