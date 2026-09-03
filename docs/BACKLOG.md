@@ -267,6 +267,28 @@ These are inspiration references, not features to copy directly.
 - **Talking Tom Gold Run**: run resources feeding visible hub / world progression
 - **Canabalt**: reminder that a runner can remain compelling with extremely limited controls
 
+## Art / Visual Direction Experiments
+
+The full preserved visual-design and asset-pipeline exploration lives in [`ART_DIRECTION_IDEAS.md`](./ART_DIRECTION_IDEAS.md).
+
+Key areas to revisit later:
+
+- Anime / chibi monster girls + clean cartoon environments
+- Monster City, cyber/fantasy districts, sewers, academy, haunted, snow, beach, dragon and space themes
+- strong mobile-readable silhouettes and restrained environment detail
+- modular environment kits and reusable image-pattern / tile systems
+- palette swaps, tinting, mirroring, overlays and decals to increase variety cheaply
+- landmark structures to break up procedural repetition
+- layered parallax backgrounds instead of giant baked strips
+- modular NPC / character construction experiments
+- sprite animation mixed with transform and secondary animation
+- texture atlases and asset-size budgets
+- PNG vs WebP quality / size benchmarks
+- in-world monster courier / delivery-app UI identity
+- future formal `ART_DIRECTION.md` Art Bible and `ART_PIPELINE.md` production guide
+
+These remain exploratory until a representative visual slice is prototyped and evaluated for readability, identity, production speed, storage size and runtime performance.
+
 ## Design Guardrails for Future Experiments
 
 - Do not treat items in this backlog as commitments or current milestone scope.
