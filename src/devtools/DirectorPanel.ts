@@ -2,10 +2,7 @@ import type { Scene } from 'phaser';
 import type { LifecycleSnapshot } from '../core/LifecycleService';
 import type { ViewportSnapshot } from '../core/ViewportService';
 import type { InputSnapshot } from '../input/InputService';
-
-const PANEL_MARGIN = 12;
-const PANEL_HEIGHT = 164;
-const PANEL_MAX_WIDTH = 360;
+import { createDirectorResponsiveLayout } from './DirectorResponsiveLayout';
 
 /** Minimal read-only diagnostics for Director device testing. */
 export class DirectorPanel {
@@ -15,7 +12,7 @@ export class DirectorPanel {
 
   constructor(scene: Scene) {
     this.background = scene.add
-      .rectangle(0, 0, PANEL_MAX_WIDTH, PANEL_HEIGHT, 0x080a14, 0.88)
+      .rectangle(0, 0, 360, 164, 0x080a14, 0.88)
       .setOrigin(0)
       .setScrollFactor(0)
       .setDepth(10_000);
@@ -31,16 +28,14 @@ export class DirectorPanel {
   }
 
   layout(viewport: ViewportSnapshot): void {
-    const availableWidth = Math.max(
-      160,
-      viewport.width - viewport.safeArea.left - viewport.safeArea.right - PANEL_MARGIN * 2,
-    );
-    const panelWidth = Math.min(PANEL_MAX_WIDTH, availableWidth);
-    const x = viewport.safeArea.left + PANEL_MARGIN;
-    const y = viewport.safeArea.top + PANEL_MARGIN;
+    const { diagnostics } = createDirectorResponsiveLayout(viewport);
 
-    this.background.setPosition(x, y).setSize(panelWidth, PANEL_HEIGHT);
-    this.text.setPosition(x + 12, y + 10).setWordWrapWidth(panelWidth - 24);
+    this.background
+      .setPosition(diagnostics.x, diagnostics.y)
+      .setSize(diagnostics.width, diagnostics.height);
+    this.text
+      .setPosition(diagnostics.x + 12, diagnostics.y + 10)
+      .setWordWrapWidth(Math.max(40, diagnostics.width - 24));
     this.elapsedSinceRefresh = Number.POSITIVE_INFINITY;
   }
 
