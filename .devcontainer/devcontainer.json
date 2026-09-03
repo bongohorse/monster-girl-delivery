@@ -12,7 +12,7 @@
     }
   },
 
-  "postCreateCommand": "curl -fsSL https://bun.sh/install | bash -s -- bun-v1.4.0 && ~/.bun/bin/bun install --frozen-lockfile && (curl -fsSL https://chatgpt.com/codex/install.sh | sh || echo 'Warning: Codex CLI installation failed; project dependencies are ready.')",
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
 
   "postStartCommand": "grep -qxF 'export GH_TOKEN=\"$MGD_GH_TOKEN\"' ~/.bashrc || echo 'export GH_TOKEN=\"$MGD_GH_TOKEN\"' >> ~/.bashrc",
 
