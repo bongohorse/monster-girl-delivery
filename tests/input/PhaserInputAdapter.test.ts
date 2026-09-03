@@ -122,4 +122,18 @@ describe('PhaserInputAdapter', () => {
 
     expect(keyboard.removeCapture).toHaveBeenCalledExactlyOnceWith(32);
   });
+
+  it('does not turn a held Space key repeat into a fresh action press', () => {
+    const { keyboard, scene } = createScene();
+    const inputService = new InputService();
+    new PhaserInputAdapter(scene, inputService);
+
+    keyboard.emit('keydown-SPACE', { repeat: false });
+    expect(inputService.consumePrimaryActionPress()).toBe(true);
+    inputService.releaseAll();
+
+    keyboard.emit('keydown-SPACE', { repeat: true });
+    expect(inputService.consumePrimaryActionPress()).toBe(false);
+    expect(inputService.isThrustHeld()).toBe(false);
+  });
 });

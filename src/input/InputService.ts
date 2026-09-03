@@ -14,6 +14,7 @@ export class InputService {
   private activePointerId: number | null = null;
   private activePointerSource: PointerSource | null = null;
   private gameplayBlocked = false;
+  private primaryActionPressed = false;
   private spaceHeld = false;
 
   pressPointer(pointerId: number, source: PointerSource): void {
@@ -23,6 +24,7 @@ export class InputService {
 
     this.activePointerId = pointerId;
     this.activePointerSource = source;
+    this.primaryActionPressed = true;
   }
 
   releasePointer(pointerId: number): void {
@@ -45,8 +47,18 @@ export class InputService {
     }
 
     if (!this.gameplayBlocked) {
+      if (!this.spaceHeld) {
+        this.primaryActionPressed = true;
+      }
       this.spaceHeld = true;
     }
+  }
+
+  /** Consumes a fresh accepted touch, primary-mouse, or Space press exactly once. */
+  consumePrimaryActionPress(): boolean {
+    const pressed = this.primaryActionPressed;
+    this.primaryActionPressed = false;
+    return pressed;
   }
 
   setGameplayBlocked(blocked: boolean): void {
@@ -64,6 +76,7 @@ export class InputService {
   releaseAll(): void {
     this.activePointerId = null;
     this.activePointerSource = null;
+    this.primaryActionPressed = false;
     this.spaceHeld = false;
   }
 

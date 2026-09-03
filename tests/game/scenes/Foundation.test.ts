@@ -3,6 +3,7 @@ import { createAppServices } from '../../../src/core/AppServices';
 import { ViewportService } from '../../../src/core/ViewportService';
 import { createPrototypeFlightBounds } from '../../../src/game/PrototypeFlightLayout';
 import { Foundation } from '../../../src/game/scenes/Foundation';
+import type { PrototypeRunState } from '../../../src/systems/PrototypeRunSimulation';
 import { type RunMotionState, stepRunMotion } from '../../../src/systems/RunMotionSimulation';
 import {
   stepVerticalFlight,
@@ -16,9 +17,11 @@ vi.mock('phaser', () => ({
 }));
 
 const getFlightState = (foundation: Foundation): VerticalFlightState =>
-  Reflect.get(foundation, 'flightState') as VerticalFlightState;
+  (Reflect.get(foundation, 'runState') as PrototypeRunState).flight;
 const getRunMotionState = (foundation: Foundation): RunMotionState =>
-  Reflect.get(foundation, 'runMotionState') as RunMotionState;
+  (Reflect.get(foundation, 'runState') as PrototypeRunState).motion;
+const getRunState = (foundation: Foundation): PrototypeRunState =>
+  Reflect.get(foundation, 'runState') as PrototypeRunState;
 
 const createFoundationHarness = () => {
   const services = createAppServices();
@@ -26,6 +29,15 @@ const createFoundationHarness = () => {
   const viewportService = new ViewportService(400, 800);
   const directorPanel = { layout: vi.fn(), update: vi.fn() };
   const directorTuningControls = { destroy: vi.fn(), layout: vi.fn() };
+  const hazardPresentation = { destroy: vi.fn(), render: vi.fn() };
+  const instructions = {
+    setPosition: vi.fn(),
+    setText: vi.fn(),
+    setWordWrapWidth: vi.fn(),
+  };
+  instructions.setPosition.mockReturnValue(instructions);
+  instructions.setText.mockReturnValue(instructions);
+  instructions.setWordWrapWidth.mockReturnValue(instructions);
   const playerPresentation = { destroy: vi.fn(), setPosition: vi.fn() };
   const scrollingWorldPresentation = { destroy: vi.fn(), render: vi.fn() };
   const scaleOff = vi.fn();
@@ -34,9 +46,15 @@ const createFoundationHarness = () => {
   Reflect.set(foundation, 'viewportService', viewportService);
   Reflect.set(foundation, 'directorPanel', directorPanel);
   Reflect.set(foundation, 'directorTuningControls', directorTuningControls);
+  Reflect.set(foundation, 'hazardPresentation', hazardPresentation);
+  Reflect.set(foundation, 'instructions', instructions);
   Reflect.set(foundation, 'playerPresentation', playerPresentation);
   Reflect.set(foundation, 'scrollingWorldPresentation', scrollingWorldPresentation);
-  Reflect.set(foundation, 'flightState', { positionY: 400, velocityY: 0 });
+  Reflect.set(foundation, 'runState', {
+    phase: 'running',
+    motion: { distance: 0 },
+    flight: { positionY: 400, velocityY: 0 },
+  });
   Reflect.set(foundation, 'game', { loop: { actualFps: 60 } });
   Reflect.set(foundation, 'scale', { off: scaleOff });
   Reflect.set(foundation, 'cameras', { resize: cameraResize });
@@ -46,6 +64,8 @@ const createFoundationHarness = () => {
     directorTuningControls,
     directorPanel,
     foundation,
+    hazardPresentation,
+    instructions,
     playerPresentation,
     scrollingWorldPresentation,
     scaleOff,
@@ -62,6 +82,7 @@ describe('Foundation scene gameplay orchestration', () => {
   it('steps flight and horizontal progress from the same TimeService delta', () => {
     const {
       foundation,
+      hazardPresentation,
       playerPresentation,
       scrollingWorldPresentation,
       services,
@@ -94,6 +115,7 @@ describe('Foundation scene gameplay orchestration', () => {
       expectedRunMotion.distance,
       viewportService.getSnapshot(),
     );
+    expect(hazardPresentation.render).toHaveBeenLastCalledWith(expectedRunMotion, 100);
   });
 
   it('keeps player screen-space X stable while the world advances', () => {
@@ -136,6 +158,48 @@ describe('Foundation scene gameplay orchestration', () => {
     expect(getRunMotionState(foundation).distance).toBeGreaterThan(runBeforePause.distance);
   });
 
+  it('enters death once, holds simulation, and restarts from fresh input', () => {
+    const { foundation, hazardPresentation, instructions, services, scrollingWorldPresentation } =
+      createFoundationHarness();
+    Reflect.set(foundation, 'runState', {
+      phase: 'running',
+      motion: { distance: 1_180 },
+      flight: { positionY: 195, velocityY: 0 },
+    });
+    services.input.setSpaceHeld(true);
+
+    foundation.update(0, 50);
+
+    const deadState = getRunState(foundation);
+    expect(deadState.phase).toBe('dead');
+    expect(deadState.motion.distance).toBe(1_197.5);
+    expect(services.input.isThrustHeld()).toBe(false);
+    expect(instructions.setText).toHaveBeenCalledExactlyOnceWith(
+      'Delivery interrupted\nTap, click, or press Space to restart.',
+    );
+
+    foundation.update(0, 1_000);
+
+    expect(getRunState(foundation)).toEqual(deadState);
+    expect(instructions.setText).toHaveBeenCalledOnce();
+
+    services.input.pressPointer(9, 'touch');
+    foundation.update(0, 16);
+
+    expect(getRunState(foundation)).toEqual({
+      phase: 'running',
+      motion: { distance: 0 },
+      flight: { positionY: 400, velocityY: 0 },
+    });
+    expect(services.input.isThrustHeld()).toBe(false);
+    expect(instructions.setText).toHaveBeenNthCalledWith(
+      2,
+      'M2 horizontal run prototype\nHold touch, mouse, or Space to thrust.',
+    );
+    expect(scrollingWorldPresentation.render).toHaveBeenLastCalledWith(0, expect.any(Object));
+    expect(hazardPresentation.render).toHaveBeenLastCalledWith({ distance: 0 }, 100);
+  });
+
   it('recalculates resize bounds immediately without advancing simulation time', () => {
     const {
       cameraResize,
@@ -146,8 +210,11 @@ describe('Foundation scene gameplay orchestration', () => {
       viewportService,
     } = createFoundationHarness();
     vi.stubGlobal('document', { getElementById: vi.fn(() => null) });
-    Reflect.set(foundation, 'flightState', { positionY: 500, velocityY: 120 });
-    Reflect.set(foundation, 'runMotionState', { distance: 123 });
+    Reflect.set(foundation, 'runState', {
+      phase: 'running',
+      motion: { distance: 123 },
+      flight: { positionY: 500, velocityY: 120 },
+    });
     services.time.update(16);
     const tuningBefore = services.flightTuning.getSnapshot();
     const runTuningBefore = services.runMotion.getSnapshot();
@@ -188,6 +255,7 @@ describe('Foundation scene gameplay orchestration', () => {
     const {
       directorTuningControls,
       foundation,
+      hazardPresentation,
       playerPresentation,
       scaleOff,
       scrollingWorldPresentation,
@@ -218,6 +286,7 @@ describe('Foundation scene gameplay orchestration', () => {
     expect(scaleOff).toHaveBeenCalledOnce();
     expect(directorTuningControls.destroy).toHaveBeenCalledOnce();
     expect(playerPresentation.destroy).toHaveBeenCalledOnce();
+    expect(hazardPresentation.destroy).toHaveBeenCalledOnce();
     expect(scrollingWorldPresentation.destroy).toHaveBeenCalledOnce();
     expect(inputAdapter.destroy).toHaveBeenCalledOnce();
     expect(lifecycleAdapter.destroy).toHaveBeenCalledOnce();

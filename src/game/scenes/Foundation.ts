@@ -5,16 +5,21 @@ import { readSafeAreaInsets, ViewportService } from '../../core/ViewportService'
 import { DirectorPanel } from '../../devtools/DirectorPanel';
 import { createDirectorResponsiveLayout } from '../../devtools/DirectorResponsiveLayout';
 import { DirectorTuningControls } from '../../devtools/DirectorTuningControls';
+import { PrototypeHazardPresentation } from '../../entities/PrototypeHazardPresentation';
 import { PrototypePlayerPresentation } from '../../entities/PrototypePlayerPresentation';
 import { PrototypeScrollingWorldPresentation } from '../../entities/PrototypeScrollingWorldPresentation';
+import { PROTOTYPE_PLACEHOLDER_HAZARD } from '../../hazards/PrototypeHazard';
 import { PhaserInputAdapter } from '../../input/PhaserInputAdapter';
-import { type RunMotionState, stepRunMotion } from '../../systems/RunMotionSimulation';
 import {
-  constrainVerticalFlightState,
-  stepVerticalFlight,
-  type VerticalFlightState,
-} from '../../systems/VerticalFlightSimulation';
+  createPrototypeRunState,
+  type PrototypeRunState,
+  stepPrototypeRun,
+} from '../../systems/PrototypeRunSimulation';
+import { constrainVerticalFlightState } from '../../systems/VerticalFlightSimulation';
 import { createPrototypeFlightBounds, getPrototypePlayerX } from '../PrototypeFlightLayout';
+
+const RUNNING_INSTRUCTIONS = 'M2 horizontal run prototype\nHold touch, mouse, or Space to thrust.';
+const DEAD_INSTRUCTIONS = 'Delivery interrupted\nTap, click, or press Space to restart.';
 
 export class Foundation extends Scene {
   private title?: Phaser.GameObjects.Text;
@@ -24,10 +29,14 @@ export class Foundation extends Scene {
   private directorTuningControls?: DirectorTuningControls;
   private inputAdapter?: PhaserInputAdapter;
   private lifecycleAdapter?: PhaserLifecycleAdapter;
+  private hazardPresentation?: PrototypeHazardPresentation;
   private playerPresentation?: PrototypePlayerPresentation;
   private scrollingWorldPresentation?: PrototypeScrollingWorldPresentation;
-  private flightState: VerticalFlightState = { positionY: 0, velocityY: 0 };
-  private runMotionState: RunMotionState = { distance: 0 };
+  private runState: PrototypeRunState = {
+    phase: 'running',
+    motion: { distance: 0 },
+    flight: { positionY: 0, velocityY: 0 },
+  };
   private shutdownHandled = false;
 
   constructor(
@@ -57,16 +66,14 @@ export class Foundation extends Scene {
 
     const viewport = this.viewportService.getSnapshot();
     const bounds = createPrototypeFlightBounds(viewport);
-    this.runMotionState = { distance: 0 };
-    this.flightState = {
-      positionY: (bounds.ceilingY + bounds.floorY) / 2,
-      velocityY: 0,
-    };
+    this.runState = createPrototypeRunState(bounds);
+    this.services.input.releaseAll();
     this.scrollingWorldPresentation = new PrototypeScrollingWorldPresentation(this);
+    this.hazardPresentation = new PrototypeHazardPresentation(this);
     this.playerPresentation = new PrototypePlayerPresentation(
       this,
       getPrototypePlayerX(viewport),
-      this.flightState.positionY,
+      this.runState.flight.positionY,
     );
 
     this.cameras.main.setBackgroundColor(0x121426);
@@ -78,7 +85,7 @@ export class Foundation extends Scene {
       })
       .setOrigin(0.5);
     this.instructions = this.add
-      .text(0, 0, 'M2 horizontal run prototype\nHold touch, mouse, or Space to thrust.', {
+      .text(0, 0, RUNNING_INSTRUCTIONS, {
         align: 'center',
         color: '#b9c8ec',
         fontFamily: 'Arial, sans-serif',
@@ -99,20 +106,32 @@ export class Foundation extends Scene {
 
     const simulationDeltaSeconds = this.services.time.update(delta);
     const viewport = this.viewportService.getSnapshot();
-    this.runMotionState = stepRunMotion(
-      this.runMotionState,
-      simulationDeltaSeconds,
-      this.services.runMotion.getSnapshot(),
-    );
-    this.flightState = stepVerticalFlight(
-      this.flightState,
-      simulationDeltaSeconds,
-      this.services.input.isThrustHeld(),
-      this.services.flightTuning.getSnapshot(),
-      createPrototypeFlightBounds(viewport),
-    );
-    this.scrollingWorldPresentation?.render(this.runMotionState.distance, viewport);
-    this.playerPresentation.setPosition(getPrototypePlayerX(viewport), this.flightState.positionY);
+
+    if (this.runState.phase === 'dead') {
+      const restartPressed = this.services.input.consumePrimaryActionPress();
+
+      if (restartPressed && !this.services.lifecycle.isPaused()) {
+        this.restartRun(viewport);
+      }
+    } else {
+      // While running, primary presses are thrust input rather than queued restart requests.
+      this.services.input.consumePrimaryActionPress();
+      const result = stepPrototypeRun(this.runState, simulationDeltaSeconds, {
+        flightBounds: createPrototypeFlightBounds(viewport),
+        flightTuning: this.services.flightTuning.getSnapshot(),
+        hazard: PROTOTYPE_PLACEHOLDER_HAZARD,
+        runMotionTuning: this.services.runMotion.getSnapshot(),
+        thrustHeld: this.services.input.isThrustHeld(),
+      });
+      this.runState = result.state;
+
+      if (result.enteredDead) {
+        this.services.input.releaseAll();
+        this.instructions?.setText(DEAD_INSTRUCTIONS);
+      }
+    }
+
+    this.renderRun(viewport);
 
     this.directorPanel?.update(
       delta,
@@ -135,10 +154,13 @@ export class Foundation extends Scene {
       readSafeAreaInsets(document.getElementById('safe-area-probe')),
     );
     const viewport = this.viewportService.getSnapshot();
-    this.flightState = constrainVerticalFlightState(
-      this.flightState,
-      createPrototypeFlightBounds(viewport),
-    );
+    this.runState = {
+      ...this.runState,
+      flight: constrainVerticalFlightState(
+        this.runState.flight,
+        createPrototypeFlightBounds(viewport),
+      ),
+    };
     this.layout(viewport);
   };
 
@@ -177,10 +199,23 @@ export class Foundation extends Scene {
     this.instructions
       ?.setPosition(centerX, instructionsY)
       .setWordWrapWidth(Math.max(120, safeWidth - 32));
-    this.scrollingWorldPresentation?.render(this.runMotionState.distance, viewport);
-    this.playerPresentation?.setPosition(getPrototypePlayerX(viewport), this.flightState.positionY);
+    this.renderRun(viewport);
     this.directorPanel?.layout(viewport);
     this.directorTuningControls?.layout(viewport);
+  }
+
+  private restartRun(viewport: ReturnType<ViewportService['getSnapshot']>): void {
+    this.runState = createPrototypeRunState(createPrototypeFlightBounds(viewport));
+    this.services.input.releaseAll();
+    this.instructions?.setText(RUNNING_INSTRUCTIONS);
+  }
+
+  private renderRun(viewport: ReturnType<ViewportService['getSnapshot']>): void {
+    const playerScreenX = getPrototypePlayerX(viewport);
+
+    this.scrollingWorldPresentation?.render(this.runState.motion.distance, viewport);
+    this.hazardPresentation?.render(this.runState.motion, playerScreenX);
+    this.playerPresentation?.setPosition(playerScreenX, this.runState.flight.positionY);
   }
 
   private readonly handleShutdown = (): void => {
@@ -195,6 +230,8 @@ export class Foundation extends Scene {
     this.directorPanel = undefined;
     this.scrollingWorldPresentation?.destroy();
     this.scrollingWorldPresentation = undefined;
+    this.hazardPresentation?.destroy();
+    this.hazardPresentation = undefined;
     this.playerPresentation?.destroy();
     this.playerPresentation = undefined;
     this.inputAdapter?.destroy();

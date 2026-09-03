@@ -43,6 +43,21 @@ describe('InputService', () => {
     expect(input.isThrustHeld()).toBe(false);
   });
 
+  it('exposes fresh primary presses once and clears stale presses with input ownership', () => {
+    const input = new InputService();
+
+    input.pressPointer(3, 'touch');
+    expect(input.consumePrimaryActionPress()).toBe(true);
+    expect(input.consumePrimaryActionPress()).toBe(false);
+
+    input.releasePointer(3);
+    input.setSpaceHeld(true);
+    input.releaseAll();
+
+    expect(input.consumePrimaryActionPress()).toBe(false);
+    expect(input.isThrustHeld()).toBe(false);
+  });
+
   it('clears input when blocked and ignores presses that start while blocked', () => {
     const input = new InputService();
 
