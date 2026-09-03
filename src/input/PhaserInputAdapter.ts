@@ -54,7 +54,11 @@ export class PhaserInputAdapter {
     this.inputService.releasePointer(pointer.id);
   };
 
-  private readonly handleSpaceDown = (): void => {
+  private readonly handleSpaceDown = (event?: KeyboardEvent): void => {
+    if (event?.repeat) {
+      return;
+    }
+
     this.inputService.setSpaceHeld(true);
   };
 

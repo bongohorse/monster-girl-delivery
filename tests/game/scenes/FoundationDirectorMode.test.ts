@@ -63,6 +63,13 @@ vi.mock('../../../src/entities/PrototypePlayerPresentation', () => ({
   },
 }));
 
+vi.mock('../../../src/entities/PrototypeHazardPresentation', () => ({
+  PrototypeHazardPresentation: class {
+    destroy() {}
+    render() {}
+  },
+}));
+
 vi.mock('../../../src/entities/PrototypeScrollingWorldPresentation', () => ({
   PrototypeScrollingWorldPresentation: class {
     destroy() {}
