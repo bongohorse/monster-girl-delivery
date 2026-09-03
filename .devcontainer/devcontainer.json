@@ -28,7 +28,8 @@
   "customizations": {
     "vscode": {
       "settings": {
-        "editor.formatOnSave": true
+        "editor.formatOnSave": true,
+        "workbench.secondarySideBar.defaultVisibility": "hidden"
       },
       "extensions": ["biomejs.biome"]
     }
