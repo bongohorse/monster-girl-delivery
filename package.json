@@ -20,11 +20,13 @@
     "build-nolog": "vite build --config vite/config.prod.mjs"
   },
   "devDependencies": {
-    "typescript": "~5.7.2",
-    "vite": "^8.1.0"
+    "@biomejs/biome": "2.5.11",
+    "terser": "^5.51.2",
+    "typescript": "7.0.2",
+    "vite": "^8.1.0",
+    "vitest": "4.1.11"
   },
   "dependencies": {
-    "phaser": "4.2.1",
-    "terser": "^5.39.0"
+    "phaser": "4.2.1"
   }
 }
