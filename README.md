@@ -41,12 +41,7 @@ bun install
 bun run dev
 ```
 
-For LAN device testing:
-
-```bash
-bun run dev -- --host
-# Phaser starter currently serves on port 8080
-```
+The development server listens on port 8080 and advertises its LAN URL for real-device testing.
 
 ## Quality checks
 

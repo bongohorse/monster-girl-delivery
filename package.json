@@ -1,21 +1,28 @@
 {
-  "name": "template-vite-ts",
-  "description": "A Phaser 3 TypeScript template using Vite.",
-  "version": "1.4.0",
+  "name": "monster-girl-delivery",
+  "description": "Mobile-first Phaser 4 game foundation.",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/phaserjs/template-vite-ts.git"
+    "url": "git+https://github.com/bongohorse/monster-girl-delivery.git"
   },
   "author": "Phaser Studio <support@phaser.io> (https://phaser.io/)",
   "license": "MIT",
   "licenseUrl": "http://www.opensource.org/licenses/mit-license.php",
   "bugs": {
-    "url": "https://github.com/phaserjs/template-vite-ts/issues"
+    "url": "https://github.com/bongohorse/monster-girl-delivery/issues"
   },
-  "homepage": "https://github.com/phaserjs/template-vite-ts#readme",
+  "homepage": "https://bongohorse.github.io/monster-girl-delivery/",
   "scripts": {
-    "dev": "node log.js dev & vite --config vite/config.dev.mjs",
-    "build": "node log.js build & vite build --config vite/config.prod.mjs",
+    "dev": "vite --host 0.0.0.0 --config vite/config.dev.mjs",
+    "build": "vite build --config vite/config.prod.mjs",
+    "preview": "vite preview --host 0.0.0.0 --port 8080 --config vite/config.prod.mjs",
+    "check": "biome check --write .",
+    "ci:check": "biome ci .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
     "dev-nolog": "vite --config vite/config.dev.mjs",
     "build-nolog": "vite build --config vite/config.prod.mjs"
   },

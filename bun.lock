@@ -3,7 +3,7 @@
   "configVersion": 0,
   "workspaces": {
     "": {
-      "name": "template-vite-ts",
+      "name": "monster-girl-delivery",
       "dependencies": {
         "phaser": "4.2.1",
       },
