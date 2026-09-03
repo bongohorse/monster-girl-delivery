@@ -34,7 +34,7 @@ This file preserves useful ideas that are intentionally not part of the current 
 
 ## Product
 
-- Portrait vs landscape decision after M1
+- Portrait mode or variant evaluation
 - Character gameplay abilities vs cosmetic-only
 - Economy design
 - Gacha rates/costs
