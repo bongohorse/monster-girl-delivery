@@ -18,8 +18,7 @@ export const PROTOTYPE_PLAYER_LOGICAL_VERTICAL_EXTENTS: Readonly<PrototypePlayer
 
 const PLAYER_X_FRACTION = 0.25;
 
-const sanitizeExtent = (value: number): number =>
-  Number.isFinite(value) ? Math.max(0, value) : 0;
+const sanitizeExtent = (value: number): number => (Number.isFinite(value) ? Math.max(0, value) : 0);
 
 /** Derives non-lethal flight limits from the current safe viewport, never a device preset. */
 export const createPrototypeFlightBounds = (
@@ -28,10 +27,7 @@ export const createPrototypeFlightBounds = (
 ): VerticalFlightBounds => {
   const height = sanitizeExtent(viewport.height);
   const safeTop = Math.min(height, sanitizeExtent(viewport.safeArea.top));
-  const safeBottomInset = Math.min(
-    height - safeTop,
-    sanitizeExtent(viewport.safeArea.bottom),
-  );
+  const safeBottomInset = Math.min(height - safeTop, sanitizeExtent(viewport.safeArea.bottom));
   const safeBottom = height - safeBottomInset;
   const top = sanitizeExtent(extents.top);
   const bottom = sanitizeExtent(extents.bottom);
