@@ -1,26 +1,35 @@
-import { Scene } from 'phaser';
+import { Loader, Scale, Scene, Scenes } from 'phaser';
+import { createPreloaderLayout, type PreloaderLayout } from '../PreloaderLayout';
 
 export class Preloader extends Scene {
+  private background?: Phaser.GameObjects.Image;
+  private loadingBarFrame?: Phaser.GameObjects.Rectangle;
+  private loadingBarFill?: Phaser.GameObjects.Rectangle;
+  private loadProgress = 0;
+  private shutdownHandled = false;
+
   constructor() {
     super('Preloader');
   }
 
   init() {
-    const { width, height } = this.scale;
-    const barWidth = Math.max(32, Math.min(460, width - 64));
-    const centerX = width / 2;
-    const centerY = height / 2;
+    this.loadProgress = 0;
+    this.shutdownHandled = false;
 
-    this.add.image(centerX, centerY, 'background').setDisplaySize(width, height);
-    this.add.rectangle(centerX, centerY, barWidth + 8, 32).setStrokeStyle(1, 0xffffff);
-
-    const bar = this.add
-      .rectangle(centerX - barWidth / 2, centerY, 4, 28, 0xffffff)
+    const layout = createPreloaderLayout(this.scale.width, this.scale.height, this.loadProgress);
+    this.background = this.add
+      .image(layout.background.x, layout.background.y, 'background')
+      .setDisplaySize(layout.background.width, layout.background.height);
+    this.loadingBarFrame = this.add
+      .rectangle(layout.frame.x, layout.frame.y, layout.frame.width, layout.frame.height)
+      .setStrokeStyle(1, 0xffffff);
+    this.loadingBarFill = this.add
+      .rectangle(layout.fill.x, layout.fill.y, layout.fill.width, layout.fill.height, 0xffffff)
       .setOrigin(0, 0.5);
 
-    this.load.on('progress', (progress: number) => {
-      bar.width = Math.max(4, barWidth * progress);
-    });
+    this.load.on(Loader.Events.PROGRESS, this.handleProgress);
+    this.scale.on(Scale.Events.RESIZE, this.handleResize);
+    this.events.once(Scenes.Events.SHUTDOWN, this.handleShutdown);
   }
 
   create() {
@@ -30,4 +39,40 @@ export class Preloader extends Scene {
     //  Enter the M0 foundation diagnostics after starter assets are ready.
     this.scene.start('Foundation');
   }
+
+  private readonly handleProgress = (progress: number): void => {
+    const layout = createPreloaderLayout(this.scale.width, this.scale.height, progress);
+    this.loadProgress = layout.progress;
+    this.applyLayout(layout);
+  };
+
+  private readonly handleResize = (gameSize: Phaser.Structs.Size): void => {
+    this.cameras.resize(gameSize.width, gameSize.height);
+    this.applyLayout(createPreloaderLayout(gameSize.width, gameSize.height, this.loadProgress));
+  };
+
+  private applyLayout(layout: PreloaderLayout): void {
+    this.background
+      ?.setPosition(layout.background.x, layout.background.y)
+      .setDisplaySize(layout.background.width, layout.background.height);
+    this.loadingBarFrame
+      ?.setPosition(layout.frame.x, layout.frame.y)
+      .setSize(layout.frame.width, layout.frame.height);
+    this.loadingBarFill
+      ?.setPosition(layout.fill.x, layout.fill.y)
+      .setSize(layout.fill.width, layout.fill.height);
+  }
+
+  private readonly handleShutdown = (): void => {
+    if (this.shutdownHandled) {
+      return;
+    }
+
+    this.shutdownHandled = true;
+    this.load.off(Loader.Events.PROGRESS, this.handleProgress);
+    this.scale.off(Scale.Events.RESIZE, this.handleResize);
+    this.background = undefined;
+    this.loadingBarFrame = undefined;
+    this.loadingBarFill = undefined;
+  };
 }
