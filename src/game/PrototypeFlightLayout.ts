@@ -21,8 +21,7 @@ const PLAYER_X_FRACTION = 0.25;
 /** Derives non-lethal flight limits from the current playable viewport, never a device preset. */
 export const createPrototypeFlightBounds = (
   viewport: Pick<ViewportSnapshot, 'height'>,
-  extents: Readonly<PrototypePlayerLogicalVerticalExtents> =
-    PROTOTYPE_PLAYER_LOGICAL_VERTICAL_EXTENTS,
+  extents: Readonly<PrototypePlayerLogicalVerticalExtents> = PROTOTYPE_PLAYER_LOGICAL_VERTICAL_EXTENTS,
 ): VerticalFlightBounds => {
   const height = Number.isFinite(viewport.height) ? Math.max(0, viewport.height) : 0;
   const top = Number.isFinite(extents.top) ? Math.max(0, extents.top) : 0;
