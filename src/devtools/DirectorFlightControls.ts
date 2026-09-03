@@ -1,7 +1,7 @@
+import type { Scene } from 'phaser';
 import type { FlightTuningConfig, FlightTuningValues } from '../config/FlightTuningConfig';
 import type { ViewportSnapshot } from '../core/ViewportService';
 import type { InputService } from '../input/InputService';
-import type { Scene } from 'phaser';
 
 type FlightTuningKey = keyof FlightTuningValues;
 type AdjustmentDirection = -1 | 1;
