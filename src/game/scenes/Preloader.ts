@@ -1,46 +1,40 @@
 import { Scene } from 'phaser';
 
-export class Preloader extends Scene
-{
-    constructor ()
-    {
-        super('Preloader');
-    }
+export class Preloader extends Scene {
+  constructor() {
+    super('Preloader');
+  }
 
-    init ()
-    {
-        //  We loaded this image in our Boot Scene, so we can display it here
-        this.add.image(512, 384, 'background');
+  init() {
+    const { width, height } = this.scale;
+    const barWidth = Math.max(32, Math.min(460, width - 64));
+    const centerX = width / 2;
+    const centerY = height / 2;
 
-        //  A simple progress bar. This is the outline of the bar.
-        this.add.rectangle(512, 384, 468, 32).setStrokeStyle(1, 0xffffff);
+    this.add.image(centerX, centerY, 'background').setDisplaySize(width, height);
+    this.add.rectangle(centerX, centerY, barWidth + 8, 32).setStrokeStyle(1, 0xffffff);
 
-        //  This is the progress bar itself. It will increase in size from the left based on the % of progress.
-        const bar = this.add.rectangle(512-230, 384, 4, 28, 0xffffff);
+    const bar = this.add
+      .rectangle(centerX - barWidth / 2, centerY, 4, 28, 0xffffff)
+      .setOrigin(0, 0.5);
 
-        //  Use the 'progress' event emitted by the LoaderPlugin to update the loading bar
-        this.load.on('progress', (progress: number) => {
+    this.load.on('progress', (progress: number) => {
+      bar.width = Math.max(4, barWidth * progress);
+    });
+  }
 
-            //  Update the progress bar (our bar is 464px wide, so 100% = 464px)
-            bar.width = 4 + (460 * progress);
+  preload() {
+    //  Load the assets for the game - Replace with your own assets
+    this.load.setPath('assets');
 
-        });
-    }
+    this.load.image('logo', 'logo.png');
+  }
 
-    preload ()
-    {
-        //  Load the assets for the game - Replace with your own assets
-        this.load.setPath('assets');
+  create() {
+    //  When all the assets have loaded, it's often worth creating global objects here that the rest of the game can use.
+    //  For example, you can define global animations here, so we can use them in other scenes.
 
-        this.load.image('logo', 'logo.png');
-    }
-
-    create ()
-    {
-        //  When all the assets have loaded, it's often worth creating global objects here that the rest of the game can use.
-        //  For example, you can define global animations here, so we can use them in other scenes.
-
-        //  Move to the MainMenu. You could also swap this for a Scene Transition, such as a camera fade.
-        this.scene.start('MainMenu');
-    }
+    //  Enter the M0 foundation diagnostics after starter assets are ready.
+    this.scene.start('Foundation');
+  }
 }

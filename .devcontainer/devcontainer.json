@@ -1,6 +1,6 @@
 {
   "name": "Monster Girl Delivery",
-  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
 
   "features": {
     "ghcr.io/devcontainers/features/github-cli:1": {}
@@ -12,7 +12,7 @@
     }
   },
 
-  "postCreateCommand": "curl -fsSL https://bun.sh/install | bash -s -- bun-v1.4.0 && curl -fsSL https://chatgpt.com/codex/install.sh | sh && ~/.bun/bin/bun install",
+  "postCreateCommand": "curl -fsSL https://bun.sh/install | bash -s -- bun-v1.4.0 && curl -fsSL https://chatgpt.com/codex/install.sh | sh && ~/.bun/bin/bun install --frozen-lockfile",
 
   "postStartCommand": "grep -qxF 'export GH_TOKEN=\"$MGD_GH_TOKEN\"' ~/.bashrc || echo 'export GH_TOKEN=\"$MGD_GH_TOKEN\"' >> ~/.bashrc",
 
@@ -30,9 +30,7 @@
       "settings": {
         "editor.formatOnSave": true
       },
-      "extensions": [
-        "biomejs.biome"
-      ]
+      "extensions": ["biomejs.biome"]
     }
   }
 }
