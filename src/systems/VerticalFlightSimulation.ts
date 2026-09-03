@@ -31,10 +31,15 @@ const assertValidBounds = (bounds: Readonly<VerticalFlightBounds>): void => {
   }
 };
 
-const constrainToBounds = (
+/**
+ * Contains an existing state inside new bounds without advancing simulation time.
+ * Velocity is preserved unless it points farther out of a boundary the state had to meet.
+ */
+export const constrainVerticalFlightState = (
   state: Readonly<VerticalFlightState>,
   bounds: Readonly<VerticalFlightBounds>,
 ): VerticalFlightState => {
+  assertValidBounds(bounds);
   const positionY = clamp(state.positionY, bounds.ceilingY, bounds.floorY);
   const velocityPointsAboveCeiling = positionY === bounds.ceilingY && state.velocityY < 0;
   const velocityPointsBelowFloor = positionY === bounds.floorY && state.velocityY > 0;
@@ -94,7 +99,7 @@ export const stepVerticalFlight = (
     return { ...state };
   }
 
-  const constrainedState = constrainToBounds(state, bounds);
+  const constrainedState = constrainVerticalFlightState(state, bounds);
   const minimumVelocity = -tuning.maxRiseVelocity;
   const maximumVelocity = tuning.maxFallVelocity;
   const initialVelocity = clamp(constrainedState.velocityY, minimumVelocity, maximumVelocity);
@@ -111,7 +116,7 @@ export const stepVerticalFlight = (
     elapsedSeconds,
   );
 
-  return constrainToBounds(
+  return constrainVerticalFlightState(
     {
       positionY: constrainedState.positionY + displacement,
       velocityY: finalVelocity,
