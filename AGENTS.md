@@ -150,6 +150,18 @@ Keep changes focused and reviewable.
 
 Do not generate unrelated refactors in a feature/bug PR.
 
+## Task sizing and milestone planning
+
+- Milestones and large Issues are planning containers, not implementation tasks.
+- Before implementation, split them into small sub-issues with one clear responsibility and explicit acceptance criteria.
+- Prefer independently testable sub-issues and record dependencies between them where relevant.
+- After creating the milestone plan, stop and wait for Game Director approval. Do not begin the first implementation task automatically.
+- The default implementation unit is one sub-issue → one branch → one pull request.
+- Do not implement multiple independent sub-issues in one agent run unless the Director explicitly instructs you to.
+- Split any task containing multiple independently reviewable systems before coding.
+- Record out-of-scope discoveries as separate backlog items or Issues instead of expanding the current task.
+- After completing the assigned sub-issue and pull request, the implementation agent must stop.
+
 ## First milestone
 
 M0 is foundation only.
@@ -165,7 +177,7 @@ When authenticated GitHub access is available, you are allowed to manage the rep
 - comment on and close Issues when acceptance criteria are met;
 - inspect and rerun GitHub Actions;
 - create follow-up Issues for useful work outside current scope;
-- merge your PR when required checks pass and the Issue does not explicitly require human approval.
+- merge a PR only when the assigned task explicitly includes merging and required checks pass.
 
 Never bypass protection by weakening rules, force-pushing `main`, deleting `main`, exposing secrets, or changing repository/account administration.
 

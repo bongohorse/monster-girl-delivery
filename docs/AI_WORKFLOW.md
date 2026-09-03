@@ -47,6 +47,22 @@ Every coding task should state:
 5. Explicit non-goals
 6. Required checks
 
+## Milestone planning
+
+Milestones and large Issues are planning containers, not implementation tasks. Before coding, split them into small GitHub sub-issues. Each sub-issue should have one clear responsibility, explicit acceptance criteria, and preferably an independently testable result. Record dependencies between sub-issues where relevant.
+
+If a task contains multiple independently reviewable systems, split it before implementation. After creating a milestone plan, stop and wait for Game Director approval; do not begin the first sub-issue automatically.
+
+## Implementation unit
+
+The default unit of work is:
+
+```text
+one sub-issue → one branch → one pull request
+```
+
+Do not implement multiple independent sub-issues in one agent run unless the Director explicitly instructs you to. Put out-of-scope discoveries in separate backlog items or Issues rather than expanding the current task. After completing the assigned sub-issue and pull request, the implementation agent stops.
+
 ## AI safety rule
 
 An AI should not infer a feature merely because it was discussed historically. Use the current specification and current Issue.
@@ -58,10 +74,10 @@ Future ideas belong in backlog/issues until explicitly scheduled.
 Default coding-agent flow:
 
 ```text
-Issue → branch → implementation → checks → PR → CI → merge → close Issue
+Approved sub-issue → branch → implementation → checks → PR → stop
 ```
 
-Agents may self-merge after required CI passes unless the Issue explicitly requests human approval.
+Review, CI, merge, and Issue closure follow separately. An implementation agent merges only when its assigned task explicitly includes merging.
 
 If useful work is discovered outside the Issue scope, create a new Issue instead of expanding the current PR.
 
