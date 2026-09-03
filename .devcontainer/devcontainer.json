@@ -1,0 +1,25 @@
+{
+  "name": "Monster Girl Delivery",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "postCreateCommand": "curl -fsSL https://bun.sh/install | bash -s -- bun-v1.4.0 && ~/.bun/bin/bun install",
+  "forwardPorts": [8080],
+  "portsAttributes": {
+    "8080": {
+      "label": "Vite Development Server",
+      "onAutoForward": "openPreview"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "editor.formatOnSave": true
+      },
+      "extensions": [
+        "biomejs.biome"
+      ]
+    }
+  }
+}

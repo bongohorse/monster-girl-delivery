@@ -1,0 +1,45 @@
+name: Feature / Task
+description: Define a focused game or engineering task.
+title: "[Task] "
+labels:
+  - task
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Keep the task small enough for one AI coding session or one focused PR.
+  - type: input
+    id: goal
+    attributes:
+      label: Goal
+      description: What should exist after this task?
+      placeholder: "Example: Add a Director toggle that displays player hitboxes"
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Relevant game/design/technical context.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      description: Concrete conditions that define success.
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Out of Scope
+      description: What must not be included in this task?
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes / Ideas
+      description: Future ideas that should be preserved without being implemented now.

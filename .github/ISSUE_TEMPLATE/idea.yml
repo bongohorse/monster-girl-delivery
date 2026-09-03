@@ -1,0 +1,22 @@
+name: Backlog idea
+about: Preserve a useful idea without scheduling it yet
+title: "[Idea] "
+labels: ["type:idea", "status:backlog"]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: Idea
+      description: Describe the concept briefly.
+    validations:
+      required: true
+  - type: textarea
+    id: value
+    attributes:
+      label: Why it may be useful
+      description: Player value, production value, or technical value.
+  - type: textarea
+    id: risks
+    attributes:
+      label: Risks / open questions
+      description: Unknowns, dependencies, or reasons not to implement yet.
