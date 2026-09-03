@@ -2,6 +2,7 @@ import { Scale, Scene, Scenes } from 'phaser';
 import type { AppServices } from '../../core/AppServices';
 import { PhaserLifecycleAdapter } from '../../core/PhaserLifecycleAdapter';
 import { readSafeAreaInsets, ViewportService } from '../../core/ViewportService';
+import { DirectorFlightControls } from '../../devtools/DirectorFlightControls';
 import { DirectorPanel } from '../../devtools/DirectorPanel';
 import { PrototypePlayerPresentation } from '../../entities/PrototypePlayerPresentation';
 import { PhaserInputAdapter } from '../../input/PhaserInputAdapter';
@@ -16,6 +17,7 @@ export class Foundation extends Scene {
   private instructions?: Phaser.GameObjects.Text;
   private viewportService?: ViewportService;
   private directorPanel?: DirectorPanel;
+  private directorFlightControls?: DirectorFlightControls;
   private inputAdapter?: PhaserInputAdapter;
   private lifecycleAdapter?: PhaserLifecycleAdapter;
   private playerPresentation?: PrototypePlayerPresentation;
@@ -34,6 +36,11 @@ export class Foundation extends Scene {
     this.inputAdapter = new PhaserInputAdapter(this, this.services.input);
     this.lifecycleAdapter = new PhaserLifecycleAdapter(this.game, this.services.lifecycle);
     this.directorPanel = new DirectorPanel(this);
+    this.directorFlightControls = new DirectorFlightControls(
+      this,
+      this.services.flightTuning,
+      this.services.input,
+    );
 
     const viewport = this.viewportService.getSnapshot();
     const bounds = createPrototypeFlightBounds(viewport);
@@ -118,6 +125,7 @@ export class Foundation extends Scene {
       .setWordWrapWidth(Math.max(180, viewport.width - 48));
     this.playerPresentation?.setPosition(getPrototypePlayerX(viewport), this.flightState.positionY);
     this.directorPanel?.layout(viewport);
+    this.directorFlightControls?.layout(viewport);
   }
 
   private readonly handleShutdown = (): void => {
@@ -127,6 +135,8 @@ export class Foundation extends Scene {
 
     this.shutdownHandled = true;
     this.scale.off(Scale.Events.RESIZE, this.handleResize);
+    this.directorFlightControls?.destroy();
+    this.directorFlightControls = undefined;
     this.playerPresentation?.destroy();
     this.playerPresentation = undefined;
     this.inputAdapter?.destroy();
