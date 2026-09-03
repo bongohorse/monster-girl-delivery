@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createAppServices } from '../../../src/core/AppServices';
 import { ViewportService } from '../../../src/core/ViewportService';
 import { createPrototypeFlightBounds } from '../../../src/game/PrototypeFlightLayout';
@@ -25,6 +25,7 @@ const createFoundationHarness = () => {
   const directorFlightControls = { destroy: vi.fn(), layout: vi.fn() };
   const playerPresentation = { destroy: vi.fn(), setPosition: vi.fn() };
   const scaleOff = vi.fn();
+  const cameraResize = vi.fn();
 
   Reflect.set(foundation, 'viewportService', viewportService);
   Reflect.set(foundation, 'directorPanel', directorPanel);
@@ -33,8 +34,10 @@ const createFoundationHarness = () => {
   Reflect.set(foundation, 'flightState', { positionY: 400, velocityY: 0 });
   Reflect.set(foundation, 'game', { loop: { actualFps: 60 } });
   Reflect.set(foundation, 'scale', { off: scaleOff });
+  Reflect.set(foundation, 'cameras', { resize: cameraResize });
 
   return {
+    cameraResize,
     directorFlightControls,
     directorPanel,
     foundation,
@@ -44,6 +47,10 @@ const createFoundationHarness = () => {
     viewportService,
   };
 };
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 describe('Foundation scene flight orchestration', () => {
   it('steps flight from TimeService delta and high-level thrust intent', () => {
@@ -83,6 +90,39 @@ describe('Foundation scene flight orchestration', () => {
 
     foundation.update(0, 16);
     expect(getFlightState(foundation).positionY).toBeGreaterThan(beforePause.positionY);
+  });
+
+  it('recalculates resize bounds immediately without advancing simulation time', () => {
+    const { cameraResize, foundation, playerPresentation, services, viewportService } =
+      createFoundationHarness();
+    vi.stubGlobal('document', { getElementById: vi.fn(() => null) });
+    Reflect.set(foundation, 'flightState', { positionY: 500, velocityY: 120 });
+    services.time.update(16);
+    const tuningBefore = services.flightTuning.getSnapshot();
+
+    const handleResize: unknown = Reflect.get(foundation, 'handleResize');
+    expect(handleResize).toBeTypeOf('function');
+    if (typeof handleResize !== 'function') {
+      throw new TypeError('Foundation resize handler is unavailable.');
+    }
+
+    handleResize({ width: 800, height: 600 });
+
+    expect(cameraResize).toHaveBeenLastCalledWith(800, 600);
+    expect(viewportService.getSnapshot().orientation).toBe('landscape');
+    expect(getFlightState(foundation)).toEqual({ positionY: 500, velocityY: 120 });
+    expect(playerPresentation.setPosition).toHaveBeenLastCalledWith(200, 500);
+    expect(services.time.getDeltaSeconds()).toBeCloseTo(0.016);
+    expect(services.flightTuning.getSnapshot()).toEqual(tuningBefore);
+
+    handleResize({ width: 800, height: 300 });
+
+    expect(getFlightState(foundation)).toEqual({ positionY: 272, velocityY: 0 });
+    expect(playerPresentation.setPosition).toHaveBeenLastCalledWith(200, 272);
+    expect(services.time.getDeltaSeconds()).toBeCloseTo(0.016);
+
+    foundation.update(0, 0);
+    expect(getFlightState(foundation)).toEqual({ positionY: 272, velocityY: 0 });
   });
 
   it('cleans scene-owned integration once while keeping application time reusable', () => {
