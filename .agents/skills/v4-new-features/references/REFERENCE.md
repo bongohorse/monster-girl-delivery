@@ -33,12 +33,6 @@ sprite.setTintMode(Phaser.TintModes.FILL);           // sets mode separately
 
 ---
 
-## Migrating from v3
-
-For detailed migration instructions, code conversion examples, removed APIs, and a full checklist, see the dedicated [v3 to v4 Migration Guide](../v3-to-v4-migration/SKILL.md).
-
----
-
 ## Source File Map
 
 | Feature | Path |
@@ -66,4 +60,4 @@ For detailed migration instructions, code conversion examples, removed APIs, and
 
 ---
 
-**Related skills**: ../filters-and-postfx/SKILL.md, ../game-object-components/SKILL.md, ../tilemaps/SKILL.md, ../v3-to-v4-migration/SKILL.md
+**Related skills**: ../filters-and-postfx/SKILL.md, ../game-object-components/SKILL.md, ../tilemaps/SKILL.md

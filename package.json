@@ -22,9 +22,7 @@
     "check": "biome check --write .",
     "ci:check": "biome ci .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "dev-nolog": "vite --config vite/config.dev.mjs",
-    "build-nolog": "vite build --config vite/config.prod.mjs"
+    "test": "vitest run"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.11",

@@ -6,7 +6,7 @@ This project intentionally gives coding agents broad repository autonomy while k
 
 - Codespace: development VM.
 - Git: push branches/commits with the Codespaces repository token.
-- `gh` CLI: use a repo-scoped fine-grained PAT stored as the Codespaces secret `GH_TOKEN`.
+- `gh` CLI: use a repo-scoped fine-grained PAT stored as the Codespaces secret `MGD_GH_TOKEN`; the devcontainer exports it as `GH_TOKEN`.
 - `main`: protected by a GitHub Ruleset. Agents work through PRs.
 - CI: must pass before merge.
 - Human review: optional, not required by default.
@@ -20,12 +20,13 @@ Required:
 | Permission | Access |
 |---|---|
 | Actions | Read and write |
-| Checks | Read and write |
 | Commit statuses | Read and write |
 | Contents | Read and write |
 | Issues | Read and write |
 | Pull requests | Read and write |
 | Workflows | Write |
+
+Fine-grained PATs do not provide a separate `Checks` permission. Use Actions access and `gh run` for CI status and logs. Commands that request check annotations or status rollups may return `403` even when workflow run and job results are readable.
 
 Useful later:
 
@@ -72,7 +73,7 @@ Agents must not:
 
 ## Authentication inside Codespaces
 
-`GH_TOKEN` is automatically used by GitHub CLI when present.
+Configure the fine-grained PAT as the Codespaces secret `MGD_GH_TOKEN`. The devcontainer adds `export GH_TOKEN="$MGD_GH_TOKEN"` to the shell environment, and GitHub CLI automatically uses `GH_TOKEN` when present.
 
 Verify:
 
