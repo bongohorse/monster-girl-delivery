@@ -26,7 +26,10 @@ export class Foundation extends Scene {
   private flightState: VerticalFlightState = { positionY: 0, velocityY: 0 };
   private shutdownHandled = false;
 
-  constructor(private readonly services: AppServices) {
+  constructor(
+    private readonly services: AppServices,
+    private readonly directorMode: boolean,
+  ) {
     super('Foundation');
   }
 
@@ -37,12 +40,15 @@ export class Foundation extends Scene {
     this.viewportService = new ViewportService(this.scale.width, this.scale.height, safeArea);
     this.inputAdapter = new PhaserInputAdapter(this, this.services.input);
     this.lifecycleAdapter = new PhaserLifecycleAdapter(this.game, this.services.lifecycle);
-    this.directorPanel = new DirectorPanel(this);
-    this.directorFlightControls = new DirectorFlightControls(
-      this,
-      this.services.flightTuning,
-      this.services.input,
-    );
+
+    if (this.directorMode) {
+      this.directorPanel = new DirectorPanel(this);
+      this.directorFlightControls = new DirectorFlightControls(
+        this,
+        this.services.flightTuning,
+        this.services.input,
+      );
+    }
 
     const viewport = this.viewportService.getSnapshot();
     const bounds = createPrototypeFlightBounds(viewport);
@@ -80,7 +86,7 @@ export class Foundation extends Scene {
   }
 
   update(_time: number, delta: number) {
-    if (!this.viewportService || !this.directorPanel || !this.playerPresentation) {
+    if (!this.viewportService || !this.playerPresentation) {
       return;
     }
 
@@ -95,7 +101,7 @@ export class Foundation extends Scene {
     );
     this.playerPresentation.setPosition(getPrototypePlayerX(viewport), this.flightState.positionY);
 
-    this.directorPanel.update(
+    this.directorPanel?.update(
       delta,
       this.game.loop.actualFps,
       viewport,
@@ -133,12 +139,17 @@ export class Foundation extends Scene {
     const safeWidth = Math.max(0, safeRightEdge - safeLeft);
     const centerX = safeLeft + safeWidth / 2;
     const titleSize = Math.round(Math.max(24, Math.min(42, safeWidth * 0.065)));
-    const directorLayout = createDirectorResponsiveLayout(viewport);
-    const directorBottom = Math.max(
-      directorLayout.diagnostics.y + directorLayout.diagnostics.height,
-      directorLayout.flightControls.y + directorLayout.flightControls.height,
-    );
-    const contentTop = Math.min(safeBottom, Math.max(safeTop, directorBottom + 16));
+    let contentTop = safeTop;
+
+    if (this.directorPanel && this.directorFlightControls) {
+      const directorLayout = createDirectorResponsiveLayout(viewport);
+      const directorBottom = Math.max(
+        directorLayout.diagnostics.y + directorLayout.diagnostics.height,
+        directorLayout.flightControls.y + directorLayout.flightControls.height,
+      );
+      contentTop = Math.min(safeBottom, Math.max(safeTop, directorBottom + 16));
+    }
+
     const contentHeight = Math.max(0, safeBottom - contentTop);
     const titleY =
       contentHeight >= 100
@@ -167,6 +178,7 @@ export class Foundation extends Scene {
     this.scale.off(Scale.Events.RESIZE, this.handleResize);
     this.directorFlightControls?.destroy();
     this.directorFlightControls = undefined;
+    this.directorPanel = undefined;
     this.playerPresentation?.destroy();
     this.playerPresentation = undefined;
     this.inputAdapter?.destroy();

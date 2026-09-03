@@ -4,7 +4,11 @@ import { Boot } from './scenes/Boot';
 import { Foundation } from './scenes/Foundation';
 import { Preloader } from './scenes/Preloader';
 
-const StartGame = (parent: string) => {
+interface StartGameOptions {
+  directorMode: boolean;
+}
+
+const StartGame = (parent: string, options: StartGameOptions) => {
   const services = createAppServices();
   const config: Phaser.Types.Core.GameConfig = {
     type: AUTO,
@@ -23,7 +27,7 @@ const StartGame = (parent: string) => {
       width: '100%',
       height: '100%',
     },
-    scene: [Boot, Preloader, new Foundation(services)],
+    scene: [Boot, Preloader, new Foundation(services, options.directorMode)],
   };
 
   return new Game(config);

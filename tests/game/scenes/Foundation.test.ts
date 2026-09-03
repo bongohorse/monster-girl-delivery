@@ -19,7 +19,7 @@ const getFlightState = (foundation: Foundation): VerticalFlightState =>
 
 const createFoundationHarness = () => {
   const services = createAppServices();
-  const foundation = new Foundation(services);
+  const foundation = new Foundation(services, true);
   const viewportService = new ViewportService(400, 800);
   const directorPanel = { layout: vi.fn(), update: vi.fn() };
   const directorFlightControls = { destroy: vi.fn(), layout: vi.fn() };
