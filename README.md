@@ -2,7 +2,7 @@
 
 2D mobile-first endless sidescroller built with Phaser 4 and TypeScript.
 
-**Current status:** Pre-Production / M2 — Hazards, Graze and Fairness
+**Current status:** Pre-Production / M2 — Horizontal Run & First Hazard
 
 ## Quick start — GitHub Codespaces
 
@@ -123,8 +123,8 @@ For development or agent work, read these documents in order:
 
 ## Current milestone
 
-M0 Foundation and M1 Flight Prototype are complete. The current milestone is **M2 — Hazards, Graze and Fairness**.
+M0 Foundation and M1 Flight Prototype are complete. The current milestone is **M2 — Horizontal Run & First Hazard**.
 
 Landscape is the decided target orientation for the current core game, based on the Director-accepted smartphone/tablet results in the [`M1 real-device report`](docs/m1-device-report.md). Portrait remains a future possibility for a separate mode or variant.
 
-M2 focuses on hazards, warnings, collision, Graze, score, and the first explicit fairness rules.
+M2 focuses on deterministic horizontal world motion, configurable prototype scroll speed, one deterministic lethal hazard, collision, run death/restart, and Landscape device validation. Graze and scoring remain future work.
