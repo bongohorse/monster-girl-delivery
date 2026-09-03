@@ -73,10 +73,10 @@ vi.mock('../../../src/devtools/DirectorPanel', () => ({
   },
 }));
 
-vi.mock('../../../src/devtools/DirectorFlightControls', () => ({
-  DirectorFlightControls: class {
-    constructor() {
-      directorControlsConstructed();
+vi.mock('../../../src/devtools/DirectorTuningControls', () => ({
+  DirectorTuningControls: class {
+    constructor(...args: unknown[]) {
+      directorControlsConstructed(...args);
     }
     destroy() {
       directorControlsDestroyed();
@@ -101,6 +101,7 @@ afterEach(() => {
 describe('Foundation Director mode boundary', () => {
   it('does not construct Director tooling when Director mode is disabled', () => {
     const services = createAppServices();
+    const runMotionBefore = services.runMotion.getSnapshot();
     const foundation = new Foundation(services, false);
 
     foundation.create();
@@ -109,9 +110,10 @@ describe('Foundation Director mode boundary', () => {
     expect(directorPanelConstructed).not.toHaveBeenCalled();
     expect(directorControlsConstructed).not.toHaveBeenCalled();
     expect(Reflect.get(foundation, 'directorPanel')).toBeUndefined();
-    expect(Reflect.get(foundation, 'directorFlightControls')).toBeUndefined();
+    expect(Reflect.get(foundation, 'directorTuningControls')).toBeUndefined();
     expect(services.time.getDeltaSeconds()).toBeCloseTo(0.016);
     expect(services.input.getSnapshot().gameplayBlocked).toBe(false);
+    expect(services.runMotion.getSnapshot()).toEqual(runMotionBefore);
 
     const handleShutdown: unknown = Reflect.get(foundation, 'handleShutdown');
     expect(handleShutdown).toBeTypeOf('function');
@@ -126,11 +128,17 @@ describe('Foundation Director mode boundary', () => {
   });
 
   it('keeps Director tooling enabled when Director mode is enabled', () => {
-    const foundation = new Foundation(createAppServices(), true);
+    const services = createAppServices();
+    const foundation = new Foundation(services, true);
 
     foundation.create();
 
     expect(directorPanelConstructed).toHaveBeenCalledOnce();
-    expect(directorControlsConstructed).toHaveBeenCalledOnce();
+    expect(directorControlsConstructed).toHaveBeenCalledWith(
+      foundation,
+      services.flightTuning,
+      services.runMotion,
+      services.input,
+    );
   });
 });

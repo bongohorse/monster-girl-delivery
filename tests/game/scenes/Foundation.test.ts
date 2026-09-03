@@ -22,14 +22,14 @@ const createFoundationHarness = () => {
   const foundation = new Foundation(services, true);
   const viewportService = new ViewportService(400, 800);
   const directorPanel = { layout: vi.fn(), update: vi.fn() };
-  const directorFlightControls = { destroy: vi.fn(), layout: vi.fn() };
+  const directorTuningControls = { destroy: vi.fn(), layout: vi.fn() };
   const playerPresentation = { destroy: vi.fn(), setPosition: vi.fn() };
   const scaleOff = vi.fn();
   const cameraResize = vi.fn();
 
   Reflect.set(foundation, 'viewportService', viewportService);
   Reflect.set(foundation, 'directorPanel', directorPanel);
-  Reflect.set(foundation, 'directorFlightControls', directorFlightControls);
+  Reflect.set(foundation, 'directorTuningControls', directorTuningControls);
   Reflect.set(foundation, 'playerPresentation', playerPresentation);
   Reflect.set(foundation, 'flightState', { positionY: 400, velocityY: 0 });
   Reflect.set(foundation, 'game', { loop: { actualFps: 60 } });
@@ -38,7 +38,7 @@ const createFoundationHarness = () => {
 
   return {
     cameraResize,
-    directorFlightControls,
+    directorTuningControls,
     directorPanel,
     foundation,
     playerPresentation,
@@ -126,7 +126,7 @@ describe('Foundation scene flight orchestration', () => {
   });
 
   it('cleans scene-owned integration once while keeping application time reusable', () => {
-    const { directorFlightControls, foundation, playerPresentation, scaleOff, services } =
+    const { directorTuningControls, foundation, playerPresentation, scaleOff, services } =
       createFoundationHarness();
     const inputAdapter = { destroy: vi.fn() };
     const lifecycleAdapter = { destroy: vi.fn() };
@@ -143,7 +143,7 @@ describe('Foundation scene flight orchestration', () => {
       throw new TypeError('Foundation shutdown handler is unavailable.');
     }
 
-    directorFlightControls.destroy.mockImplementation(() => {
+    directorTuningControls.destroy.mockImplementation(() => {
       services.input.setGameplayBlocked(false);
     });
 
@@ -151,7 +151,7 @@ describe('Foundation scene flight orchestration', () => {
     handleShutdown();
 
     expect(scaleOff).toHaveBeenCalledOnce();
-    expect(directorFlightControls.destroy).toHaveBeenCalledOnce();
+    expect(directorTuningControls.destroy).toHaveBeenCalledOnce();
     expect(playerPresentation.destroy).toHaveBeenCalledOnce();
     expect(inputAdapter.destroy).toHaveBeenCalledOnce();
     expect(lifecycleAdapter.destroy).toHaveBeenCalledOnce();
