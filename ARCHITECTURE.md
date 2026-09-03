@@ -131,7 +131,7 @@ Requirements:
 
 Do not tie gameplay rules directly to a specific phone resolution.
 
-Orientation remains experimental until M1 testing.
+Landscape is the decided target orientation for the current core game. Viewport systems must still handle dynamic resize and varied landscape aspect ratios; orientation locking requires a separate implementation decision.
 
 ## 7. Gameplay separation
 

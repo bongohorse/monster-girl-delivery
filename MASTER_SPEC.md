@@ -1,8 +1,8 @@
 # MONSTER GIRL DELIVERY — MASTER SPEC
 
-**Status:** Pre-Production / Flight Prototype
+**Status:** Pre-Production / Hazards, Graze and Fairness
 **Document status:** Living specification
-**Current milestone:** M1 — Flight Prototype
+**Current milestone:** M2 — Hazards, Graze and Fairness
 **Role of human:** Game Director / Product Owner
 **Role of coding agents:** Implementation / Engineering
 
@@ -55,14 +55,15 @@ Priority order:
 
 One gameplay codebase should remain the source for all platforms where practical.
 
-### EXPERIMENT
+Current core orientation:
 
-Final orientation:
-- Portrait vs. Landscape is intentionally undecided.
-- Milestone 1 must test both on real devices before finalizing orientation.
+- **Landscape — DECIDED** as the target orientation for the current core game.
+- The left-to-right endless-sidescroller flow benefits from landscape's forward view and reaction space.
+- The Director based this decision on the accepted smartphone/tablet results in the [M1 real-device report](docs/m1-device-report.md).
 
 ### FUTURE
 
+- Portrait may be revisited as a separate mode or variant, but is not part of the current core mode.
 - Android/iOS packaging, likely via Capacitor.
 - Desktop/Steam packaging, likely via Tauri or another suitable wrapper.
 - PWA may be considered later, but is not part of the current architecture.
@@ -222,15 +223,7 @@ The game must adapt to:
 
 The physical screen size must not directly determine gameplay fairness.
 
-### EXPERIMENT
-
-Orientation is intentionally open.
-
-The first prototype must make it easy to test:
-- portrait;
-- landscape;
-- resize while running;
-- different aspect ratios.
+Landscape is the target orientation for the current core game. Viewport systems must still handle resizing and different aspect ratios; selecting a target orientation does not itself require runtime orientation locking.
 
 ### Fairness principle
 
@@ -294,7 +287,7 @@ Resume behavior may include a short user-visible resume phase later, but the exa
 
 ## 11. Hazards and Fairness
 
-### FUTURE / M2+
+### M2 — CURRENT MILESTONE
 
 Hazards may include:
 - static obstacles;
@@ -330,7 +323,7 @@ Exact timings remain **PROTOTYPE/TBD** until gameplay testing validates them.
 
 ## 12. Graze
 
-### FUTURE / M2+
+### M2 — CURRENT MILESTONE
 
 Graze is a risk/reward mechanic.
 
@@ -790,6 +783,8 @@ The actual Phaser starter may contain additional files. Do not delete useful sta
 
 ### M1 — Flight Prototype
 
+**Status: COMPLETE — 2026-09-03.** The Director accepted the mobile-first evidence in the [M1 real-device report](docs/m1-device-report.md) and selected Landscape for the current core game.
+
 - placeholder player;
 - thrust/gravity;
 - floor/ceiling;
@@ -799,6 +794,8 @@ The actual Phaser starter may contain additional files. Do not delete useful sta
 - orientation decision.
 
 ### M2 — Hazards, Graze and Fairness
+
+**Status: CURRENT.**
 
 - hazards;
 - warning system;
@@ -945,6 +942,10 @@ Before gameplay development begins, the repository foundation should satisfy:
 - Browser remains the easiest development/test target.
 - Local/offline-first established.
 - No real-money mechanics initially.
-- Portrait vs. Landscape intentionally left experimental.
+- Portrait vs. Landscape initially left experimental pending M1 testing.
+- M1 smartphone/tablet evidence in the [M1 real-device report](docs/m1-device-report.md) accepted as sufficient to continue the mobile-first project; unrecorded desktop/browser checks remain deferred to #69.
+- Landscape selected as the DECIDED target orientation for the current core game because its left-to-right flow benefits from forward view and reaction space.
+- Portrait retained only as a FUTURE separate mode or variant possibility.
+- M1 completed and M2 started.
 - Replay and telemetry intentionally postponed.
 - Cloudflare intentionally postponed.
