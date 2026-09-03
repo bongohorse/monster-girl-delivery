@@ -1,17 +1,30 @@
 {
   "name": "Monster Girl Delivery",
   "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+
   "features": {
     "ghcr.io/devcontainers/features/github-cli:1": {}
   },
+
+  "secrets": {
+    "MGD_GH_TOKEN": {
+      "description": "Fine-grained GitHub PAT scoped to bongohorse/monster-girl-delivery"
+    }
+  },
+
   "postCreateCommand": "curl -fsSL https://bun.sh/install | bash -s -- bun-v1.4.0 && ~/.bun/bin/bun install",
+
+  "postStartCommand": "grep -qxF 'export GH_TOKEN=\"$MGD_GH_TOKEN\"' ~/.bashrc || echo 'export GH_TOKEN=\"$MGD_GH_TOKEN\"' >> ~/.bashrc",
+
   "forwardPorts": [8080],
+
   "portsAttributes": {
     "8080": {
       "label": "Vite Development Server",
       "onAutoForward": "openPreview"
     }
   },
+
   "customizations": {
     "vscode": {
       "settings": {
