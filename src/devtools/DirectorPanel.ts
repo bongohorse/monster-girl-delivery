@@ -64,7 +64,7 @@ export class DirectorPanel {
     const pauseState = lifecycle.paused ? lifecycle.pauseReasons.join(', ') : 'running';
 
     this.text.setText([
-      'DIRECTOR DIAGNOSTICS — M0',
+      'DIRECTOR DIAGNOSTICS — M1',
       `FPS: ${Math.round(framesPerSecond)}`,
       `Viewport: ${Math.round(viewport.width)} × ${Math.round(viewport.height)}`,
       `Orientation: ${viewport.orientation}`,
