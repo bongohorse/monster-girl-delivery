@@ -17,7 +17,7 @@ bun install --frozen-lockfile
 
 printf '\n[Codespaces] Installing Codex CLI (optional)...\n'
 if curl --fail --silent --show-error --location --retry 5 --connect-timeout 10 \
-    https://chatgpt.com/codex/install.sh | sh; then
+    https://chatgpt.com/codex/install.sh | CODEX_NON_INTERACTIVE=1 sh; then
   printf '[Codespaces] Codex CLI installed.\n'
 else
   printf '[Codespaces] Warning: Codex CLI installation failed; project dependencies are ready.\n' >&2
