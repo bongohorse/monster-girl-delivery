@@ -14,38 +14,22 @@ The goal is to preserve ideas without forcing early decisions. When a topic beco
 # Table of contents
 
 - [A. Vision, identity, story and tone](#a-vision-identity-story-and-tone)
-  - [Core fantasy](#core-fantasy)
-  - [Story direction](#story-direction)
-  - [Humor and fanservice](#humor-and-fanservice)
 - [B. Core gameplay and run structure](#b-core-gameplay-and-run-structure)
-  - [Delivery Mode](#delivery-mode)
-  - [Endless Mode](#endless-mode)
-  - [Delivery Chains](#delivery-chains)
-  - [End-of-run flow](#end-of-run-flow)
 - [C. Level selection, world map and difficulty](#c-level-selection-world-map-and-difficulty)
-  - [Delivery World Map](#delivery-world-map)
-  - [World and level progression](#world-and-level-progression)
-  - [Difficulty curve](#difficulty-curve)
-  - [Difficulty indicators](#difficulty-indicators)
-  - [Authored vs procedural levels](#authored-vs-procedural-levels)
-  - [Challenge, Daily and Weekly levels](#challenge-daily-and-weekly-levels)
 - [D. Movement modes, vehicles and gameplay mutators](#d-movement-modes-vehicles-and-gameplay-mutators)
 - [E. Worlds, themes and seasonal events](#e-worlds-themes-and-seasonal-events)
 - [F. Characters, artwork and presentation](#f-characters-artwork-and-presentation)
-  - [Customization](#customization)
-  - [Gallery and Locker Room](#gallery-and-locker-room)
-  - [Character Care / Cleanup](#character-care--cleanup)
-  - [Artwork Reveal minigames](#artwork-reveal-minigames)
-  - [Portrait Mode and Gyroscope Parallax](#portrait-mode-and-gyroscope-parallax)
-  - [Animation and art pipeline](#animation-and-art-pipeline)
 - [G. Progression, achievements and collectibles](#g-progression-achievements-and-collectibles)
 - [H. Economy, rewards, loot and monetization ideas](#h-economy-rewards-loot-and-monetization-ideas)
 - [I. Dailies, rankings, seasons and community systems](#i-dailies-rankings-seasons-and-community-systems)
-- [J. Side activities, management and cozy meta game](#j-side-activities-management-and-cozy-meta-game)
-- [K. Inspiration from other games](#k-inspiration-from-other-games)
-- [L. Art, rendering and production notes](#l-art-rendering-and-production-notes)
-- [M. Version priorities](#m-version-priorities)
-- [N. Open design questions](#n-open-design-questions)
+- [J. Side activities, humor minigames and arcade](#j-side-activities-humor-minigames-and-arcade)
+- [K. Smartphone-specific interactions](#k-smartphone-specific-interactions)
+- [L. Delivery HQ, management and Shenmue-style everyday life](#l-delivery-hq-management-and-shenmue-style-everyday-life)
+- [M. Alternative runner modes and possible spin-offs](#m-alternative-runner-modes-and-possible-spin-offs)
+- [N. Inspiration from other games](#n-inspiration-from-other-games)
+- [O. Art, rendering and production notes](#o-art-rendering-and-production-notes)
+- [P. Version priorities](#p-version-priorities)
+- [Q. Open design questions](#q-open-design-questions)
 - [Related documents](#related-documents)
 
 ---
@@ -118,143 +102,116 @@ Example tone:
 
 Fanservice can be part of the identity, but it should not replace gameplay or humor. Fanservice/sexualized character designs must clearly depict **adult characters**.
 
-Genre parody can also be part of the humor:
-
-- exaggerated ninja run;
-- giant anime energy aura;
-- absurd hair transformation;
-- overly long power-up sequence;
-- magical-girl transformation parody;
-- mecha parody;
-- isekai clichés;
-- tournament-arc jokes.
-
-Prefer broad genre parody over copying specific protected characters or exact designs.
-
 ---
 
 # B. Core gameplay and run structure
 
-## Core control philosophy
-
-MGD can eventually contain many gameplay ideas without requiring many permanent controls.
-
-> **Keep the permanent control vocabulary small. Temporarily change what those controls do.**
-
-That preserves accessibility while still allowing very different-feeling sections.
-
 ## Delivery Mode
 
-One strong direction is for the main game to contain **finishable delivery levels**, not only endless survival.
+One strong direction is to make the main progression mode consist of **finishable deliveries** rather than only endless survival.
 
 Example:
 
 ```text
-Order arrives
-→ accept delivery
-→ customer is 1,200 m away
-→ run / fly / dodge / collect
-→ reach destination
+Order accepted
+→ target is 1,200 m away
+→ run / fly through route
+→ dodge hazards and collect rewards
+→ reach customer
 → deliver package
-→ result / reward
+→ results and rewards
 ```
 
-A distance marker such as `Customer: 850 m` gives the player a clear objective.
+The destination answers two useful questions at once:
 
-This answers both:
+- gameplay: "How far until I finish?"
+- theme: "Why am I running at all?"
 
-- **Gameplay:** How do I survive the route?
-- **Theme:** Where am I going and why?
+Possible visible UI:
 
-Delivery levels also create natural places for customers, jokes, short story scenes, ratings, optional objectives, and unlocks.
+```text
+CUSTOMER: 850 m
+```
 
 ## Endless Mode
 
-A classic Endless Mode should still exist.
+A traditional Endless Mode should still exist.
 
 Possible goals:
 
 - maximum distance;
-- highest score;
-- longest survival;
+- maximum score;
 - most coins;
-- longest Near-Miss chain;
-- highest Delivery Flow combo;
+- longest near-miss chain;
+- longest survival streak;
 - character-specific records;
 - leaderboard placement.
 
-A mature game could therefore contain:
+A long-term mode structure could be:
 
 - **Delivery Mode** — finishable jobs;
-- **Endless Mode** — arcade survival/high score;
-- **Challenge Mode** — fixed skill tests;
-- **Event Modes** — temporary seasonal rules.
+- **Endless Mode** — survival/high score;
+- **Challenge Mode** — standardized competitive routes;
+- **Event Modes** — temporary rule sets;
+- **Arcade / Side Modes** — experimental small games.
 
 ## Delivery Chains
 
-A successful delivery does not necessarily have to end play immediately.
-
-Possible structure:
+After a successful delivery, the player might optionally continue into another job.
 
 ```text
-Delivery complete
-→ optional next express order
-→ continue the same run
-→ increasing Delivery Chain bonus
-→ another delivery
-→ eventually fail or voluntarily stop
+Delivery 1 complete
+→ express order arrives
+→ continue?
+→ Delivery 2
+→ larger chain bonus
+→ Delivery 3
+→ larger bonus
+→ cash out or eventually fail
 ```
 
-A thematic variation is a **Bonus Package Catch**:
+A particularly thematic variation is to physically drop or throw the next package into the playfield.
 
-- the next parcel is thrown/dropped into the gameplay area;
-- the player must catch it;
-- success starts a bonus delivery;
-- failure simply ends the chain normally rather than heavily punishing the player.
+If the player catches it:
 
-This could become a distinctive MGD mechanic.
+**EXPRESS DELIVERY / BONUS DELIVERY** begins.
 
-A player-friendly version is to officially complete the current delivery first, then offer:
-
-- **Finish Run**
-- **Next Delivery**
+Missing it should usually end the chain normally instead of creating a harsh punishment.
 
 ## End-of-run flow
 
-The end of a run should be entertaining and rewarding even after failure.
+The end of a run should remain entertaining.
 
 ### Successful delivery
 
-Possible short sequence:
+Possible sequence:
 
-1. reach destination;
-2. character stops at the customer;
-3. package is handed over;
-4. customer reacts;
-5. brief joke, pose, animation, or expression;
-6. result screen.
+1. arrive at destination;
+2. monster girl hands over package;
+3. customer gives a short reaction or joke;
+4. results appear;
+5. rewards and unlocks are shown;
+6. player can immediately start another run.
 
-Scenes should be brief and skippable.
+Customer scenes should be short and skippable.
 
 ### Failure
 
-Avoid a boring instant `GAME OVER` freeze.
+Avoid a dead static `GAME OVER` screen.
 
-Possible fail-state elements:
+Possible fail-state behavior:
 
 - tumble;
 - slide;
-- ragdoll-like continuation;
+- short ragdoll-like movement;
 - broom continues without rider;
-- package bounces ahead;
-- remaining distance shown;
-- humorous character reaction.
+- package bounces forward;
+- remaining distance is shown;
+- character gives a humorous reaction.
 
-Failure itself can be entertaining, following a useful *Jetpack Joyride* lesson.
+### Results
 
-### Results screen
-
-Possible stats:
+Possible statistics:
 
 - distance;
 - delivery time;
@@ -264,12 +221,11 @@ Possible stats:
 - package condition;
 - optional objectives;
 - Delivery Flow / combo;
-- mission progress;
 - character XP;
 - account XP;
+- mission progress;
 - new records;
-- delivery rating;
-- unlocks.
+- delivery rating.
 
 Possible ratings:
 
@@ -280,16 +236,9 @@ Possible ratings:
 
 ### Reward philosophy
 
-**Bad runs should not delete progress or feel like wasted time.**
+**Bad runs should not erase progress or punish the player harshly.**
 
-Good play should grant extra rewards while weak runs still move something forward.
-
-Avoid:
-
-- losing earned currency on crash;
-- harsh progress loss;
-- energy systems that punish attempts;
-- mandatory payment to restore normal progress.
+Good play should create extra rewards. Weak play should still move something forward.
 
 ---
 
@@ -297,270 +246,227 @@ Avoid:
 
 ## Delivery World Map
 
-A strong level-selection idea is a **visual overview map**, inspired by games such as *Yoshi's Island*, but themed as a delivery region.
-
-Instead of a plain list like `Level 17`, the player sees a map with connected delivery nodes.
+A visible **world/route map** similar in spirit to classic platformer overview maps could make the level structure feel much more memorable than a flat numbered list.
 
 Example:
 
 ```text
-MONSTER CITY
+WORLD 1 — MONSTER CITY
 
 1-1 Apartment District
-        ↓
+  ↓
 1-2 Shopping Street
-        ↓
+  ↓
 1-3 Construction Zone
-      ↙       ↘
-1-4A Rooftops   1-4B Subway
-      ↘       ↙
-       1-5 Finale
+  ├─ 1-4A Rooftop Route
+  └─ 1-4B Subway Route
+  ↓
+1-5 Finale Delivery
 ```
 
-Possible node markers:
+Possible map node types:
 
-- 📦 normal delivery;
-- ⏱ express delivery;
-- 💎 bonus route;
-- ⚠ dangerous route;
-- 🎁 mystery delivery;
-- 👑 challenge stage;
-- seasonal/event node;
-- character-specific job.
+- normal delivery;
+- express delivery;
+- bonus route;
+- challenge stage;
+- event route;
+- Mystery Delivery;
+- special customer;
+- boss/set-piece delivery.
 
-The map can make progression feel like traveling through an actual delivery area rather than selecting abstract stages.
-
-Later, small courier icons could physically move between nodes.
+The map could eventually show the courier moving between delivery nodes.
 
 ## World and level progression
 
-For the main Delivery Mode, every new player can begin in **World 1 / Map 1** and unlock later areas progressively.
+For a campaign-like Delivery Mode, players would probably begin in **World 1 / Map 1** and unlock later worlds progressively.
 
-Rather than one endless list of levels, progression could be organized into worlds:
+Possible structure:
 
-```text
-World 1 — Monster City
-World 2 — Fantasy District
-World 3 — Jungle
-World 4 — Cyber City
-World 5 — ...
-```
+- World 1 — Monster City;
+- World 2 — Fantasy District;
+- World 3 — Jungle;
+- World 4 — Cyber City;
+- later seasonal/special worlds.
 
-Each world might contain a manageable group of routes, for example roughly 8–15 main deliveries plus optional stages. The exact amount is TBD and should depend on production capacity and playtesting.
-
-Unlocking later worlds can provide a clear long-term objective while still allowing Endless Mode and events to sit outside the campaign map.
+Each world can contain a manageable set of levels rather than one endless numbered list.
 
 ## Difficulty curve
 
-Levels should become harder **on average**, but not every single level needs to be strictly harder than the previous one.
+Difficulty should rise **on average**, but not every level should be harder than the previous one.
 
-A constantly rising staircase can become exhausting.
-
-Prefer **difficulty waves**:
+Prefer difficulty waves:
 
 ```text
-Easy
-→ Medium
-→ Medium
-→ Hard
-→ Fun / lower-pressure special level
-→ Medium
-→ Hard
-→ Finale
+easy
+→ medium
+→ medium
+→ hard
+→ playful/special relief level
+→ medium
+→ hard
+→ finale
 ```
 
-New mechanics should first appear in safe situations before being combined with older hazards.
+New mechanics should be introduced in safe conditions before being combined with other hazards.
 
 Example:
 
 ```text
-2-2: introduce Gravity Flip with easy obstacles
+2-2: introduces Gravity Flip with simple layout
 2-4: Gravity Flip + lasers
-2-7: Gravity Flip + lasers + moving hazards
+2-7: Gravity Flip + lasers + moving obstacles
 ```
-
-This lets the game teach through play instead of long tutorials.
 
 ## Difficulty indicators
 
-Routes could show a simple danger rating before the player enters.
+Levels or routes could display a simple danger rating, for example:
 
-Possible presentations:
+```text
+★☆☆☆☆
+★★★☆☆
+★★★★★
+```
 
-- ★☆☆☆☆ to ★★★★★;
-- Easy / Normal / Dangerous / Extreme;
-- colored danger icons;
-- delivery-company risk classification.
+or named route danger:
 
-The rating describes the **route itself** rather than requiring multiple difficulty versions of every level.
+- Easy Route;
+- Normal Route;
+- Dangerous;
+- Extreme.
 
-Creating Easy/Normal/Hard variants for every route would multiply balancing and content work, so that should only be considered if later testing shows a real need.
+It is probably better to give each route its own intended challenge level than to multiply every stage into Easy/Normal/Hard versions unless later testing proves that worthwhile.
 
 ## Optional hardcore routes
 
-Hardcore content should usually be optional.
+Hardcore content can exist as optional branches rather than blocking normal players.
 
-A world-map branch might contain:
-
-```text
-1-5 Main Route
-  └─ ⚠ Challenge Delivery
-```
-
-Possible challenge rules:
+Possible conditions:
 
 - no-hit;
-- higher speed;
-- difficult coin lines;
-- strict time limit;
+- speed target;
 - no revive;
-- perfect package condition;
-- special mutator combination.
+- difficult coin line;
+- Perfect Delivery;
+- fixed movement modifier;
+- high near-miss requirement.
 
-Rewards should preferably be prestige/cosmetic items rather than mandatory power:
+Possible rewards:
 
 - badge;
 - banner;
-- profile frame;
+- title;
 - trail;
 - artwork;
-- achievement.
-
-This allows normie players to continue while hardcore players receive a meaningful skill ceiling.
+- leaderboard placement.
 
 ## Authored vs procedural levels
 
-MGD does not need to choose between fully hand-built and fully random levels.
+The strongest direction is likely a **hybrid**.
 
-A promising model is:
-
-> **Authored level skeleton + controlled procedural patterns + fixed setpieces.**
-
-A route can have a defined identity:
+A route can have a defined identity and authored skeleton:
 
 ```text
 Rooftop Delivery
 Distance: 1,600 m
-Movement: Jetpack
-Theme: Rooftops
-Main mechanic: Ventilation hazards
+Primary mechanic: vents
+World: Monster City
 ```
 
-Within that structure, controlled variation can change:
+Inside that route, controlled systems can vary:
 
 - hazard patterns;
 - coin patterns;
-- bonus pickups;
-- optional enemy positions;
+- bonus objects;
+- enemy placement;
 - Mystery Packages;
-- safe route / risky route combinations.
+- optional path selection.
 
-Important scripted setpieces can stay fixed.
+Important set pieces should remain authored and repeatable.
 
-Examples:
+This gives replay value without making every run feel like anonymous procedural noise.
 
-- flying through a building;
-- a window breaks;
-- character drops into a lower route;
-- gravity suddenly flips;
-- giant sign collapses;
-- chase sequence starts.
+## Daily and Weekly challenge routes
 
-This keeps levels recognizable without making every replay identical.
+Competitive challenge routes can use a fixed seed and standardized rules so everyone plays the same content.
 
-Procedural content should always follow fairness rules, not unconstrained random spawning.
+Example:
 
-## Challenge, Daily and Weekly levels
+```text
+WEEKLY DELIVERY #37
+World: Cyber City
+Character: Demon Girl
+Distance: 2,500 m
+Modifier: Gravity Flip
+Seed: identical for everyone
+```
 
-Fixed-seed challenge routes are especially useful for rankings.
-
-### Daily Delivery
-
-Every player receives the same seed and conditions for that day.
-
-### Weekly Delivery
-
-A larger fixed challenge can use:
-
-- same route;
-- same hazards;
-- same character or normalized stats;
-- same movement modifier;
-- same scoring rules.
-
-This makes competition about skill instead of random luck or paid power.
+This is especially useful for fair leaderboards.
 
 ---
 
 # D. Movement modes, vehicles and gameplay mutators
 
-Temporary gameplay changes can keep the runner fresh while preserving simple controls.
+The permanent control vocabulary should stay small.
 
-## Flight
+> **Do not give the player twenty permanent mechanics. Temporarily change what a few simple inputs mean.**
 
-Possible forms:
+Possible movement modes:
+
+## Jetpack / broom flight
 
 - jetpack;
 - witch broom;
 - wings;
-- rocket pack;
 - magical propulsion;
 - hover device.
 
-## Running
+## Running mode
 
-A grounded runner mode can focus on jumping, ducking, and sliding.
+Possible actions:
 
-Possible obstacles:
+- jump;
+- slide;
+- duck;
+- short rail/pipe slide.
+
+Possible hazards:
 
 - crates;
 - holes;
 - lasers;
-- cats and dogs;
+- cats/dogs;
 - construction workers;
 - pipes;
-- road barriers;
 - traffic;
-- low ceilings;
-- moving machinery.
-
-Pipes or rails can become short slide sections.
+- machinery.
 
 ## Gravity Flip
 
-Reverse gravity so the character travels along the ceiling. This creates very different timing without requiring complex controls.
+Reverse gravity and move along the ceiling before returning to normal.
 
-## Water / Jetski physics
+## Water / Jetski
 
-A water mode can use:
+Wave physics, jumps, momentum and landings.
 
-- waves;
-- momentum;
-- jumping from water;
-- landings;
-- summer/coastal presentation.
+## Pogo stick
 
-## Pogo Stick
-
-Automatic bouncing with deliberately difficult, funny timing.
+Automatic bouncing with deliberately awkward timing.
 
 ## Giant bouncing ball
 
-The character bounces through the route on a huge ball.
+Character rides a large ball through the stage.
 
 ## Monster transformations
 
-Monster-specific temporary forms could include:
+Temporary forms could include:
 
 - rolling ball;
-- dragon;
 - slime;
+- dragon;
 - bat;
 - ghost;
-- rocket-like form;
-- other species-specific transformations.
-
-This can make character identity mechanically playful.
+- rocket-like form.
 
 ## Mounts
 
@@ -579,97 +485,138 @@ Possible mounts:
 Possible vehicles:
 
 - helicopter;
-- hoverbike;
 - motorcycle;
+- hoverbike;
 - jetski;
 - minecart;
 - delivery drone;
 - spaceship;
 - submarine;
-- small mech;
+- mech;
 - flying taxi.
 
-The monster girl should remain visible whenever practical because the characters are a major visual attraction of the game.
+The monster girls are a central visual attraction, so vehicles should avoid hiding them completely whenever practical.
 
-Useful solutions:
-
-- ride on top;
-- open cockpit;
-- transparent cockpit;
-- hang from the vehicle;
-- visually transform into the special form.
-
-Vehicles can also act as temporary crash protection or an extra life. When a vehicle is destroyed, use a short **safety clear / orientation window** so the player is not killed unfairly immediately afterward.
+Temporary vehicles can also act as a protective extra hit. Losing one should provide a short safety/orientation window rather than immediately killing the player.
 
 ---
 
 # E. Worlds, themes and seasonal events
 
-## Possible worlds
+Long-term variety can come from strongly different locations.
 
-### Monster City
+Possible worlds:
 
-Main everyday setting with streets, stores, apartments, rooftops, traffic, and delivery addresses.
+## Monster City
 
-### Fantasy / Dungeon
+- apartments;
+- shopping streets;
+- rooftops;
+- alleys;
+- traffic;
+- construction zones.
 
-Castles, villages, dungeons, dragons, traps, magic, medieval customers.
+## Fantasy / Dungeon
 
-### Cyberpunk
+- castles;
+- villages;
+- traps;
+- dragons;
+- magic;
+- dungeon customers.
 
-Neon, hover traffic, drones, corporations, robots, futuristic data deliveries.
+## Cyberpunk
 
-### Jungle
+- neon;
+- hover traffic;
+- drones;
+- megacorporations;
+- robots;
+- data deliveries.
 
-Ruins, rivers, vines, animals, temples, dense foliage.
+## Jungle
 
-### Robot Factory
+- ruins;
+- rivers;
+- vines;
+- animals;
+- temples.
 
-Conveyor belts, lasers, pistons, crushers, machines, industrial robots.
+## Robot Factory
 
-### Candy World
+- conveyor belts;
+- lasers;
+- crushers;
+- pistons;
+- robots.
 
-Cute exaggerated sweets environment with candy, cakes, chocolate, pastel scenery, and strange edible hazards.
+## Candy World
 
-### Beach / Summer
+- candy;
+- cake;
+- chocolate;
+- pastel scenery;
+- cute absurd hazards.
 
-Sand, sea, palms, beach balls, water, dolphins, jetski sections.
+## Beach / Summer
 
-### Snow / Winter
+- sand;
+- sea;
+- palms;
+- beach balls;
+- water;
+- jetski sections.
 
-Snow, ice, mountains, frozen roads, snowmen, festive lighting.
+## Snow / Winter
 
-### Haunted
+- snow;
+- ice;
+- mountains;
+- holiday lights;
+- snowmen.
 
-Graveyards, ghosts, fog, haunted mansions, bats, Halloween props.
+## Haunted
 
-### Demon District
+- graveyards;
+- fog;
+- ghosts;
+- bats;
+- haunted houses.
 
-Demonic architecture, lava, clubs, neon, and absurd demon bureaucracy.
+## Demon District
 
-### Monster Academy
+- demonic architecture;
+- lava;
+- clubs;
+- neon;
+- demon bureaucracy jokes.
 
-School/university setting with classrooms, dorms, sports areas, magical experiments.
+## Monster Academy
 
-### Space
+- school/university;
+- dorms;
+- sports areas;
+- magical experiments.
 
-Orbital stations, alien planets, asteroids, zero-gravity visuals, spaceships. Space may work better as a theme and set of route mechanics than as a completely separate game.
+## Space
 
-## Time-travel idea
+- orbital stations;
+- alien planets;
+- asteroid routes;
+- spaceships.
 
-A later narrative device could justify radically different eras:
+## Time travel
+
+A later story device could justify radically different eras:
 
 - Stone Age;
 - Bronze Age;
 - antiquity;
-- medieval period;
-- Renaissance;
+- medieval;
 - Wild West;
-- modern day;
+- modern era;
 - cyberpunk future;
 - distant space future.
-
-A broken or experimental delivery portal could explain why parcels must be delivered across history.
 
 ## Seasonal events
 
@@ -684,38 +631,34 @@ Possible events:
 - Halloween;
 - Winter;
 - Christmas;
-- game anniversary.
+- Anniversary.
 
 Events can change:
 
-- maps;
-- decorations;
+- map decoration;
+- missions;
+- cosmetics;
 - music;
 - hazards;
 - collectibles;
-- cosmetics;
-- missions;
+- temporary modes;
 - customers;
-- movement modifiers;
 - rewards.
 
 ### Summer ideas
 
-- beach environment;
-- summer outfits / bikinis for clearly adult characters;
+- beach;
+- summer outfits for adult characters;
 - sunglasses;
 - water pistols;
-- sand;
-- sea;
 - beach balls;
 - palms;
 - sunscreen jokes;
-- tanning / tan-line cosmetic jokes;
+- tanning/tan-line cosmetic jokes;
 - dolphins;
-- jetski gameplay;
-- water physics.
+- jetski mode.
 
-### Winter / Christmas ideas
+### Winter ideas
 
 - snowball fights;
 - snowmen;
@@ -725,19 +668,7 @@ Events can change:
 - presents;
 - reindeer mount;
 - sleigh section;
-- icy physics.
-
-### Seasonal gameplay remix
-
-A seasonal event does not always need a completely new minigame.
-
-Examples:
-
-- Halloween Ghost Mode;
-- winter ice physics;
-- summer jetski route;
-- Lunar New Year dragon section;
-- anniversary remix containing several old mutators.
+- ice physics.
 
 ---
 
@@ -745,7 +676,7 @@ Examples:
 
 ## Customization
 
-Players should have multiple ways to make a favorite monster girl feel like **their version** of that character.
+Players should have many ways to make a favorite character feel like **their version** of that character.
 
 Possible customization:
 
@@ -757,8 +688,7 @@ Possible customization:
 - shoes;
 - delivery bags;
 - wings;
-- horns;
-- tail decorations;
+- horn/tail decorations;
 - charms;
 - trails;
 - aura effects;
@@ -767,9 +697,9 @@ Possible customization:
 - victory poses;
 - emotes.
 
-### Cheap high-value cosmetics
+## Cheap cosmetics with high value
 
-Particularly useful for a small team:
+Especially useful low-cost categories:
 
 - profile icons;
 - banners / name cards;
@@ -778,212 +708,144 @@ Particularly useful for a small team:
 - portrait frames;
 - stickers;
 - delivery stamps;
-- trails;
-- VFX color variants;
 - package skins;
+- simple accessories;
+- trails;
+- VFX colors;
 - loading-screen art;
-- UI themes;
-- simple accessories.
+- UI themes.
 
-These create visible ownership and status without requiring a fully redrawn animation set.
+These create identity and collection without requiring complete character re-animation.
 
-## Gallery and Locker Room
+## Gallery
 
-The Gallery can collect:
+Possible content:
 
-- character artwork;
-- event artwork;
+- character art;
+- event art;
 - delivery scenes;
 - customer scenes;
+- collectible photos;
 - concept art;
 - special animations;
-- collectible photos;
 - world illustrations.
 
-A **Locker Room / Character Viewer** can combine collection and customization.
+## Locker Room / Character Viewer
 
-Possible actions:
+Possible functions:
 
 - choose character;
 - change outfit;
 - equip accessories;
-- select trail/aura;
-- preview animation;
-- choose pose;
+- preview trails/auras;
+- view animations;
+- select pose;
 - change background;
-- view artwork;
-- inspect collectibles;
+- inspect gallery art;
 - take screenshots.
 
-This gives the game a calm character-focused counterpoint to the runner.
+This provides a calm counterpoint to the runner.
 
 ## Character Care / Cleanup
 
-A new post-run / reward idea is to let the monster girl return from a difficult delivery visibly affected by the route.
+After certain deliveries, a monster girl could return visibly affected by the route:
 
-Possible dirt/effects:
+- dirty;
+- muddy;
+- dusty;
+- covered in soot;
+- wet;
+- sandy;
+- covered in slime;
+- snow-covered.
 
-- dust;
-- mud;
-- soot;
-- snow;
-- leaves;
-- water;
-- paint;
-- slime.
-
-The player can perform a short care/cleanup interaction similar to grooming a pet or horse.
-
-Possible interactions:
+A short optional care interaction could include:
 
 - wipe dirt away;
-- soap the character up;
+- apply soap;
 - rinse;
+- dry;
 - brush or comb hair;
-- remove leaves or debris;
-- clean accessories;
-- polish equipment.
+- clean equipment;
+- remove leaves/snow/slime.
 
-Example:
+This can create a satisfying transition:
 
 ```text
-Character returns from delivery
-→ dirty / messy state
-→ wipe dirt
-→ use soap
-→ rinse
-→ comb hair
-→ Perfect Care
-→ artwork reveal
+Run
+→ character returns messy
+→ short cleanup/care interaction
+→ character looks restored
+→ artwork reveal / bonus reward
 ```
 
-This can create a slower, more affectionate transition after intense gameplay and strengthen attachment to the characters.
-
-It should **not** be mandatory after every short run. Better triggers include:
-
-- first completion of a special route;
-- character level milestone;
-- artwork unlock;
-- seasonal event;
-- rare dirty/messy delivery state;
-- relationship/bond milestone.
-
-Possible small rewards:
-
-- bonus coins;
-- bonus XP;
-- Care rating;
-- badge progress;
-- cosmetic progress.
-
-The main artwork reward should not be lost because the player performs the care interaction badly.
+This should not happen after every short run. It is better as an occasional reward tied to special deliveries, character milestones, events, or gallery unlocks.
 
 ## Artwork Reveal minigames
 
-Artwork does not always need to appear instantly. Different worlds or unlocks can use small themed reveal interactions.
+Artwork can be revealed in many different ways.
 
-Important principle:
+Important rule:
 
-> **The artwork has already been earned. The reveal minigame celebrates the reward; it should not become a frustrating gate.**
+> **The artwork should already be earned. The reveal interaction is a celebration, not a gate that can permanently deny the reward.**
 
-Possible reveal methods:
+Possible reveal mechanics:
 
 ### Wipe / clean
 
-- wipe dirt from the screen;
-- remove condensation;
-- clean a dirty window;
-- wipe water away.
+- wipe dirt;
+- wipe condensation;
+- clean a lens;
+- remove rain/water.
 
 ### Scratch-card reveal
 
-Rub or scratch away a covering layer like a scratch ticket.
-
-This is especially natural on touchscreens.
+Rub away a top layer like a scratch ticket.
 
 ### Puzzle
 
-Assemble pieces of the artwork.
+Reassemble image pieces.
 
 ### Sliding puzzle
 
-A classic 3×3 or 4×4 sliding puzzle. Best kept optional because some players dislike this puzzle type.
+Optional harder variant for players who enjoy it.
 
-### Photo development
+### Polaroid / photo development
 
-The image slowly develops while the player wipes, taps, tilts, or interacts with it.
+Reveal gradually through motion or touch.
 
-### Polaroid shake
+### Gift / package opening
 
-A Polaroid appears and the player moves/shakes the phone using motion sensors until the image becomes visible.
+Open wrapping paper or a delivery box to reveal the image.
 
-### Gift unwrap
+### Environment-specific reveals
 
-Tear away wrapping paper. Especially suitable for Christmas, birthdays, anniversaries, and special gifts.
+- Beach: brush away sand;
+- Winter: scrape snow/ice;
+- Slime area: peel slime away;
+- Haunted: clear fog/ghost layer;
+- Fantasy: break crystals or unlock magic seal;
+- Cyberpunk: decrypt/glitch-clean the image;
+- Jungle: remove leaves/vines;
+- Factory: unscrew/open a metal panel.
 
-### Package opening
-
-A very MGD-specific version:
-
-```text
-Mystery artwork delivered
-→ cut/open package tape
-→ open parcel
-→ pull out artwork
-```
-
-### World-specific reveals
-
-**Beach:** brush sand away.  
-**Winter:** scrape snow or ice away.  
-**Slime/Sewers:** pull sticky slime off the image.  
-**Cyberpunk:** decrypt/glitch-clean the image.  
-**Haunted:** clear fog or ghosts.  
-**Fantasy:** break a magical seal or crystal layer.  
-**Jungle:** move leaves and vines aside.  
-**Robot Factory:** remove panels / unlock a mechanical cover.
-
-Small bonus points can be awarded for speed or accuracy, but completing the reveal should always unlock/show the artwork.
-
-This creates a useful loop:
-
-```text
-Delivery
-→ reward earned
-→ optional care/reveal interaction
-→ artwork shown
-→ artwork added to Gallery
-```
+Timed performance can grant a small coin or score bonus, but the image itself should remain obtainable.
 
 ## Portrait Mode and Gyroscope Parallax
 
-Special character rewards could ask the player to rotate from landscape to portrait:
+Special presentation moments could ask the player to rotate the phone from landscape into portrait orientation.
 
-```text
-Special reward unlocked
-→ TURN YOUR PHONE
-→ rotate to portrait
-→ full-screen character artwork
-→ small interaction / animation
-→ return to normal game
-```
-
-Good uses:
+Possible use cases:
 
 - character unlock;
-- gallery;
+- artwork reveal;
 - event reward;
-- victory moment;
 - relationship scene;
-- rare artwork reveal.
+- Gallery/Character Viewer.
 
-Portrait changes should not frequently interrupt normal runner gameplay.
+Portrait artwork could use **gyroscope / motion / tilt parallax**.
 
-### Gyroscope / Tilt Parallax
-
-Character artwork can use the gyroscope/accelerometer for fake 3D depth.
-
-Possible layers:
+Possible depth layers:
 
 - distant background;
 - near background;
@@ -991,84 +853,71 @@ Possible layers:
 - hair/accessories;
 - foreground particles.
 
-Different movement amounts create a depth illusion as the player tilts the phone.
-
-This is promising for:
-
-- Gallery;
-- Locker Room;
-- artwork reveals;
-- victory screens;
-- special character views.
-
-Using it continuously during fast runner gameplay may be distracting, reduce readability, or cause motion discomfort. Treat gameplay use as an experiment rather than a default feature.
+This may look excellent for artwork but could be distracting in precision runner gameplay.
 
 ## Animation and art pipeline
 
-### Sprite customization problem
+The current pixel-art prototype is not a final art-style decision.
 
-Full outfits are expensive with frame-by-frame sprite animation because every animation frame may need another costume version.
+Future options may include:
 
-Early customization should therefore emphasize:
+- larger high-detail sprites;
+- modular sprite layers;
+- accessory anchor points;
+- bone/skeletal animation;
+- sprite + transform hybrid animation;
+- lightweight secondary animation.
 
-- hats;
-- glasses;
-- simple accessories;
-- trails;
-- auras;
-- VFX;
-- package skins;
-- profile cosmetics.
-
-### Accessory anchor points
-
-A future sprite system could expose separate attachment points for:
-
-- head;
-- face;
-- back;
-- hand;
-- bag;
-- trail origin.
-
-This can create many combinations without redrawing every frame.
-
-### Skeletal / bone animation
-
-A future 2D skeletal system could eventually support:
-
-- reusable animations;
-- layered outfits;
-- accessories;
-- secondary motion;
-- more character variants.
-
-Spine is well known but expensive. Free/cheaper alternatives can be researched later.
-
-This is not a current priority. It is more appropriate for version 2 or much later after the runner itself is proven fun.
+A bone-based system may help with outfits and reusable motion later, but it is too much complexity for the early prototype.
 
 ---
 
 # G. Progression, achievements and collectibles
 
+## Achievements
+
+Examples:
+
+- deliver 100 packages;
+- perform 100 near misses;
+- travel 1 km upside down;
+- complete a no-hit route;
+- catch several bonus packages;
+- repeatedly deliver to a memorable customer;
+- complete seasonal challenges.
+
+Possible rewards:
+
+- title;
+- badge;
+- frame;
+- icon;
+- coins;
+- cosmetic;
+- artwork.
+
 ## Collectibles
 
-Possible collectible categories:
+Possible categories:
 
 - character cards;
-- gallery artwork;
-- photos;
+- photos/artwork;
 - delivery stickers;
+- world souvenirs;
 - badges;
 - cosmetics;
-- world souvenirs.
+- plushies;
+- event tokens;
+- trophies.
 
-Example souvenirs:
+World-specific souvenirs can reinforce exploration.
+
+Examples:
 
 **Beach**
 - shell;
 - sunglasses;
-- miniature palm.
+- tiny palm decoration.
 
 **Cyberpunk**
 - data chip;
@@ -1077,72 +926,19 @@ Example souvenirs:
 
 **Fantasy**
 - dragon scale;
-- potion bottle;
+- potion;
 - magic stone.
-
-Avoid introducing too many currencies just because many collectible types exist.
-
-## Achievements
-
-Achievements can mix mastery and jokes.
-
-Possible examples:
-
-- deliver 100 packages;
-- perform 100 Near Misses;
-- travel 1 km upside down;
-- finish a no-hit run;
-- complete a difficult route with one character;
-- repeatedly deliver to a memorable customer;
-- catch multiple bonus packages in one chain;
-- finish a seasonal challenge.
-
-Possible rewards:
-
-- title;
-- badge;
-- profile frame;
-- icon;
-- coins;
-- cosmetic;
-- artwork.
-
-## Unlockables
-
-Possible unlocks:
-
-- monster girls;
-- outfits;
-- accessories;
-- trails;
-- auras;
-- vehicles;
-- mounts;
-- Gallery art;
-- maps;
-- music;
-- emotes;
-- victory poses;
-- delivery bags;
-- package skins;
-- profile icons;
-- banners;
-- titles;
-- badges;
-- UI themes.
-
-The player should regularly feel that playing advances something.
 
 ## Character progression
 
-Each monster girl could have a personal mastery track.
+Each monster girl could have a personal mastery/progression track.
 
 Possible rewards:
 
 - badge;
 - portrait frame;
 - title;
-- character icon;
+- icon;
 - banner;
 - sticker;
 - emote;
@@ -1150,11 +946,9 @@ Possible rewards:
 - artwork;
 - accessory.
 
-This provides visible dedication to a favorite character without requiring power advantages.
-
 ## Account progression
 
-Separate overall Account XP can come from:
+Separate overall account XP can come from:
 
 - runs;
 - deliveries;
@@ -1169,8 +963,23 @@ Possible rewards:
 - Mystery Packages;
 - profile frames;
 - titles;
-- feature unlocks;
-- Gallery rewards.
+- unlocks;
+- gallery rewards.
+
+## Hardcore skill ceiling
+
+Simple controls can still support deep mastery.
+
+Possible hardcore goals:
+
+- no-hit deliveries;
+- perfect routes;
+- speedruns;
+- long near-miss chains;
+- high Delivery Flow;
+- weekly fixed challenges;
+- Endless leaderboards;
+- character-specific records.
 
 ---
 
@@ -1178,21 +987,23 @@ Possible rewards:
 
 ## Coins
 
-Normal earnable currency from gameplay and missions.
+Normal earnable currency.
 
 Possible uses:
 
 - cosmetics;
 - Mystery Packages;
 - minigames;
-- simple unlocks;
-- shop rotations;
-- gifts;
-- arcade machines.
+- arcade machines;
+- character gifts;
+- event shops;
+- deterministic unlocks.
 
 ## Gems / premium currency
 
-A later optional currency might be used for:
+Possible much later.
+
+Potential uses:
 
 - premium cosmetics;
 - optional time-saving;
@@ -1200,25 +1011,23 @@ A later optional currency might be used for:
 - revive;
 - special shop purchases.
 
-Gems are not necessary for the early game.
+Not needed for the early game.
 
-## Monetization direction
+## Monetization principle
 
 Prefer:
 
 - cosmetics;
 - optional convenience;
-- optional time-saving;
+- time-saving;
 - optional ad rewards;
 - cosmetic seasonal passes.
 
-Avoid making payment the primary route to leaderboard power.
+Avoid making paid power the primary path to leaderboard success.
 
-The broad desired direction is closer to **pay for cosmetics / optional time-saving** than pay-to-win.
+## Mystery Packages / loot-box-like rewards
 
-## Mystery Packages / loot boxes
-
-Loot-box-like rewards fit the delivery theme naturally if presented as parcels.
+Random rewards fit the delivery theme naturally.
 
 Possible names:
 
@@ -1228,17 +1037,7 @@ Possible names:
 - Premium Parcel;
 - Monster Box.
 
-Possible sequence:
-
-```text
-MYSTERY DELIVERY RECEIVED
-→ package lands in the office
-→ package shakes
-→ player opens it
-→ reward reveal
-```
-
-Possible rewards:
+Possible contents:
 
 - coins;
 - icons;
@@ -1250,78 +1049,22 @@ Possible rewards:
 - artwork;
 - cosmetics.
 
-For early versions these should be treated as **earnable gameplay rewards**, not necessarily real-money random purchases.
+Early versions should treat them primarily as **earnable gameplay rewards**.
 
-Real-money random rewards introduce legal, rating, platform, and player-trust concerns and should only be considered much later, if at all.
-
-## Gacha ideas
-
-Gacha is only one possible future system and is not required for MGD.
-
-Common building blocks:
-
-- banners;
-- single/multi pulls;
-- rarity tiers;
-- pity;
-- featured guarantee;
-- duplicate conversion;
-- spark/selector after enough pulls;
-- wishlist;
-- free tickets;
-- reruns.
-
-If MGD ever uses gacha, a **cosmetic-focused** system is preferable to locking major gameplay power behind random pulls.
-
-Example seasonal pool:
-
-**Summer Mystery Delivery**
-
-- adult-character summer outfit;
-- sunglasses;
-- beach banner;
-- dolphin sticker;
-- water trail;
-- summer profile icon;
-- beach artwork.
-
-Possible player-friendly rules:
-
-- guaranteed Rare+ after a threshold;
-- guaranteed Epic+ after a larger threshold;
-- direct featured-item selector after enough attempts;
-- duplicate conversion into Delivery Tokens;
-- desired cosmetics purchasable with Tokens;
-- carry-over pity where appropriate;
-- earnable tickets from gameplay.
-
-## Shop
-
-Possible deterministic shops:
-
-- coin shop;
-- cosmetic shop;
-- daily/weekly rotation;
-- event shop;
-- Delivery Token shop;
-- gift shop;
-- premium cosmetic shop.
-
-Players should have meaningful ways to earn customization through gameplay rather than seeing the whole system as a payment screen.
+Real-money random rewards create additional legal, rating, platform, and player-trust concerns and should only be considered much later, if at all.
 
 ## Gifts
 
-### Gifts to the player
+### Gifts to player
 
 - daily gift;
+- anniversary reward;
 - event gift;
-- anniversary gift;
-- compensation package;
-- achievement reward.
+- achievement package.
 
 ### Gifts to characters
 
-Possible later Bond/Friendship items:
+Possible gifts:
 
 - food;
 - flowers;
@@ -1330,15 +1073,56 @@ Possible later Bond/Friendship items:
 - souvenirs;
 - character-specific favorites.
 
-These could unlock dialogue, artwork, poses, emotes, small stories, and cosmetics.
+These can feed a Bond/Friendship system.
+
+## Shop
+
+Possible sections:
+
+- coin shop;
+- cosmetic shop;
+- rotating shop;
+- event shop;
+- Delivery Token shop;
+- character gift shop;
+- premium cosmetic shop.
+
+## Gacha ideas
+
+Gacha is optional and not required.
+
+If ever used, cosmetic-focused gacha is preferable to random paid power.
+
+Useful building blocks:
+
+- banners;
+- rarity;
+- single/multi pulls;
+- pity;
+- featured guarantee;
+- duplicate conversion;
+- selector/spark;
+- wishlist;
+- free tickets;
+- reruns.
+
+Possible player-friendly structure:
+
+- guaranteed Rare+ after a threshold;
+- guaranteed Epic+ after a larger threshold;
+- direct featured selection after enough attempts;
+- duplicate conversion into Delivery Tokens;
+- ability to buy desired cosmetics with tokens;
+- carry-over pity where appropriate;
+- earnable pulls from gameplay.
 
 ---
 
 # I. Dailies, rankings, seasons and community systems
 
-## Daily Login
+## Daily login rewards
 
-A simple login track can reward returning.
+A simple reward sequence can encourage return play.
 
 Example:
 
@@ -1348,74 +1132,50 @@ Example:
 | 2 | More coins |
 | 3 | Small Mystery Package |
 | 4 | Coins + XP |
-| 5 | Ticket / special reward |
+| 5 | Ticket |
 | 6 | Rare package |
 | 7 | Epic Mystery Delivery |
 
-Missing one real-world day should preferably **not reset the entire chain**. Reward returning; do not punish people for having a life outside the game.
+Prefer not to reset the whole sequence because one real-world day was missed.
 
-## Daily Missions
+## Daily missions
 
-Possible dailies:
+Examples:
 
 - deliver 3 packages;
 - collect 500 coins;
 - fly 2,000 m with a broom;
-- perform 20 Near Misses;
+- perform 20 near misses;
 - use a vehicle;
 - play a specific character;
 - catch a bonus package;
-- finish a no-damage route;
-- complete a Gravity Flip objective.
+- finish without damage.
 
-Useful quality-of-life rule:
+A free daily reroll can reduce frustration.
 
-- one free daily reroll.
+## Weekly missions
 
-Possible rewards:
+Larger objectives with milestone rewards.
 
-- coins;
-- XP;
-- character XP;
-- account XP;
-- event points;
-- Mystery Packages.
+## Global rankings
 
-Dailies should encourage variety without becoming chores.
+Possible leaderboards:
 
-## Weekly Missions
-
-Larger milestones can award better packages or cosmetics.
-
-Example:
-
-```text
-10 weekly points → reward
-20 weekly points → better reward
-40 weekly points → weekly Mystery Package
-```
-
-## Rankings
-
-Do not rely on one global leaderboard only.
-
-Possible categories:
-
-- longest Endless distance;
-- highest score;
+- Endless distance;
+- high score;
 - fastest delivery;
-- most coins in one run;
-- best Near-Miss chain;
-- highest Delivery Flow;
-- weekly fixed challenge;
+- most coins;
+- longest near-miss chain;
+- Delivery Flow;
+- weekly challenge;
 - character-specific score;
 - friends-only ranking.
 
-Competitive rankings become less meaningful if paid upgrades dominate. Serious competition should use normalized conditions where possible.
+Competitive modes should avoid paid power advantages where possible.
 
 ## Ranking leagues
 
-Possible seasonal prestige tiers:
+Possible prestige tiers:
 
 - Bronze;
 - Silver;
@@ -1424,23 +1184,15 @@ Possible seasonal prestige tiers:
 - Diamond;
 - Master.
 
-Rewards should mainly be visible status/cosmetics:
-
-- profile frame;
-- badge;
-- title;
-- banner;
-- seasonal icon.
+Rewards should mostly be visible status/cosmetic items.
 
 ## Global community events
-
-MGD's theme fits cooperative global goals very well.
 
 Example:
 
 ```text
 GLOBAL DELIVERY EVENT
-Goal: 10,000,000 deliveries
+10,000,000 deliveries total
 
 1M  → Coins
 3M  → Mystery Package
@@ -1448,30 +1200,26 @@ Goal: 10,000,000 deliveries
 10M → Special Cosmetic
 ```
 
-Everyone contributes simply by playing.
+## Character/team events
 
-## Character/team competitions
-
-Players can support a favorite courier:
+Players could support favorite monster girls:
 
 - Team Demon Girl;
 - Team Slime Girl;
 - Team Dragon Girl;
 - Team Harpy.
 
-Each successful delivery contributes to the team total.
+Successful deliveries contribute to a global score.
 
-Possible result structure:
+## Battle pass / seasonal progression
 
-- everyone participating receives something;
-- winning team gets an extra badge/banner/artwork;
-- results become part of seasonal history.
+Possible later system once enough content exists.
 
-## Battle Pass / seasonal progression
+Example:
 
-A seasonal pass can work later, but it creates a constant content-production obligation and should not be an early priority.
+**Summer Delivery Pass**
 
-Possible **Summer Delivery Pass** rewards:
+Rewards:
 
 - coins;
 - tickets;
@@ -1482,98 +1230,418 @@ Possible **Summer Delivery Pass** rewards:
 - artwork;
 - outfits.
 
-Player-friendly ideas:
-
-- choose which reward branch to progress first;
-- allow old seasonal tracks to return or remain available instead of relying entirely on permanent FOMO.
+A branching reward structure or ability to revisit old passes may be more player-friendly than a rigid temporary linear track.
 
 ---
 
-# J. Side activities, management and cozy meta game
+# J. Side activities, humor minigames and arcade
 
-## Minigames
+The side-activity layer can become a **toybox** around the runner.
 
-Possible side activities:
+The key rule is that these activities should remain small, playful, and optional rather than turning MGD into ten full-size games at once.
 
-- slot machine;
-- crane/claw machine;
-- package sorting;
-- timing game;
-- drone race;
-- card matching;
-- fishing;
-- arcade cabinets;
-- short seasonal minigames.
+## Carnival / festival minigames
 
-Each minigame is effectively a small game project of its own, so these belong after the runner is already strong.
+Seasonal festivals or a permanent fairground area could contain deliberately goofy booth games.
 
-## Slot machine / arcade currency sink
+### Dunk Tank / Bullseye
 
-Coins could be used in an in-game arcade/slot-style machine for:
+A monster girl sits on a seat above a water tank.
 
-- coins;
+The player throws a ball at a target.
+
+Hit bullseye:
+
+**SPLASH.**
+
+Different characters can react differently:
+
+- Demon Girl gets annoyed;
+- Slime Girl enjoys it;
+- Cat Girl hates getting wet;
+- Dragon Girl heats the water;
+- Mermaid-type character wonders why this is supposed to be punishment.
+
+### Tomato Throw
+
+A slapstick booth where the player throws tomatoes at targets or characters.
+
+Possible comedy:
+
+- character dodges at the last moment;
+- tomato hits the booth operator;
+- target moves illegally;
+- character throws one back;
+- scoreboard refuses to count a valid hit.
+
+### Rigged carnival games
+
+The booths should feel humorously suspicious.
+
+Examples:
+
+- target moves at the last second;
+- basketball hoop is slightly too small;
+- claw machine releases plushie before the exit;
+- ring-toss peg bends away;
+- operator says a clear win "doesn't count";
+- hidden trick lets the player expose or beat the scam.
+
+Possible rewards:
+
+- plushies;
+- tiny accessories;
 - stickers;
-- collectibles;
-- small cosmetics;
-- Mystery Packages.
+- character gifts;
+- carnival badges;
+- artwork;
+- souvenirs.
 
-If implemented, this should use soft currency and not require real-money wagering.
+This gives small collectibles a physical origin in the game world rather than making everything come from menus.
 
-## Delivery-company management
+## Physics-based parody minigame
 
-A larger future meta system could let the player operate the delivery company.
+A physics launcher game could parody the broad slingshot genre.
 
-Possible actions:
+Concept:
 
-- recruit couriers;
-- assign characters to jobs;
-- upgrade the base;
-- unlock regions;
-- buy vehicles;
-- improve rooms;
-- collect passive company rewards;
-- decorate the office;
-- expand warehouse/garage.
+**Courier Emergency Launch Training**
 
-## Delivery HQ as a physical menu
+A monster girl is launched through an obstacle course.
 
-Instead of abstract menus, the headquarters could contain:
+Possible character-specific physics:
+
+- Slime Girl sticks to surfaces;
+- Dragon Girl is heavy and destructive;
+- Harpy can slightly steer in air;
+- Ghost Girl passes through one obstacle;
+- bouncing character rebounds strongly.
+
+The humor comes from treating a ridiculous giant slingshot as legitimate courier training.
+
+This should borrow the general physics-play concept, not copy protected characters, layouts, branding, or art from another game.
+
+## Simulator-inspired micro activities
+
+Popular simulation games show that simple repetitive actions can be satisfying when they provide clear visible progress.
+
+MGD can borrow the **best 30–90 seconds** of those fantasies rather than build entire simulator games.
+
+### Cleaning / pressure-washing style
+
+- clean mud from a courier;
+- clean a delivery vehicle;
+- remove soot from equipment;
+- wash slime off a room;
+- restore an object from dirty to 100% clean.
+
+This connects directly to Character Care and Artwork Reveal.
+
+### Unpacking style
+
+Possible uses:
+
+- open a Mystery Package;
+- unpack collectibles;
+- sort items into shelves;
+- decorate a character room;
+- unpack warehouse stock.
+
+### Mechanic / workshop style
+
+Simplified garage interactions:
+
+```text
+find broken part
+→ unscrew
+→ replace
+→ clean
+→ test
+```
+
+Possible repair targets:
+
+- broom;
+- jetpack;
+- jetski;
+- drone;
+- motorcycle;
+- weird monster vehicle.
+
+### Logistics / truck-sim inspiration
+
+Borrow the feeling of running a transport company rather than building a full truck simulator.
+
+Possible decisions:
+
+- choose job;
+- choose courier;
+- unlock region;
+- own vehicles;
+- improve company;
+- plan special deliveries.
+
+The actual delivery can still lead into the normal runner.
+
+## Classic arcade games
+
+A Delivery HQ arcade could contain cheap, simple games inspired by classic arcade mechanics.
+
+These should be original MGD-themed implementations rather than direct copyrighted clones.
+
+Possible examples:
+
+### Package Blocks
+
+Falling-block package-stacking game.
+
+### Slime Breaker
+
+Brick-breaker-style game where Slime Girl is the bouncing projectile.
+
+### Demon Pong
+
+Two sides knock a fireball back and forth.
+
+### Asteroid Delivery
+
+A delivery drone dodges space hazards and collects parcels.
+
+### Lamia Snake
+
+A snake-style game using a Lamia character.
+
+### Road Crossing Delivery
+
+Cross traffic safely with a package.
+
+### Crane / claw machine
+
+Win plushies or gifts for characters.
+
+### Arcade rewards
+
+Possible rewards:
+
+- high-score badges;
+- Arcade Tokens;
+- plushies;
+- stickers;
+- cosmetics;
+- achievements;
+- small coin payouts.
+
+A major advantage is that the arcade can grow one cheap cabinet at a time.
+
+## Currency as world activity
+
+A more interesting economy loop is:
+
+```text
+Delivery
+→ earn 500 Coins
+→ spend 200 at Arcade
+→ play Carnival
+→ win Plushie
+→ give Plushie to Demon Girl
+→ Bond increases
+→ unlock Artwork
+```
+
+This is more memorable than simply opening a shop menu and buying one item.
+
+---
+
+# K. Smartphone-specific interactions
+
+MGD should consider using features that make the phone feel like part of the game, but these should usually be optional extras rather than mandatory core controls.
+
+## Gyroscope / tilt
+
+Possible uses:
+
+- artwork parallax;
+- balance a tray;
+- keep a fragile potion upright;
+- steer a small board/vehicle;
+- marble/labyrinth minigame;
+- balance water/liquid;
+- control a claw machine;
+- subtle Character Viewer motion.
+
+Example:
+
+**Fragile Potion Delivery**
+
+Tilt too far and the liquid sloshes dangerously.
+
+## Device rotation
+
+Possible playful uses:
+
+- rotate landscape → portrait for artwork;
+- physically rotate device to tighten a screw;
+- rotate a puzzle object;
+- absurd scene where the whole room spins;
+- special event interaction.
+
+## Microphone / blowing
+
+Microphone-based interactions should always have a touch fallback because microphone permission, noisy environments, and public play can make them inconvenient.
+
+Possible uses:
+
+- blow out birthday candles;
+- clear condensation;
+- blow wind for a Harpy;
+- put out a small fire;
+- dry hair after cleanup;
+- inflate a balloon until it pops;
+- trigger a joke where blowing makes demon fire worse.
+
+## Haptics / vibration
+
+Haptics can add a lot of polish for little content cost.
+
+Possible feedback moments:
+
+- package lands;
+- bullseye hit;
+- puzzle piece snaps into place;
+- screw locks;
+- Mystery Package opens;
+- character lands;
+- scratch-card reveal;
+- coin pickup streak;
+- crash/near miss.
+
+## Camera / other phone features
+
+Possible future experiments, only if they add real value:
+
+- photo mode overlays;
+- AR-style novelty scene;
+- motion gestures;
+- local notifications for optional events.
+
+These should not become unnecessary permission-heavy gimmicks.
+
+---
+
+# L. Delivery HQ, management and Shenmue-style everyday life
+
+A long-term strength of MGD could be giving players a place where they can **waste time pleasantly** instead of only switching between menus and runs.
+
+The inspiration is not "build a giant open world." The useful lesson is:
+
+> **A world feels alive when the player can do small things that are not strictly required by the main objective.**
+
+## Delivery HQ as physical menu
+
+Possible rooms/areas:
 
 - reception;
-- garage;
 - warehouse;
-- Locker Room;
-- Gallery;
+- garage;
+- locker room;
+- gallery;
 - arcade;
 - café;
-- character rooms.
+- character rooms;
+- event plaza;
+- toy/cosmetic shop.
 
-Entering a room effectively opens that system.
+Each room can effectively represent a menu/system while still feeling like a place.
 
-## Cozy / low-pressure activities
+## Simple NPC routines
 
-A later calm side of MGD could provide contrast to the fast runner.
+Even a few characters with small routines can make the HQ feel alive.
+
+Example:
+
+- morning: Harpy at café;
+- afternoon: Harpy working;
+- evening: Harpy at arcade.
+
+This does not require hundreds of NPCs or a large open world.
+
+## Odd jobs
+
+Monster girls doing odd jobs fits the premise extremely well.
+
+Possible side jobs:
+
+### Warehouse shift
+
+Sort packages by region/type.
+
+### Café shift
+
+Serve orders with a simple timing game.
+
+### Garage shift
+
+Repair delivery equipment.
+
+### Cleaning shift
+
+Clean HQ, vehicle, or equipment.
+
+### Carnival shift
+
+Operate or play festival booths.
+
+### Fishing
+
+Catch strange delivery items or collectibles.
+
+### Moving job
+
+Move furniture or packages.
+
+### Pet sitting
+
+Look after strange monster pets.
+
+### Security shift
+
+Watch the warehouse at night and react to odd events.
+
+These jobs can be short, simple minigames rather than deep simulation systems.
+
+## Management layer
+
+Possible long-term management:
+
+- recruit couriers;
+- assign girls to jobs;
+- upgrade HQ;
+- unlock regions;
+- buy vehicles;
+- decorate rooms;
+- expand garage/warehouse;
+- collect passive company rewards.
+
+## Cozy / low-pressure play
 
 Possible activities:
 
 - decorate rooms;
 - talk to characters;
-- sit around the base;
+- sit around;
 - fish;
 - collect objects;
-- play arcade machines;
+- use arcade machines;
 - take photos;
-- complete tiny jobs;
-- inspect trophies and souvenirs;
-- Character Care / grooming.
+- inspect trophies;
+- give gifts;
+- do small errands.
 
-The player should sometimes be allowed to do things because they are enjoyable rather than because every second must optimize progression.
+The player should be allowed to do things simply because they are enjoyable, not because every second must maximize progression.
 
-## Relationship / dating-sim direction
+## Relationship / Bond layer
 
-A full dating sim would be a major separate system and should not be assumed.
-
-A lighter Bond system could come first:
+A lightweight Bond system can come before any full dating-sim concept.
 
 ```text
 Use character
@@ -1584,168 +1652,333 @@ Use character
 → unlock artwork / emotes / poses
 ```
 
-A full romance system can remain a later question.
+A full dating/romance system remains a separate future design question.
 
-## Auto Mode
+## Auto mode
 
 Possible uses:
 
 - accessibility;
-- low-pressure farming;
-- company-management simulation;
-- previously completed easy deliveries.
+- previously completed easy deliveries;
+- low-pressure passive company activity.
 
 Main risk:
 
-> If automatic play gives the same value as actually playing, why should the player control the runner?
+> If automatic play gives the same value as playing, why play the runner?
 
-Auto Mode should therefore be a support feature, not the main progression method.
-
-## Revive / Continue
-
-A later mobile feature could allow one continue after crashing through:
-
-- optional advertisement;
-- gem;
-- rare revive item.
-
-After revival, give a short protection/safety window.
+Auto mode should therefore remain secondary.
 
 ---
 
-# K. Inspiration from other games
+# M. Alternative runner modes and possible spin-offs
+
+MGD can experiment with different runner traditions without replacing the main landscape game.
+
+The important realization is that a **3-lane portrait runner or behind-the-back runner is almost a separate game system**, not merely a small movement modifier.
+
+These concepts are best treated as:
+
+1. Event modes;
+2. Arcade side games;
+3. Experimental prototypes;
+4. possible later standalone spin-offs.
+
+## Main MGD runner
+
+Current core identity:
+
+- landscape;
+- side view;
+- one-touch flight / broom / jetpack style;
+- delivery framing.
+
+This should remain the first game to make fun.
+
+## Portrait 3-lane runner
+
+A mode inspired by the broad lane-runner genre:
+
+- portrait;
+- automatic forward movement;
+- three lanes;
+- swipe left/right to change lane;
+- swipe up to jump;
+- swipe down to slide;
+- collect coins;
+- dodge obstacles;
+- speed gradually rises.
+
+Possible MGD theme:
+
+**Monster Metro Delivery**
+
+Possible hazards:
+
+- delivery vans;
+- market stalls;
+- bins;
+- construction barriers;
+- trains;
+- robots;
+- NPCs;
+- dogs/cats;
+- rival couriers.
+
+## Genre-parody version
+
+The arcade could deliberately parody mobile-runner clichés.
+
+Possible joke cabinet names:
+
+- `Definitely Not Subway Monsters`;
+- `Temple Delivery`;
+- `Infinite Coin Line Simulator`.
+
+Possible exaggerated jokes:
+
+- absurdly perfect coin lines;
+- giant magnet powerup;
+- ridiculous pursuer;
+- constant "NEW HIGH SCORE" messages;
+- intentionally overdramatic boosters.
+
+The joke should target broad genre conventions rather than copy exact branded content.
+
+## Behind-the-back Temple-style runner
+
+Possible structure:
+
+- portrait;
+- camera behind character;
+- lane/side movement;
+- jump;
+- slide;
+- turns;
+- gaps;
+- collapsing paths;
+- chase pressure.
+
+Possible theme:
+
+**Dungeon Escape Delivery**
+
+Example joke premise:
+
+```text
+Monster Girl delivers wrong package to dungeon boss
+Boss: "That is not my order."
+RUN.
+```
+
+Jungle/Fantasy worlds naturally support this format.
+
+## Speed / Sonic-style route
+
+Instead of building a complete new game, the broad high-speed runner fantasy may work as a temporary mode.
+
+Possible features:
+
+- extreme speed;
+- ramps;
+- springs;
+- loops or loop-like set pieces;
+- boost pads;
+- large coin arcs;
+- strong flow.
+
+Possible MGD name:
+
+**Hyper Delivery**
+
+This may fit better as a mutator or special stage than as a separate permanent game.
+
+## Puzzle-runner variants
+
+Some side modes could mix short runner sections with simple physics/puzzle interactions.
+
+Potential use:
+
+- cut ropes/chains;
+- redirect package trajectory;
+- move platforms;
+- activate switches;
+- guide a delivery object to the courier.
+
+Again, use broad mechanic ideas rather than copying branded levels or characters.
+
+## MGD Arcade / Runner Collection
+
+A possible long-term arcade category:
+
+- Monster Metro;
+- Temple Delivery;
+- Slime Dash;
+- Demon Highway;
+- Space Courier;
+- Snow Rush.
+
+Each can test a different classic runner structure using the same MGD universe.
+
+## Possible standalone spin-offs
+
+If MGD becomes successful, a polished alternate mode could later become its own game.
+
+Example:
+
+**Monster Girl Delivery Rush**
+
+- portrait;
+- lane runner;
+- same universe;
+- reused characters/cosmetics where practical;
+- separate gameplay balance and UI.
+
+This should be considered only after the main MGD game has proven itself.
+
+---
+
+# N. Inspiration from other games
+
+The goal is to borrow **design principles**, not copy protected content.
 
 ## Jetpack Joyride
 
-Useful principles:
+Useful lessons:
 
 - extremely accessible input;
-- polished one-touch movement;
-- pacing waves rather than only linear difficulty;
-- temporary vehicles / mutators;
-- vehicles as temporary protection;
-- safe recovery after losing a vehicle;
-- coin patterns that teach movement;
+- one-touch movement;
+- pacing waves;
+- temporary vehicles/mutators;
+- vehicles as protection;
+- safe recovery after vehicle loss;
+- coin patterns that guide movement;
 - entertaining fail state;
-- missions that redirect player behavior;
-- quick restarts;
-- satisfying distance and Near-Miss statistics.
+- missions that change player behavior;
+- fast restart;
+- satisfying distance/near-miss statistics.
 
-See `docs/ENDLESS_RUNNER_BLUEPRINT.md` for the dedicated reference document.
+See `ENDLESS_RUNNER_BLUEPRINT.md` for the dedicated reference.
 
 ## Overwatch
 
-Useful for **player expression and hero identity**, not combat.
+Useful for player expression and character identity:
 
-| Overwatch-style concept | Possible MGD version |
-|---|---|
-| Hero level | Monster-girl level |
-| Hero badge | Character mastery badge |
-| Portrait border | Profile / character frame |
-| Player icon | Monster-girl profile icon |
-| Name card | Profile banner |
-| Player title | Delivery title |
-| Spray | Sticker / delivery stamp |
-| Charm | Bag / broom / vehicle charm |
-| Emote | Character emote |
-| Victory pose | Delivery result pose |
-| Skin | Outfit |
-| Loot box | Mystery Package |
-| Battle pass | Seasonal Delivery Pass |
-| Arcade modes | Rotating runner modifiers |
-| Seasonal events | Seasonal delivery events |
-| Hero progression | Character mastery |
-| Challenges | Daily / weekly deliveries |
+- hero/character levels;
+- mastery badges;
+- portrait borders;
+- profile icons;
+- name cards/banners;
+- titles;
+- sprays/stickers;
+- charms;
+- emotes;
+- victory poses;
+- skins/outfits;
+- seasonal events;
+- rotating modes;
+- battle-pass progression.
 
-Main lesson: many satisfying rewards do **not** need to modify the animated character sprite itself.
+Strong lesson:
 
-## Gacha / character-collection games
+> Many rewarding cosmetics can be cheap to produce because they do not need to modify the animated character itself.
 
-Useful ideas even without aggressive monetization:
+## Character-collection / gacha games
 
-- strong character identity;
-- favorite-character progression;
-- collections;
+Useful ideas:
+
+- strong individual character identity;
+- favorites;
+- affinity/Bond;
+- collection goals;
 - exciting reward reveals;
-- pity / guarantees;
+- pity/guarantees;
 - duplicate protection;
 - event reward pools;
-- affinity systems;
-- character stories;
 - reruns;
-- earnable pulls/tickets;
-- wishlists/selectors.
-
-The useful part is **collection psychology and character attachment**, not necessarily selling random power.
-
-## Fortnite
-
-- Locker/customization;
-- cosmetics as identity;
-- emotes;
-- seasonal presentation;
-- profile expression.
+- free tickets;
+- selectors/wishlists.
 
 ## Pokémon
 
+Useful ideas:
+
 - collection;
 - optional minigames;
-- side activities;
-- places to spend accumulated currency;
-- attachment to individual creatures/characters.
+- small side activities;
+- places to spend currency;
+- attachment to individual characters/creatures.
 
 ## Animal Crossing
 
-- calm optional meta space;
-- decorating;
-- collecting;
-- playing at your own pace;
-- non-competitive activities.
+Useful ideas:
 
-The intention is to borrow useful design principles rather than clone any one game.
+- calm optional space;
+- decoration;
+- collection;
+- play at own pace;
+- activities that are fun without being progression-efficient.
+
+## Shenmue
+
+Useful lesson:
+
+- small jobs;
+- arcade games;
+- collectible toys;
+- daily routines;
+- world time;
+- mundane interactions;
+- spending time in the world can itself be enjoyable.
+
+MGD should apply this on a much smaller scale through a compact HQ/neighborhood rather than trying to create a giant simulation-heavy open world.
+
+## Simulation games
+
+Useful lesson:
+
+- visible progress makes repetitive actions satisfying;
+- cleaning, repairing, sorting, unpacking, and organizing can work well as short side activities.
+
+## Classic arcade games
+
+Useful lesson:
+
+- simple rules can remain fun for decades;
+- tiny arcade games are cheap ways to add optional high-score play;
+- MGD themes can make familiar mechanics feel playful and character-specific.
+
+## Mobile runner genre
+
+Useful structures to explore:
+
+- side-view runner;
+- 3-lane portrait runner;
+- behind-the-back chase runner;
+- speed/flow runner;
+- puzzle runner;
+- vehicle runner.
+
+These can inspire event modes, arcade cabinets, or future spin-offs.
 
 ---
 
-# L. Art, rendering and production notes
+# O. Art, rendering and production notes
 
 ## Broad visual direction
 
-Current exploration points toward:
+Current exploration favors something like:
 
 - anime/chibi monster girls;
 - clean cartoon environments;
-- light cyber/fantasy delivery flavor;
+- cyber/fantasy delivery flavor;
 - strong silhouettes;
-- readable mobile composition;
+- clear mobile readability;
 - modular assets;
-- clear background/gameplay/foreground hierarchy.
-
-Possible production methods:
-
-- reusable tiles/patterns;
-- tinting and mirroring;
-- region-specific palettes;
-- overlay variations;
-- modular character pieces;
-- sprite + transform animation mix;
-- cheap secondary animation where useful.
-
-See `docs/ART_DIRECTION_IDEAS.md` for deeper visual exploration.
-
-## Pixel art is not a final commitment
-
-Pixel art is useful for prototyping because it is:
-
-- fast;
-- cute;
-- readable;
-- forgiving when assets are incomplete.
-
-The final game may use larger high-detail artwork or another style entirely.
+- foreground/gameplay/background hierarchy.
 
 ## Minimal early asset set
 
-For early visual improvement, keep the asset list small:
+Early prototype art should stay small:
 
 - player;
 - background;
@@ -1754,41 +1987,60 @@ For early visual improvement, keep the asset list small:
 - effect;
 - minimal UI.
 
-A visible package asset was not required for the earliest gameplay prototype, even though packages may become more important later.
-
 ## Parallax background
 
-Background assets should support:
+Backgrounds should ideally support:
 
-- seamless horizontal repetition;
+- seamless horizontal repeat;
 - multiple depth layers;
-- parallax scrolling;
-- easy replacement while the final style remains undecided.
+- easy replacement;
+- parallax scrolling.
 
-## Rendering sharpness / resolution
+## Rendering sharpness
 
-The prototype was observed to look blurrier or lower-resolution than expected on modern mobile displays.
-
-Desired long-term result: **sharp mobile presentation**, not accidental 720p-like softness.
+The final game should look sharp on modern mobile displays.
 
 Important distinction:
 
-- gameplay may use a stable logical coordinate system;
-- rendering can still use device/display resolution appropriately;
-- device resolution should not alter gameplay fairness;
-- pixel art, if retained, needs intentional scaling/filtering rules.
+- gameplay can use stable logical coordinates;
+- rendering can still target device resolution appropriately;
+- device resolution must not affect gameplay fairness;
+- pixel art requires intentional scaling rather than accidental blur.
 
-The current small pixel assets should not force the entire final renderer into a low-resolution look.
+Pixel art remains a prototype convenience, not a permanent commitment.
+
+## Gyroscope in normal gameplay
+
+Continuous tilt-parallax in fast runner gameplay may:
+
+- distract from hazards;
+- reduce precision;
+- create motion discomfort;
+- hurt readability.
+
+It is therefore more promising for artwork, menus, character viewing, and small minigames.
+
+## Skeletal animation
+
+Bone/skeletal animation may later help with:
+
+- reusable animations;
+- layered outfits;
+- accessories;
+- secondary motion;
+- more character variation.
+
+This should remain a future/version-2-level investigation rather than early scope.
 
 ---
 
-# M. Version priorities
+# P. Version priorities
 
 ## Version 1 — prove the runner is fun
 
 Strong early focus:
 
-- one good playable monster girl;
+- one playable monster girl;
 - responsive one-touch movement;
 - one readable route/world;
 - hazards;
@@ -1796,162 +2048,149 @@ Strong early focus:
 - good pacing;
 - satisfying fail behavior;
 - fast restart;
-- basic result screen;
+- basic results;
 - simple missions;
-- perhaps one or two gameplay mutators;
-- simple collection/gallery hook;
+- one or two gameplay mutators at most;
+- simple gallery/collection hook;
 - basic delivery flavor.
 
-The first version should focus on the things that make *Jetpack Joyride*-style gameplay fun before building large meta systems.
+## Early follow-up
 
-## Good early follow-up systems
-
-After the runner itself works:
+After the runner works:
 
 - finishable Delivery Mode;
 - Endless Mode;
-- Delivery World Map;
+- world map;
 - more monster girls;
 - more worlds;
 - achievements;
-- account/character XP;
+- character/account XP;
 - unlockables;
 - earnable Mystery Packages;
 - cheap cosmetics;
 - trails/VFX;
 - Gallery;
-- Daily Missions;
-- seasonal experiments;
-- first artwork reveal interaction.
+- daily missions;
+- first seasonal experiments.
 
 ## Later systems
 
-Only after the core game proves itself:
+Only after the core game is proven:
 
 - full Locker Room;
 - large outfit library;
-- skeletal animation;
-- Character Care system;
-- many artwork reveal minigames;
-- portrait artwork interactions;
-- gyroscope artwork;
-- global rankings;
-- large seasonal modes;
-- Battle Pass;
+- Character Care;
+- Artwork Reveal minigames;
+- portrait/gyro artwork;
+- arcade cabinets;
+- carnival minigames;
+- simulator-inspired microgames;
+- Delivery HQ;
+- odd jobs;
+- management;
+- Bond/relationship system;
+- cozy activities;
+- rankings;
+- community events;
+- battle pass;
 - premium currency;
 - gacha;
-- monetization systems;
-- minigames;
-- Delivery Company management;
-- relationship/dating systems;
-- cozy hub activities;
-- Auto Mode.
+- monetization;
+- alternate portrait runners;
+- standalone spin-offs;
+- auto mode.
 
-## Possible mature long-term loop
+## Scope rule
 
-```text
-Order arrives
-→ choose monster girl / cosmetics
-→ select route on Delivery Map
-→ run / fly / dodge / collect
-→ temporary movement modifier or vehicle
-→ complete delivery
-→ customer reaction
-→ results
-→ coins + XP + mission progress + collectibles
-→ character/account progression
-→ occasional Character Care / Artwork Reveal
-→ unlock cosmetics / artwork / Mystery Packages
-→ visit Locker Room / Gallery / HQ if desired
-→ next delivery or Endless Mode
-```
+Do not build:
 
-Seasonal events, rankings, minigames, management, and relationship systems should sit around this loop rather than replace it.
+**Runner + Dating Sim + Truck Sim + Mechanic Sim + Arcade Collection + Gacha + Open World + Portrait Runner**
+
+all at the same time.
+
+Instead, treat later systems as small toys added around a strong core.
 
 ---
 
-# N. Open design questions
-
-These questions are intentionally unresolved.
+# Q. Open design questions
 
 ## Core structure
 
-- Should Delivery Mode become the primary mode or sit equally beside Endless?
-- Should reaching a customer always end the run?
-- Should Delivery Chains become a major scoring system?
-- How often should temporary movement modes appear?
-- How many permanent controls should the finished game have?
+- Should Delivery Mode eventually become the primary mode?
+- Should completing a delivery always end the run?
+- How important should Delivery Chains become?
+- How many permanent controls should exist?
+- How often should movement mutators appear?
 
 ## Level structure
 
-- Should the campaign use one main linear route with optional branches, or several equal paths?
 - How many levels should each world contain?
-- Should every player begin at World 1, or should later versions allow alternative starts?
-- How much of a level should be authored versus procedurally varied?
-- Should difficulty be shown with stars, colors, text, or an in-world delivery-risk rating?
-- How often should challenge routes branch away from the main path?
+- How much procedural variation should a route have?
+- How visible should difficulty ratings be?
+- Should optional hardcore routes branch from the main map?
 
-## Story
+## Story and world
 
-- How much actual plot does MGD need?
-- Is the delivery company the main narrative anchor?
-- Does the player own/manage the company or simply play its couriers?
+- How much plot does MGD need?
+- Does the player own the company or just play its couriers?
+- How large should the Delivery HQ become?
+- Should NPC routines exist only in the HQ or in a small surrounding neighborhood?
 
 ## Characters
 
-- Are characters mechanically identical, slightly different, or strongly differentiated?
-- How much customization is feasible with the final animation pipeline?
-- Should relationship progression remain Bond/Friendship-focused or eventually become dating?
+- Are characters mechanically identical or slightly differentiated?
+- How much outfit customization is feasible with the chosen art pipeline?
+- When would skeletal animation become worth the cost?
+- How far should Bond/relationship systems go?
 
-## Artwork and character interaction
+## Artwork and interaction
 
-- How often should Character Care appear without becoming repetitive?
-- Should different worlds always use different artwork reveal mechanics?
-- Which reveal interactions are fun enough to repeat?
-- Should bonus points come from speed/accuracy or only from participation?
-- Should artwork reveals rotate into portrait mode automatically or only on player choice?
-- Does gyroscope parallax feel premium or distracting on real devices?
+- How often should Character Care occur?
+- Which Artwork Reveal mechanics remain fun after repetition?
+- Should all reveals have a skip button?
+- Which phone sensors feel delightful rather than gimmicky?
+- Should microphone interactions always be opt-in?
 
 ## Economy
 
-- How many currencies are actually needed?
-- What should Coins be spent on?
+- How many currencies are actually necessary?
+- What are the best coin sinks?
 - Should Mystery Packages remain gameplay-only?
-- Is gacha useful at all, or is a deterministic shop enough?
-- How can monetization remain fair and mostly cosmetic?
-
-## Progression
-
-- How much should Account Level matter compared with Character Level?
-- What cheap cosmetics feel meaningful?
-- Should old seasonal rewards return?
-- How much daily/weekly structure stays fun before feeling like a chore?
+- Is gacha useful at all?
+- How can monetization stay primarily cosmetic?
 
 ## Competition
 
-- Which leaderboard metrics are most interesting?
-- Should competitive challenges normalize all characters/upgrades?
-- How long should ranking seasons last?
-- Should community goals matter more than direct competition?
+- Which rankings are worth supporting?
+- Should ranked challenges normalize character stats/upgrades?
+- How long should seasons last?
+- Are cooperative community goals more important than direct competition?
 
-## Meta game
+## Side activities
 
-- Is a Delivery HQ worth building?
-- Does management improve MGD or distract from the runner?
-- Which calm/cozy activity provides the best contrast?
-- Are minigames worth their production cost?
+- Which one minigame would be cheapest and most fun to build first?
+- Should Arcade Tokens exist or just use Coins?
+- Should carnival games be seasonal or permanently available?
+- Which simulator-like interaction best fits MGD: cleaning, unpacking, sorting, or repair?
+- How many odd jobs are enough to make the world feel alive without overwhelming production?
+
+## Alternative runners
+
+- Is a portrait 3-lane runner best as an event, arcade game, or separate title?
+- Can high-speed runner ideas work as short mutators instead of new games?
+- Which alternate runner formats reuse enough MGD assets to justify development?
 
 ## Presentation
 
-- Pixel art vs larger high-detail character art?
-- When does skeletal animation become worthwhile?
-- Does portrait artwork justify runtime orientation changes?
+- Pixel art vs larger detailed sprites?
+- Landscape-only core vs occasional portrait rewards?
+- Does motion parallax look premium or distracting on real devices?
 
 ---
 
 # Core principle to preserve
 
-The project can contain a huge idea pool without becoming a huge game immediately.
+The project can hold a huge idea pool without becoming a huge game immediately.
 
 > **MGD should be very easy to start playing, but capable of surprising the player for a long time.**
 
@@ -1966,9 +2205,11 @@ Instead:
 - rewarding collection;
 - visible personalization;
 - varied worlds;
-- optional long-term systems.
+- optional side activities;
+- playful use of phone hardware;
+- a world where players can sometimes waste time just for fun.
 
-A player might begin a run on a broom, hit a Gravity Flip section, lose the broom, land on a dinosaur, complete a delivery, catch a bonus package, unlock a sticker, gain a Demon Girl level, clean the character after the mission, reveal a new artwork, and immediately begin another route — while still understanding the basic game after only a few seconds.
+A mature MGD could eventually let a player start a broom delivery, hit a gravity-flip section, land on a dinosaur, deliver a package, clean up the courier, reveal artwork, spend coins at a rigged carnival booth, win a plushie, give it to a favorite character, play one arcade cabinet, and then immediately start another run — while the core game itself remains understandable within seconds.
 
 That is the kind of controlled variety MGD should aim for.
 
@@ -1979,6 +2220,6 @@ That is the kind of controlled variety MGD should aim for.
 - [`../MASTER_SPEC.md`](../MASTER_SPEC.md) — approved product/game decisions and decision states
 - [`ROADMAP.md`](ROADMAP.md) — milestone sequence
 - [`BACKLOG.md`](BACKLOG.md) — preserved future gameplay ideas
-- [`ENDLESS_RUNNER_BLUEPRINT.md`](ENDLESS_RUNNER_BLUEPRINT.md) — Endless Runner / *Jetpack Joyride* design lessons
+- [`ENDLESS_RUNNER_BLUEPRINT.md`](ENDLESS_RUNNER_BLUEPRINT.md) — detailed Endless Runner / *Jetpack Joyride* design lessons
 - [`ART_DIRECTION_IDEAS.md`](ART_DIRECTION_IDEAS.md) — art and visual-production ideas
 - [`README.md`](README.md) — documentation hub
