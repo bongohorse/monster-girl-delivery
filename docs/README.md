@@ -23,8 +23,7 @@ The GitHub Issues/PRs are the live execution trail. Milestone closeout should up
 | See what milestone comes next | [`ROADMAP.md`](ROADMAP.md) |
 | Check approved game rules and product decisions | [`../MASTER_SPEC.md`](../MASTER_SPEC.md) |
 | See what is being implemented right now | the current GitHub milestone parent and its child Issues |
-| Browse future ideas that are **not committed scope** | [`BACKLOG.md`](BACKLOG.md) |
-| Browse visual/art ideas | [`ART_DIRECTION_IDEAS.md`](ART_DIRECTION_IDEAS.md) |
+| Browse future gameplay, art, content, tooling, economy, and progression ideas that are **not committed scope** | [`BACKLOG.md`](BACKLOG.md) |
 | Review Endless Runner / Jetpack Joyride design lessons | [`ENDLESS_RUNNER_BLUEPRINT.md`](ENDLESS_RUNNER_BLUEPRINT.md) |
 | Understand the technical structure | [`../ARCHITECTURE.md`](../ARCHITECTURE.md) |
 | See development commands and workflow | [`../DEVELOPMENT.md`](../DEVELOPMENT.md) |
@@ -46,7 +45,7 @@ docs/ROADMAP.md
 current GitHub milestone / Issue
 ```
 
-Open `MASTER_SPEC.md` when you need the exact product rule or decision state. Open `BACKLOG.md` only when discussing future ideas.
+Open `MASTER_SPEC.md` when you need the exact product rule or decision state. Open `BACKLOG.md` only when discussing future ideas or design exploration.
 
 ---
 
@@ -70,7 +69,7 @@ ARCHITECTURE.md + DEVELOPMENT.md as needed
 existing implementation/tests
 ```
 
-Do **not** treat every idea or reference document as required implementation context. In particular, `BACKLOG.md`, `ART_DIRECTION_IDEAS.md`, and `ENDLESS_RUNNER_BLUEPRINT.md` contain preserved possibilities or reference lessons, not approved current scope.
+Do **not** treat every idea or reference document as required implementation context. In particular, `BACKLOG.md` and `ENDLESS_RUNNER_BLUEPRINT.md` contain preserved possibilities or reference lessons, not approved current scope.
 
 ### AI task routing
 
@@ -81,7 +80,7 @@ Do **not** treat every idea or reference document as required implementation con
 | Architecture change | `ARCHITECTURE.md` + `MASTER_SPEC.md` | `DEVELOPMENT.md`, current Issue |
 | Workflow / repo tooling | `DEVELOPMENT.md` + `AGENTS.md` | `AI_WORKFLOW.md`, `GITHUB_AI_ACCESS.md` |
 | Historical review / closeout | `milestones/README.md` | milestone report, merged Issues/PRs, actual validation evidence |
-| Art/design exploration | `ART_DIRECTION_IDEAS.md` | `BACKLOG.md`, relevant product constraints in `MASTER_SPEC.md` |
+| Art/design exploration | `BACKLOG.md` | relevant product constraints in `MASTER_SPEC.md` |
 | Runner design / pacing / progression research | `ENDLESS_RUNNER_BLUEPRINT.md` | `BACKLOG.md`, relevant product constraints in `MASTER_SPEC.md` |
 
 ---
@@ -152,11 +151,21 @@ GitHub/Codespaces AI authentication and permissions reference.
 
 #### [`BACKLOG.md`](BACKLOG.md)
 
-Future gameplay, tools, modes, progression, content, and reference-game ideas. These are deliberately preserved without making them commitments.
+The single categorized future-ideas store for MGD. It contains preserved exploration covering:
 
-#### [`ART_DIRECTION_IDEAS.md`](ART_DIRECTION_IDEAS.md)
+- product/gameplay ideas;
+- delivery systems and modes;
+- worlds and events;
+- characters and cosmetics;
+- Companions, progression, economy, and collection;
+- HQ/cozy/minigame concepts;
+- art direction and visual language;
+- modular asset and technical-art pipeline ideas;
+- tooling/testing/platform backlog;
+- reference-game lessons;
+- open design questions.
 
-Visual direction, themes, modular art-production ideas, asset pipeline experiments, and future Art Bible concepts.
+The former `GAME_DESIGN_IDEAS.md` and `ART_DIRECTION_IDEAS.md` were merged into this file on 2026-09-04. Their old paths remain only as compatibility redirects.
 
 #### [`ENDLESS_RUNNER_BLUEPRINT.md`](ENDLESS_RUNNER_BLUEPRINT.md)
 
@@ -190,7 +199,7 @@ Different documents own different kinds of truth. Do not flatten them into one g
 4. **Current approved GitHub Issue** controls the focused implementation scope, within the product and architecture boundaries above.
 5. **`ARCHITECTURE.md`** controls established technical boundaries unless an approved task intentionally changes them.
 6. **`DEVELOPMENT.md`, `AGENTS.md`, and `AI_WORKFLOW.md`** control repository/process behavior.
-7. **`BACKLOG.md`, `ART_DIRECTION_IDEAS.md`, and `ENDLESS_RUNNER_BLUEPRINT.md`** are idea/reference stores only.
+7. **`BACKLOG.md` and `ENDLESS_RUNNER_BLUEPRINT.md`** are idea/reference stores only.
 8. **Milestone closeout reports** are authoritative historical records for what actually happened, but are not forward planning documents.
 
 When two sources appear to contradict each other on the **same kind of decision**, do not silently choose the convenient one. Check whether one explicitly supersedes the other; otherwise flag the conflict for the Game Director.
@@ -205,6 +214,7 @@ To keep this repo readable as it grows:
 - Keep root-level documents for project-wide rules that agents/tools need to find immediately.
 - Put supporting/reference material under `docs/`.
 - Put completed milestone history under `docs/milestones/`.
+- Keep future gameplay/art/design exploration centralized in `BACKLOG.md` unless a topic becomes stable enough to deserve a formal production specification.
 - Do not mix future ideas into historical closeout reports.
 - Do not turn backlog/reference ideas into roadmap scope without an explicit Director decision.
 - Update this hub when a new major documentation category is introduced.
@@ -223,8 +233,9 @@ DEVELOPMENT.md                Development and validation workflow
 docs/
 ├── README.md                     Documentation hub / navigation map
 ├── ROADMAP.md                    Approved milestone sequence
-├── BACKLOG.md                    Preserved future ideas
-├── ART_DIRECTION_IDEAS.md        Preserved visual/art exploration
+├── BACKLOG.md                    Unified categorized future ideas / design exploration
+├── GAME_DESIGN_IDEAS.md          Legacy redirect → BACKLOG.md
+├── ART_DIRECTION_IDEAS.md        Legacy redirect → BACKLOG.md
 ├── ENDLESS_RUNNER_BLUEPRINT.md   Endless Runner / Jetpack Joyride design reference
 ├── AI_WORKFLOW.md                Human ↔ AI workflow
 ├── GITHUB_AI_ACCESS.md           GitHub/Codespaces AI access reference
