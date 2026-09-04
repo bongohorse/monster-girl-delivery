@@ -22,6 +22,8 @@ Do not create historical reports in advance. Current and future milestone planni
 
 A new report is added here only when the milestone has factual implementation and validation evidence to close out.
 
+Current M3 supporting evidence is recorded in [`M3-seeded-run-validation.md`](M3-seeded-run-validation.md). It contains factual Issue #65 validation only; it is not an M3 completion report and does not authorize the M4 transition.
+
 ## Closeout rule for M2+
 
 Every milestone must receive a closeout report before, or as part of, formally moving the project to the next milestone.

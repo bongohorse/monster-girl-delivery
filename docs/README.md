@@ -12,6 +12,7 @@ The hub is intentionally a navigation/ownership document, not another specificat
 - **Project phase:** Pre-Production
 - **Current milestone:** M3 — Seeded Generation & Fairness
 - **Current milestone parent:** [GitHub Issue #57](https://github.com/bongohorse/monster-girl-delivery/issues/57)
+- **Current validation evidence:** [`milestones/M3-seeded-run-validation.md`](milestones/M3-seeded-run-validation.md)
 - **Roadmap:** [`ROADMAP.md`](ROADMAP.md)
 - **Product/game specification:** [`../MASTER_SPEC.md`](../MASTER_SPEC.md)
 
@@ -195,6 +196,8 @@ Current completed reports:
 - [`milestones/M2-horizontal-run-first-hazard.md`](milestones/M2-horizontal-run-first-hazard.md)
 - supporting M1 evidence: [`milestones/M1-device-report.md`](milestones/M1-device-report.md)
 
+Current M3 supporting evidence is recorded in [`milestones/M3-seeded-run-validation.md`](milestones/M3-seeded-run-validation.md). This evidence does not make M3 complete or authorize the M4 transition; factual M3 closeout remains owned by Issue #115.
+
 Historical reports should be corrected only when factual evidence is wrong, not rewritten to match later plans.
 
 ---
@@ -240,6 +243,8 @@ docs/
     ├── M1-flight-prototype.md    Completed M1 history
     ├── M2-horizontal-run-first-hazard.md
     │                             Completed M2 history
+    ├── M3-seeded-run-validation.md
+    │                             Current M3 supporting validation evidence
     └── M1-device-report.md       Supporting M1 device evidence
 ```
 
