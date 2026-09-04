@@ -15,7 +15,7 @@ const FLIGHT_BOUNDS = Object.freeze({ ceilingY: 28, floorY: 362 });
 const STEP_CONTEXT = Object.freeze({
   flightBounds: FLIGHT_BOUNDS,
   flightTuning: PROTOTYPE_FLIGHT_TUNING_DEFAULTS,
-  hazard: PROTOTYPE_PLACEHOLDER_HAZARD,
+  hazards: [PROTOTYPE_PLACEHOLDER_HAZARD],
   runMotionTuning: PROTOTYPE_RUN_MOTION_DEFAULTS,
   thrustHeld: false,
 });
@@ -51,6 +51,25 @@ describe('prototype run simulation', () => {
       motion: { distance: 1_200 },
       flight: { positionY: 195, velocityY: 40 },
     });
+  });
+
+  it('checks the generated logical hazard collection without a second collision path', () => {
+    const state: PrototypeRunState = {
+      phase: 'running',
+      motion: { distance: 1_180 },
+      flight: { positionY: 195, velocityY: 0 },
+    };
+
+    const clearHazard = {
+      hitbox: { left: 2_000, right: 2_048, top: 147, bottom: 243 },
+    };
+    const result = stepPrototypeRun(state, 0.05, {
+      ...STEP_CONTEXT,
+      hazards: [clearHazard, PROTOTYPE_PLACEHOLDER_HAZARD],
+    });
+
+    expect(result.enteredDead).toBe(true);
+    expect(result.state.phase).toBe('dead');
   });
 
   it('recreates the same clean state and derived hazard position on every restart', () => {

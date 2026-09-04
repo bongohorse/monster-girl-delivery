@@ -63,10 +63,10 @@ vi.mock('../../../src/entities/PrototypePlayerPresentation', () => ({
   },
 }));
 
-vi.mock('../../../src/entities/PrototypeHazardPresentation', () => ({
-  PrototypeHazardPresentation: class {
+vi.mock('../../../src/entities/GeneratedHazardPresentation', () => ({
+  GeneratedHazardPresentation: class {
     destroy() {}
-    render() {}
+    sync() {}
   },
 }));
 

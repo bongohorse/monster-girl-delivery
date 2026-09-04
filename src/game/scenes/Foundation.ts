@@ -5,10 +5,16 @@ import { readSafeAreaInsets, ViewportService } from '../../core/ViewportService'
 import { DirectorPanel } from '../../devtools/DirectorPanel';
 import { createDirectorResponsiveLayout } from '../../devtools/DirectorResponsiveLayout';
 import { DirectorTuningControls } from '../../devtools/DirectorTuningControls';
-import { PrototypeHazardPresentation } from '../../entities/PrototypeHazardPresentation';
+import { GeneratedHazardPresentation } from '../../entities/GeneratedHazardPresentation';
 import { PrototypePlayerPresentation } from '../../entities/PrototypePlayerPresentation';
 import { PrototypeScrollingWorldPresentation } from '../../entities/PrototypeScrollingWorldPresentation';
-import { PROTOTYPE_PLACEHOLDER_HAZARD } from '../../hazards/PrototypeHazard';
+import {
+  advanceGeneratedHazardStream,
+  createGeneratedHazardStream,
+  type GeneratedHazardStreamState,
+  PROTOTYPE_LIVE_RUN_SEED,
+} from '../../generation/GeneratedHazardStream';
+import { PROTOTYPE_HAZARD_PATTERN_FIXTURES } from '../../generation/PrototypeHazardPatternFixtures';
 import { PhaserInputAdapter } from '../../input/PhaserInputAdapter';
 import {
   createPrototypeRunState,
@@ -18,8 +24,12 @@ import {
 import { constrainVerticalFlightState } from '../../systems/VerticalFlightSimulation';
 import { createPrototypeFlightBounds, getPrototypePlayerX } from '../PrototypeFlightLayout';
 
-const RUNNING_INSTRUCTIONS = 'M2 horizontal run prototype\nHold touch, mouse, or Space to thrust.';
+const RUNNING_INSTRUCTIONS =
+  'M3 seeded hazard run prototype\nHold touch, mouse, or Space to thrust.';
 const DEAD_INSTRUCTIONS = 'Delivery interrupted\nTap, click, or press Space to restart.';
+const LIVE_HAZARD_STREAM_CONTEXT = Object.freeze({
+  catalog: PROTOTYPE_HAZARD_PATTERN_FIXTURES,
+});
 
 export class Foundation extends Scene {
   private title?: Phaser.GameObjects.Text;
@@ -29,7 +39,8 @@ export class Foundation extends Scene {
   private directorTuningControls?: DirectorTuningControls;
   private inputAdapter?: PhaserInputAdapter;
   private lifecycleAdapter?: PhaserLifecycleAdapter;
-  private hazardPresentation?: PrototypeHazardPresentation;
+  private generatedHazardPresentation?: GeneratedHazardPresentation;
+  private hazardStream?: Readonly<GeneratedHazardStreamState>;
   private playerPresentation?: PrototypePlayerPresentation;
   private scrollingWorldPresentation?: PrototypeScrollingWorldPresentation;
   private runState: PrototypeRunState = {
@@ -67,9 +78,13 @@ export class Foundation extends Scene {
     const viewport = this.viewportService.getSnapshot();
     const bounds = createPrototypeFlightBounds(viewport);
     this.runState = createPrototypeRunState(bounds);
+    this.hazardStream = createGeneratedHazardStream(
+      PROTOTYPE_LIVE_RUN_SEED,
+      LIVE_HAZARD_STREAM_CONTEXT,
+    );
     this.services.input.releaseAll();
     this.scrollingWorldPresentation = new PrototypeScrollingWorldPresentation(this);
-    this.hazardPresentation = new PrototypeHazardPresentation(this);
+    this.generatedHazardPresentation = new GeneratedHazardPresentation(this);
     this.playerPresentation = new PrototypePlayerPresentation(
       this,
       getPrototypePlayerX(viewport),
@@ -100,7 +115,7 @@ export class Foundation extends Scene {
   }
 
   update(_time: number, delta: number) {
-    if (!this.viewportService || !this.playerPresentation) {
+    if (!this.viewportService || !this.playerPresentation || !this.hazardStream) {
       return;
     }
 
@@ -119,7 +134,7 @@ export class Foundation extends Scene {
       const result = stepPrototypeRun(this.runState, simulationDeltaSeconds, {
         flightBounds: createPrototypeFlightBounds(viewport),
         flightTuning: this.services.flightTuning.getSnapshot(),
-        hazard: PROTOTYPE_PLACEHOLDER_HAZARD,
+        hazards: this.hazardStream.spawns,
         runMotionTuning: this.services.runMotion.getSnapshot(),
         thrustHeld: this.services.input.isThrustHeld(),
       });
@@ -128,6 +143,12 @@ export class Foundation extends Scene {
       if (result.enteredDead) {
         this.services.input.releaseAll();
         this.instructions?.setText(DEAD_INSTRUCTIONS);
+      } else {
+        this.hazardStream = advanceGeneratedHazardStream(
+          this.hazardStream,
+          this.runState.motion.distance,
+          LIVE_HAZARD_STREAM_CONTEXT,
+        );
       }
     }
 
@@ -206,6 +227,10 @@ export class Foundation extends Scene {
 
   private restartRun(viewport: ReturnType<ViewportService['getSnapshot']>): void {
     this.runState = createPrototypeRunState(createPrototypeFlightBounds(viewport));
+    this.hazardStream = createGeneratedHazardStream(
+      PROTOTYPE_LIVE_RUN_SEED,
+      LIVE_HAZARD_STREAM_CONTEXT,
+    );
     this.services.input.releaseAll();
     this.instructions?.setText(RUNNING_INSTRUCTIONS);
   }
@@ -214,7 +239,11 @@ export class Foundation extends Scene {
     const playerScreenX = getPrototypePlayerX(viewport);
 
     this.scrollingWorldPresentation?.render(this.runState.motion.distance, viewport);
-    this.hazardPresentation?.render(this.runState.motion, playerScreenX);
+    this.generatedHazardPresentation?.sync(
+      this.hazardStream?.spawns ?? [],
+      this.runState.motion,
+      playerScreenX,
+    );
     this.playerPresentation?.setPosition(playerScreenX, this.runState.flight.positionY);
   }
 
@@ -230,8 +259,9 @@ export class Foundation extends Scene {
     this.directorPanel = undefined;
     this.scrollingWorldPresentation?.destroy();
     this.scrollingWorldPresentation = undefined;
-    this.hazardPresentation?.destroy();
-    this.hazardPresentation = undefined;
+    this.generatedHazardPresentation?.destroy();
+    this.generatedHazardPresentation = undefined;
+    this.hazardStream = undefined;
     this.playerPresentation?.destroy();
     this.playerPresentation = undefined;
     this.inputAdapter?.destroy();

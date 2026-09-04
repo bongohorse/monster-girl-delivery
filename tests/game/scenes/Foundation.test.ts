@@ -3,6 +3,13 @@ import { createAppServices } from '../../../src/core/AppServices';
 import { ViewportService } from '../../../src/core/ViewportService';
 import { createPrototypeFlightBounds } from '../../../src/game/PrototypeFlightLayout';
 import { Foundation } from '../../../src/game/scenes/Foundation';
+import {
+  advanceGeneratedHazardStream,
+  createGeneratedHazardStream,
+  type GeneratedHazardStreamState,
+  PROTOTYPE_LIVE_RUN_SEED,
+} from '../../../src/generation/GeneratedHazardStream';
+import { PROTOTYPE_HAZARD_PATTERN_FIXTURES } from '../../../src/generation/PrototypeHazardPatternFixtures';
 import type { PrototypeRunState } from '../../../src/systems/PrototypeRunSimulation';
 import { type RunMotionState, stepRunMotion } from '../../../src/systems/RunMotionSimulation';
 import {
@@ -22,6 +29,11 @@ const getRunMotionState = (foundation: Foundation): RunMotionState =>
   (Reflect.get(foundation, 'runState') as PrototypeRunState).motion;
 const getRunState = (foundation: Foundation): PrototypeRunState =>
   Reflect.get(foundation, 'runState') as PrototypeRunState;
+const getHazardStream = (foundation: Foundation): Readonly<GeneratedHazardStreamState> =>
+  Reflect.get(foundation, 'hazardStream') as Readonly<GeneratedHazardStreamState>;
+const TEST_HAZARD_STREAM_CONTEXT = Object.freeze({
+  catalog: PROTOTYPE_HAZARD_PATTERN_FIXTURES,
+});
 
 const createFoundationHarness = () => {
   const services = createAppServices();
@@ -29,7 +41,7 @@ const createFoundationHarness = () => {
   const viewportService = new ViewportService(400, 800);
   const directorPanel = { layout: vi.fn(), update: vi.fn() };
   const directorTuningControls = { destroy: vi.fn(), layout: vi.fn() };
-  const hazardPresentation = { destroy: vi.fn(), render: vi.fn() };
+  const generatedHazardPresentation = { destroy: vi.fn(), sync: vi.fn() };
   const instructions = {
     setPosition: vi.fn(),
     setText: vi.fn(),
@@ -46,7 +58,12 @@ const createFoundationHarness = () => {
   Reflect.set(foundation, 'viewportService', viewportService);
   Reflect.set(foundation, 'directorPanel', directorPanel);
   Reflect.set(foundation, 'directorTuningControls', directorTuningControls);
-  Reflect.set(foundation, 'hazardPresentation', hazardPresentation);
+  Reflect.set(foundation, 'generatedHazardPresentation', generatedHazardPresentation);
+  Reflect.set(
+    foundation,
+    'hazardStream',
+    createGeneratedHazardStream(PROTOTYPE_LIVE_RUN_SEED, TEST_HAZARD_STREAM_CONTEXT),
+  );
   Reflect.set(foundation, 'instructions', instructions);
   Reflect.set(foundation, 'playerPresentation', playerPresentation);
   Reflect.set(foundation, 'scrollingWorldPresentation', scrollingWorldPresentation);
@@ -64,7 +81,7 @@ const createFoundationHarness = () => {
     directorTuningControls,
     directorPanel,
     foundation,
-    hazardPresentation,
+    generatedHazardPresentation,
     instructions,
     playerPresentation,
     scrollingWorldPresentation,
@@ -82,7 +99,7 @@ describe('Foundation scene gameplay orchestration', () => {
   it('steps flight and horizontal progress from the same TimeService delta', () => {
     const {
       foundation,
-      hazardPresentation,
+      generatedHazardPresentation,
       playerPresentation,
       scrollingWorldPresentation,
       services,
@@ -115,7 +132,11 @@ describe('Foundation scene gameplay orchestration', () => {
       expectedRunMotion.distance,
       viewportService.getSnapshot(),
     );
-    expect(hazardPresentation.render).toHaveBeenLastCalledWith(expectedRunMotion, 100);
+    expect(generatedHazardPresentation.sync).toHaveBeenLastCalledWith(
+      getHazardStream(foundation).spawns,
+      expectedRunMotion,
+      100,
+    );
   });
 
   it('keeps player screen-space X stable while the world advances', () => {
@@ -138,10 +159,12 @@ describe('Foundation scene gameplay orchestration', () => {
     services.lifecycle.pause('hidden');
     const beforePause = getFlightState(foundation);
     const runBeforePause = getRunMotionState(foundation);
+    const hazardsBeforePause = getHazardStream(foundation);
 
     foundation.update(0, 5_000);
     expect(getFlightState(foundation)).toEqual(beforePause);
     expect(getRunMotionState(foundation)).toEqual(runBeforePause);
+    expect(getHazardStream(foundation)).toBe(hazardsBeforePause);
     expect(scrollingWorldPresentation.render).toHaveBeenLastCalledWith(
       runBeforePause.distance,
       expect.any(Object),
@@ -152,6 +175,7 @@ describe('Foundation scene gameplay orchestration', () => {
     foundation.update(0, 5_000);
     expect(getFlightState(foundation)).toEqual(beforePause);
     expect(getRunMotionState(foundation)).toEqual(runBeforePause);
+    expect(getHazardStream(foundation)).toBe(hazardsBeforePause);
 
     foundation.update(0, 16);
     expect(getFlightState(foundation).positionY).toBeGreaterThan(beforePause.positionY);
@@ -159,20 +183,41 @@ describe('Foundation scene gameplay orchestration', () => {
   });
 
   it('enters death once, holds simulation, and restarts from fresh input', () => {
-    const { foundation, hazardPresentation, instructions, services, scrollingWorldPresentation } =
-      createFoundationHarness();
+    const {
+      foundation,
+      generatedHazardPresentation,
+      instructions,
+      services,
+      scrollingWorldPresentation,
+    } = createFoundationHarness();
+    const initialHazardStream = getHazardStream(foundation);
+    const progressedHazardStream = advanceGeneratedHazardStream(
+      initialHazardStream,
+      400,
+      TEST_HAZARD_STREAM_CONTEXT,
+    );
+    const collisionHazard = progressedHazardStream.spawns[0];
+
+    expect(collisionHazard).toBeDefined();
+    if (!collisionHazard) {
+      throw new Error('Expected the live generated stream to contain a collision hazard.');
+    }
+
+    Reflect.set(foundation, 'hazardStream', progressedHazardStream);
     Reflect.set(foundation, 'runState', {
       phase: 'running',
-      motion: { distance: 1_180 },
-      flight: { positionY: 195, velocityY: 0 },
+      motion: { distance: collisionHazard.hitbox.left - 17.5 },
+      flight: {
+        positionY: (collisionHazard.hitbox.top + collisionHazard.hitbox.bottom) / 2,
+        velocityY: 0,
+      },
     });
-    services.input.setSpaceHeld(true);
 
     foundation.update(0, 50);
 
     const deadState = getRunState(foundation);
     expect(deadState.phase).toBe('dead');
-    expect(deadState.motion.distance).toBe(1_197.5);
+    expect(deadState.motion.distance).toBe(collisionHazard.hitbox.left);
     expect(services.input.isThrustHeld()).toBe(false);
     expect(instructions.setText).toHaveBeenCalledExactlyOnceWith(
       'Delivery interrupted\nTap, click, or press Space to restart.',
@@ -191,13 +236,18 @@ describe('Foundation scene gameplay orchestration', () => {
       motion: { distance: 0 },
       flight: { positionY: 400, velocityY: 0 },
     });
+    expect(getHazardStream(foundation)).toEqual(initialHazardStream);
     expect(services.input.isThrustHeld()).toBe(false);
     expect(instructions.setText).toHaveBeenNthCalledWith(
       2,
-      'M2 horizontal run prototype\nHold touch, mouse, or Space to thrust.',
+      'M3 seeded hazard run prototype\nHold touch, mouse, or Space to thrust.',
     );
     expect(scrollingWorldPresentation.render).toHaveBeenLastCalledWith(0, expect.any(Object));
-    expect(hazardPresentation.render).toHaveBeenLastCalledWith({ distance: 0 }, 100);
+    expect(generatedHazardPresentation.sync).toHaveBeenLastCalledWith(
+      initialHazardStream.spawns,
+      { distance: 0 },
+      100,
+    );
   });
 
   it('recalculates resize bounds immediately without advancing simulation time', () => {
@@ -216,6 +266,7 @@ describe('Foundation scene gameplay orchestration', () => {
       flight: { positionY: 500, velocityY: 120 },
     });
     services.time.update(16);
+    const hazardStreamBeforeResize = getHazardStream(foundation);
     const tuningBefore = services.flightTuning.getSnapshot();
     const runTuningBefore = services.runMotion.getSnapshot();
 
@@ -235,6 +286,7 @@ describe('Foundation scene gameplay orchestration', () => {
     expect(services.flightTuning.getSnapshot()).toEqual(tuningBefore);
     expect(services.runMotion.getSnapshot()).toEqual(runTuningBefore);
     expect(getRunMotionState(foundation)).toEqual({ distance: 123 });
+    expect(getHazardStream(foundation)).toBe(hazardStreamBeforeResize);
     expect(scrollingWorldPresentation.render).toHaveBeenLastCalledWith(
       123,
       viewportService.getSnapshot(),
@@ -255,7 +307,7 @@ describe('Foundation scene gameplay orchestration', () => {
     const {
       directorTuningControls,
       foundation,
-      hazardPresentation,
+      generatedHazardPresentation,
       playerPresentation,
       scaleOff,
       scrollingWorldPresentation,
@@ -286,7 +338,7 @@ describe('Foundation scene gameplay orchestration', () => {
     expect(scaleOff).toHaveBeenCalledOnce();
     expect(directorTuningControls.destroy).toHaveBeenCalledOnce();
     expect(playerPresentation.destroy).toHaveBeenCalledOnce();
-    expect(hazardPresentation.destroy).toHaveBeenCalledOnce();
+    expect(generatedHazardPresentation.destroy).toHaveBeenCalledOnce();
     expect(scrollingWorldPresentation.destroy).toHaveBeenCalledOnce();
     expect(inputAdapter.destroy).toHaveBeenCalledOnce();
     expect(lifecycleAdapter.destroy).toHaveBeenCalledOnce();
