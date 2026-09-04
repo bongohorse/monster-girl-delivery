@@ -62,6 +62,17 @@ export interface GeneratedHazardStreamContext {
   readonly constraints?: Readonly<PatternValidationConstraints>;
 }
 
+export type HazardSpeedChangeStatus = 'applied' | 'deferred';
+
+/** Structured transition-time decision for gameplay and later Director diagnostics. */
+export interface HazardSpeedChangeResolution {
+  readonly appliedScrollSpeed: number;
+  readonly limitingTargetRunDistance: number | null;
+  readonly maximumSafeScrollSpeed: number | null;
+  readonly requestedScrollSpeed: number;
+  readonly status: HazardSpeedChangeStatus;
+}
+
 const MAX_PATTERNS_PER_ADVANCE = 64;
 
 const assertValidConfig = (config: Readonly<GeneratedHazardStreamConfig>): void => {
@@ -94,6 +105,71 @@ const getPatternSchedulingBoundary = (
   }
 
   return boundary;
+};
+
+/**
+ * Resolves a requested speed against immutable future hazard targets at the transition instant.
+ * Decreases apply immediately. An increase is deferred at the current applied speed unless every
+ * scheduled future hazard would still provide the configured minimum reaction time.
+ */
+export const resolveHazardSafeSpeedChange = (
+  state: Readonly<GeneratedHazardStreamState>,
+  runDistance: number,
+  context: Readonly<GeneratedHazardStreamContext>,
+  requestedRunMotion: Readonly<RunMotionValues>,
+): Readonly<HazardSpeedChangeResolution> => {
+  assertValidRunDistance(runDistance);
+
+  if (runDistance < state.runDistance) {
+    throw new RangeError('Hazard speed resolution cannot observe runDistance moving backward.');
+  }
+
+  const config = context.config ?? PROTOTYPE_GENERATED_HAZARD_STREAM_CONFIG;
+  assertValidConfig(config);
+  const requestedWindow = createHazardReactionWindow(requestedRunMotion, config.reactionTime);
+  const futureSpawns = state.spawns.filter(
+    (spawn) => spawn.approachTiming.targetRunDistance >= runDistance,
+  );
+  const limitingTargetRunDistance = futureSpawns.reduce<number | null>((nearest, spawn) => {
+    const { targetRunDistance } = spawn.approachTiming;
+
+    if (nearest !== null && targetRunDistance >= nearest) {
+      return nearest;
+    }
+
+    return targetRunDistance;
+  }, null);
+  const maximumSafeScrollSpeed =
+    limitingTargetRunDistance === null
+      ? null
+      : (limitingTargetRunDistance - runDistance) / requestedWindow.minimumReactionTimeSeconds;
+
+  if (maximumSafeScrollSpeed !== null && !Number.isFinite(maximumSafeScrollSpeed)) {
+    throw new RangeError('Maximum safe hazard scroll speed must remain finite.');
+  }
+
+  const increaseRequested = requestedWindow.scrollSpeed > state.schedulingWindow.scrollSpeed;
+  const increaseIsSafe =
+    !increaseRequested ||
+    futureSpawns.every(
+      (spawn) =>
+        evaluateHazardApproachTiming(
+          spawn.approachTiming.targetRunDistance,
+          runDistance,
+          requestedWindow,
+        ).meetsMinimumReactionTime,
+    );
+  const status: HazardSpeedChangeStatus =
+    increaseRequested && !increaseIsSafe ? 'deferred' : 'applied';
+
+  return Object.freeze({
+    appliedScrollSpeed:
+      status === 'applied' ? requestedWindow.scrollSpeed : state.schedulingWindow.scrollSpeed,
+    limitingTargetRunDistance,
+    maximumSafeScrollSpeed,
+    requestedScrollSpeed: requestedWindow.scrollSpeed,
+    status,
+  });
 };
 
 const freezeState = (state: GeneratedHazardStreamState): Readonly<GeneratedHazardStreamState> =>
@@ -196,8 +272,9 @@ export const createGeneratedHazardStream = (
 
 /**
  * Advances from authoritative run distance and speed without retroactively moving accepted hazards.
- * A larger horizon pushes only the unscheduled cursor far enough to preserve the new minimum;
- * existing positions and timing snapshots stay immutable, while a smaller horizon keeps extra lead.
+ * Unsafe speed increases retain the current applied speed. An accepted larger horizon pushes only
+ * the unscheduled cursor far enough to preserve the new minimum; existing positions and timing
+ * snapshots stay immutable, while a smaller horizon keeps extra lead.
  */
 export const advanceGeneratedHazardStream = (
   state: Readonly<GeneratedHazardStreamState>,
@@ -213,7 +290,11 @@ export const advanceGeneratedHazardStream = (
 
   const config = context.config ?? PROTOTYPE_GENERATED_HAZARD_STREAM_CONFIG;
   assertValidConfig(config);
-  const schedulingWindow = createHazardReactionWindow(runMotion, config.reactionTime);
+  const speedChange = resolveHazardSafeSpeedChange(state, runDistance, context, runMotion);
+  const schedulingWindow = createHazardReactionWindow(
+    { baseScrollSpeed: speedChange.appliedScrollSpeed },
+    config.reactionTime,
+  );
 
   if (
     runDistance === state.runDistance &&

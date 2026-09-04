@@ -155,6 +155,19 @@ describe('Foundation scene gameplay orchestration', () => {
     );
   });
 
+  it('keeps an unsafe requested speed increase out of the authoritative run path', () => {
+    const { foundation, services } = createFoundationHarness();
+    const initialHazardStream = getHazardStream(foundation);
+
+    services.runMotion.update({ baseScrollSpeed: 700 });
+    foundation.update(0, 0);
+
+    expect(services.runMotion.getSnapshot()).toEqual({ baseScrollSpeed: 350 });
+    expect(getHazardStream(foundation)).toBe(initialHazardStream);
+    expect(getHazardStream(foundation).schedulingWindow.scrollSpeed).toBe(350);
+    expect(getRunMotionState(foundation)).toEqual({ distance: 0 });
+  });
+
   it('keeps player screen-space X stable while the world advances', () => {
     const { foundation, playerPresentation, scrollingWorldPresentation } =
       createFoundationHarness();

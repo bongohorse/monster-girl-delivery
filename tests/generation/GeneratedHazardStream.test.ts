@@ -4,6 +4,7 @@ import {
   advanceGeneratedHazardStream,
   createGeneratedHazardStream,
   PROTOTYPE_GENERATED_HAZARD_STREAM_CONFIG,
+  resolveHazardSafeSpeedChange,
 } from '../../src/generation/GeneratedHazardStream';
 import { evaluateHazardApproachTiming } from '../../src/generation/HazardApproachTiming';
 import { createHazardPattern } from '../../src/generation/HazardPattern';
@@ -133,70 +134,99 @@ describe('generated hazard stream', () => {
     });
   });
 
-  it('does not move scheduled hazards when speed changes and preserves the new horizon for future spawns', () => {
+  it('deterministically defers an unsafe speed increase without moving scheduled hazards', () => {
     const initial = createGeneratedHazardStream(
       'speed-change',
       LIVE_CONTEXT,
       PROTOTYPE_RUN_MOTION_DEFAULTS,
     );
     const existingSpawns = initial.spawns;
-    const faster = advanceGeneratedHazardStream(initial, 0, LIVE_CONTEXT, {
+    const resolution = resolveHazardSafeSpeedChange(initial, 0, LIVE_CONTEXT, {
       baseScrollSpeed: 700,
     });
-    const repeatedFaster = advanceGeneratedHazardStream(initial, 0, LIVE_CONTEXT, {
+    const repeatedResolution = resolveHazardSafeSpeedChange(initial, 0, LIVE_CONTEXT, {
+      baseScrollSpeed: 700,
+    });
+    const deferred = advanceGeneratedHazardStream(initial, 0, LIVE_CONTEXT, {
       baseScrollSpeed: 700,
     });
 
-    expect(repeatedFaster).toEqual(faster);
-    expect(faster.schedulingWindow).toEqual({
-      minimumReactionDistance: 1_400,
-      minimumReactionTimeSeconds: 2,
-      scrollSpeed: 700,
+    expect(repeatedResolution).toEqual(resolution);
+    expect(resolution).toMatchObject({
+      appliedScrollSpeed: 350,
+      requestedScrollSpeed: 700,
+      status: 'deferred',
     });
-    expect(faster.spawns.slice(0, existingSpawns.length)).toEqual(existingSpawns);
-    expect(faster.nextPatternStartDistance).toBeGreaterThanOrEqual(
-      Math.max(
-        initial.nextPatternStartDistance,
-        faster.schedulingWindow.minimumReactionDistance + PROTOTYPE_PLAYER_COLLISION_EXTENTS.right,
-      ),
+    expect(resolution.maximumSafeScrollSpeed).toBeGreaterThan(350);
+    expect(resolution.maximumSafeScrollSpeed).toBeLessThan(700);
+    expect(resolution.limitingTargetRunDistance).not.toBeNull();
+    expect(Object.isFrozen(resolution)).toBe(true);
+    expect(deferred).toBe(initial);
+    expect(deferred.spawns).toBe(existingSpawns);
+  });
+
+  it('applies an accepted speed increase only when every future hazard keeps the minimum time', () => {
+    const initial = createGeneratedHazardStream(
+      'speed-change',
+      LIVE_CONTEXT,
+      PROTOTYPE_RUN_MOTION_DEFAULTS,
     );
-
-    for (const [index, spawn] of existingSpawns.entries()) {
-      expect(faster.spawns[index]).toBe(spawn);
-    }
-
-    const firstExisting = existingSpawns[0];
-    expect(firstExisting).toBeDefined();
-    if (!firstExisting) {
-      throw new Error('Expected a scheduled hazard before the speed change.');
-    }
-
-    expect(firstExisting.approachTiming.meetsMinimumReactionTime).toBe(true);
-    expect(
-      evaluateHazardApproachTiming(
-        firstExisting.approachTiming.targetRunDistance,
-        0,
-        faster.schedulingWindow,
-      ),
-    ).toMatchObject({
-      meetsMinimumReactionTime: false,
-      scrollSpeed: 700,
+    const unsafeResolution = resolveHazardSafeSpeedChange(initial, 0, LIVE_CONTEXT, {
+      baseScrollSpeed: 700,
     });
+    const acceptedSpeed = unsafeResolution.maximumSafeScrollSpeed;
+
+    expect(acceptedSpeed).not.toBeNull();
+    if (acceptedSpeed === null) {
+      throw new Error('Expected a scheduled hazard to provide a finite safe speed boundary.');
+    }
+    expect(acceptedSpeed).toBeGreaterThan(PROTOTYPE_RUN_MOTION_DEFAULTS.baseScrollSpeed);
+
+    const resolution = resolveHazardSafeSpeedChange(initial, 0, LIVE_CONTEXT, {
+      baseScrollSpeed: acceptedSpeed,
+    });
+    const accepted = advanceGeneratedHazardStream(initial, 0, LIVE_CONTEXT, {
+      baseScrollSpeed: acceptedSpeed,
+    });
+
+    expect(resolution).toMatchObject({
+      appliedScrollSpeed: acceptedSpeed,
+      maximumSafeScrollSpeed: acceptedSpeed,
+      requestedScrollSpeed: acceptedSpeed,
+      status: 'applied',
+    });
+    expect(accepted.schedulingWindow.scrollSpeed).toBe(acceptedSpeed);
+    expect(accepted.spawns.slice(0, initial.spawns.length)).toEqual(initial.spawns);
+
+    for (const [index, spawn] of initial.spawns.entries()) {
+      expect(accepted.spawns[index]).toBe(spawn);
+    }
+    expect(
+      accepted.spawns.every(
+        (spawn) =>
+          evaluateHazardApproachTiming(
+            spawn.approachTiming.targetRunDistance,
+            0,
+            accepted.schedulingWindow,
+          ).meetsMinimumReactionTime,
+      ),
+    ).toBe(true);
 
     const nextSchedulingDistance =
-      faster.nextPatternStartDistance -
-      faster.schedulingWindow.minimumReactionDistance -
+      accepted.nextPatternStartDistance -
+      accepted.schedulingWindow.minimumReactionDistance -
       PROTOTYPE_PLAYER_COLLISION_EXTENTS.right;
-    const continued = advanceGeneratedHazardStream(faster, nextSchedulingDistance, LIVE_CONTEXT, {
-      baseScrollSpeed: 700,
+    const continued = advanceGeneratedHazardStream(accepted, nextSchedulingDistance, LIVE_CONTEXT, {
+      baseScrollSpeed: acceptedSpeed,
     });
-    const newlyScheduled = continued.spawns.slice(existingSpawns.length);
+    const newlyScheduled = continued.spawns.slice(initial.spawns.length);
 
     expect(newlyScheduled.length).toBeGreaterThan(0);
     expect(
       newlyScheduled.every(
         (spawn) =>
-          spawn.approachTiming.scrollSpeed === 700 && spawn.approachTiming.meetsMinimumReactionTime,
+          spawn.approachTiming.scrollSpeed === acceptedSpeed &&
+          spawn.approachTiming.meetsMinimumReactionTime,
       ),
     ).toBe(true);
     expect(
@@ -207,19 +237,14 @@ describe('generated hazard stream', () => {
       ),
     ).toBe(true);
 
-    const slower = advanceGeneratedHazardStream(initial, 0, LIVE_CONTEXT, {
+    const slowerResolution = resolveHazardSafeSpeedChange(initial, 0, LIVE_CONTEXT, {
       baseScrollSpeed: 175,
     });
-    expect(slower.spawns).toEqual(existingSpawns);
-    expect(slower.schedulingWindow.minimumReactionDistance).toBe(350);
-
-    const slowerAfterFaster = advanceGeneratedHazardStream(faster, 0, LIVE_CONTEXT, {
-      baseScrollSpeed: 175,
+    expect(slowerResolution).toMatchObject({
+      appliedScrollSpeed: 175,
+      requestedScrollSpeed: 175,
+      status: 'applied',
     });
-    const fasterAgain = advanceGeneratedHazardStream(slowerAfterFaster, 0, LIVE_CONTEXT, {
-      baseScrollSpeed: 700,
-    });
-    expect(fasterAgain.nextPatternStartDistance).toBe(faster.nextPatternStartDistance);
   });
 
   it('returns the same state without duplicate spawns at repeated run distance', () => {

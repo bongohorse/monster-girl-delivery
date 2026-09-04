@@ -129,7 +129,6 @@ export class Foundation extends Scene {
 
     const simulationDeltaSeconds = this.services.time.update(delta);
     const viewport = this.viewportService.getSnapshot();
-    const runMotionTuning = this.services.runMotion.getSnapshot();
 
     if (this.runState.phase === 'dead') {
       const restartPressed = this.services.input.consumePrimaryActionPress();
@@ -140,6 +139,20 @@ export class Foundation extends Scene {
     } else {
       // While running, primary presses are thrust input rather than queued restart requests.
       this.services.input.consumePrimaryActionPress();
+      const requestedRunMotion = this.services.runMotion.getSnapshot();
+      this.hazardStream = advanceGeneratedHazardStream(
+        this.hazardStream,
+        this.runState.motion.distance,
+        LIVE_HAZARD_STREAM_CONTEXT,
+        requestedRunMotion,
+      );
+      const appliedScrollSpeed = this.hazardStream.schedulingWindow.scrollSpeed;
+
+      if (appliedScrollSpeed !== requestedRunMotion.baseScrollSpeed) {
+        this.services.runMotion.update({ baseScrollSpeed: appliedScrollSpeed });
+      }
+
+      const runMotionTuning = this.services.runMotion.getSnapshot();
       const result = stepPrototypeRun(this.runState, simulationDeltaSeconds, {
         flightBounds: createPrototypeFlightBounds(viewport),
         flightTuning: this.services.flightTuning.getSnapshot(),

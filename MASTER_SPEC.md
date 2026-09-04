@@ -302,7 +302,7 @@ Large randomized test samples are useful evidence but do not mathematically prov
 
 The current pattern catalog, fairness constraint values, retry limits, stream-window values, and fixed live seed are **PROTOTYPE**. M3 validation evidence is recorded in [`docs/milestones/M3-seeded-run-validation.md`](docs/milestones/M3-seeded-run-validation.md).
 
-M4 hazard approach scheduling derives its logical look-ahead distance from minimum reaction seconds × authoritative scroll speed. Existing scheduled hazards remain at immutable logical positions when speed changes; an increased horizon moves only the unscheduled cursor far enough to preserve the new minimum, while a decrease keeps the extra lead. Structured timing snapshots allow current time-to-impact to be evaluated without making viewport width a gameplay input. The reaction-time value remains **PROTOTYPE**.
+M4 hazard approach scheduling derives its logical look-ahead distance from minimum reaction seconds × authoritative scroll speed. Existing scheduled hazards remain at immutable logical positions when speed changes. A requested increase is rejected unless every scheduled future hazard still meets the minimum reaction time, leaving the current applied speed authoritative; an accepted increase moves only the unscheduled cursor far enough to preserve the new minimum, while a decrease applies immediately and keeps the extra lead. Structured timing and speed-resolution snapshots expose the limiting target and maximum safe speed without making viewport width a gameplay input. The reaction-time value remains **PROTOTYPE**.
 
 ### FUTURE
 

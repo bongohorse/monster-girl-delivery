@@ -166,7 +166,7 @@ Gameplay geometry and UI safe areas are related but distinct concerns.
 
 A larger physical viewport must not accidentally grant a large gameplay reaction-time advantage.
 
-M4 hazard-approach scheduling converts a typed **PROTOTYPE** minimum reaction time and the authoritative run-speed snapshot into a logical distance horizon. Viewport width is not an input. Accepted hazards keep immutable positions and scheduling-time timing snapshots when speed changes. A larger horizon pushes only the unscheduled cursor far enough to preserve the new minimum; a smaller horizon retains the extra lead. Current time-to-impact can be re-evaluated explicitly for diagnostics without teleporting existing hazards.
+M4 hazard-approach scheduling converts a typed **PROTOTYPE** minimum reaction time and the authoritative run-speed snapshot into a logical distance horizon. Viewport width is not an input. Accepted hazards keep immutable positions and scheduling-time timing snapshots when speed changes. A deterministic transition boundary rejects a requested speed increase unless every scheduled future hazard still meets the minimum reaction time; the current applied speed remains authoritative when rejected. An accepted larger horizon pushes only the unscheduled cursor far enough to preserve the new minimum, while decreases apply immediately and retain extra lead. The structured decision exposes the limiting target and maximum safe speed for later diagnostics without teleporting existing hazards.
 
 ## 9. Gameplay vs. presentation
 
@@ -212,7 +212,7 @@ Rules:
 - generated hazards/patterns must pass explicit fairness validation;
 - generation and validation should remain deterministic/headless-testable where practical.
 - hazard approach horizons derive from reaction seconds × authoritative logical scroll speed, not physical viewport width or a screen-edge offset;
-- already-scheduled hazards do not move when scroll tuning changes; an increased horizon adjusts only unscheduled content, and immutable timing snapshots preserve what was intended when each hazard entered the stream.
+- already-scheduled hazards do not move when scroll tuning changes; the authoritative path rejects unsafe increases using a deterministic maximum-safe-speed boundary, while accepted increases adjust only unscheduled content and immutable timing snapshots preserve what was intended when each hazard entered the stream.
 
 ## 11. Director/developer tools
 
