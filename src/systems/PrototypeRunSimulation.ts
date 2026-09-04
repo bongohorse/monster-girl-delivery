@@ -21,7 +21,7 @@ export interface PrototypeRunState {
 export interface PrototypeRunStepContext {
   flightBounds: Readonly<VerticalFlightBounds>;
   flightTuning: Readonly<FlightTuningValues>;
-  hazard: Readonly<LogicalHazard>;
+  hazards: ReadonlyArray<Readonly<LogicalHazard>>;
   runMotionTuning: Readonly<RunMotionValues>;
   thrustHeld: boolean;
 }
@@ -71,7 +71,9 @@ export const stepPrototypeRun = (
     context.flightTuning,
     context.flightBounds,
   );
-  const enteredDead = isPlayerCollidingWithHazard(motion, flight, context.hazard);
+  const enteredDead = context.hazards.some((hazard) =>
+    isPlayerCollidingWithHazard(motion, flight, hazard),
+  );
 
   return {
     enteredDead,

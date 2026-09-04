@@ -1,18 +1,18 @@
 import type { GameObjects, Scene } from 'phaser';
 import {
   PROTOTYPE_PLACEHOLDER_HAZARD,
-  type PrototypePlaceholderHazard,
   projectHazardHitboxToScreen,
 } from '../hazards/PrototypeHazard';
+import type { LogicalHazard } from '../systems/HazardCollision';
 import type { RunMotionState } from '../systems/RunMotionSimulation';
 
-/** Temporary M2 barrier presentation; logical collision remains outside Phaser. */
+/** Temporary barrier presentation; logical collision and generated identity remain outside Phaser. */
 export class PrototypeHazardPresentation {
   private graphics?: GameObjects.Graphics;
 
   constructor(
     scene: Scene,
-    private readonly hazard: Readonly<PrototypePlaceholderHazard> = PROTOTYPE_PLACEHOLDER_HAZARD,
+    private readonly hazard: Readonly<LogicalHazard> = PROTOTYPE_PLACEHOLDER_HAZARD,
   ) {
     const width = hazard.hitbox.right - hazard.hitbox.left;
     const height = hazard.hitbox.bottom - hazard.hitbox.top;
