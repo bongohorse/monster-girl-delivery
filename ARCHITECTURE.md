@@ -187,7 +187,7 @@ Phaser scenes/presentation may orchestrate and display these systems, but should
 
 ## 10. Randomness and procedural generation
 
-The dedicated seeded gameplay PRNG, explicit run-generation state, logical hazard-pattern data model, deterministic pattern selection, and pure prototype fairness validation are current M3 infrastructure. Pattern scheduling/spawning remain planned until their focused M3 tasks land.
+The dedicated seeded gameplay PRNG, explicit run-generation state, logical hazard-pattern data model, deterministic pattern selection, pure prototype fairness validation, and deterministic logical spawn scheduling are current M3 infrastructure. Live spawning/presentation remains planned until its focused M3 task lands.
 
 Target flow:
 
