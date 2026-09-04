@@ -2,7 +2,7 @@
 
 **Document status:** Living product/game specification  
 **Project status:** Pre-Production  
-**Current milestone:** M3 — Seeded Generation & Fairness
+**Current milestone:** M4 — Run Pacing & Hazard Language
 
 **Human role:** Game Director / Product Owner  
 **Coding-agent role:** Implementation / Engineering
@@ -223,7 +223,7 @@ M2 delivered:
 - restart path;
 - Landscape validation.
 
-Randomized/procedural hazard generation was not delivered by M2. Seeded generation and explicit prototype fairness validation are current M3 scope; exact milestone sequencing remains owned by [`docs/ROADMAP.md`](docs/ROADMAP.md).
+M3 extended this foundation with deterministic seeded pattern generation, explicit prototype fairness validation, bounded logical spawn scheduling, and a live generated hazard stream. The catalog, geometry, fairness constraints, retry bounds, and stream distances remain **PROTOTYPE**.
 
 ### FUTURE
 
@@ -273,11 +273,9 @@ Scheduling belongs in [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## 10. Procedural generation, seeds, difficulty, and pacing
 
-### FUTURE
+### Implemented M3 foundation
 
-Gameplay runs should become reproducible through a dedicated seed/state model.
-
-Target concept:
+Gameplay runs are reproducible through an explicit seed/state model:
 
 ```text
 seed
@@ -286,7 +284,7 @@ pattern index
 PRNG state
 ```
 
-Target generation flow:
+Implemented generation flow:
 
 ```text
 Seed / Run State
@@ -298,9 +296,13 @@ Pattern Validator
 Spawner
 ```
 
-Gameplay randomness must use the dedicated seeded gameplay PRNG once introduced.
+Gameplay generation uses the dedicated seeded gameplay PRNG rather than `Math.random()`. Pattern selection, fairness validation, and spawn scheduling remain separate responsibilities, and only accepted patterns enter the live logical spawn stream.
 
 Large randomized test samples are useful evidence but do not mathematically prove every future seed safe.
+
+The current pattern catalog, fairness constraint values, retry limits, stream-window values, and fixed live seed are **PROTOTYPE**. M3 validation evidence is recorded in [`docs/milestones/M3-seeded-run-validation.md`](docs/milestones/M3-seeded-run-validation.md).
+
+### FUTURE
 
 Difficulty should primarily evolve through deterministic run progression rather than unrelated random adjustments.
 
@@ -542,8 +544,8 @@ This specification intentionally does not duplicate the complete M0–M9 roadmap
 
 Current milestone:
 
-- **M3 — Seeded Generation & Fairness**
-- Parent Issue: [#57](https://github.com/bongohorse/monster-girl-delivery/issues/57)
+- **M4 — Run Pacing & Hazard Language**
+- Parent Issue: [#116](https://github.com/bongohorse/monster-girl-delivery/issues/116)
 
 Current focused scope is defined by that parent Issue and its approved child Issues, within the durable product/architecture constraints documented here.
 

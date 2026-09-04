@@ -4,7 +4,7 @@
 **Approved by:** Game Director / Product Owner  
 **Originally approved:** 2026-09-03  
 **Roadmap 2.0 revision:** 2026-09-04  
-**Current milestone:** M3 — Seeded Generation & Fairness
+**Current milestone:** M4 — Run Pacing & Hazard Language
 
 > [!IMPORTANT]
 > This file is the **single source of truth for milestone sequencing and milestone-level future scope**. `MASTER_SPEC.md` owns durable product/game decisions; focused GitHub Issues own live implementation scope.
@@ -182,7 +182,7 @@ Historical report: [`milestones/M2-horizontal-run-first-hazard.md`](milestones/M
 
 ## M3 — Seeded Generation & Fairness
 
-**Status: CURRENT**
+**Status: COMPLETE**
 
 **Purpose:** establish deterministic procedural encounter generation that can be reproduced, inspected, tested, and rejected when unsafe.
 
@@ -222,11 +222,17 @@ M3 may close only when evidence shows that:
 
 **Explicitly not part of M3:** final difficulty curve, pacing system, production art, Graze, score/economy, large content catalogs, or final balancing.
 
-Current parent: [Issue #57](https://github.com/bongohorse/monster-girl-delivery/issues/57)
+Completed parent: [Issue #57](https://github.com/bongohorse/monster-girl-delivery/issues/57)
+
+Historical report: [`milestones/M3-seeded-generation-fairness.md`](milestones/M3-seeded-generation-fairness.md)
+
+Supporting validation: [`milestones/M3-seeded-run-validation.md`](milestones/M3-seeded-run-validation.md)
 
 ---
 
 ## M4 — Run Pacing & Hazard Language
+
+**Status: CURRENT**
 
 **Purpose:** turn technically valid generated encounters into runs that remain readable, varied, fair, and interesting over time.
 
@@ -236,9 +242,7 @@ Current parent: [Issue #57](https://github.com/bongohorse/monster-girl-delivery/
 
 ### Entry gate
 
-- M3 generation/validation pipeline is complete and reproducible;
-- M3 closeout is accepted;
-- M4 has a focused parent plan before implementation begins.
+Satisfied by the completed, validated M3 generation pipeline, the factual M3 closeout, closure of M3 parent Issue #57, and the focused M4 parent plan in Issue #116.
 
 ### Core scope
 
@@ -271,7 +275,9 @@ M4 may close only when:
 
 **Explicitly not part of M4:** final production content volume, final balance values, full economy/meta, production art scaling, or release-level content variety.
 
-The existing Jetpack Joyride-derived umbrella Issue #78 and its future child tasks are useful inputs, but they remain unapproved implementation work until deliberately promoted into M4 planning.
+Current parent: [Issue #116](https://github.com/bongohorse/monster-girl-delivery/issues/116)
+
+The existing Jetpack Joyride-derived umbrella Issue #78 remains a long-term reference. Only the work explicitly promoted and ordered by M4 parent Issue #116 is current M4 scope.
 
 ---
 
@@ -623,11 +629,11 @@ M0  Foundation                         COMPLETE
  ↓
 M1  Flight Prototype                   COMPLETE
  ↓
-M2  Horizontal Run & First Hazard      CURRENT
+M2  Horizontal Run & First Hazard      COMPLETE
  ↓
-M3  Seeded Generation & Fairness
+M3  Seeded Generation & Fairness       COMPLETE
  ↓
-M4  Run Pacing & Hazard Language
+M4  Run Pacing & Hazard Language       CURRENT
  ↓
 M5  Complete Arcade Loop & Skill Layer
  ↓
@@ -680,4 +686,4 @@ The logic is deliberate:
 - Director/QA tooling grows with the systems that need observation; it is not a separate gameplay product.
 - `BACKLOG.md` and `ENDLESS_RUNNER_BLUEPRINT.md` are inputs for promotion/research decisions, not scheduled work by themselves.
 - If milestone sequencing changes, update this file rather than maintaining a competing roadmap elsewhere.
-- Do not create M4–M9 implementation Issues simply because this roadmap is more detailed. Create detailed Issue plans when the relevant milestone approaches and its entry assumptions can be verified.
+- Do not create future-milestone implementation Issues simply because this roadmap is more detailed. Create detailed Issue plans when the relevant milestone approaches and its entry assumptions can be verified.

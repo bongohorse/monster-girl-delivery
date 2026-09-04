@@ -15,6 +15,7 @@ They are **not** a substitute for the current roadmap or the current GitHub mile
 | M0 — Foundation | Core project/tooling, timing, input, lifecycle, viewport, diagnostics, CI/Codespaces foundation | [`M0-foundation.md`](M0-foundation.md) | automated validation recorded in report |
 | M1 — Flight Prototype | Playable deterministic one-button vertical flight prototype; mobile/tablet validation; Landscape selected for core play | [`M1-flight-prototype.md`](M1-flight-prototype.md) | [`M1-device-report.md`](M1-device-report.md) |
 | M2 — Horizontal Run & First Hazard | Deterministic left-to-right run foundation with one lethal hazard, death/restart, and accepted Landscape validation | [`M2-horizontal-run-first-hazard.md`](M2-horizontal-run-first-hazard.md) | automated and Director-reported device/browser evidence recorded in report |
+| M3 — Seeded Generation & Fairness | Deterministic seeded generator → validator → scheduler → live-stream pipeline with same-seed Director tooling | [`M3-seeded-generation-fairness.md`](M3-seeded-generation-fairness.md) | [`M3-seeded-run-validation.md`](M3-seeded-run-validation.md) |
 
 ## Current / future milestones
 
@@ -22,7 +23,7 @@ Do not create historical reports in advance. Current and future milestone planni
 
 A new report is added here only when the milestone has factual implementation and validation evidence to close out.
 
-Current M3 supporting evidence is recorded in [`M3-seeded-run-validation.md`](M3-seeded-run-validation.md). It contains factual Issue #65 validation only; it is not an M3 completion report and does not authorize the M4 transition.
+M4 — Run Pacing & Hazard Language is current. Its planning and implementation scope is owned by GitHub Issue #116 and its deliberately promoted child Issues.
 
 ## Closeout rule for M2+
 
