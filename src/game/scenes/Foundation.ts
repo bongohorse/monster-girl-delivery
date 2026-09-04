@@ -88,6 +88,7 @@ export class Foundation extends Scene {
     this.hazardStream = createGeneratedHazardStream(
       PROTOTYPE_LIVE_RUN_SEED,
       LIVE_HAZARD_STREAM_CONTEXT,
+      this.services.runMotion.getSnapshot(),
     );
     this.services.input.releaseAll();
     this.scrollingWorldPresentation = new PrototypeScrollingWorldPresentation(this);
@@ -128,6 +129,7 @@ export class Foundation extends Scene {
 
     const simulationDeltaSeconds = this.services.time.update(delta);
     const viewport = this.viewportService.getSnapshot();
+    const runMotionTuning = this.services.runMotion.getSnapshot();
 
     if (this.runState.phase === 'dead') {
       const restartPressed = this.services.input.consumePrimaryActionPress();
@@ -142,7 +144,7 @@ export class Foundation extends Scene {
         flightBounds: createPrototypeFlightBounds(viewport),
         flightTuning: this.services.flightTuning.getSnapshot(),
         hazards: this.hazardStream.spawns,
-        runMotionTuning: this.services.runMotion.getSnapshot(),
+        runMotionTuning,
         thrustHeld: this.services.input.isThrustHeld(),
       });
       this.runState = result.state;
@@ -155,6 +157,7 @@ export class Foundation extends Scene {
           this.hazardStream,
           this.runState.motion.distance,
           LIVE_HAZARD_STREAM_CONTEXT,
+          runMotionTuning,
         );
       }
     }
@@ -247,6 +250,7 @@ export class Foundation extends Scene {
     this.hazardStream = createGeneratedHazardStream(
       PROTOTYPE_LIVE_RUN_SEED,
       LIVE_HAZARD_STREAM_CONTEXT,
+      this.services.runMotion.getSnapshot(),
     );
     this.services.input.releaseAll();
     this.instructions?.setText(RUNNING_INSTRUCTIONS);

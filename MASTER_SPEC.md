@@ -164,7 +164,7 @@ Landscape is the core target orientation, but viewport systems must still handle
 
 Additional visible area must not accidentally grant a large reaction-time advantage.
 
-Future generated hazards should be constrained by time-to-impact/reachability/fairness rules rather than relying only on raw screen-edge distance.
+Generated hazard approach scheduling uses a typed **PROTOTYPE** reaction-time constraint converted to logical distance from authoritative scroll speed. It does not use physical viewport width as its fairness authority. Physics-aware reachability and later fairness layers remain scheduled M4 work.
 
 ### Safe-area principle
 
@@ -301,6 +301,8 @@ Gameplay generation uses the dedicated seeded gameplay PRNG rather than `Math.ra
 Large randomized test samples are useful evidence but do not mathematically prove every future seed safe.
 
 The current pattern catalog, fairness constraint values, retry limits, stream-window values, and fixed live seed are **PROTOTYPE**. M3 validation evidence is recorded in [`docs/milestones/M3-seeded-run-validation.md`](docs/milestones/M3-seeded-run-validation.md).
+
+M4 hazard approach scheduling derives its logical look-ahead distance from minimum reaction seconds × authoritative scroll speed. Existing scheduled hazards remain at immutable logical positions when speed changes; an increased horizon moves only the unscheduled cursor far enough to preserve the new minimum, while a decrease keeps the extra lead. Structured timing snapshots allow current time-to-impact to be evaluated without making viewport width a gameplay input. The reaction-time value remains **PROTOTYPE**.
 
 ### FUTURE
 

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   advanceGeneratedHazardStream,
   createGeneratedHazardStream,
+  type GeneratedHazardSpawnInstance,
   type GeneratedHazardStreamContext,
   PROTOTYPE_GENERATED_HAZARD_STREAM_CONFIG,
   PROTOTYPE_LIVE_RUN_SEED,
@@ -14,6 +15,7 @@ import {
 } from '../../src/generation/PrototypeHazardPatternFixtures';
 import { createRunGenerationState } from '../../src/generation/RunGenerationState';
 import type { SeedInput } from '../../src/generation/SeededPrng';
+import { PROTOTYPE_PLAYER_COLLISION_EXTENTS } from '../../src/systems/HazardCollision';
 
 interface AcceptedPatternTrace {
   readonly patternId: string;
@@ -22,11 +24,11 @@ interface AcceptedPatternTrace {
 
 const VALIDATION_STREAM_CONFIG = Object.freeze({
   ...PROTOTYPE_GENERATED_HAZARD_STREAM_CONFIG,
-  firstPatternStartDistance: 1_000,
+  reactionTime: { minimumReactionTimeSeconds: 2 },
   retainBehindDistance: 100_000,
-  // This focused window schedules exactly one pattern at each requested cursor.
-  spawnAheadDistance: 1,
 });
+// The player-right collision extent plus this two-second horizon preserves the recorded M3 start.
+const VALIDATION_RUN_MOTION = Object.freeze({ baseScrollSpeed: 491 });
 
 const VALIDATION_CONTEXT: Readonly<GeneratedHazardStreamContext> = Object.freeze({
   catalog: PROTOTYPE_HAZARD_PATTERN_FIXTURES,
@@ -106,23 +108,16 @@ const BLOCKED_PATTERN = createHazardPattern({
 });
 
 const collectAcceptedTrace = (seed: SeedInput): ReadonlyArray<AcceptedPatternTrace> => {
-  let stream = createGeneratedHazardStream(seed, VALIDATION_CONTEXT);
+  let stream = createGeneratedHazardStream(seed, VALIDATION_CONTEXT, VALIDATION_RUN_MOTION);
   const trace: AcceptedPatternTrace[] = [];
 
-  for (let patternIndex = 0; patternIndex < 6; patternIndex += 1) {
-    const previousSpawnCount = stream.spawns.length;
-    const previousPatternCount = stream.scheduledPatternCount;
-    stream = advanceGeneratedHazardStream(
-      stream,
-      stream.nextPatternStartDistance,
-      VALIDATION_CONTEXT,
-    );
-
-    const addedSpawns = stream.spawns.slice(previousSpawnCount);
+  const appendTrace = (
+    addedSpawns: ReadonlyArray<Readonly<GeneratedHazardSpawnInstance>>,
+  ): void => {
     const patternIds = new Set(addedSpawns.map((spawn) => spawn.patternId));
 
-    if (stream.scheduledPatternCount !== previousPatternCount + 1 || patternIds.size !== 1) {
-      throw new Error('Representative validation must advance exactly one accepted pattern.');
+    if (patternIds.size !== 1) {
+      throw new Error('Representative validation must record exactly one accepted pattern.');
     }
 
     const patternId = addedSpawns[0]?.patternId;
@@ -134,6 +129,31 @@ const collectAcceptedTrace = (seed: SeedInput): ReadonlyArray<AcceptedPatternTra
       patternId,
       runDistances: addedSpawns.map((spawn) => spawn.runDistance),
     });
+  };
+
+  if (stream.scheduledPatternCount !== 1) {
+    throw new Error('Representative validation must start with exactly one accepted pattern.');
+  }
+  appendTrace(stream.spawns);
+
+  for (let patternIndex = 1; patternIndex < 6; patternIndex += 1) {
+    const previousSpawnCount = stream.spawns.length;
+    const previousPatternCount: number = stream.scheduledPatternCount;
+    stream = advanceGeneratedHazardStream(
+      stream,
+      stream.nextPatternStartDistance -
+        stream.schedulingWindow.minimumReactionDistance -
+        PROTOTYPE_PLAYER_COLLISION_EXTENTS.right,
+      VALIDATION_CONTEXT,
+      VALIDATION_RUN_MOTION,
+    );
+
+    const addedSpawns = stream.spawns.slice(previousSpawnCount);
+
+    if (stream.scheduledPatternCount !== previousPatternCount + 1) {
+      throw new Error('Representative validation must advance exactly one accepted pattern.');
+    }
+    appendTrace(addedSpawns);
   }
 
   return trace;
@@ -184,14 +204,17 @@ describe('M3 seeded-run validation evidence', () => {
       catalog,
       config: {
         ...VALIDATION_STREAM_CONFIG,
-        firstPatternStartDistance: 2_000,
         maxCandidateAttempts: 4,
       },
     };
-    const initialStream = createGeneratedHazardStream(seed, context);
-    const acceptedStream = advanceGeneratedHazardStream(initialStream, 2_000, context);
+    const rejectionRunMotion = { baseScrollSpeed: 991 };
+    const acceptedStream = createGeneratedHazardStream(seed, context, rejectionRunMotion);
+    const acceptedLogicalSpawns = acceptedStream.spawns.map(({ approachTiming, ...spawn }) => {
+      expect(approachTiming.minimumReactionTimeSeconds).toBe(2);
+      return spawn;
+    });
 
-    expect(acceptedStream.spawns).toEqual(schedule.spawns);
+    expect(acceptedLogicalSpawns).toEqual(schedule.spawns);
     expect(acceptedStream.generationState).toEqual(schedule.state);
     expect(acceptedStream.spawns.map(({ patternId }) => patternId)).toEqual([
       'prototype-corridor',

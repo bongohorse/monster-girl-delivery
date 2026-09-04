@@ -64,7 +64,11 @@ const createFoundationHarness = () => {
   Reflect.set(
     foundation,
     'hazardStream',
-    createGeneratedHazardStream(PROTOTYPE_LIVE_RUN_SEED, TEST_HAZARD_STREAM_CONTEXT),
+    createGeneratedHazardStream(
+      PROTOTYPE_LIVE_RUN_SEED,
+      TEST_HAZARD_STREAM_CONTEXT,
+      services.runMotion.getSnapshot(),
+    ),
   );
   Reflect.set(foundation, 'instructions', instructions);
   Reflect.set(foundation, 'playerPresentation', playerPresentation);
@@ -207,6 +211,7 @@ describe('Foundation scene gameplay orchestration', () => {
       initialHazardStream,
       400,
       TEST_HAZARD_STREAM_CONTEXT,
+      services.runMotion.getSnapshot(),
     );
     const collisionHazard = progressedHazardStream.spawns[0];
 

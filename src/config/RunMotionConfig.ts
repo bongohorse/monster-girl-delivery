@@ -10,13 +10,13 @@ export const PROTOTYPE_RUN_MOTION_DEFAULTS: Readonly<RunMotionValues> = Object.f
   baseScrollSpeed: 350,
 });
 
-const assertValidSpeed: (value: unknown) => asserts value is number = (value) => {
+export const assertValidBaseScrollSpeed: (value: unknown) => asserts value is number = (value) => {
   if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
     throw new RangeError('baseScrollSpeed must be a non-negative finite number.');
   }
 };
 
-/** Owns the live M2 horizontal run-motion tuning state shared by the application. */
+/** Owns the live horizontal run-motion tuning state shared by the application. */
 export class RunMotionConfig {
   private values: RunMotionValues = { ...PROTOTYPE_RUN_MOTION_DEFAULTS };
 
@@ -26,7 +26,7 @@ export class RunMotionConfig {
     }
 
     const { baseScrollSpeed } = update;
-    assertValidSpeed(baseScrollSpeed);
+    assertValidBaseScrollSpeed(baseScrollSpeed);
     this.values = { baseScrollSpeed };
   }
 
