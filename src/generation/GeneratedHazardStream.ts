@@ -1,6 +1,10 @@
 import type { RunMotionValues } from '../config/RunMotionConfig';
 import { PROTOTYPE_PLAYER_COLLISION_EXTENTS } from '../systems/HazardCollision';
 import {
+  type PatternReachabilityContext,
+  PROTOTYPE_PATTERN_REACHABILITY_CONTEXT,
+} from './FlightReachability';
+import {
   createHazardReactionWindow,
   evaluateHazardApproachTiming,
   type HazardApproachTiming,
@@ -60,6 +64,10 @@ export interface GeneratedHazardStreamContext {
   readonly catalog: ReadonlyArray<Readonly<HazardPattern>>;
   readonly config?: Readonly<GeneratedHazardStreamConfig>;
   readonly constraints?: Readonly<PatternValidationConstraints>;
+  /** Representative logical flight state/tuning; reaction time comes from the scheduling window. */
+  readonly reachability?: Readonly<
+    Omit<PatternReachabilityContext, 'availableReactionTimeSeconds'>
+  >;
 }
 
 export type HazardSpeedChangeStatus = 'applied' | 'deferred';
@@ -186,6 +194,13 @@ const fillSpawnWindow = (
 ): Readonly<GeneratedHazardStreamState> => {
   const config = context.config ?? PROTOTYPE_GENERATED_HAZARD_STREAM_CONFIG;
   const constraints = context.constraints ?? PROTOTYPE_PATTERN_VALIDATION_CONSTRAINTS;
+  const reachabilitySource = context.reachability ?? PROTOTYPE_PATTERN_REACHABILITY_CONTEXT;
+  const reachability = Object.freeze({
+    availableReactionTimeSeconds: schedulingWindow.minimumReactionTimeSeconds,
+    flightState: reachabilitySource.flightState,
+    flightTuning: reachabilitySource.flightTuning,
+    playerExtents: reachabilitySource.playerExtents,
+  });
   const windowEnd = getPatternSchedulingBoundary(runDistance, schedulingWindow);
 
   const retainedSpawns = state.spawns.filter(
@@ -207,6 +222,7 @@ const fillSpawnWindow = (
       constraints,
       maxCandidateAttempts: config.maxCandidateAttempts,
       patternStartDistance: nextPatternStartDistance,
+      reachability,
       state: generationState,
     });
     generationState = schedule.state;

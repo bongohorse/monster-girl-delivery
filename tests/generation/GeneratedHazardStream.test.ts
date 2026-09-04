@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { PROTOTYPE_FLIGHT_TUNING_DEFAULTS } from '../../src/config/FlightTuningConfig';
 import { PROTOTYPE_RUN_MOTION_DEFAULTS } from '../../src/config/RunMotionConfig';
 import {
   advanceGeneratedHazardStream,
@@ -38,6 +39,18 @@ const ZERO_OFFSET_PATTERN = createHazardPattern({
       id: 'at-pattern-start',
       type: 'placeholder-barrier',
       hitbox: { left: 0, right: 48, top: 160, bottom: 208 },
+    },
+  ],
+});
+
+const UPWARD_ONLY_PATTERN = createHazardPattern({
+  id: 'upward-only',
+  runLength: 300,
+  entries: [
+    {
+      id: 'lower-wall',
+      type: 'placeholder-barrier',
+      hitbox: { left: 100, right: 148, top: 180, bottom: 342 },
     },
   ],
 });
@@ -89,6 +102,57 @@ describe('generated hazard stream', () => {
 
     expect(restarted).toEqual(first);
     expect(replayedProgress).toEqual(progressed);
+  });
+
+  it('deterministically applies stream reaction time and representative flight state to reachability', () => {
+    const baseContext = {
+      catalog: [UPWARD_ONLY_PATTERN],
+      config: {
+        ...PROTOTYPE_GENERATED_HAZARD_STREAM_CONFIG,
+        reactionTime: { minimumReactionTimeSeconds: 0.1 },
+      },
+      reachability: {
+        flightTuning: PROTOTYPE_FLIGHT_TUNING_DEFAULTS,
+        playerExtents: PROTOTYPE_PLAYER_COLLISION_EXTENTS,
+      },
+    };
+    const unreachableContext = {
+      ...baseContext,
+      reachability: {
+        ...baseContext.reachability,
+        flightState: { positionY: 200, velocityY: 650 },
+      },
+    };
+    const reachableContext = {
+      ...baseContext,
+      reachability: {
+        ...baseContext.reachability,
+        flightState: { positionY: 200, velocityY: -550 },
+      },
+    };
+
+    const unreachable = createGeneratedHazardStream(
+      'stream-reachability',
+      unreachableContext,
+      PROTOTYPE_RUN_MOTION_DEFAULTS,
+    );
+    const reachable = createGeneratedHazardStream(
+      'stream-reachability',
+      reachableContext,
+      PROTOTYPE_RUN_MOTION_DEFAULTS,
+    );
+
+    expect(unreachable).toMatchObject({ status: 'exhausted', spawns: [] });
+    expect(
+      createGeneratedHazardStream(
+        'stream-reachability',
+        unreachableContext,
+        PROTOTYPE_RUN_MOTION_DEFAULTS,
+      ),
+    ).toEqual(unreachable);
+    expect(reachable.status).toBe('active');
+    expect(reachable.spawns).not.toHaveLength(0);
+    expect(reachable.schedulingWindow.minimumReactionTimeSeconds).toBe(0.1);
   });
 
   it('keeps the intended reaction window identical across narrow and wide viewports', () => {

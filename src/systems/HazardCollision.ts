@@ -31,7 +31,7 @@ export const PROTOTYPE_PLAYER_COLLISION_EXTENTS: Readonly<PrototypePlayerCollisi
     bottom: 24,
   });
 
-const assertFiniteNonNegativeExtents = (
+export const assertValidPlayerCollisionExtents = (
   extents: Readonly<PrototypePlayerCollisionExtents>,
 ): void => {
   if (
@@ -57,7 +57,7 @@ export const createPrototypePlayerHitbox = (
   if (!Number.isFinite(runState.distance) || !Number.isFinite(flightState.positionY)) {
     throw new RangeError('Player run distance and vertical position must be finite.');
   }
-  assertFiniteNonNegativeExtents(extents);
+  assertValidPlayerCollisionExtents(extents);
 
   return {
     left: runState.distance - extents.left,

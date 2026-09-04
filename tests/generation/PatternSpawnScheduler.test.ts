@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { PROTOTYPE_PATTERN_REACHABILITY_CONTEXT } from '../../src/generation/FlightReachability';
 import { createHazardPattern, type HazardPattern } from '../../src/generation/HazardPattern';
 import { scheduleNextPattern } from '../../src/generation/PatternSpawnScheduler';
 import {
@@ -41,6 +42,18 @@ const UNSORTED_VALID_PATTERN = createHazardPattern({
       id: 'earlier',
       type: 'placeholder-barrier',
       hitbox: { left: 100, right: 148, top: 160, bottom: 208 },
+    },
+  ],
+});
+
+const UNREACHABLE_UPWARD_PATTERN = createHazardPattern({
+  id: 'unreachable-upward',
+  runLength: 300,
+  entries: [
+    {
+      id: 'lower-wall',
+      type: 'placeholder-barrier',
+      hitbox: { left: 100, right: 148, top: 180, bottom: 342 },
     },
   ],
 });
@@ -156,6 +169,43 @@ describe('scheduleNextPattern', () => {
     expect(schedule.rejections.every((rejection) => rejection.issues.length > 0)).toBe(true);
     expect(schedule.state).toEqual(advanceGenerationState(initialState, 3));
     expect('spawns' in schedule).toBe(false);
+  });
+
+  it('keeps a geometrically open but unreachable candidate out of the spawn stream', () => {
+    const initialState = createRunGenerationState('unreachable-physics');
+    const schedule = scheduleNextPattern({
+      catalog: [UNREACHABLE_UPWARD_PATTERN],
+      maxCandidateAttempts: 1,
+      patternStartDistance: 1_000,
+      reachability: {
+        ...PROTOTYPE_PATTERN_REACHABILITY_CONTEXT,
+        availableReactionTimeSeconds: 0.1,
+        flightState: { positionY: 200, velocityY: 650 },
+      },
+      state: initialState,
+    });
+
+    expect(schedule).toMatchObject({
+      attempts: 1,
+      rejections: [
+        {
+          attempt: 1,
+          issues: [
+            {
+              code: 'vertical-corridor-unreachable',
+              reachability: {
+                failureReason: 'safe-corridor-above-reachable-envelope',
+                reachable: false,
+              },
+            },
+          ],
+          patternId: 'unreachable-upward',
+        },
+      ],
+      status: 'exhausted',
+    });
+    expect('spawns' in schedule).toBe(false);
+    expect(schedule.state).toEqual(advanceGenerationState(initialState, 1));
   });
 
   it('maps local hitboxes to monotonically ordered absolute run distances', () => {

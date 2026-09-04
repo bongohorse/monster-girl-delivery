@@ -168,6 +168,8 @@ A larger physical viewport must not accidentally grant a large gameplay reaction
 
 M4 hazard-approach scheduling converts a typed **PROTOTYPE** minimum reaction time and the authoritative run-speed snapshot into a logical distance horizon. Viewport width is not an input. Accepted hazards keep immutable positions and scheduling-time timing snapshots when speed changes. A deterministic transition boundary rejects a requested speed increase unless every scheduled future hazard still meets the minimum reaction time; the current applied speed remains authoritative when rejected. An accepted larger horizon pushes only the unscheduled cursor far enough to preserve the new minimum, while decreases apply immediately and retain extra lead. The structured decision exposes the limiting target and maximum safe speed for later diagnostics without teleporting existing hazards.
 
+M4 pattern reachability remains a pure logical validation rule. It reuses the authoritative analytical vertical-flight integrator to compute conservative continuous-thrust and released-input position extremes over the available reaction time. Hazard-free vertical corridors are reduced by the player collision extents into safe center-position ranges; inclusive intersection with the reachable envelope passes. The context carries explicit flight state and tuning, defaulting to a **PROTOTYPE** representative state for live generation, and never reads Phaser, FPS, viewport size, or presentation state.
+
 ## 9. Gameplay vs. presentation
 
 Keep deterministic rules independent of Phaser rendering where practical.
@@ -213,6 +215,8 @@ Rules:
 - generation and validation should remain deterministic/headless-testable where practical.
 - hazard approach horizons derive from reaction seconds × authoritative logical scroll speed, not physical viewport width or a screen-edge offset;
 - already-scheduled hazards do not move when scroll tuning changes; the authoritative path rejects unsafe increases using a deterministic maximum-safe-speed boundary, while accepted increases adjust only unscheduled content and immutable timing snapshots preserve what was intended when each hazard entered the stream.
+- geometrically open pattern corridors must also intersect the conservative vertical-flight envelope for the configured reaction time, player collision extents, flight tuning, and explicit current/representative flight state;
+- reachability failures remain structured scheduler rejection data, and only candidates passing both geometry and reachability validation may spawn.
 
 ## 11. Director/developer tools
 

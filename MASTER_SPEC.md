@@ -304,6 +304,8 @@ The current pattern catalog, fairness constraint values, retry limits, stream-wi
 
 M4 hazard approach scheduling derives its logical look-ahead distance from minimum reaction seconds × authoritative scroll speed. Existing scheduled hazards remain at immutable logical positions when speed changes. A requested increase is rejected unless every scheduled future hazard still meets the minimum reaction time, leaving the current applied speed authoritative; an accepted increase moves only the unscheduled cursor far enough to preserve the new minimum, while a decrease applies immediately and keeps the extra lead. Structured timing and speed-resolution snapshots expose the limiting target and maximum safe speed without making viewport width a gameplay input. The reaction-time value remains **PROTOTYPE**.
 
+M4 pattern validation also checks whether a geometrically open corridor intersects a conservative vertical-flight envelope within the available reaction time. The envelope uses the existing flight equations, explicit flight tuning and current/representative vertical state, plus the logical player collision extents. Edge contact is safe under the existing positive-area collision rule. Reachability contexts and failure reasons are structured and deterministic; their current values remain **PROTOTYPE**. This focused rule evaluates individual pattern encounters, while sequence-level transitions remain later M4 work.
+
 ### FUTURE
 
 Difficulty should primarily evolve through deterministic run progression rather than unrelated random adjustments.
