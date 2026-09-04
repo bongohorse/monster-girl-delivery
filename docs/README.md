@@ -76,6 +76,8 @@ Do not load the entire backlog/reference library as implementation requirements.
 
 ## Source ownership
 
+A **current explicit Game Director decision** controls product intent. Living documents should then be updated so that durable decisions are recorded in the correct source of truth rather than relying on chat/history indefinitely.
+
 | Source | Owns | Does not own |
 |---|---|---|
 | [`../MASTER_SPEC.md`](../MASTER_SPEC.md) | durable product/game decisions, decision states, platform/game constraints | milestone sequence, development commands, AI workflow |
@@ -95,9 +97,10 @@ Do not load the entire backlog/reference library as implementation requirements.
 
 When two sources appear to conflict on the **same kind of decision**:
 
-1. check whether one explicitly supersedes the other;
-2. check the ownership table above;
-3. if the conflict remains real, surface it to the Game Director rather than silently resolving it.
+1. apply any current explicit Game Director decision;
+2. check whether one document explicitly supersedes the other;
+3. check the ownership table above;
+4. if the conflict remains real, surface it to the Game Director rather than silently resolving it.
 
 A convenient implementation detail does not override a product decision.
 
