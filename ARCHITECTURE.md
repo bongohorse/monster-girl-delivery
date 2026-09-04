@@ -187,9 +187,9 @@ Phaser scenes/presentation may orchestrate and display these systems, but should
 
 ## 10. Randomness and procedural generation
 
-The dedicated seeded gameplay PRNG, explicit run-generation state, logical hazard-pattern data model, deterministic pattern selection, pure prototype fairness validation, deterministic logical spawn scheduling, live generated-hazard integration, and development-only same-seed restart tooling are current M3 infrastructure. Focused reproducibility, rejection, and lifecycle/resize evidence is recorded in [`docs/milestones/M3-seeded-run-validation.md`](docs/milestones/M3-seeded-run-validation.md); factual milestone closeout remains separate work.
+M3 established the dedicated seeded gameplay PRNG, explicit run-generation state, logical hazard-pattern data model, deterministic pattern selection, pure prototype fairness validation, deterministic logical spawn scheduling, live generated-hazard integration, and development-only same-seed restart tooling. The factual result is recorded in [`docs/milestones/M3-seeded-generation-fairness.md`](docs/milestones/M3-seeded-generation-fairness.md), with focused evidence in [`docs/milestones/M3-seeded-run-validation.md`](docs/milestones/M3-seeded-run-validation.md).
 
-Target flow:
+Current M3-established flow:
 
 ```text
 Run generation state

@@ -10,7 +10,7 @@
 
 Record focused evidence that representative fixed seeds reproduce the same accepted logical hazard sequence, different seeds can vary, rejected candidates do not enter the live accepted spawn stream, and lifecycle/resize interruptions leave generation state unchanged.
 
-This is supporting validation evidence for Issue #65, not the factual M3 completion report owned by Issue #115. Pattern content, constraints, and distances remain **PROTOTYPE** values; this report does not finalize balance or certify every possible seed.
+This is supporting validation evidence for Issue #65. The factual milestone outcome is recorded separately in [`M3-seeded-generation-fairness.md`](M3-seeded-generation-fairness.md). Pattern content, constraints, and distances remain **PROTOTYPE** values; this report does not finalize balance or certify every possible seed.
 
 ## Automated representative-seed evidence
 
@@ -95,4 +95,4 @@ The focused report branch passed the required validation on 2026-09-04:
 
 ## Validation conclusion
 
-Issue #65's reproducibility/fairness-pipeline gate is supported by deterministic representative-seed traces, explicit rejected-candidate evidence, lifecycle/resize state-preservation coverage, and the separately recorded Game Director observations. No blocker was identified. Formal M3 closeout and transition remain separate work under Issue #115.
+Issue #65's reproducibility/fairness-pipeline gate is supported by deterministic representative-seed traces, explicit rejected-candidate evidence, lifecycle/resize state-preservation coverage, and the separately recorded Game Director observations. No blocker was identified. The subsequent factual closeout is recorded in [`M3-seeded-generation-fairness.md`](M3-seeded-generation-fairness.md).

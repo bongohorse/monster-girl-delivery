@@ -10,9 +10,9 @@ The hub is intentionally a navigation/ownership document, not another specificat
 ## Current project pointer
 
 - **Project phase:** Pre-Production
-- **Current milestone:** M3 — Seeded Generation & Fairness
-- **Current milestone parent:** [GitHub Issue #57](https://github.com/bongohorse/monster-girl-delivery/issues/57)
-- **Current validation evidence:** [`milestones/M3-seeded-run-validation.md`](milestones/M3-seeded-run-validation.md)
+- **Current milestone:** M4 — Run Pacing & Hazard Language
+- **Current milestone parent:** [GitHub Issue #116](https://github.com/bongohorse/monster-girl-delivery/issues/116)
+- **Latest completed milestone:** M3 — [`milestones/M3-seeded-generation-fairness.md`](milestones/M3-seeded-generation-fairness.md)
 - **Roadmap:** [`ROADMAP.md`](ROADMAP.md)
 - **Product/game specification:** [`../MASTER_SPEC.md`](../MASTER_SPEC.md)
 
@@ -194,9 +194,11 @@ Current completed reports:
 - [`milestones/M0-foundation.md`](milestones/M0-foundation.md)
 - [`milestones/M1-flight-prototype.md`](milestones/M1-flight-prototype.md)
 - [`milestones/M2-horizontal-run-first-hazard.md`](milestones/M2-horizontal-run-first-hazard.md)
+- [`milestones/M3-seeded-generation-fairness.md`](milestones/M3-seeded-generation-fairness.md)
 - supporting M1 evidence: [`milestones/M1-device-report.md`](milestones/M1-device-report.md)
+- supporting M3 evidence: [`milestones/M3-seeded-run-validation.md`](milestones/M3-seeded-run-validation.md)
 
-Current M3 supporting evidence is recorded in [`milestones/M3-seeded-run-validation.md`](milestones/M3-seeded-run-validation.md). This evidence does not make M3 complete or authorize the M4 transition; factual M3 closeout remains owned by Issue #115.
+Current M4 planning and implementation scope is owned by GitHub Issue #116 and its deliberately promoted child Issues.
 
 Historical reports should be corrected only when factual evidence is wrong, not rewritten to match later plans.
 
@@ -244,7 +246,9 @@ docs/
     ├── M2-horizontal-run-first-hazard.md
     │                             Completed M2 history
     ├── M3-seeded-run-validation.md
-    │                             Current M3 supporting validation evidence
+    │                             Supporting M3 validation evidence
+    ├── M3-seeded-generation-fairness.md
+    │                             Completed M3 history
     └── M1-device-report.md       Supporting M1 device evidence
 ```
 
