@@ -4,7 +4,7 @@
 **Approved by:** Game Director / Product Owner  
 **Originally approved:** 2026-09-03  
 **Roadmap 2.0 revision:** 2026-09-04  
-**Current milestone:** M2 — Horizontal Run & First Hazard
+**Current milestone:** M3 — Seeded Generation & Fairness
 
 > [!IMPORTANT]
 > This file is the **single source of truth for milestone sequencing and milestone-level future scope**. `MASTER_SPEC.md` owns durable product/game decisions; focused GitHub Issues own live implementation scope.
@@ -139,7 +139,7 @@ Supporting device evidence: [`milestones/M1-device-report.md`](milestones/M1-dev
 
 ## M2 — Horizontal Run & First Hazard
 
-**Status: CURRENT**
+**Status: COMPLETE**
 
 **Purpose:** turn the vertical flight prototype into the first real left-to-right endless-run foundation.
 
@@ -174,11 +174,15 @@ M2 may close only when:
 
 **Explicitly not part of M2:** production art, Graze, scoring, procedural generation, final difficulty/pacing, or meta systems.
 
-Current parent: [Issue #49](https://github.com/bongohorse/monster-girl-delivery/issues/49)
+Completed parent: [Issue #49](https://github.com/bongohorse/monster-girl-delivery/issues/49)
+
+Historical report: [`milestones/M2-horizontal-run-first-hazard.md`](milestones/M2-horizontal-run-first-hazard.md)
 
 ---
 
 ## M3 — Seeded Generation & Fairness
+
+**Status: CURRENT**
 
 **Purpose:** establish deterministic procedural encounter generation that can be reproduced, inspected, tested, and rejected when unsafe.
 
@@ -188,9 +192,9 @@ Current parent: [Issue #49](https://github.com/bongohorse/monster-girl-delivery/
 
 ### Entry gate
 
-Implementation begins only after M2 has passed its exit gate and factual closeout.
+Satisfied by the completed M2 implementation, accepted Landscape validation, factual closeout, and closure of M2 parent Issue #49.
 
-The existing M3 parent Issue #57 already records the detailed entry dependencies and focused child work.
+The M3 parent Issue #57 records the detailed focused scope, dependencies, and ordered child work.
 
 ### Core scope
 
@@ -218,7 +222,7 @@ M3 may close only when evidence shows that:
 
 **Explicitly not part of M3:** final difficulty curve, pacing system, production art, Graze, score/economy, large content catalogs, or final balancing.
 
-Current planned parent: [Issue #57](https://github.com/bongohorse/monster-girl-delivery/issues/57)
+Current parent: [Issue #57](https://github.com/bongohorse/monster-girl-delivery/issues/57)
 
 ---
 

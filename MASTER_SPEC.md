@@ -2,7 +2,8 @@
 
 **Document status:** Living product/game specification  
 **Project status:** Pre-Production  
-**Current milestone:** M2 — Horizontal Run & First Hazard  
+**Current milestone:** M3 — Seeded Generation & Fairness
+
 **Human role:** Game Director / Product Owner  
 **Coding-agent role:** Implementation / Engineering
 
@@ -212,9 +213,9 @@ A future user-visible resume UX may be added, but the exact presentation is **TB
 
 ## 8. Hazards and fairness
 
-### CURRENT M2 behavior/scope
+### Implemented M2 foundation
 
-M2 introduces:
+M2 delivered:
 
 - one deterministic placeholder hazard type;
 - explicit player/hazard collision;
@@ -222,7 +223,7 @@ M2 introduces:
 - restart path;
 - Landscape validation.
 
-Randomized/procedural hazard generation is not part of M2.
+Randomized/procedural hazard generation was not delivered by M2. Seeded generation and explicit prototype fairness validation are current M3 scope; exact milestone sequencing remains owned by [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ### FUTURE
 
@@ -541,8 +542,8 @@ This specification intentionally does not duplicate the complete M0–M9 roadmap
 
 Current milestone:
 
-- **M2 — Horizontal Run & First Hazard**
-- Parent Issue: [#49](https://github.com/bongohorse/monster-girl-delivery/issues/49)
+- **M3 — Seeded Generation & Fairness**
+- Parent Issue: [#57](https://github.com/bongohorse/monster-girl-delivery/issues/57)
 
 Current focused scope is defined by that parent Issue and its approved child Issues, within the durable product/architecture constraints documented here.
 
