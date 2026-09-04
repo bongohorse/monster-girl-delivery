@@ -1,21 +1,26 @@
 # GitHub AI Access
 
-This project intentionally gives coding agents broad repository autonomy while keeping account-level secrets and administration outside normal agent access.
+[← Documentation Hub](README.md)
+
+This document describes **authentication and technical repository permissions** for AI/coding tools working on Monster Girl Delivery.
+
+It does **not** grant product authority or automatic permission to merge. Operational behavior is defined by [`../AGENTS.md`](../AGENTS.md), [`AI_WORKFLOW.md`](AI_WORKFLOW.md), repository protections, and the assigned task.
 
 ## Recommended model
 
-- Codespace: development VM.
-- Git: push branches/commits with the Codespaces repository token.
-- `gh` CLI: use a repo-scoped fine-grained PAT stored as the Codespaces secret `MGD_GH_TOKEN`; the devcontainer exports it as `GH_TOKEN`.
-- `main`: protected by a GitHub Ruleset. Agents work through PRs.
-- CI: must pass before merge.
-- Human review: optional, not required by default.
+- **Codespace:** development environment.
+- **Git:** use the Codespaces-provided repository credential for normal branch/commit pushes where available.
+- **GitHub CLI:** use a repository-scoped fine-grained PAT stored as Codespaces secret `MGD_GH_TOKEN`; the devcontainer exposes it as `GH_TOKEN`.
+- **Main branch:** work through branches/PRs; do not bypass repository protections.
+- **CI:** required checks must pass before a merge when those checks apply.
 
-## Fine-grained PAT permissions
+A technically permitted action is not automatically an authorized action for every task.
 
-Create one token dedicated to this repository only.
+## Fine-grained PAT scope
 
-Required:
+Create a token dedicated to **`bongohorse/monster-girl-delivery` only**.
+
+Typical required repository permissions for broad Issue/PR/Actions work:
 
 | Permission | Access |
 |---|---|
@@ -26,9 +31,9 @@ Required:
 | Pull requests | Read and write |
 | Workflows | Write |
 
-Fine-grained PATs do not provide a separate `Checks` permission. Use Actions access and `gh run` for CI status and logs. Commands that request check annotations or status rollups may return `403` even when workflow run and job results are readable.
+Fine-grained PATs do not expose every classic-token permission under the same names. CI inspection should primarily use Actions/workflow-run access (`gh run …`) rather than assuming every check-annotation endpoint is available.
 
-Useful later:
+Possible later permissions, only if a real task needs them:
 
 | Permission | Access |
 |---|---|
@@ -37,45 +42,61 @@ Useful later:
 | Discussions | Read and write |
 | Repository projects | Read and write |
 
-Do not grant by default:
+Do **not** grant by default:
 
 - Administration
 - Secrets
-- Codespaces secrets
+- Codespaces secrets administration
 - Webhooks
 - Security-advisory administration
+- access to unrelated repositories
 
-The token should have access to **Monster Girl Delivery only**, not every repository on the account.
+Use the least repository/account scope that still supports the approved workflow.
 
-## What agents may do
+## What authenticated agents may technically do
 
-Agents may, when relevant to an assigned task:
+When the assigned task and repository rules authorize it, an authenticated agent may be able to:
 
-- read and modify repository files;
+- read/modify repository files;
 - create branches and commits;
 - push branches;
-- create, edit, label, comment on, and close Issues;
-- create and update Pull Requests;
-- inspect CI runs and logs;
+- create/edit/comment on/close Issues;
+- create/update Pull Requests;
+- inspect CI runs/logs;
 - rerun failed Actions;
-- edit workflow files when required by the task;
-- merge their own PR after required checks pass, unless the Issue says human approval is required;
-- create follow-up Issues for discovered work that is outside the current task.
+- edit workflow files when that is part of the task;
+- create follow-up Issues for useful out-of-scope discoveries;
+- merge a PR **only when the active task/policy explicitly authorizes the agent to merge and required checks pass**.
+
+## Prohibited actions
 
 Agents must not:
 
 - force-push or delete `main`;
-- weaken branch/ruleset protections to make a PR pass;
-- expose or print secrets;
-- change repository/account administration;
+- weaken branch/ruleset protections to make a change pass;
+- expose, print, or commit secrets;
+- silently change repository/account administration;
 - silently change product decisions in `MASTER_SPEC.md`;
-- merge a PR with failing required checks.
+- merge with failing required checks;
+- treat broad PAT capability as permission to perform unrelated repository changes.
 
 ## Authentication inside Codespaces
 
-Configure the fine-grained PAT as the Codespaces secret `MGD_GH_TOKEN`. The devcontainer adds `export GH_TOKEN="$MGD_GH_TOKEN"` to the shell environment, and GitHub CLI automatically uses `GH_TOKEN` when present.
+The devcontainer declares the Codespaces secret:
 
-Verify:
+```text
+MGD_GH_TOKEN
+```
+
+It exposes that value to GitHub CLI as:
+
+```text
+GH_TOKEN
+```
+
+The token value itself must never be stored in repository files.
+
+Verify access inside a Codespace with non-secret commands such as:
 
 ```bash
 gh auth status
@@ -85,4 +106,14 @@ gh pr list --limit 5
 gh run list --limit 5
 ```
 
-Git pushes can continue to use the Codespaces-provided Git credential for the current repository.
+Git pushes can continue to use the Codespaces-provided Git credential for the current repository where appropriate.
+
+## Merge-policy reminder
+
+This file defines **capability**, not workflow authority.
+
+For coding agents, the default repository rule is:
+
+> Implement the focused task, validate it, open/update the PR, and stop. Merge only when the assigned task explicitly includes merging.
+
+See [`../AGENTS.md`](../AGENTS.md) and [`AI_WORKFLOW.md`](AI_WORKFLOW.md) for the operational rules.
