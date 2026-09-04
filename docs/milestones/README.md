@@ -13,7 +13,7 @@ They are **not** a substitute for the current roadmap or the current GitHub mile
 | Milestone | Result | Closeout report | Supporting evidence |
 |---|---|---|---|
 | M0 — Foundation | Core project/tooling, timing, input, lifecycle, viewport, diagnostics, CI/Codespaces foundation | [`M0-foundation.md`](M0-foundation.md) | automated validation recorded in report |
-| M1 — Flight Prototype | Playable deterministic one-button vertical flight prototype; mobile/tablet validation; Landscape selected for core play | [`M1-flight-prototype.md`](M1-flight-prototype.md) | [`../m1-device-report.md`](../m1-device-report.md) |
+| M1 — Flight Prototype | Playable deterministic one-button vertical flight prototype; mobile/tablet validation; Landscape selected for core play | [`M1-flight-prototype.md`](M1-flight-prototype.md) | [`M1-device-report.md`](M1-device-report.md) |
 
 ## Planned / current milestones
 
