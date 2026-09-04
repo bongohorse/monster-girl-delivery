@@ -1,248 +1,243 @@
 # Monster Girl Delivery — Documentation Hub
 
-Start here when you need to understand the project, find a specific document, or decide which source is authoritative.
+This is the canonical map for MGD documentation. Use it to answer two questions quickly:
 
-This page is intentionally a **map**, not another specification. It links to the existing sources of truth instead of duplicating them.
+1. **Where does this information belong?**
+2. **Which source wins when documents discuss related topics?**
 
-## Project status pointer
+The hub is intentionally a navigation/ownership document, not another specification.
 
+## Current project pointer
+
+- **Project phase:** Pre-Production
 - **Current milestone:** M2 — Horizontal Run & First Hazard
 - **Current milestone parent:** [GitHub Issue #49](https://github.com/bongohorse/monster-girl-delivery/issues/49)
 - **Roadmap:** [`ROADMAP.md`](ROADMAP.md)
-- **Product specification:** [`../MASTER_SPEC.md`](../MASTER_SPEC.md)
+- **Product/game specification:** [`../MASTER_SPEC.md`](../MASTER_SPEC.md)
 
-The GitHub Issues/PRs are the live execution trail. Milestone closeout should update this pointer when the project advances.
+GitHub Issues/PRs are the live execution trail. Completed milestone reports are historical evidence, not current planning.
 
 ---
 
-## I am the Game Director / a human
+## Fast paths
 
-| I want to... | Go here |
+### Game Director / human
+
+| I want to… | Go to |
 |---|---|
 | Start or preview the game | [`../README.md`](../README.md) |
-| See what milestone comes next | [`ROADMAP.md`](ROADMAP.md) |
-| Check approved game rules and product decisions | [`../MASTER_SPEC.md`](../MASTER_SPEC.md) |
-| See what is being implemented right now | the current GitHub milestone parent and its child Issues |
-| Browse future gameplay, art, content, tooling, economy, and progression ideas that are **not committed scope** | [`BACKLOG.md`](BACKLOG.md) |
-| Review Endless Runner / Jetpack Joyride design lessons | [`ENDLESS_RUNNER_BLUEPRINT.md`](ENDLESS_RUNNER_BLUEPRINT.md) |
-| Understand the technical structure | [`../ARCHITECTURE.md`](../ARCHITECTURE.md) |
-| See development commands and workflow | [`../DEVELOPMENT.md`](../DEVELOPMENT.md) |
-| Review what completed milestones actually delivered | [`milestones/README.md`](milestones/README.md) |
+| See what is being built now | current GitHub milestone/Issue |
+| See milestone order and future milestone scope | [`ROADMAP.md`](ROADMAP.md) |
+| Check an approved game/product rule | [`../MASTER_SPEC.md`](../MASTER_SPEC.md) |
+| Browse unapproved future ideas | [`BACKLOG.md`](BACKLOG.md) |
+| Review Endless Runner / Jetpack Joyride lessons | [`ENDLESS_RUNNER_BLUEPRINT.md`](ENDLESS_RUNNER_BLUEPRINT.md) |
+| Understand technical boundaries | [`../ARCHITECTURE.md`](../ARCHITECTURE.md) |
+| See commands, CI, testing, Codespaces, or closeout workflow | [`../DEVELOPMENT.md`](../DEVELOPMENT.md) |
+| Review completed milestones | [`milestones/README.md`](milestones/README.md) |
 | Review M1 real-device evidence | [`milestones/M1-device-report.md`](milestones/M1-device-report.md) |
-| Understand AI/GitHub access setup | [`GITHUB_AI_ACCESS.md`](GITHUB_AI_ACCESS.md) |
 
-### Fast human reading path
-
-For normal project direction, you usually only need:
+Typical planning path:
 
 ```text
 README.md
-  ↓
-docs/README.md   ← you are here
-  ↓
+   ↓
+docs/README.md
+   ↓
 docs/ROADMAP.md
-  ↓
-current GitHub milestone / Issue
+   ↓
+current GitHub Issue / PR
 ```
 
-Open `MASTER_SPEC.md` when you need the exact product rule or decision state. Open `BACKLOG.md` only when discussing future ideas or design exploration.
+Open `MASTER_SPEC.md` when the exact product/game decision matters. Open `BACKLOG.md` only for future exploration/promotion discussions.
 
----
+### AI / coding agent
 
-## I am an AI / coding agent
+Start with [`../AGENTS.md`](../AGENTS.md).
 
-Start with [`../AGENTS.md`](../AGENTS.md). Then use this hub to load only the documents relevant to the assigned task.
-
-### Minimal implementation reading path
+Typical implementation path:
 
 ```text
 AGENTS.md
-  ↓
+   ↓
 docs/README.md
-  ↓
-assigned GitHub Issue / PR
-  ↓
-relevant MASTER_SPEC.md sections
-  ↓
-ARCHITECTURE.md + DEVELOPMENT.md as needed
-  ↓
-existing implementation/tests
+   ↓
+assigned Issue / PR
+   ↓
+relevant MASTER_SPEC.md rules
+   ↓
+ARCHITECTURE.md / DEVELOPMENT.md as required
+   ↓
+existing code + tests
 ```
 
-Do **not** treat every idea or reference document as required implementation context. In particular, `BACKLOG.md` and `ENDLESS_RUNNER_BLUEPRINT.md` contain preserved possibilities or reference lessons, not approved current scope.
-
-### AI task routing
-
-| Task type | Read first | Then read |
-|---|---|---|
-| Focused implementation / bug fix | `AGENTS.md` + assigned Issue | relevant `MASTER_SPEC.md`, `ARCHITECTURE.md`, code/tests |
-| Milestone planning | `MASTER_SPEC.md` + `ROADMAP.md` | current parent Issue, `BACKLOG.md` only for explicitly promoted ideas |
-| Architecture change | `ARCHITECTURE.md` + `MASTER_SPEC.md` | `DEVELOPMENT.md`, current Issue |
-| Workflow / repo tooling | `DEVELOPMENT.md` + `AGENTS.md` | `AI_WORKFLOW.md`, `GITHUB_AI_ACCESS.md` |
-| Historical review / closeout | `milestones/README.md` | milestone report, merged Issues/PRs, actual validation evidence |
-| Art/design exploration | `BACKLOG.md` | relevant product constraints in `MASTER_SPEC.md` |
-| Runner design / pacing / progression research | `ENDLESS_RUNNER_BLUEPRINT.md` | `BACKLOG.md`, relevant product constraints in `MASTER_SPEC.md` |
+Do not load the entire backlog/reference library as implementation requirements.
 
 ---
 
-## What each document means
+## Source ownership
 
-### Authoritative living documents
+A **current explicit Game Director decision** controls product intent. Living documents should then be updated so that durable decisions are recorded in the correct source of truth rather than relying on chat/history indefinitely.
 
-#### [`../MASTER_SPEC.md`](../MASTER_SPEC.md) — product and game truth
+| Source | Owns | Does not own |
+|---|---|---|
+| [`../MASTER_SPEC.md`](../MASTER_SPEC.md) | durable product/game decisions, decision states, platform/game constraints | milestone sequence, development commands, AI workflow |
+| [`ROADMAP.md`](ROADMAP.md) | M0–M9 order and milestone-level future scope | focused implementation details, product decisions outside sequencing |
+| Current GitHub Issue / PR | focused live scope, acceptance criteria, dependencies, implementation/review trail | silent overrides of `DECIDED` product rules or architecture boundaries |
+| [`../ARCHITECTURE.md`](../ARCHITECTURE.md) | technical ownership, service/system boundaries, current vs. planned architecture | product scope, milestone scheduling |
+| [`../DEVELOPMENT.md`](../DEVELOPMENT.md) | commands, verification, Codespaces, CI, PR mechanics, milestone closeout process | product/game design |
+| [`../AGENTS.md`](../AGENTS.md) | mandatory coding-agent behavior and scope discipline | product design |
+| [`AI_WORKFLOW.md`](AI_WORKFLOW.md) | human/AI coordination and role orchestration | authentication setup, product scope |
+| [`GITHUB_AI_ACCESS.md`](GITHUB_AI_ACCESS.md) | GitHub/Codespaces authentication and repository permissions | merge approval policy or product decisions |
+| [`BACKLOG.md`](BACKLOG.md) | preserved future gameplay/art/content/tooling ideas and open questions | approved current scope |
+| [`ENDLESS_RUNNER_BLUEPRINT.md`](ENDLESS_RUNNER_BLUEPRINT.md) | external design lessons/reference material | MGD requirements |
+| [`milestones/`](milestones/) | factual completed history and supporting evidence | future planning |
+| Existing code/tests | currently implemented behavior | product intent by themselves |
+
+### Conflict rule
+
+When two sources appear to conflict on the **same kind of decision**:
+
+1. apply any current explicit Game Director decision;
+2. check whether one document explicitly supersedes the other;
+3. check the ownership table above;
+4. if the conflict remains real, surface it to the Game Director rather than silently resolving it.
+
+A convenient implementation detail does not override a product decision.
+
+---
+
+## Document guide
+
+### `MASTER_SPEC.md` — product/game truth
 
 Use for:
-- approved product decisions;
-- current game rules;
-- decision states such as `DECIDED`, `PROTOTYPE`, `EXPERIMENT`, `TBD`, `FUTURE`, and `OUT OF SCOPE`;
-- platform and gameplay constraints.
 
-Do not promote a future idea just because it appears elsewhere.
+- `DECIDED`, `PROTOTYPE`, `EXPERIMENT`, `TBD`, `FUTURE`, and `OUT OF SCOPE` states;
+- current core gameplay rules;
+- platform/orientation strategy;
+- product-level fairness/performance/production principles.
 
-#### [`ROADMAP.md`](ROADMAP.md) — milestone sequence and future scope
+It intentionally does **not** duplicate the full milestone roadmap anymore.
 
-Use for:
-- M0–M9 milestone order;
-- the purpose and broad scope of upcoming milestones;
-- deciding which large ideas belong in which phase.
-
-`ROADMAP.md` explicitly supersedes the older forward-looking M3–M7 milestone outline in `MASTER_SPEC.md`. It does **not** replace the product decisions in `MASTER_SPEC.md`.
-
-#### [`../ARCHITECTURE.md`](../ARCHITECTURE.md) — technical boundaries
+### `ROADMAP.md` — sequencing
 
 Use for:
-- system ownership;
-- timing/input/lifecycle boundaries;
-- deterministic simulation rules;
-- technical structure that implementation should preserve.
 
-### Live execution state
+- the approved M0–M9 sequence;
+- the purpose of each milestone;
+- milestone-level boundaries;
+- deciding when a promoted idea is appropriate to schedule.
 
-#### GitHub Issues and Pull Requests
+A roadmap item still needs focused Issues before implementation.
+
+### `ARCHITECTURE.md` — technical boundaries
 
 Use for:
-- the currently approved implementation unit;
-- dependencies and blockers;
-- acceptance criteria;
-- review discussion;
-- exact implementation/merge history.
 
-A focused Issue narrows what to build now. It must not silently override a `DECIDED` product rule or an approved architectural boundary. If it appears to do so, surface the conflict instead of guessing.
+- authoritative service/system ownership;
+- time/input/lifecycle boundaries;
+- gameplay-vs-presentation separation;
+- current repository structure;
+- clearly marked planned architecture such as seeded generation/persistence.
 
-### Process and AI rules
+### `DEVELOPMENT.md` — execution mechanics
 
-#### [`../DEVELOPMENT.md`](../DEVELOPMENT.md)
+Use for:
 
-Commands, validation, development workflow, PR discipline, and milestone-closeout process.
+- Bun/Vite commands;
+- verification order;
+- Codespaces behavior;
+- tests/CI;
+- dependency handling;
+- PR flow;
+- milestone closeout procedure.
 
-#### [`../AGENTS.md`](../AGENTS.md)
+### `AGENTS.md` — coding-agent contract
 
-Mandatory repository rules for coding agents.
+Mandatory rules for implementation agents: task entry, scope discipline, architecture/product boundaries, testing, and merge behavior.
 
-#### [`AI_WORKFLOW.md`](AI_WORKFLOW.md)
+### `AI_WORKFLOW.md` — orchestration
 
-How human direction, AI coordination, coding agents, PRs, Issues, and automation fit together.
+Describes how the Game Director, AI coordinator/reviewer, coding agents, GitHub Actions, and Renovate interact.
 
-#### [`GITHUB_AI_ACCESS.md`](GITHUB_AI_ACCESS.md)
+### `GITHUB_AI_ACCESS.md` — permissions/authentication
 
-GitHub/Codespaces AI authentication and permissions reference.
+Describes the repository-scoped PAT/Codespaces model and what repository operations an authenticated agent can technically perform. Operational approval rules still come from `AGENTS.md` / the assigned task.
 
-### Preserved ideas and design references — not current requirements
+### `BACKLOG.md` — future ideas only
 
-#### [`BACKLOG.md`](BACKLOG.md)
+Single categorized store for preserved exploration including:
 
-The single categorized future-ideas store for MGD. It contains preserved exploration covering:
-
-- product/gameplay ideas;
-- delivery systems and modes;
-- worlds and events;
-- characters and cosmetics;
-- Companions, progression, economy, and collection;
-- HQ/cozy/minigame concepts;
-- art direction and visual language;
-- modular asset and technical-art pipeline ideas;
-- tooling/testing/platform backlog;
+- gameplay/modes/delivery systems;
+- worlds/events;
+- characters/cosmetics;
+- progression/economy/Companions;
+- HQ/cozy/minigames;
+- art direction and asset-production ideas;
+- tooling/platform experiments;
 - reference-game lessons;
 - open design questions.
 
-The former `GAME_DESIGN_IDEAS.md` and `ART_DIRECTION_IDEAS.md` were merged into this file on 2026-09-04. Their old paths remain only as compatibility redirects.
+Nothing in the backlog becomes implementation scope until deliberately promoted.
 
-#### [`ENDLESS_RUNNER_BLUEPRINT.md`](ENDLESS_RUNNER_BLUEPRINT.md)
+### `ENDLESS_RUNNER_BLUEPRINT.md` — design reference
 
-Design-reference document based on lessons from *Jetpack Joyride* and Luke Muscat's Endless Runner design process. Use it when discussing core controls, game feel, pacing waves, gameplay mutators/vehicles, fail states, missions, progression, economy, audio, performance, and Mobile Runner anti-patterns.
+Jetpack Joyride / Endless Runner design lessons. Useful for design research, but never automatically binding on MGD.
 
-Nothing in these files becomes current scope until the Game Director promotes it into the specification, roadmap, or an approved Issue.
+### `milestones/` — completed history
 
-### Historical evidence
+[`milestones/README.md`](milestones/README.md) indexes factual closeout reports and supporting evidence.
 
-#### [`milestones/README.md`](milestones/README.md)
+Current completed reports:
 
-Index of factual milestone closeout reports. These answer **what actually shipped**, not what is planned now.
-
-Current historical reports:
 - [`milestones/M0-foundation.md`](milestones/M0-foundation.md)
 - [`milestones/M1-flight-prototype.md`](milestones/M1-flight-prototype.md)
+- supporting M1 evidence: [`milestones/M1-device-report.md`](milestones/M1-device-report.md)
 
-Supporting evidence lives next to the relevant reports, for example [`milestones/M1-device-report.md`](milestones/M1-device-report.md).
-
-Historical reports should not be rewritten merely because later plans changed.
-
----
-
-## Source-of-truth rules
-
-Different documents own different kinds of truth. Do not flatten them into one giant priority list.
-
-1. **Explicit current Game Director decision** controls product intent.
-2. **`MASTER_SPEC.md`** controls durable product/game decisions.
-3. **`ROADMAP.md`** controls approved milestone sequencing and the newer forward-looking milestone structure where it explicitly supersedes older planning.
-4. **Current approved GitHub Issue** controls the focused implementation scope, within the product and architecture boundaries above.
-5. **`ARCHITECTURE.md`** controls established technical boundaries unless an approved task intentionally changes them.
-6. **`DEVELOPMENT.md`, `AGENTS.md`, and `AI_WORKFLOW.md`** control repository/process behavior.
-7. **`BACKLOG.md` and `ENDLESS_RUNNER_BLUEPRINT.md`** are idea/reference stores only.
-8. **Milestone closeout reports** are authoritative historical records for what actually happened, but are not forward planning documents.
-
-When two sources appear to contradict each other on the **same kind of decision**, do not silently choose the convenient one. Check whether one explicitly supersedes the other; otherwise flag the conflict for the Game Director.
+Historical reports should be corrected only when factual evidence is wrong, not rewritten to match later plans.
 
 ---
 
 ## Documentation maintenance rules
 
-To keep this repo readable as it grows:
-
-- Prefer linking to an existing source of truth instead of duplicating its content.
-- Keep root-level documents for project-wide rules that agents/tools need to find immediately.
-- Put supporting/reference material under `docs/`.
-- Put completed milestone history under `docs/milestones/`.
-- Keep future gameplay/art/design exploration centralized in `BACKLOG.md` unless a topic becomes stable enough to deserve a formal production specification.
-- Do not mix future ideas into historical closeout reports.
-- Do not turn backlog/reference ideas into roadmap scope without an explicit Director decision.
-- Update this hub when a new major documentation category is introduced.
+- Link to the source of truth instead of copying large sections into multiple files.
+- Keep root-level documents for project-wide rules that agents/humans need immediately.
+- Keep supporting/reference/history material under `docs/`.
+- Keep completed milestone history/evidence under `docs/milestones/`.
+- Keep future design/art/content exploration centralized in `BACKLOG.md` until a topic becomes an approved specification.
+- Do not put future ideas into historical reports.
+- Do not turn backlog/reference ideas into roadmap scope without a Game Director decision.
+- Remove historical phase-specific instructions from living workflow/architecture docs once the milestone report owns that history.
+- Distinguish **current implementation** from **planned architecture** explicitly.
+- Update this hub when a major document is added, removed, renamed, or changes ownership.
 - At milestone closeout, update the current milestone pointer and milestone history index.
-- Avoid moving established files unless the navigation benefit clearly outweighs broken-link/churn risk.
+
+---
 
 ## Directory map
 
 ```text
-README.md                     Human quick start / run the project
-AGENTS.md                     Mandatory AI agent rules
+README.md                     Human quick start
+AGENTS.md                     Mandatory coding-agent rules
 MASTER_SPEC.md                Product/game source of truth
-ARCHITECTURE.md               Technical boundaries
-DEVELOPMENT.md                Development and validation workflow
+ARCHITECTURE.md               Technical architecture boundaries
+DEVELOPMENT.md                Commands, validation, workflow
 
 docs/
-├── README.md                     Documentation hub / navigation map
+├── README.md                     Documentation hub / ownership map
 ├── ROADMAP.md                    Approved milestone sequence
-├── BACKLOG.md                    Unified categorized future ideas / design exploration
-├── GAME_DESIGN_IDEAS.md          Legacy redirect → BACKLOG.md
-├── ART_DIRECTION_IDEAS.md        Legacy redirect → BACKLOG.md
-├── ENDLESS_RUNNER_BLUEPRINT.md   Endless Runner / Jetpack Joyride design reference
-├── AI_WORKFLOW.md                Human ↔ AI workflow
-├── GITHUB_AI_ACCESS.md           GitHub/Codespaces AI access reference
+├── BACKLOG.md                    Unified future ideas / exploration
+├── ENDLESS_RUNNER_BLUEPRINT.md   Endless Runner design reference
+├── AI_WORKFLOW.md                Human ↔ AI orchestration
+├── GITHUB_AI_ACCESS.md           GitHub/Codespaces auth + permissions
+├── GAME_DESIGN_IDEAS.md          Compatibility stub → BACKLOG.md
+├── ART_DIRECTION_IDEAS.md        Compatibility stub → BACKLOG.md
 └── milestones/
     ├── README.md                 Milestone history index
     ├── TEMPLATE.md               Closeout template
     ├── M0-foundation.md          Completed M0 history
     ├── M1-flight-prototype.md    Completed M1 history
-    └── M1-device-report.md       Supporting M1 real-device evidence
+    └── M1-device-report.md       Supporting M1 device evidence
 ```
+
+The two `*_IDEAS.md` compatibility stubs remain only so previously shared external links continue to resolve. New documentation should link directly to `BACKLOG.md`.

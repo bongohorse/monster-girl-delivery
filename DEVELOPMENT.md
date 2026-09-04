@@ -1,12 +1,19 @@
-# DEVELOPMENT — MONSTER GIRL DELIVERY
+# Development — Monster Girl Delivery
+
+This document owns **development commands, validation, environment setup, PR workflow, and milestone closeout mechanics**.
+
+For product/game rules see [`MASTER_SPEC.md`](MASTER_SPEC.md). For architecture boundaries see [`ARCHITECTURE.md`](ARCHITECTURE.md). Coding agents must also follow [`AGENTS.md`](AGENTS.md).
 
 ## 1. Environment
 
-Primary remote development environment: GitHub Codespaces.
+Primary remote environment: **GitHub Codespaces**.
 
-Recommended local environment: Bun + Git.
+Local development requires:
 
-The repository should reproduce the same environment through `.devcontainer/`.
+- Git;
+- Bun.
+
+The repository's `.devcontainer/` is the reproducible Codespaces definition.
 
 ## 2. Standard commands
 
@@ -21,27 +28,23 @@ bun run typecheck
 bun run test
 ```
 
-For real-device LAN testing, Vite must be reachable from the local network. The project may configure `vite --host` in the `dev` script.
+Current package scripts:
 
-## 3. Required package scripts
+| Command | Purpose |
+|---|---|
+| `bun run dev` | Start the Vite development server and development-only Director tooling |
+| `bun run build` | Create the production build |
+| `bun run preview` | Serve the production build locally |
+| `bun run check` | Run Biome with local fixes |
+| `bun run ci:check` | Run non-modifying Biome CI validation |
+| `bun run typecheck` | Run `tsc --noEmit` |
+| `bun run test` | Run Vitest once |
 
-The repository should provide these scripts:
+The project standard is **Vitest**; do not substitute `bun test` for the documented test command.
 
-```text
-dev         → Vite development server
-build       → production build
-preview     → preview production build
-check       → Biome auto-fix/check for local development
-ci:check    → Biome CI check without modifying files
-typecheck   → tsc --noEmit
-test        → vitest run
-```
+## 3. Required verification
 
-Do not use `bun test` as the project's test command because the project standard is Vitest.
-
-## 4. Verification order
-
-Before reporting a task complete:
+Before reporting a repository task complete, run:
 
 ```bash
 bun run ci:check
@@ -50,199 +53,189 @@ bun run test
 bun run build
 ```
 
-## 5. Codespaces
+If a check cannot be run, report exactly which check and why.
 
-The repository contains `.devcontainer/devcontainer.json`.
+A green build/check suite is engineering evidence. It does not replace Game Director acceptance or required manual/device testing.
 
-A new Codespace should:
+## 4. Development and production preview
 
-1. start from a predictable base environment;
-2. have Git available;
-3. have Bun installed;
-4. install project dependencies;
-5. make the Vite development port available.
-
-Configure GitHub CLI access through the `MGD_GH_TOKEN` Codespaces secret. The devcontainer exports it as `GH_TOKEN` for shell sessions.
-
-Do not store secrets in `devcontainer.json`.
-
-## 6. Browser testing
-
-Default development:
-
-```bash
-bun run dev -- --host
-```
-
-or, if the package script includes `--host`:
+Normal development:
 
 ```bash
 bun run dev
 ```
 
-On a real device connected to the same network, use the Vite Network URL.
+The configured Vite server listens on the network and uses port `8080`, enabling Codespaces preview and real-device browser testing.
 
-Test at minimum during M1:
+Production preview:
 
-- phone portrait;
-- phone landscape;
-- tablet;
-- narrow/wide browser window;
-- real resize/orientation changes.
+```bash
+bun run build
+bun run preview
+```
 
-## 7. Asset commands
+Director/dev tools are development-only and should not be treated as production gameplay.
 
-These commands are planned and may remain unavailable until the asset pipeline is implemented:
+## 5. Codespaces
+
+The repository contains `.devcontainer/devcontainer.json` and a post-create setup script.
+
+A new Codespace should:
+
+1. start from the pinned devcontainer base;
+2. provide Git and GitHub CLI;
+3. install the Bun version defined by the repository setup;
+4. install project dependencies;
+5. forward port `8080` for Vite preview/testing.
+
+### GitHub CLI authentication
+
+The repository supports a Codespaces secret named `MGD_GH_TOKEN`. The devcontainer exposes it to GitHub CLI as `GH_TOKEN`.
+
+Do not store tokens in repository files or `devcontainer.json` values.
+
+See [`docs/GITHUB_AI_ACCESS.md`](docs/GITHUB_AI_ACCESS.md) for the permission/authentication model.
+
+## 6. Manual and real-device testing
+
+Manual testing requirements come from the **current focused Issue/milestone**, not from stale historical instructions in this file.
+
+General principles:
+
+- test the actual target interaction on real mobile hardware when required;
+- record device/browser/viewport details when they matter to reproducibility;
+- distinguish observed manual evidence from automated tests;
+- verify resize/lifecycle/input interruption when the changed system touches those paths;
+- do not claim a device/configuration was tested when it was not.
+
+Completed milestone evidence belongs under [`docs/milestones/`](docs/milestones/).
+
+## 7. Tests
+
+Tests should be fast, deterministic, and focused on application/game rules.
+
+High-value examples:
+
+- math and physics calculations;
+- state transitions;
+- deterministic generation;
+- collision/fairness rules;
+- persistence migrations;
+- pure layout calculations where behavior matters.
+
+Avoid browser/rendering tests for rules that can be expressed as pure TypeScript. Do not test framework internals merely to increase test count.
+
+## 8. CI
+
+Pull-request validation follows the repository's configured GitHub Actions workflow. The expected core sequence is:
+
+```text
+install
+→ Biome CI
+→ typecheck
+→ Vitest
+→ production build
+```
+
+`main` may additionally deploy the validated web build to GitHub Pages.
+
+## 9. Dependencies
+
+Renovate owns routine dependency-update PRs.
+
+Rules:
+
+- keep the Bun lockfile committed;
+- require CI for dependency updates;
+- do not assume minor/patch means risk-free;
+- do not duplicate Renovate with recurring manual dependency churn unless a specific task requires it;
+- major toolchain changes require explicit justification/approval under the architecture/product rules.
+
+## 10. Git and PR workflow
+
+Preferred implementation flow:
+
+```text
+focused Issue
+    ↓
+branch
+    ↓
+implementation
+    ↓
+local verification
+    ↓
+Pull Request
+    ↓
+GitHub Actions
+    ↓
+review / acceptance
+    ↓
+merge when authorized
+```
+
+Keep changes focused and reviewable. A passing CI run does not automatically authorize merge.
+
+Coding-agent scope/merge rules are defined in [`AGENTS.md`](AGENTS.md). Cross-agent coordination is documented in [`docs/AI_WORKFLOW.md`](docs/AI_WORKFLOW.md).
+
+## 11. Asset commands
+
+The following are **planned interfaces**, not guaranteed current scripts:
 
 ```bash
 bun run assets:validate
 bun run assets:build
 ```
 
-Do not invent asset tooling without a concrete task.
+Do not invent or document asset tooling as implemented until an approved task adds it.
 
-## 8. Tests
+## 12. Deployment and packaging targets
 
-Tests should be fast and deterministic.
+Current web deployment target:
 
-Good tests cover:
-- math;
-- state transitions;
-- deterministic generation;
-- persistence migrations;
-- fairness constraints.
-
-Do not require a browser for tests that can run as pure TypeScript.
-
-## 9. CI
-
-Pull requests:
-
-```text
-install
-→ biome ci
-→ typecheck
-→ vitest
-→ production build
-```
-
-`main` may additionally deploy the validated web build to GitHub Pages.
-
-## 10. Dependency updates
-
-Renovate creates dependency update PRs.
-
-Never assume a dependency update is safe just because it is semver-minor/patch. CI is required, and breaking behavior still needs review.
-
-The Bun lockfile must be committed.
-
-## 11. AI-agent workflow
-
-For a new task:
-
-1. Read `AGENTS.md`.
-2. Read the relevant sections of `MASTER_SPEC.md`.
-3. Inspect existing code.
-4. Make the smallest coherent change.
-5. Run validation.
-6. Report what changed and what was tested.
-
-For product ambiguity:
-- do not invent permanent rules;
-- choose a reversible implementation;
-- record the unresolved decision as TBD/Experiment if needed.
-
-## 12. Git / PR workflow
-
-Preferred flow:
-
-```text
-Issue
-  ↓
-AI plan
-  ↓
-small implementation
-  ↓
-local checks
-  ↓
-PR
-  ↓
-GitHub Actions
-  ↓
-human review
-  ↓
-merge
-```
-
-Do not merge an AI PR solely because automation is green.
-
-## 13. Jules
-
-Google Jules can work from repository Issues and inspect the codebase autonomously.
-
-Give Jules small, concrete tasks with acceptance criteria.
-
-Jules automatically looks for root `AGENTS.md`; keep that file current.
-
-Avoid asking Jules to "improve the project" without a defined boundary.
-
-## 14. Renovate
-
-Renovate is responsible for dependency update PRs.
-
-Do not duplicate Renovate's dependency work with manual recurring update tasks unless needed.
-
-## 15. Release targets
-
-Current web target:
 - GitHub Pages.
 
-Alternative later:
-- itch.io.
+Possible later distribution/packaging work, only when promoted by the roadmap/product plan:
 
-Future:
-- Capacitor for Android/iOS evaluation.
-- Desktop wrapper for Steam evaluation.
+- itch.io;
+- Android/iOS packaging (for example Capacitor evaluation);
+- Desktop/Steam wrapper evaluation;
+- gamepad/desktop UX;
+- PWA evaluation.
 
-Do not add Cloudflare infrastructure unless a real product requirement appears.
+Do not add Cloudflare/backend infrastructure without a concrete approved requirement.
 
-## 16. Milestone closeout
+## 13. Security and secrets
 
-Completed milestones must have a factual closeout report under `docs/milestones/`.
+- Never commit API keys, PATs, or other secrets.
+- Use GitHub/Codespaces secrets for external credentials.
+- Do not print secrets in logs, documentation, Issues, or PRs.
+- Do not weaken repository protections to make automation easier.
 
-The closeout report is historical evidence, not a rewrite of the original plan. It must clearly distinguish:
+## 14. Milestone closeout
 
-- what the milestone planned to do;
-- what actually landed;
-- architecture/product decisions made;
-- automated validation performed;
-- manual/device evidence actually observed;
-- deferred/open work;
-- supporting maintenance completed during the milestone but outside its product scope;
-- main Issues/PRs;
-- why the milestone was allowed to exit;
-- what the next milestone inherits.
+Every completed milestone receives a factual report under `docs/milestones/` before, or as part of, advancing the documented current milestone.
 
-Use [`docs/milestones/TEMPLATE.md`](docs/milestones/TEMPLATE.md) as the standard format.
+Use [`docs/milestones/TEMPLATE.md`](docs/milestones/TEMPLATE.md).
 
-Before moving the documented current milestone forward, either:
+A closeout report must distinguish:
 
-1. merge the completed milestone's closeout report first; or
-2. include the closeout report in the same focused documentation transition PR.
+1. planned scope;
+2. what actually landed;
+3. architecture/product decisions established;
+4. automated validation;
+5. manual/device evidence actually observed;
+6. deferred/open work;
+7. supporting maintenance outside milestone product scope;
+8. main Issues/PRs;
+9. exit decision;
+10. what the next milestone may safely inherit.
 
 Accuracy rules:
 
+- never turn planned scope into historical fact;
 - never claim unperformed manual/device checks;
-- never turn planned scope into historical fact merely because it appeared in an Issue;
-- keep `PROTOTYPE`, `TBD`, `EXPERIMENT`, `FUTURE`, and deferred states explicit;
 - automated coverage does not substitute for manual evidence;
-- maintenance work must not be presented as milestone gameplay scope.
+- keep `PROTOTYPE`, `EXPERIMENT`, `TBD`, `FUTURE`, and deferred states explicit;
+- historical reports must not be rewritten simply because later plans changed.
 
-The same standard repository validation applies to milestone closeout documentation:
-
-```bash
-bun run ci:check
-bun run typecheck
-bun run test
-bun run build
-```
+Run the normal repository verification for a closeout/documentation transition as well.
