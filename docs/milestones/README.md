@@ -1,15 +1,25 @@
 # Milestone History
 
+[← Documentation Hub](../README.md)
+
 This directory records what each project milestone **actually delivered**.
 
-`MASTER_SPEC.md` remains the product specification and forward-looking source of truth. These milestone reports are historical closeout records: they document the implemented result, evidence, decisions, and deferred work after a milestone exits.
+`MASTER_SPEC.md` remains the product specification. [`../ROADMAP.md`](../ROADMAP.md) owns the approved milestone sequence and forward-looking milestone structure. These milestone reports are historical closeout records: they document the implemented result, evidence, decisions, and deferred work after a milestone exits.
+
+They are **not** a substitute for the current roadmap or the current GitHub milestone Issue.
 
 ## Completed milestones
 
-| Milestone | Result | Closeout report |
-|---|---|---|
-| M0 — Foundation | Core project/tooling, timing, input, lifecycle, viewport, diagnostics, CI/Codespaces foundation | [`M0-foundation.md`](M0-foundation.md) |
-| M1 — Flight Prototype | Playable deterministic one-button vertical flight prototype; mobile/tablet validation; Landscape selected for core play | [`M1-flight-prototype.md`](M1-flight-prototype.md) |
+| Milestone | Result | Closeout report | Supporting evidence |
+|---|---|---|---|
+| M0 — Foundation | Core project/tooling, timing, input, lifecycle, viewport, diagnostics, CI/Codespaces foundation | [`M0-foundation.md`](M0-foundation.md) | automated validation recorded in report |
+| M1 — Flight Prototype | Playable deterministic one-button vertical flight prototype; mobile/tablet validation; Landscape selected for core play | [`M1-flight-prototype.md`](M1-flight-prototype.md) | [`../m1-device-report.md`](../m1-device-report.md) |
+
+## Planned / current milestones
+
+Do not create historical reports in advance. Current and future milestone planning belongs in [`../ROADMAP.md`](../ROADMAP.md) and GitHub Issues.
+
+A new report is added here only when the milestone has factual implementation and validation evidence to close out.
 
 ## Closeout rule for M2+
 
@@ -37,3 +47,4 @@ A closeout report must distinguish:
 - Keep `PROTOTYPE`, `TBD`, `EXPERIMENT`, `FUTURE`, and deferred decisions explicit.
 - Maintenance performed during a milestone must not be rewritten as milestone gameplay scope.
 - If a later correction is needed, amend the historical report transparently; do not silently rewrite the reason a milestone originally exited.
+- Future roadmap changes do not rewrite completed milestone history.
