@@ -306,18 +306,11 @@ M4 hazard approach scheduling derives its logical look-ahead distance from minim
 
 M4 pattern validation also checks whether a geometrically open corridor intersects a conservative vertical-flight envelope within the available reaction time. The envelope uses the existing flight equations, explicit flight tuning and current/representative vertical state, plus the logical player collision extents. Edge contact is safe under the existing positive-area collision rule. Reachability contexts and failure reasons are structured and deterministic; their current values remain **PROTOTYPE**. This focused rule evaluates individual pattern encounters, while sequence-level transitions remain later M4 work.
 
+M4 difficulty is derived deterministically from logical run distance and one explicit, capped **PROTOTYPE** tier configuration. Its immutable snapshot centralizes scroll-speed scaling, reaction-time and safe-corridor targets, reaction spacing, and pattern entry/density eligibility limits. Progression increases challenge across multiple parameters rather than only making the world faster. Difficulty has no viewport, FPS, wall-clock, failure-history, or pacing/intensity input. Typed adapters expose the snapshot to run motion, timing, validation, pattern selection, and later Director diagnostics; full live encounter-policy integration remains focused work under #120.
+
 ### FUTURE
 
-Difficulty should primarily evolve through deterministic run progression rather than unrelated random adjustments.
-
-An earlier prototype formula remains only an example, not a locked rule:
-
-```text
-tier = min(10, floor(distance / 250))
-speed = baseSpeed * (1 + 0.04 * tier)
-```
-
-Difficulty and pacing must be tuned through playtesting. Pacing should include readable pressure/recovery rather than permanent maximum intensity.
+Difficulty and pacing values must be tuned through playtesting. The separate pacing system should include readable pressure/recovery rather than permanent maximum intensity, and must not be collapsed into the difficulty tier.
 
 Scheduling belongs in [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
