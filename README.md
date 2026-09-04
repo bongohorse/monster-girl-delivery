@@ -1,58 +1,55 @@
 # Monster Girl Delivery
 
-2D mobile-first endless sidescroller built with Phaser 4 and TypeScript.
+2D mobile-first sidescroller built with Phaser 4 and TypeScript.
 
-**Current status:** Pre-Production / M2 — Horizontal Run & First Hazard
+**Current project phase:** Pre-Production  
+**Current milestone:** M2 — Horizontal Run & First Hazard ([Issue #49](https://github.com/bongohorse/monster-girl-delivery/issues/49))
 
-> **Looking for project documentation?** Start with the [`Documentation Hub`](docs/README.md). It explains where product decisions, roadmap, current Issues, future ideas, architecture, AI rules, and milestone history live.
+> Start with the [`Documentation Hub`](docs/README.md) for product decisions, roadmap ownership, architecture, future ideas, AI workflow, and milestone history.
 
 ## Quick start — GitHub Codespaces
 
-A new Codespace installs Bun and the project dependencies automatically.
+A new Codespace installs the development environment and project dependencies through the repository's devcontainer setup.
 
-To start the game for normal development:
+Start normal development:
 
 ```bash
 bun run dev
 ```
 
-The Vite development server runs on **port 8080**.
+The Vite development server uses **port 8080**. In Codespaces, port `8080` is forwarded automatically and configured to open as a preview. You can also open it manually from the **Ports** tab.
 
-In GitHub Codespaces, port `8080` is forwarded automatically. The project is configured to open a Codespaces preview for this port. You can also open it manually from the **Ports** tab by finding port `8080` and choosing **Open in Browser** or **Open Preview**.
-
-To stop the server:
+Stop the server with:
 
 ```text
 Ctrl + C
 ```
 
-If dependencies ever need to be installed manually:
+If dependencies need to be installed manually:
 
 ```bash
 bun install
 bun run dev
 ```
 
-## Development server vs. production preview
+## Development vs. production preview
 
-For everyday development, use:
+Use development mode while building/tuning the game:
 
 ```bash
 bun run dev
 ```
 
-This runs Vite in development mode with fast reloads while editing the game. **Director/dev tuning panels are available only in this development mode.**
+Development-only Director tooling is available in this mode.
 
-To test the built production version locally, first build the game and then start Vite's production preview server:
+To verify the production build locally:
 
 ```bash
 bun run build
 bun run preview
 ```
 
-`bun run preview` also runs on **port 8080**, so in Codespaces open the same forwarded port from the **Ports** tab.
-
-> **Use `bun run dev` while developing.** Use `bun run build` + `bun run preview` when you specifically want to verify the production build. The production preview intentionally does not construct Director tools.
+The production preview also uses port `8080` and intentionally excludes development-only Director tooling.
 
 ## Local development
 
@@ -61,8 +58,6 @@ Requirements:
 - Git
 - Bun
 
-Clone the repository and start the development server:
-
 ```bash
 git clone https://github.com/bongohorse/monster-girl-delivery.git
 cd monster-girl-delivery
@@ -70,23 +65,21 @@ bun install
 bun run dev
 ```
 
-Then open the URL shown by Vite in your browser. The development server listens on port `8080` and is exposed on the network for real-device testing.
+The development server is exposed on the network so real-device browser testing can use the Vite Network URL where networking permits it.
 
 ## Useful commands
 
 | Command | Purpose |
 |---|---|
-| `bun run dev` | Start the development server on port 8080 with Director/dev tools |
-| `bun run build` | Create a production build |
-| `bun run preview` | Serve the already-built production version on port 8080 |
+| `bun run dev` | Start Vite development server + dev-only Director tools |
+| `bun run build` | Create production build |
+| `bun run preview` | Serve the built production version |
 | `bun run check` | Run Biome and apply fixes |
-| `bun run ci:check` | Run the non-modifying Biome CI check |
+| `bun run ci:check` | Run non-modifying Biome CI check |
 | `bun run typecheck` | Run TypeScript type checking |
-| `bun run test` | Run Vitest tests |
+| `bun run test` | Run Vitest |
 
-## Before committing
-
-Run the same core validation used by CI:
+Before reporting repository work complete, run:
 
 ```bash
 bun run ci:check
@@ -95,60 +88,41 @@ bun run test
 bun run build
 ```
 
+See [`DEVELOPMENT.md`](DEVELOPMENT.md) for the full development/validation workflow.
+
 ## Project stack
 
 - Phaser 4
 - TypeScript
 - Bun
-- Vite 8
+- Vite
 - Biome
 - Vitest
 - GitHub Actions
 - Renovate
-- Google Jules
 
-## Project workflow
+Exact installed versions are defined by `package.json` and `bun.lock`.
 
-- **Human:** Game Director / Product Owner
-- **AI coding agents:** implementation and engineering
-- **CI:** automated validation
-- **GitHub Issues/PRs:** live execution trail
+## Documentation
 
-## Documentation — where to start
+[`docs/README.md`](docs/README.md) is the canonical navigation and source-of-truth map.
 
-The central index is [`docs/README.md`](docs/README.md).
-
-### For the Game Director / human
-
-1. [`docs/README.md`](docs/README.md) — choose the right document quickly
-2. [`docs/ROADMAP.md`](docs/ROADMAP.md) — milestone sequence and future scope
-3. current GitHub milestone/Issue — what is actually being worked on now
-4. [`MASTER_SPEC.md`](MASTER_SPEC.md) — exact product/game decisions when needed
-
-### For AI / coding agents
-
-1. [`AGENTS.md`](AGENTS.md) — mandatory repository rules
-2. [`docs/README.md`](docs/README.md) — document authority and task routing
-3. assigned GitHub Issue / PR — focused current scope
-4. relevant sections of [`MASTER_SPEC.md`](MASTER_SPEC.md), [`ARCHITECTURE.md`](ARCHITECTURE.md), and [`DEVELOPMENT.md`](DEVELOPMENT.md)
-
-### Main document categories
-
-| Need | Document |
+| Need | Source |
 |---|---|
-| Product/game truth | [`MASTER_SPEC.md`](MASTER_SPEC.md) |
+| Product/game decisions | [`MASTER_SPEC.md`](MASTER_SPEC.md) |
 | Milestone sequence | [`docs/ROADMAP.md`](docs/ROADMAP.md) |
+| Current implementation scope | current GitHub Issue / PR |
 | Technical boundaries | [`ARCHITECTURE.md`](ARCHITECTURE.md) |
-| Development workflow | [`DEVELOPMENT.md`](DEVELOPMENT.md) |
-| AI agent rules | [`AGENTS.md`](AGENTS.md) |
+| Development/validation workflow | [`DEVELOPMENT.md`](DEVELOPMENT.md) |
+| Mandatory coding-agent rules | [`AGENTS.md`](AGENTS.md) |
 | Future ideas / experiments | [`docs/BACKLOG.md`](docs/BACKLOG.md) |
-| Art/visual ideas | [`docs/ART_DIRECTION_IDEAS.md`](docs/ART_DIRECTION_IDEAS.md) |
+| Endless Runner design reference | [`docs/ENDLESS_RUNNER_BLUEPRINT.md`](docs/ENDLESS_RUNNER_BLUEPRINT.md) |
 | Completed milestone history | [`docs/milestones/README.md`](docs/milestones/README.md) |
 
-## Current milestone
+## Current product direction
 
-M0 Foundation and M1 Flight Prototype are complete. The current milestone is **M2 — Horizontal Run & First Hazard**.
+The current core game is **Landscape**, left-to-right, with one-button flight. The Director accepted the M1 smartphone/tablet evidence recorded in [`docs/milestones/M1-device-report.md`](docs/milestones/M1-device-report.md).
 
-Landscape is the decided target orientation for the current core game, based on the Director-accepted smartphone/tablet results in the [`M1 real-device report`](docs/m1-device-report.md). Portrait remains a future possibility for a separate mode or variant.
+Portrait remains a **FUTURE** separate-mode/variant possibility, not current core gameplay.
 
-M2 focuses on deterministic horizontal world motion, configurable prototype scroll speed, one deterministic lethal hazard, collision, run death/restart, and Landscape device validation. Graze and scoring remain future work.
+For exact current M2 scope, use [Issue #49](https://github.com/bongohorse/monster-girl-delivery/issues/49) rather than copying the full milestone specification into this README.
