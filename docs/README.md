@@ -28,7 +28,7 @@ The GitHub Issues/PRs are the live execution trail. Milestone closeout should up
 | Understand the technical structure | [`../ARCHITECTURE.md`](../ARCHITECTURE.md) |
 | See development commands and workflow | [`../DEVELOPMENT.md`](../DEVELOPMENT.md) |
 | Review what completed milestones actually delivered | [`milestones/README.md`](milestones/README.md) |
-| Review M1 real-device evidence | [`m1-device-report.md`](m1-device-report.md) |
+| Review M1 real-device evidence | [`milestones/M1-device-report.md`](milestones/M1-device-report.md) |
 | Understand AI/GitHub access setup | [`GITHUB_AI_ACCESS.md`](GITHUB_AI_ACCESS.md) |
 
 ### Fast human reading path
@@ -183,7 +183,7 @@ Current historical reports:
 - [`milestones/M0-foundation.md`](milestones/M0-foundation.md)
 - [`milestones/M1-flight-prototype.md`](milestones/M1-flight-prototype.md)
 
-Supporting evidence may live next to the reports, for example [`m1-device-report.md`](m1-device-report.md).
+Supporting evidence lives next to the relevant reports, for example [`milestones/M1-device-report.md`](milestones/M1-device-report.md).
 
 Historical reports should not be rewritten merely because later plans changed.
 
@@ -239,10 +239,10 @@ docs/
 ├── ENDLESS_RUNNER_BLUEPRINT.md   Endless Runner / Jetpack Joyride design reference
 ├── AI_WORKFLOW.md                Human ↔ AI workflow
 ├── GITHUB_AI_ACCESS.md           GitHub/Codespaces AI access reference
-├── m1-device-report.md           Supporting historical device evidence
 └── milestones/
     ├── README.md                 Milestone history index
     ├── TEMPLATE.md               Closeout template
     ├── M0-foundation.md          Completed M0 history
-    └── M1-flight-prototype.md
+    ├── M1-flight-prototype.md    Completed M1 history
+    └── M1-device-report.md       Supporting M1 real-device evidence
 ```
