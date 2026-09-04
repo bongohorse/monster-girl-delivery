@@ -5,7 +5,7 @@ const PANEL_GAP = 12;
 const PANEL_MAX_WIDTH = 360;
 const MIN_SIDE_BY_SIDE_PANEL_WIDTH = 250;
 
-export const DIRECTOR_DIAGNOSTICS_PANEL_HEIGHT = 164;
+export const DIRECTOR_DIAGNOSTICS_PANEL_HEIGHT = 204;
 export const DIRECTOR_TUNING_CONTROLS_PANEL_HEIGHT = 230;
 
 export interface DirectorPanelPlacement {
