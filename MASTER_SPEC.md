@@ -7,7 +7,7 @@
 **Coding-agent role:** Implementation / Engineering
 
 > [!IMPORTANT]
-> This file owns **durable product and game decisions**. It does not own milestone sequencing, technical architecture, development commands, or AI workflow. See [`docs/README.md`](docs/README.md) for the canonical source-of-truth map.
+> This file owns **durable product and game decisions**. It does not own milestone sequencing, technical architecture/tooling, development commands, or AI workflow. See [`docs/README.md`](docs/README.md) for the canonical source-of-truth map.
 
 ## 0. Decision states
 
@@ -79,34 +79,11 @@ One gameplay codebase should remain the source for all platforms where practical
 - store-specific content variants;
 - store compliance implementation before release preparation.
 
----
-
-## 3. Engineering stack constraints
-
-### DECIDED
-
-The current project foundation uses:
-
-| Layer | Technology |
-|---|---|
-| Game framework | Phaser 4 |
-| Language | TypeScript |
-| Runtime/package manager/scripts | Bun |
-| Dev/build | Vite |
-| Production bundling | Vite-integrated build pipeline / Rolldown where provided by Vite |
-| Code quality | Biome |
-| Tests | Vitest |
-| Version control | Git |
-| CI/CD | GitHub Actions |
-| Dependency automation | Renovate |
-
-Actual installed versions are defined by `package.json` / `bun.lock`, not copied into this specification.
-
-Technical ownership and workflow details live in [`ARCHITECTURE.md`](ARCHITECTURE.md) and [`DEVELOPMENT.md`](DEVELOPMENT.md).
+Technical stack and architecture decisions are owned by [`ARCHITECTURE.md`](ARCHITECTURE.md).
 
 ---
 
-## 4. Core input and gameplay loop
+## 3. Core input and gameplay loop
 
 ### DECIDED input
 
@@ -133,7 +110,7 @@ Results / Rewards (later complete loop)
 Restart
 ```
 
-Graze, scoring, rewards, collection, and Gallery enter only in their approved later milestones.
+Graze, scoring, rewards, collection, and Gallery enter only when explicitly scheduled and implemented.
 
 ### Run length
 
@@ -141,7 +118,7 @@ Graze, scoring, rewards, collection, and Gallery enter only in their approved la
 
 ---
 
-## 5. Player physics
+## 4. Player physics
 
 ### PROTOTYPE tuning
 
@@ -166,7 +143,7 @@ These values are prototype tuning and must remain configurable where the current
 
 ---
 
-## 6. Viewport, scaling, and devices
+## 5. Viewport, scaling, and devices
 
 ### DECIDED
 
@@ -194,7 +171,7 @@ UI must account for cutouts, notches, rounded corners, and home indicators. Game
 
 ---
 
-## 7. Input behavior
+## 6. Input behavior
 
 ### DECIDED
 
@@ -215,7 +192,7 @@ Requirements:
 
 ---
 
-## 8. Mobile/browser lifecycle
+## 7. Mobile/browser lifecycle
 
 ### DECIDED
 
@@ -233,9 +210,9 @@ A future user-visible resume UX may be added, but the exact presentation is **TB
 
 ---
 
-## 9. Hazards and fairness
+## 8. Hazards and fairness
 
-### M2 — CURRENT
+### CURRENT M2 behavior/scope
 
 M2 introduces:
 
@@ -272,9 +249,9 @@ The game must not rely on unconstrained random placement.
 
 ---
 
-## 10. Graze
+## 9. Graze
 
-### FUTURE — roadmap M5 scope
+### FUTURE
 
 Graze is the intended risk/reward near-miss mechanic.
 
@@ -289,11 +266,13 @@ A hazard/projectile should normally reward a Graze only once per pass.
 
 Exact hitbox dimensions, reward values, and presentation remain non-final until the focused system is implemented and tested.
 
+Scheduling belongs in [`docs/ROADMAP.md`](docs/ROADMAP.md).
+
 ---
 
-## 11. Procedural generation, seeds, difficulty, and pacing
+## 10. Procedural generation, seeds, difficulty, and pacing
 
-### FUTURE — generation begins in M3
+### FUTURE
 
 Gameplay runs should become reproducible through a dedicated seed/state model.
 
@@ -322,8 +301,6 @@ Gameplay randomness must use the dedicated seeded gameplay PRNG once introduced.
 
 Large randomized test samples are useful evidence but do not mathematically prove every future seed safe.
 
-### FUTURE — difficulty/pacing expands in M4
-
 Difficulty should primarily evolve through deterministic run progression rather than unrelated random adjustments.
 
 An earlier prototype formula remains only an example, not a locked rule:
@@ -335,11 +312,13 @@ speed = baseSpeed * (1 + 0.04 * tier)
 
 Difficulty and pacing must be tuned through playtesting. Pacing should include readable pressure/recovery rather than permanent maximum intensity.
 
+Scheduling belongs in [`docs/ROADMAP.md`](docs/ROADMAP.md).
+
 ---
 
-## 12. Score, results, and run rewards
+## 11. Score, results, and run rewards
 
-### FUTURE — complete arcade loop in M5
+### FUTURE
 
 Score may eventually reflect:
 
@@ -352,9 +331,11 @@ Exact formulas and reward values are **TBD**.
 
 The result/restart flow should remain low-friction and support fast replay.
 
+Scheduling belongs in [`docs/ROADMAP.md`](docs/ROADMAP.md).
+
 ---
 
-## 13. Economy, collection, Gallery, and character ownership
+## 12. Economy, collection, Gallery, and character ownership
 
 ### DECIDED principles
 
@@ -366,7 +347,7 @@ For the initial development/release direction:
 - economy/content data should be data-driven where practical;
 - no final currency names, costs, rates, or gacha rules are locked.
 
-### FUTURE — roadmap M7+
+### FUTURE
 
 Possible meta concepts include:
 
@@ -383,9 +364,9 @@ Random paid rewards/gacha are not approved current roadmap requirements.
 
 ---
 
-## 14. Persistence
+## 13. Persistence
 
-### FUTURE — roadmap M7
+### FUTURE
 
 Initial persistence target: local storage through a centralized `SaveManager` boundary.
 
@@ -396,11 +377,11 @@ Requirements when implemented:
 - development export/import/reset support;
 - gameplay systems do not access browser/platform storage directly.
 
-Exact schema remains **TBD**.
+Exact schema remains **TBD**. Scheduling belongs in [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ---
 
-## 15. Director / developer tooling
+## 14. Director / developer tooling
 
 ### DECIDED development principle
 
@@ -421,7 +402,7 @@ Director tooling must remain isolated from production gameplay and use the same 
 
 ---
 
-## 16. Asset-production principles
+## 15. Asset-production principles
 
 ### DECIDED
 
@@ -448,11 +429,11 @@ Principles:
 
 Exact processing/atlas tooling remains **TBD** until the relevant production work is approved.
 
-Detailed future art/pipeline exploration belongs in [`docs/BACKLOG.md`](docs/BACKLOG.md).
+Detailed future art/pipeline exploration belongs in [`docs/BACKLOG.md`](docs/BACKLOG.md). Technical pipeline boundaries belong in [`ARCHITECTURE.md`](ARCHITECTURE.md).
 
 ---
 
-## 17. Audio
+## 16. Audio
 
 ### FUTURE
 
@@ -471,7 +452,7 @@ Exact codecs, mastering, and production workflow remain **TBD**.
 
 ---
 
-## 18. UI and accessibility
+## 17. UI and accessibility
 
 ### DECIDED principles
 
@@ -495,7 +476,7 @@ Future considerations may include:
 
 ---
 
-## 19. Localization
+## 18. Localization
 
 ### FUTURE / TBD
 
@@ -505,7 +486,7 @@ Avoid scattering user-facing strings throughout gameplay-rule code. When text-he
 
 ---
 
-## 20. Performance
+## 19. Performance
 
 ### DECIDED
 
@@ -523,7 +504,7 @@ Exact minimum supported devices remain **TBD** and should be set from real-devic
 
 ---
 
-## 21. Release and online-service boundaries
+## 20. Release and online-service boundaries
 
 ### DECIDED current direction
 
@@ -552,11 +533,11 @@ Unless reopened by the Director:
 
 ---
 
-## 22. Roadmap ownership and current scope
+## 21. Roadmap ownership and current scope
 
 [`docs/ROADMAP.md`](docs/ROADMAP.md) is the **single source of truth for milestone sequencing and milestone-level future scope**.
 
-This specification intentionally does not duplicate the complete M0–M9 roadmap. That avoids the drift previously caused by maintaining two milestone lists.
+This specification intentionally does not duplicate the complete M0–M9 roadmap.
 
 Current milestone:
 
@@ -569,7 +550,7 @@ Completed milestone history and evidence live under [`docs/milestones/`](docs/mi
 
 ---
 
-## 23. Future ideas and open design questions
+## 22. Future ideas and open design questions
 
 [`docs/BACKLOG.md`](docs/BACKLOG.md) is the single preserved store for future gameplay, art, progression, economy, tooling, mode, and content ideas.
 
@@ -590,21 +571,12 @@ Backlog / reference idea
 
 ---
 
-## 24. Decision log
+## 23. Product decision log
 
 ### 2026-09-03
 
-- Phaser 4 + TypeScript selected for the game foundation.
-- Bun selected for runtime/package management/scripts.
-- Vite selected for the development/build workflow.
-- Biome selected for formatting/linting.
-- Vitest selected for deterministic/headless tests.
-- GitHub Actions selected for CI/web deployment.
-- Renovate selected for dependency automation.
 - Mobile-first direction established; browser remains the primary development/test distribution.
 - Local/offline-first established.
 - No real-money mechanics in the initial approved direction.
 - M1 smartphone/tablet evidence in [`docs/milestones/M1-device-report.md`](docs/milestones/M1-device-report.md) accepted as sufficient to continue the mobile-first project.
 - Landscape selected as **DECIDED** for the current core game; Portrait retained only as a **FUTURE** separate mode/variant possibility.
-- M1 completed and M2 — Horizontal Run & First Hazard became current.
-- Replay, telemetry, Cloudflare/backend infrastructure intentionally postponed.
