@@ -4,6 +4,8 @@
 
 **Current status:** Pre-Production / M2 — Horizontal Run & First Hazard
 
+> **Looking for project documentation?** Start with the [`Documentation Hub`](docs/README.md). It explains where product decisions, roadmap, current Issues, future ideas, architecture, AI rules, and milestone history live.
+
 ## Quick start — GitHub Codespaces
 
 A new Codespace installs Bun and the project dependencies automatically.
@@ -39,7 +41,7 @@ For everyday development, use:
 bun run dev
 ```
 
-This runs Vite in development mode with fast reloads while editing the game.
+This runs Vite in development mode with fast reloads while editing the game. **Director/dev tuning panels are available only in this development mode.**
 
 To test the built production version locally, first build the game and then start Vite's production preview server:
 
@@ -50,7 +52,7 @@ bun run preview
 
 `bun run preview` also runs on **port 8080**, so in Codespaces open the same forwarded port from the **Ports** tab.
 
-> **Use `bun run dev` while developing.** Use `bun run build` + `bun run preview` when you specifically want to verify the production build.
+> **Use `bun run dev` while developing.** Use `bun run build` + `bun run preview` when you specifically want to verify the production build. The production preview intentionally does not construct Director tools.
 
 ## Local development
 
@@ -74,7 +76,7 @@ Then open the URL shown by Vite in your browser. The development server listens 
 
 | Command | Purpose |
 |---|---|
-| `bun run dev` | Start the development server on port 8080 |
+| `bun run dev` | Start the development server on port 8080 with Director/dev tools |
 | `bun run build` | Create a production build |
 | `bun run preview` | Serve the already-built production version on port 8080 |
 | `bun run check` | Run Biome and apply fixes |
@@ -110,16 +112,38 @@ bun run build
 - **Human:** Game Director / Product Owner
 - **AI coding agents:** implementation and engineering
 - **CI:** automated validation
-- **GitHub:** source of truth
+- **GitHub Issues/PRs:** live execution trail
 
-## Project documentation
+## Documentation — where to start
 
-For development or agent work, read these documents in order:
+The central index is [`docs/README.md`](docs/README.md).
 
-1. [`MASTER_SPEC.md`](MASTER_SPEC.md) — product vision, rules, milestones, and decisions
-2. [`AGENTS.md`](AGENTS.md) — instructions for coding agents
-3. [`ARCHITECTURE.md`](ARCHITECTURE.md) — project architecture
-4. [`DEVELOPMENT.md`](DEVELOPMENT.md) — development workflow and commands
+### For the Game Director / human
+
+1. [`docs/README.md`](docs/README.md) — choose the right document quickly
+2. [`docs/ROADMAP.md`](docs/ROADMAP.md) — milestone sequence and future scope
+3. current GitHub milestone/Issue — what is actually being worked on now
+4. [`MASTER_SPEC.md`](MASTER_SPEC.md) — exact product/game decisions when needed
+
+### For AI / coding agents
+
+1. [`AGENTS.md`](AGENTS.md) — mandatory repository rules
+2. [`docs/README.md`](docs/README.md) — document authority and task routing
+3. assigned GitHub Issue / PR — focused current scope
+4. relevant sections of [`MASTER_SPEC.md`](MASTER_SPEC.md), [`ARCHITECTURE.md`](ARCHITECTURE.md), and [`DEVELOPMENT.md`](DEVELOPMENT.md)
+
+### Main document categories
+
+| Need | Document |
+|---|---|
+| Product/game truth | [`MASTER_SPEC.md`](MASTER_SPEC.md) |
+| Milestone sequence | [`docs/ROADMAP.md`](docs/ROADMAP.md) |
+| Technical boundaries | [`ARCHITECTURE.md`](ARCHITECTURE.md) |
+| Development workflow | [`DEVELOPMENT.md`](DEVELOPMENT.md) |
+| AI agent rules | [`AGENTS.md`](AGENTS.md) |
+| Future ideas / experiments | [`docs/BACKLOG.md`](docs/BACKLOG.md) |
+| Art/visual ideas | [`docs/ART_DIRECTION_IDEAS.md`](docs/ART_DIRECTION_IDEAS.md) |
+| Completed milestone history | [`docs/milestones/README.md`](docs/milestones/README.md) |
 
 ## Current milestone
 
