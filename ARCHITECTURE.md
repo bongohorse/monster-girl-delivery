@@ -1,192 +1,240 @@
-# ARCHITECTURE — MONSTER GIRL DELIVERY
+# Architecture — Monster Girl Delivery
+
+This document owns the project's **technical architecture boundaries**. Product/game rules belong in [`MASTER_SPEC.md`](MASTER_SPEC.md); milestone sequencing belongs in [`docs/ROADMAP.md`](docs/ROADMAP.md); commands and workflow belong in [`DEVELOPMENT.md`](DEVELOPMENT.md).
 
 ## 1. Architecture goals
 
 The codebase is designed for:
 
-- AI-first development;
-- small, reviewable changes;
 - mobile-first runtime behavior;
 - deterministic gameplay where practical;
+- frame-rate-independent simulation;
 - headless testing of game rules;
-- one shared gameplay codebase across platforms.
+- small, reviewable changes;
+- one shared gameplay codebase across target platforms where practical;
+- AI-assisted development without unnecessary abstraction.
 
-Avoid enterprise architecture and unnecessary abstraction.
+Avoid enterprise architecture, parallel implementations of the same responsibility, and speculative framework layers.
 
-## 2. Layering
+## 2. Ownership model
 
 ```text
-Presentation
-├── scenes/
-└── ui/
-
-Gameplay
-├── entities/
-├── hazards/
-└── systems/
-
-Core
-├── TimeService
-├── state
-├── PRNG
-└── persistence
-
-Platform / input
-└── input/
-
-Developer tools
-└── devtools/
-
-Configuration
-└── config/
+Presentation / Phaser integration
+        ↓
+Gameplay state and rules
+        ↓
+Core services / configuration
+        ↓
+Platform input + lifecycle adapters
 ```
 
-## 3. Directory structure
+Developer tools observe/tune these systems but must not become a second gameplay implementation.
+
+General ownership:
+
+```text
+Scene / game orchestration → coordinates high-level flow
+Entity                   → owns entity-specific state/presentation boundary
+System                   → owns reusable gameplay rules/processes
+Service                  → owns cross-cutting infrastructure
+Input adapter            → converts device events into InputService intent
+Developer tool           → observes/tunes development state only
+```
+
+Do not hide authoritative gameplay state inside UI/debug objects.
+
+## 3. Current repository structure
+
+Current major runtime directories are:
 
 ```text
 src/
-├── config/
-├── core/
-├── devtools/
-├── entities/
-├── hazards/
-├── input/
-├── scenes/
-├── systems/
-└── ui/
+├── config/       runtime/prototype configuration
+├── core/         cross-cutting application/game services and state
+├── devtools/     Director/debug tooling
+├── entities/     gameplay entity boundaries
+├── game/         Phaser game bootstrap, layouts, and scenes
+│   └── scenes/
+├── hazards/      hazard-domain rules/presentation boundaries
+├── input/        InputService and device/input adapters
+├── systems/      reusable gameplay systems
+└── main.ts       application entry point
 ```
 
-Supporting project directories:
+This is a description of the current major structure, not a requirement to create an empty directory for every future concept.
 
-```text
-assets/
-├── raw/
-├── source/
-├── processed/
-└── manifests/
+Supporting project areas include tests, Vite configuration, GitHub Actions, Codespaces configuration, and public runtime files.
 
-public/assets/
+## 4. Time authority
 
-tests/
-tools/
-docs/
-```
-
-## 4. TimeService
-
-`TimeService` is the shared authority for simulation time.
+`TimeService` is the shared authority for gameplay simulation time.
 
 Responsibilities:
 
-- accept Phaser's frame timing;
-- expose a normalized delta in seconds;
+- accept the frame timing supplied by the Phaser/application loop;
+- expose normalized simulation delta in seconds;
 - clamp unreasonable simulation steps;
-- represent active/paused state;
-- handle explicit pause/resume transitions;
-- prevent post-background physics jumps.
+- represent pause/resume state;
+- prevent inactive/background time from creating physics jumps.
 
-Do not duplicate time-clamping logic throughout individual gameplay classes.
+Rules:
 
-## 5. InputService
+- gameplay movement is time-based, not frame-count based;
+- do not duplicate delta clamping in individual gameplay classes;
+- lifecycle transitions must keep time state coherent.
 
-`InputService` converts device input into game actions.
+## 5. Input boundary
 
-Supported sources:
+`InputService` converts platform/device input into high-level gameplay intent.
+
+Current input sources include:
 
 - touch/pointer;
 - mouse;
 - Space key.
 
-Core concept:
+Concept:
 
 ```text
-Device input
-    ↓
+Device event
+   ↓
+platform/input adapter
+   ↓
 InputService
-    ↓
-Game action: thrustHeld
-    ↓
-Gameplay
+   ↓
+high-level intent (for example thrustHeld)
+   ↓
+gameplay
 ```
 
 Requirements:
 
-- track active pointer identity;
-- handle down/up/cancel;
-- support gameplay blocking;
-- isolate UI interactions;
-- handle lifecycle interruptions.
+- track active pointer identity where needed;
+- handle down/up/cancel/interruption;
+- support explicit gameplay blocking;
+- prevent UI/debug interaction from leaking into gameplay input;
+- release held intent on lifecycle interruption.
 
-## 6. Viewport / Scaling
+Gameplay entities must not create a parallel raw-input path.
+
+## 6. Lifecycle boundary
+
+Browser/Phaser lifecycle events are coordinated through the existing lifecycle infrastructure rather than handled independently by every gameplay object.
+
+The combined lifecycle state must:
+
+- release active gameplay input when appropriate;
+- pause simulation time coherently;
+- prevent a giant first resume delta;
+- support safe cleanup/restart behavior.
+
+## 7. Viewport and scaling
 
 Viewport handling is an application-level concern.
 
 Requirements:
 
 - dynamic resizing;
-- no hardcoded physical screen width;
-- safe UI anchoring;
-- gameplay fairness across aspect ratios;
-- real-device testing.
+- no hardcoded physical screen width as a gameplay rule;
+- safe-area-aware UI placement;
+- fairness across device aspect ratios;
+- Landscape as the decided core orientation target while still handling live resize and varied Landscape dimensions.
 
-Do not tie gameplay rules directly to a specific phone resolution.
+Gameplay geometry and UI safe areas are related but distinct concerns.
 
-Landscape is the decided target orientation for the current core game. Viewport systems must still handle dynamic resize and varied landscape aspect ratios; orientation locking requires a separate implementation decision.
+A larger physical viewport must not accidentally grant a large gameplay reaction-time advantage.
 
-## 7. Gameplay separation
+## 8. Gameplay vs. presentation
 
-Gameplay rules should be independent of rendering where practical.
+Keep deterministic rules independent of Phaser rendering where practical.
 
-Examples of preferred pure/testable logic:
-
-```text
-calculateScore()
-calculateDifficulty()
-canPatternSpawn()
-checkGraze()
-validatePattern()
-```
-
-Phaser objects can call these systems, but the mathematical rules should not require a Canvas to be tested.
-
-## 8. Procedural generation
-
-Future architecture:
+Examples of logic that should remain testable without a Canvas when implemented:
 
 ```text
-RunState
-   ↓
-PRNGService
-   ↓
-PatternGenerator
-   ↓
-PatternValidator
-   ↓
-Spawner
+flight integration
+run-distance progression
+collision rules
+score rules
+Graze rules
+difficulty functions
+pattern validation
+save migrations
 ```
 
-The PRNG owns gameplay randomness.
+Phaser scenes/presentation may orchestrate and display these systems, but should not become the only place their rules can be evaluated.
 
-`PatternValidator` checks explicit constraints such as reaction time and reachable corridors.
+## 9. Randomness and procedural generation
 
-## 9. Director tools
+Procedural generation is **planned architecture**, not permission to implement it before its roadmap milestone.
 
-Director tools are separate from production gameplay.
-
-Expected future modules:
+Target flow:
 
 ```text
-devtools/
-├── DirectorPanel
-├── DebugOverlay
-└── RuntimeConfig
+Run generation state
+        ↓
+seeded gameplay PRNG
+        ↓
+Pattern Generator
+        ↓
+Pattern Validator
+        ↓
+Spawner / presentation
 ```
 
-The system should support live tuning and deterministic test workflows without requiring source edits for every adjustment.
+Rules:
 
-## 10. Assets
+- gameplay randomness must be reproducible;
+- no gameplay `Math.random()`;
+- generated hazards/patterns must pass explicit fairness validation;
+- generation and validation should remain deterministic/headless-testable where practical.
 
-Production asset flow:
+## 10. Director/developer tools
+
+Director tools are development infrastructure.
+
+They may expose:
+
+- runtime tuning;
+- diagnostics;
+- hitboxes/debug geometry;
+- deterministic run/seed information;
+- test-state controls.
+
+They must:
+
+- use the same authoritative runtime state/configuration as gameplay;
+- avoid owning a duplicate tuning state;
+- stay isolated from production gameplay responsibilities;
+- remain easy to exclude/disable in production builds.
+
+## 11. Persistence
+
+Persistence is **planned architecture** for the approved later roadmap scope.
+
+Target boundary:
+
+```text
+Gameplay / meta systems
+        ↓
+SaveManager
+        ↓
+Storage adapter
+        ↓
+local browser storage / later platform storage
+```
+
+Rules when implemented:
+
+- gameplay systems do not access `localStorage` directly;
+- saves are versioned;
+- schema migrations are explicit;
+- platform-specific storage stays behind adapters.
+
+## 12. Assets
+
+The production asset pipeline is not fully implemented yet. Do not describe planned folders/tools as if they already exist.
+
+Approved target flow:
 
 ```text
 assets/raw
@@ -195,68 +243,21 @@ assets/source
     ↓
 assets/processed
     ↓
-asset validation / atlas build
+validation / atlas or processing steps where useful
     ↓
 public/assets
 ```
 
-Future asset tooling should be deterministic and CI-friendly.
+The exact processing tools, formats, atlas rules, and budgets remain implementation decisions for the relevant art/asset work.
 
-## 11. Persistence
+## 13. Platform abstraction
 
-Future architecture:
+Avoid scattering browser/mobile/desktop checks through gameplay.
 
-```text
-Gameplay
-   ↓
-SaveManager
-   ↓
-Storage adapter
-   ↓
-localStorage / later platform storage
-```
+When platform-specific behavior is required, put it behind small services/adapters so gameplay rules remain platform-agnostic where practical.
 
-No gameplay class directly uses `localStorage`.
+## 14. Architecture change rule
 
-## 12. Platform abstraction
+Do not treat a future diagram in this document as current implementation scope.
 
-Avoid spreading browser/mobile/desktop checks through gameplay.
-
-Platform-specific behavior should live behind small services/adapters where needed.
-
-The gameplay layer should remain platform-agnostic.
-
-## 13. State ownership
-
-Keep ownership explicit:
-
-```text
-Scene → coordinates high-level game flow
-Entity → owns entity state
-System → owns reusable rules/processes
-Service → owns cross-cutting infrastructure
-UI → displays and requests actions
-```
-
-Do not hide game state in UI objects.
-
-## 14. M0 boundaries
-
-M0 may establish:
-
-- project/tooling;
-- TimeService;
-- InputService;
-- lifecycle handling;
-- viewport foundation;
-- Director diagnostics.
-
-M0 must not implement:
-
-- player gameplay;
-- hazards;
-- Graze;
-- procedural generation;
-- economy;
-- gacha;
-- SaveManager.
+A major architecture change should be driven by an approved task and should update this document when it changes an established ownership boundary. Historical milestone details belong in [`docs/milestones/`](docs/milestones/), not here.
