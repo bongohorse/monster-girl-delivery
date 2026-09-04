@@ -1,6 +1,6 @@
 # Architecture — Monster Girl Delivery
 
-This document owns the project's **technical architecture boundaries**. Product/game rules belong in [`MASTER_SPEC.md`](MASTER_SPEC.md); milestone sequencing belongs in [`docs/ROADMAP.md`](docs/ROADMAP.md); commands and workflow belong in [`DEVELOPMENT.md`](DEVELOPMENT.md).
+This document owns the project's **technical stack and architecture boundaries**. Product/game rules belong in [`MASTER_SPEC.md`](MASTER_SPEC.md); milestone sequencing belongs in [`docs/ROADMAP.md`](docs/ROADMAP.md); commands and workflow belong in [`DEVELOPMENT.md`](DEVELOPMENT.md).
 
 ## 1. Architecture goals
 
@@ -16,7 +16,28 @@ The codebase is designed for:
 
 Avoid enterprise architecture, parallel implementations of the same responsibility, and speculative framework layers.
 
-## 2. Ownership model
+## 2. Technical stack
+
+The current foundation uses:
+
+| Layer | Technology |
+|---|---|
+| Game framework | Phaser 4 |
+| Language | TypeScript |
+| Runtime / package manager / scripts | Bun |
+| Dev/build | Vite |
+| Production bundling | Vite-integrated build pipeline / Rolldown where provided by Vite |
+| Code quality | Biome |
+| Tests | Vitest |
+| Version control | Git |
+| CI/CD | GitHub Actions |
+| Dependency automation | Renovate |
+
+Exact installed versions belong to `package.json` / `bun.lock`, not duplicated here.
+
+Do not replace a foundation technology or add a parallel build/runtime stack without an approved architecture/tooling task and a concrete reason.
+
+## 3. Ownership model
 
 ```text
 Presentation / Phaser integration
@@ -43,7 +64,7 @@ Developer tool           → observes/tunes development state only
 
 Do not hide authoritative gameplay state inside UI/debug objects.
 
-## 3. Current repository structure
+## 4. Current repository structure
 
 Current major runtime directories are:
 
@@ -65,7 +86,7 @@ This is a description of the current major structure, not a requirement to creat
 
 Supporting project areas include tests, Vite configuration, GitHub Actions, Codespaces configuration, and public runtime files.
 
-## 4. Time authority
+## 5. Time authority
 
 `TimeService` is the shared authority for gameplay simulation time.
 
@@ -83,7 +104,7 @@ Rules:
 - do not duplicate delta clamping in individual gameplay classes;
 - lifecycle transitions must keep time state coherent.
 
-## 5. Input boundary
+## 6. Input boundary
 
 `InputService` converts platform/device input into high-level gameplay intent.
 
@@ -117,7 +138,7 @@ Requirements:
 
 Gameplay entities must not create a parallel raw-input path.
 
-## 6. Lifecycle boundary
+## 7. Lifecycle boundary
 
 Browser/Phaser lifecycle events are coordinated through the existing lifecycle infrastructure rather than handled independently by every gameplay object.
 
@@ -128,7 +149,7 @@ The combined lifecycle state must:
 - prevent a giant first resume delta;
 - support safe cleanup/restart behavior.
 
-## 7. Viewport and scaling
+## 8. Viewport and scaling
 
 Viewport handling is an application-level concern.
 
@@ -144,7 +165,7 @@ Gameplay geometry and UI safe areas are related but distinct concerns.
 
 A larger physical viewport must not accidentally grant a large gameplay reaction-time advantage.
 
-## 8. Gameplay vs. presentation
+## 9. Gameplay vs. presentation
 
 Keep deterministic rules independent of Phaser rendering where practical.
 
@@ -163,7 +184,7 @@ save migrations
 
 Phaser scenes/presentation may orchestrate and display these systems, but should not become the only place their rules can be evaluated.
 
-## 9. Randomness and procedural generation
+## 10. Randomness and procedural generation
 
 Procedural generation is **planned architecture**, not permission to implement it before its roadmap milestone.
 
@@ -188,7 +209,7 @@ Rules:
 - generated hazards/patterns must pass explicit fairness validation;
 - generation and validation should remain deterministic/headless-testable where practical.
 
-## 10. Director/developer tools
+## 11. Director/developer tools
 
 Director tools are development infrastructure.
 
@@ -207,7 +228,7 @@ They must:
 - stay isolated from production gameplay responsibilities;
 - remain easy to exclude/disable in production builds.
 
-## 11. Persistence
+## 12. Persistence
 
 Persistence is **planned architecture** for the approved later roadmap scope.
 
@@ -230,7 +251,7 @@ Rules when implemented:
 - schema migrations are explicit;
 - platform-specific storage stays behind adapters.
 
-## 12. Assets
+## 13. Assets
 
 The production asset pipeline is not fully implemented yet. Do not describe planned folders/tools as if they already exist.
 
@@ -250,13 +271,13 @@ public/assets
 
 The exact processing tools, formats, atlas rules, and budgets remain implementation decisions for the relevant art/asset work.
 
-## 13. Platform abstraction
+## 14. Platform abstraction
 
 Avoid scattering browser/mobile/desktop checks through gameplay.
 
 When platform-specific behavior is required, put it behind small services/adapters so gameplay rules remain platform-agnostic where practical.
 
-## 14. Architecture change rule
+## 15. Architecture change rule
 
 Do not treat a future diagram in this document as current implementation scope.
 
