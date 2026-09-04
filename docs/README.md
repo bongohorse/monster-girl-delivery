@@ -10,8 +10,8 @@ The hub is intentionally a navigation/ownership document, not another specificat
 ## Current project pointer
 
 - **Project phase:** Pre-Production
-- **Current milestone:** M2 — Horizontal Run & First Hazard
-- **Current milestone parent:** [GitHub Issue #49](https://github.com/bongohorse/monster-girl-delivery/issues/49)
+- **Current milestone:** M3 — Seeded Generation & Fairness
+- **Current milestone parent:** [GitHub Issue #57](https://github.com/bongohorse/monster-girl-delivery/issues/57)
 - **Roadmap:** [`ROADMAP.md`](ROADMAP.md)
 - **Product/game specification:** [`../MASTER_SPEC.md`](../MASTER_SPEC.md)
 
@@ -192,6 +192,7 @@ Current completed reports:
 
 - [`milestones/M0-foundation.md`](milestones/M0-foundation.md)
 - [`milestones/M1-flight-prototype.md`](milestones/M1-flight-prototype.md)
+- [`milestones/M2-horizontal-run-first-hazard.md`](milestones/M2-horizontal-run-first-hazard.md)
 - supporting M1 evidence: [`milestones/M1-device-report.md`](milestones/M1-device-report.md)
 
 Historical reports should be corrected only when factual evidence is wrong, not rewritten to match later plans.
@@ -237,6 +238,8 @@ docs/
     ├── TEMPLATE.md               Closeout template
     ├── M0-foundation.md          Completed M0 history
     ├── M1-flight-prototype.md    Completed M1 history
+    ├── M2-horizontal-run-first-hazard.md
+    │                             Completed M2 history
     └── M1-device-report.md       Supporting M1 device evidence
 ```
 

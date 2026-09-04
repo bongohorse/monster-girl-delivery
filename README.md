@@ -3,7 +3,7 @@
 2D mobile-first sidescroller built with Phaser 4 and TypeScript.
 
 **Current project phase:** Pre-Production  
-**Current milestone:** M2 — Horizontal Run & First Hazard ([Issue #49](https://github.com/bongohorse/monster-girl-delivery/issues/49))
+**Current milestone:** M3 — Seeded Generation & Fairness ([Issue #57](https://github.com/bongohorse/monster-girl-delivery/issues/57))
 
 > Start with the [`Documentation Hub`](docs/README.md) for product decisions, roadmap ownership, architecture, future ideas, AI workflow, and milestone history.
 
@@ -125,4 +125,4 @@ The current core game is **Landscape**, left-to-right, with one-button flight. T
 
 Portrait remains a **FUTURE** separate-mode/variant possibility, not current core gameplay.
 
-For exact current M2 scope, use [Issue #49](https://github.com/bongohorse/monster-girl-delivery/issues/49) rather than copying the full milestone specification into this README.
+For exact current M3 scope, use [Issue #57](https://github.com/bongohorse/monster-girl-delivery/issues/57) rather than copying the full milestone specification into this README.
