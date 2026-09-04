@@ -1,11 +1,15 @@
 import { describe, expect, it } from 'vitest';
+import { PROTOTYPE_RUN_MOTION_DEFAULTS } from '../../src/config/RunMotionConfig';
 import {
   advanceGeneratedHazardStream,
   createGeneratedHazardStream,
   PROTOTYPE_GENERATED_HAZARD_STREAM_CONFIG,
+  resolveHazardSafeSpeedChange,
 } from '../../src/generation/GeneratedHazardStream';
+import { evaluateHazardApproachTiming } from '../../src/generation/HazardApproachTiming';
 import { createHazardPattern } from '../../src/generation/HazardPattern';
 import { PROTOTYPE_HAZARD_PATTERN_FIXTURES } from '../../src/generation/PrototypeHazardPatternFixtures';
+import { PROTOTYPE_PLAYER_COLLISION_EXTENTS } from '../../src/systems/HazardCollision';
 
 const LIVE_CONTEXT = Object.freeze({ catalog: PROTOTYPE_HAZARD_PATTERN_FIXTURES });
 
@@ -26,12 +30,33 @@ const BLOCKED_PATTERN = createHazardPattern({
   ],
 });
 
+const ZERO_OFFSET_PATTERN = createHazardPattern({
+  id: 'zero-offset',
+  runLength: 200,
+  entries: [
+    {
+      id: 'at-pattern-start',
+      type: 'placeholder-barrier',
+      hitbox: { left: 0, right: 48, top: 160, bottom: 208 },
+    },
+  ],
+});
+
 describe('generated hazard stream', () => {
   it('pre-fills and advances multiple deterministic patterns from run distance', () => {
-    const initial = createGeneratedHazardStream('stream-progress', LIVE_CONTEXT);
-    const advanced = advanceGeneratedHazardStream(initial, 1_000, LIVE_CONTEXT);
+    const initial = createGeneratedHazardStream(
+      'stream-progress',
+      LIVE_CONTEXT,
+      PROTOTYPE_RUN_MOTION_DEFAULTS,
+    );
+    const advanced = advanceGeneratedHazardStream(
+      initial,
+      1_000,
+      LIVE_CONTEXT,
+      PROTOTYPE_RUN_MOTION_DEFAULTS,
+    );
 
-    expect(initial.scheduledPatternCount).toBeGreaterThan(1);
+    expect(initial.scheduledPatternCount).toBe(1);
     expect(initial.spawns.length).toBeGreaterThan(1);
     expect(advanced.scheduledPatternCount).toBeGreaterThan(initial.scheduledPatternCount);
     expect(advanced.nextPatternStartDistance).toBeGreaterThan(initial.nextPatternStartDistance);
@@ -39,34 +64,235 @@ describe('generated hazard stream', () => {
   });
 
   it('reproduces the same logical sequence when restarted from the same seed', () => {
-    const first = createGeneratedHazardStream('same-run-seed', LIVE_CONTEXT);
-    const progressed = advanceGeneratedHazardStream(first, 900, LIVE_CONTEXT);
-    const restarted = createGeneratedHazardStream('same-run-seed', LIVE_CONTEXT);
-    const replayedProgress = advanceGeneratedHazardStream(restarted, 900, LIVE_CONTEXT);
+    const first = createGeneratedHazardStream(
+      'same-run-seed',
+      LIVE_CONTEXT,
+      PROTOTYPE_RUN_MOTION_DEFAULTS,
+    );
+    const progressed = advanceGeneratedHazardStream(
+      first,
+      900,
+      LIVE_CONTEXT,
+      PROTOTYPE_RUN_MOTION_DEFAULTS,
+    );
+    const restarted = createGeneratedHazardStream(
+      'same-run-seed',
+      LIVE_CONTEXT,
+      PROTOTYPE_RUN_MOTION_DEFAULTS,
+    );
+    const replayedProgress = advanceGeneratedHazardStream(
+      restarted,
+      900,
+      LIVE_CONTEXT,
+      PROTOTYPE_RUN_MOTION_DEFAULTS,
+    );
 
     expect(restarted).toEqual(first);
     expect(replayedProgress).toEqual(progressed);
   });
 
+  it('keeps the intended reaction window identical across narrow and wide viewports', () => {
+    const narrowLandscape = { width: 640, height: 360 };
+    const wideLandscape = { width: 1_280, height: 540 };
+
+    expect(narrowLandscape.width).not.toBe(wideLandscape.width);
+
+    const narrowEncounter = createGeneratedHazardStream(
+      'viewport-independent-timing',
+      LIVE_CONTEXT,
+      PROTOTYPE_RUN_MOTION_DEFAULTS,
+    );
+    const wideEncounter = createGeneratedHazardStream(
+      'viewport-independent-timing',
+      LIVE_CONTEXT,
+      PROTOTYPE_RUN_MOTION_DEFAULTS,
+    );
+
+    expect(wideEncounter).toEqual(narrowEncounter);
+    expect(narrowEncounter.schedulingWindow).toEqual({
+      minimumReactionDistance: 700,
+      minimumReactionTimeSeconds: 2,
+      scrollSpeed: 350,
+    });
+    expect(
+      narrowEncounter.spawns.every(
+        (spawn) =>
+          spawn.approachTiming.timeToImpactSeconds !== null &&
+          spawn.approachTiming.timeToImpactSeconds >= 2,
+      ),
+    ).toBe(true);
+
+    const boundaryEncounter = createGeneratedHazardStream(
+      'collision-boundary-timing',
+      { catalog: [ZERO_OFFSET_PATTERN] },
+      PROTOTYPE_RUN_MOTION_DEFAULTS,
+    );
+    expect(boundaryEncounter.spawns[0]?.approachTiming).toMatchObject({
+      distanceToImpact: 700,
+      meetsMinimumReactionTime: true,
+      timeToImpactSeconds: 2,
+    });
+  });
+
+  it('deterministically defers an unsafe speed increase without moving scheduled hazards', () => {
+    const initial = createGeneratedHazardStream(
+      'speed-change',
+      LIVE_CONTEXT,
+      PROTOTYPE_RUN_MOTION_DEFAULTS,
+    );
+    const existingSpawns = initial.spawns;
+    const resolution = resolveHazardSafeSpeedChange(initial, 0, LIVE_CONTEXT, {
+      baseScrollSpeed: 700,
+    });
+    const repeatedResolution = resolveHazardSafeSpeedChange(initial, 0, LIVE_CONTEXT, {
+      baseScrollSpeed: 700,
+    });
+    const deferred = advanceGeneratedHazardStream(initial, 0, LIVE_CONTEXT, {
+      baseScrollSpeed: 700,
+    });
+
+    expect(repeatedResolution).toEqual(resolution);
+    expect(resolution).toMatchObject({
+      appliedScrollSpeed: 350,
+      requestedScrollSpeed: 700,
+      status: 'deferred',
+    });
+    expect(resolution.maximumSafeScrollSpeed).toBeGreaterThan(350);
+    expect(resolution.maximumSafeScrollSpeed).toBeLessThan(700);
+    expect(resolution.limitingTargetRunDistance).not.toBeNull();
+    expect(Object.isFrozen(resolution)).toBe(true);
+    expect(deferred).toBe(initial);
+    expect(deferred.spawns).toBe(existingSpawns);
+  });
+
+  it('applies an accepted speed increase only when every future hazard keeps the minimum time', () => {
+    const initial = createGeneratedHazardStream(
+      'speed-change',
+      LIVE_CONTEXT,
+      PROTOTYPE_RUN_MOTION_DEFAULTS,
+    );
+    const unsafeResolution = resolveHazardSafeSpeedChange(initial, 0, LIVE_CONTEXT, {
+      baseScrollSpeed: 700,
+    });
+    const acceptedSpeed = unsafeResolution.maximumSafeScrollSpeed;
+
+    expect(acceptedSpeed).not.toBeNull();
+    if (acceptedSpeed === null) {
+      throw new Error('Expected a scheduled hazard to provide a finite safe speed boundary.');
+    }
+    expect(acceptedSpeed).toBeGreaterThan(PROTOTYPE_RUN_MOTION_DEFAULTS.baseScrollSpeed);
+
+    const resolution = resolveHazardSafeSpeedChange(initial, 0, LIVE_CONTEXT, {
+      baseScrollSpeed: acceptedSpeed,
+    });
+    const accepted = advanceGeneratedHazardStream(initial, 0, LIVE_CONTEXT, {
+      baseScrollSpeed: acceptedSpeed,
+    });
+
+    expect(resolution).toMatchObject({
+      appliedScrollSpeed: acceptedSpeed,
+      maximumSafeScrollSpeed: acceptedSpeed,
+      requestedScrollSpeed: acceptedSpeed,
+      status: 'applied',
+    });
+    expect(accepted.schedulingWindow.scrollSpeed).toBe(acceptedSpeed);
+    expect(accepted.spawns.slice(0, initial.spawns.length)).toEqual(initial.spawns);
+
+    for (const [index, spawn] of initial.spawns.entries()) {
+      expect(accepted.spawns[index]).toBe(spawn);
+    }
+    expect(
+      accepted.spawns.every(
+        (spawn) =>
+          evaluateHazardApproachTiming(
+            spawn.approachTiming.targetRunDistance,
+            0,
+            accepted.schedulingWindow,
+          ).meetsMinimumReactionTime,
+      ),
+    ).toBe(true);
+
+    const nextSchedulingDistance =
+      accepted.nextPatternStartDistance -
+      accepted.schedulingWindow.minimumReactionDistance -
+      PROTOTYPE_PLAYER_COLLISION_EXTENTS.right;
+    const continued = advanceGeneratedHazardStream(accepted, nextSchedulingDistance, LIVE_CONTEXT, {
+      baseScrollSpeed: acceptedSpeed,
+    });
+    const newlyScheduled = continued.spawns.slice(initial.spawns.length);
+
+    expect(newlyScheduled.length).toBeGreaterThan(0);
+    expect(
+      newlyScheduled.every(
+        (spawn) =>
+          spawn.approachTiming.scrollSpeed === acceptedSpeed &&
+          spawn.approachTiming.meetsMinimumReactionTime,
+      ),
+    ).toBe(true);
+    expect(
+      newlyScheduled.every(
+        (spawn) =>
+          spawn.approachTiming.targetRunDistance ===
+          spawn.runDistance - PROTOTYPE_PLAYER_COLLISION_EXTENTS.right,
+      ),
+    ).toBe(true);
+
+    const slowerResolution = resolveHazardSafeSpeedChange(initial, 0, LIVE_CONTEXT, {
+      baseScrollSpeed: 175,
+    });
+    expect(slowerResolution).toMatchObject({
+      appliedScrollSpeed: 175,
+      requestedScrollSpeed: 175,
+      status: 'applied',
+    });
+  });
+
   it('returns the same state without duplicate spawns at repeated run distance', () => {
-    const initial = createGeneratedHazardStream('no-duplicates', LIVE_CONTEXT);
-    const advanced = advanceGeneratedHazardStream(initial, 700, LIVE_CONTEXT);
-    const repeated = advanceGeneratedHazardStream(advanced, 700, LIVE_CONTEXT);
+    const initial = createGeneratedHazardStream(
+      'no-duplicates',
+      LIVE_CONTEXT,
+      PROTOTYPE_RUN_MOTION_DEFAULTS,
+    );
+    const advanced = advanceGeneratedHazardStream(
+      initial,
+      700,
+      LIVE_CONTEXT,
+      PROTOTYPE_RUN_MOTION_DEFAULTS,
+    );
+    const repeated = advanceGeneratedHazardStream(
+      advanced,
+      700,
+      LIVE_CONTEXT,
+      PROTOTYPE_RUN_MOTION_DEFAULTS,
+    );
 
     expect(repeated).toBe(advanced);
     expect(new Set(repeated.spawns).size).toBe(repeated.spawns.length);
   });
 
   it('does not consume generation state for zero-delta progress', () => {
-    const initial = createGeneratedHazardStream('paused-stream', LIVE_CONTEXT);
-    const paused = advanceGeneratedHazardStream(initial, 0, LIVE_CONTEXT);
+    const initial = createGeneratedHazardStream(
+      'paused-stream',
+      LIVE_CONTEXT,
+      PROTOTYPE_RUN_MOTION_DEFAULTS,
+    );
+    const paused = advanceGeneratedHazardStream(
+      initial,
+      0,
+      LIVE_CONTEXT,
+      PROTOTYPE_RUN_MOTION_DEFAULTS,
+    );
 
     expect(paused).toBe(initial);
     expect(paused.generationState).toBe(initial.generationState);
   });
 
   it('removes hazards only after they leave the fixed logical retention window', () => {
-    const initial = createGeneratedHazardStream('retention-window', LIVE_CONTEXT);
+    const initial = createGeneratedHazardStream(
+      'retention-window',
+      LIVE_CONTEXT,
+      PROTOTYPE_RUN_MOTION_DEFAULTS,
+    );
     const firstSpawn = initial.spawns[0];
 
     expect(firstSpawn).toBeDefined();
@@ -78,6 +304,7 @@ describe('generated hazard stream', () => {
       initial,
       firstSpawn.hitbox.right + PROTOTYPE_GENERATED_HAZARD_STREAM_CONFIG.retainBehindDistance + 1,
       LIVE_CONTEXT,
+      PROTOTYPE_RUN_MOTION_DEFAULTS,
     );
 
     expect(advanced.spawns).not.toContain(firstSpawn);
@@ -94,9 +321,18 @@ describe('generated hazard stream', () => {
         maxCandidateAttempts: 3,
       },
     };
-    const exhausted = createGeneratedHazardStream('exhausted-stream', context);
+    const exhausted = createGeneratedHazardStream(
+      'exhausted-stream',
+      context,
+      PROTOTYPE_RUN_MOTION_DEFAULTS,
+    );
     const generationStateAfterFailure = exhausted.generationState;
-    const advanced = advanceGeneratedHazardStream(exhausted, 100, context);
+    const advanced = advanceGeneratedHazardStream(
+      exhausted,
+      100,
+      context,
+      PROTOTYPE_RUN_MOTION_DEFAULTS,
+    );
 
     expect(exhausted.status).toBe('exhausted');
     expect(exhausted.spawns).toEqual([]);
@@ -105,28 +341,52 @@ describe('generated hazard stream', () => {
   });
 
   it('rejects invalid or backward progress and invalid logical window configuration', () => {
-    const initial = createGeneratedHazardStream('invalid-progress', LIVE_CONTEXT);
-
-    expect(() => advanceGeneratedHazardStream(initial, -1, LIVE_CONTEXT)).toThrow(RangeError);
-    expect(() => advanceGeneratedHazardStream(initial, Number.NaN, LIVE_CONTEXT)).toThrow(
-      RangeError,
+    const initial = createGeneratedHazardStream(
+      'invalid-progress',
+      LIVE_CONTEXT,
+      PROTOTYPE_RUN_MOTION_DEFAULTS,
     );
+
     expect(() =>
-      advanceGeneratedHazardStream(initial, initial.runDistance - 1, LIVE_CONTEXT),
+      advanceGeneratedHazardStream(initial, -1, LIVE_CONTEXT, PROTOTYPE_RUN_MOTION_DEFAULTS),
     ).toThrow(RangeError);
     expect(() =>
-      createGeneratedHazardStream('invalid-window', {
-        catalog: PROTOTYPE_HAZARD_PATTERN_FIXTURES,
-        config: {
-          ...PROTOTYPE_GENERATED_HAZARD_STREAM_CONFIG,
-          spawnAheadDistance: 0,
+      advanceGeneratedHazardStream(
+        initial,
+        Number.NaN,
+        LIVE_CONTEXT,
+        PROTOTYPE_RUN_MOTION_DEFAULTS,
+      ),
+    ).toThrow(RangeError);
+    expect(() =>
+      advanceGeneratedHazardStream(
+        initial,
+        initial.runDistance - 1,
+        LIVE_CONTEXT,
+        PROTOTYPE_RUN_MOTION_DEFAULTS,
+      ),
+    ).toThrow(RangeError);
+    expect(() =>
+      createGeneratedHazardStream(
+        'invalid-window',
+        {
+          catalog: PROTOTYPE_HAZARD_PATTERN_FIXTURES,
+          config: {
+            ...PROTOTYPE_GENERATED_HAZARD_STREAM_CONFIG,
+            reactionTime: { minimumReactionTimeSeconds: 0 },
+          },
         },
-      }),
+        PROTOTYPE_RUN_MOTION_DEFAULTS,
+      ),
     ).toThrow(RangeError);
   });
 
   it('keeps immutable logical output independent of viewport state', () => {
-    const stream = createGeneratedHazardStream('logical-stream', LIVE_CONTEXT);
+    const stream = createGeneratedHazardStream(
+      'logical-stream',
+      LIVE_CONTEXT,
+      PROTOTYPE_RUN_MOTION_DEFAULTS,
+    );
 
     expect(Object.isFrozen(stream)).toBe(true);
     expect(Object.isFrozen(stream.spawns)).toBe(true);
