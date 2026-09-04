@@ -8,22 +8,38 @@ The human is the Game Director. The human defines what the game should be. You i
 
 For a new/first repository session:
 
-1. Read `MASTER_SPEC.md`.
-2. Read `ARCHITECTURE.md`.
-3. Read `DEVELOPMENT.md`.
-4. Inspect the existing Phaser starter and repository files.
-5. Understand the current milestone before writing gameplay code.
+1. Read this `AGENTS.md`.
+2. Read [`docs/README.md`](docs/README.md) to understand document ownership and choose only the relevant sources.
+3. Read the assigned/current GitHub Issue or PR before deciding implementation scope.
+4. Read the relevant sections of `MASTER_SPEC.md` for product/game rules.
+5. Read `ARCHITECTURE.md` and `DEVELOPMENT.md` as required by the task.
+6. Inspect the existing implementation and tests before writing code.
+7. Confirm which milestone the assigned Issue belongs to.
 
-Do not start by building gameplay just because the repository is empty.
+Do not start by implementing a milestone, backlog idea, or discussed concept merely because it exists in the repository.
 
-## Source of truth
+Do not read `docs/BACKLOG.md` or `docs/ART_DIRECTION_IDEAS.md` as current requirements unless the task explicitly involves planning, design exploration, or promotion of those ideas.
 
-- `MASTER_SPEC.md` — product/game truth and project status.
-- `ARCHITECTURE.md` — technical boundaries.
-- `DEVELOPMENT.md` — commands and workflow.
-- Existing code — current implementation.
+## Documentation map and source ownership
+
+Use [`docs/README.md`](docs/README.md) as the navigation index.
+
+The key ownership rules are:
+
+- `MASTER_SPEC.md` — durable product/game truth and decision states.
+- `docs/ROADMAP.md` — approved milestone sequence and newer forward-looking milestone structure.
+- Current GitHub Issue / PR — focused live implementation scope within approved product/architecture boundaries.
+- `ARCHITECTURE.md` — established technical boundaries.
+- `DEVELOPMENT.md` — commands, validation, workflow, and closeout process.
+- `docs/BACKLOG.md` and `docs/ART_DIRECTION_IDEAS.md` — preserved ideas only, not implementation requirements.
+- `docs/milestones/` — factual historical closeout records, not forward planning.
+- Existing code and tests — current implementation behavior.
+
+`docs/ROADMAP.md` explicitly supersedes the older forward-looking M3–M7 milestone outline in `MASTER_SPEC.md`; it does not replace `MASTER_SPEC.md` product decisions.
 
 Never turn `TBD`, `PROTOTYPE`, `EXPERIMENT`, or `FUTURE` into permanent decisions without approval.
+
+If two sources appear to conflict on the same kind of decision and neither explicitly supersedes the other, surface the conflict instead of silently choosing one.
 
 ## General rules
 
@@ -63,7 +79,7 @@ Never turn `TBD`, `PROTOTYPE`, `EXPERIMENT`, or `FUTURE` into permanent decision
 ## Randomness
 
 - Never use `Math.random()` for gameplay decisions.
-- Use the project's seeded PRNG for gameplay randomness.
+- Use the project's seeded PRNG for gameplay randomness once that system exists.
 - Keep gameplay randomness reproducible.
 
 ## Procedural generation
@@ -162,11 +178,18 @@ Do not generate unrelated refactors in a feature/bug PR.
 - Record out-of-scope discoveries as separate backlog items or Issues instead of expanding the current task.
 - After completing the assigned sub-issue and pull request, the implementation agent must stop.
 
-## First milestone
+## Current milestone handling
 
-M0 is foundation only.
+Do not hardcode assumptions from an old milestone into new work.
 
-Do not implement player gameplay, hazards, procedural generation, gacha, economy, or save systems during M0 unless the Director explicitly changes scope.
+To determine current scope:
+
+1. check `docs/README.md` for the current milestone pointer;
+2. check `docs/ROADMAP.md` for approved sequencing;
+3. inspect the current milestone parent Issue and assigned child Issue;
+4. use completed reports in `docs/milestones/` only for historical facts and inherited capabilities.
+
+A completed milestone report never authorizes future work by itself.
 
 ## GitHub autonomy
 
