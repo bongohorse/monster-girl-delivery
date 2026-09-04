@@ -170,6 +170,8 @@ M4 hazard-approach scheduling converts a typed **PROTOTYPE** minimum reaction ti
 
 M4 pattern reachability remains a pure logical validation rule. It reuses the authoritative analytical vertical-flight integrator to compute conservative continuous-thrust and released-input position extremes over the available reaction time. Hazard-free vertical corridors are reduced by the player collision extents into safe center-position ranges; inclusive intersection with the reachable envelope passes. The context carries explicit flight state and tuning, defaulting to a **PROTOTYPE** representative state for live generation, and never reads Phaser, FPS, viewport size, or presentation state.
 
+M4 difficulty is owned by a pure distance-to-snapshot authority with an explicit capped **PROTOTYPE** tier configuration. The snapshot centralizes speed scale, reaction and corridor targets, spacing, and pattern entry/density eligibility. Consumer adapters translate that snapshot into existing run-motion, timing, validator, and catalog boundaries without bypassing their validation. Difficulty deliberately contains no pacing/intensity state; #82 owns that separate authority, and #120 owns full live encounter-policy integration.
+
 ## 9. Gameplay vs. presentation
 
 Keep deterministic rules independent of Phaser rendering where practical.
@@ -217,6 +219,9 @@ Rules:
 - already-scheduled hazards do not move when scroll tuning changes; the authoritative path rejects unsafe increases using a deterministic maximum-safe-speed boundary, while accepted increases adjust only unscheduled content and immutable timing snapshots preserve what was intended when each hazard entered the stream.
 - geometrically open pattern corridors must also intersect the conservative vertical-flight envelope for the configured reaction time, player collision extents, flight tuning, and explicit current/representative flight state;
 - reachability failures remain structured scheduler rejection data, and only candidates passing both geometry and reachability validation may spawn.
+- difficulty snapshots derive only from logical run distance and explicit configuration, remain deterministic and immutable, and never read viewport, frame, wall-clock, or player-failure state;
+- difficulty-based eligibility may narrow the candidate catalog but never replaces hard geometry or reachability validation;
+- pacing/intensity remains a separate responsibility from difficulty even when both later influence encounter selection.
 
 ## 11. Director/developer tools
 
