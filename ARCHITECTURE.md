@@ -76,6 +76,7 @@ src/
 ├── entities/     gameplay entity boundaries
 ├── game/         Phaser game bootstrap, layouts, and scenes
 │   └── scenes/
+├── generation/   deterministic seeded generation state and rules
 ├── hazards/      hazard-domain rules/presentation boundaries
 ├── input/        InputService and device/input adapters
 ├── systems/      reusable gameplay systems
@@ -186,7 +187,7 @@ Phaser scenes/presentation may orchestrate and display these systems, but should
 
 ## 10. Randomness and procedural generation
 
-Procedural generation is **planned architecture**, not permission to implement it before its roadmap milestone.
+The dedicated seeded gameplay PRNG and explicit run-generation state are current M3 infrastructure. Pattern generation, validation, and spawning remain planned until their focused M3 tasks land.
 
 Target flow:
 
