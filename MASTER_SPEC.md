@@ -608,9 +608,3 @@ Backlog / reference idea
 - Landscape selected as **DECIDED** for the current core game; Portrait retained only as a **FUTURE** separate mode/variant possibility.
 - M1 completed and M2 — Horizontal Run & First Hazard became current.
 - Replay, telemetry, Cloudflare/backend infrastructure intentionally postponed.
-
-### 2026-09-04 — documentation ownership cleanup
-
-- `docs/ROADMAP.md` is the sole owner of milestone sequencing; the duplicate milestone list was removed from this specification.
-- Agent workflow, CI, Codespaces, repository layout, and detailed development procedure are owned by their dedicated documentation instead of being duplicated here.
-- Future ideas remain centralized in `docs/BACKLOG.md`.
