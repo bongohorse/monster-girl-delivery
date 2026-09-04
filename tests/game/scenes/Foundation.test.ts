@@ -40,6 +40,7 @@ const createFoundationHarness = () => {
   const foundation = new Foundation(services, true);
   const viewportService = new ViewportService(400, 800);
   const directorPanel = { layout: vi.fn(), update: vi.fn() };
+  const directorRunControls = { destroy: vi.fn(), layout: vi.fn() };
   const directorTuningControls = { destroy: vi.fn(), layout: vi.fn() };
   const generatedHazardPresentation = { destroy: vi.fn(), sync: vi.fn() };
   const instructions = {
@@ -57,6 +58,7 @@ const createFoundationHarness = () => {
 
   Reflect.set(foundation, 'viewportService', viewportService);
   Reflect.set(foundation, 'directorPanel', directorPanel);
+  Reflect.set(foundation, 'directorRunControls', directorRunControls);
   Reflect.set(foundation, 'directorTuningControls', directorTuningControls);
   Reflect.set(foundation, 'generatedHazardPresentation', generatedHazardPresentation);
   Reflect.set(
@@ -80,6 +82,7 @@ const createFoundationHarness = () => {
     cameraResize,
     directorTuningControls,
     directorPanel,
+    directorRunControls,
     foundation,
     generatedHazardPresentation,
     instructions,
@@ -99,6 +102,7 @@ describe('Foundation scene gameplay orchestration', () => {
   it('steps flight and horizontal progress from the same TimeService delta', () => {
     const {
       foundation,
+      directorPanel,
       generatedHazardPresentation,
       playerPresentation,
       scrollingWorldPresentation,
@@ -136,6 +140,14 @@ describe('Foundation scene gameplay orchestration', () => {
       getHazardStream(foundation).spawns,
       expectedRunMotion,
       100,
+    );
+    expect(directorPanel.update).toHaveBeenLastCalledWith(
+      1_000,
+      60,
+      viewportService.getSnapshot(),
+      services.input.getSnapshot(),
+      services.lifecycle.getSnapshot(),
+      getHazardStream(foundation).generationState.seed,
     );
   });
 
@@ -306,6 +318,7 @@ describe('Foundation scene gameplay orchestration', () => {
   it('cleans scene-owned integration once while keeping application time reusable', () => {
     const {
       directorTuningControls,
+      directorRunControls,
       foundation,
       generatedHazardPresentation,
       playerPresentation,
@@ -337,6 +350,7 @@ describe('Foundation scene gameplay orchestration', () => {
 
     expect(scaleOff).toHaveBeenCalledOnce();
     expect(directorTuningControls.destroy).toHaveBeenCalledOnce();
+    expect(directorRunControls.destroy).toHaveBeenCalledOnce();
     expect(playerPresentation.destroy).toHaveBeenCalledOnce();
     expect(generatedHazardPresentation.destroy).toHaveBeenCalledOnce();
     expect(scrollingWorldPresentation.destroy).toHaveBeenCalledOnce();

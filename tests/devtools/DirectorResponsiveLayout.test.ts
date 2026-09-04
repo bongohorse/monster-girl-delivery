@@ -8,8 +8,8 @@ describe('Director responsive layout', () => {
     const layout = createDirectorResponsiveLayout(viewport);
 
     expect(layout.sideBySide).toBe(false);
-    expect(layout.diagnostics).toEqual({ x: 12, y: 12, width: 360, height: 164 });
-    expect(layout.tuningControls).toEqual({ x: 12, y: 188, width: 360, height: 230 });
+    expect(layout.diagnostics).toEqual({ x: 12, y: 12, width: 360, height: 204 });
+    expect(layout.tuningControls).toEqual({ x: 12, y: 228, width: 360, height: 230 });
   });
 
   it('places panels side by side in representative landscape space', () => {
@@ -22,7 +22,7 @@ describe('Director responsive layout', () => {
     const layout = createDirectorResponsiveLayout(viewport);
 
     expect(layout.sideBySide).toBe(true);
-    expect(layout.diagnostics).toEqual({ x: 56, y: 12, width: 360, height: 164 });
+    expect(layout.diagnostics).toEqual({ x: 56, y: 12, width: 360, height: 204 });
     expect(layout.tuningControls).toEqual({ x: 428, y: 12, width: 360, height: 230 });
   });
 
@@ -40,6 +40,6 @@ describe('Director responsive layout', () => {
     expect(layout.diagnostics.width).toBe(280);
     expect(layout.tuningControls.x).toBe(20);
     expect(layout.tuningControls.width).toBe(280);
-    expect(layout.tuningControls.y).toBe(208);
+    expect(layout.tuningControls.y).toBe(248);
   });
 });

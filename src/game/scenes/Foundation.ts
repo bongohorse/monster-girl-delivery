@@ -4,6 +4,7 @@ import { PhaserLifecycleAdapter } from '../../core/PhaserLifecycleAdapter';
 import { readSafeAreaInsets, ViewportService } from '../../core/ViewportService';
 import { DirectorPanel } from '../../devtools/DirectorPanel';
 import { createDirectorResponsiveLayout } from '../../devtools/DirectorResponsiveLayout';
+import { DirectorRunControls } from '../../devtools/DirectorRunControls';
 import { DirectorTuningControls } from '../../devtools/DirectorTuningControls';
 import { GeneratedHazardPresentation } from '../../entities/GeneratedHazardPresentation';
 import { PrototypePlayerPresentation } from '../../entities/PrototypePlayerPresentation';
@@ -36,6 +37,7 @@ export class Foundation extends Scene {
   private instructions?: Phaser.GameObjects.Text;
   private viewportService?: ViewportService;
   private directorPanel?: DirectorPanel;
+  private directorRunControls?: DirectorRunControls;
   private directorTuningControls?: DirectorTuningControls;
   private inputAdapter?: PhaserInputAdapter;
   private lifecycleAdapter?: PhaserLifecycleAdapter;
@@ -72,6 +74,11 @@ export class Foundation extends Scene {
         this.services.flightTuning,
         this.services.runMotion,
         this.services.input,
+      );
+      this.directorRunControls = new DirectorRunControls(
+        this,
+        this.services.input,
+        this.handleRestartSameSeed,
       );
     }
 
@@ -160,6 +167,7 @@ export class Foundation extends Scene {
       viewport,
       this.services.input.getSnapshot(),
       this.services.lifecycle.getSnapshot(),
+      this.hazardStream.generationState.seed,
     );
   }
 
@@ -222,8 +230,17 @@ export class Foundation extends Scene {
       .setWordWrapWidth(Math.max(120, safeWidth - 32));
     this.renderRun(viewport);
     this.directorPanel?.layout(viewport);
+    this.directorRunControls?.layout(viewport);
     this.directorTuningControls?.layout(viewport);
   }
+
+  private readonly handleRestartSameSeed = (): void => {
+    if (!this.viewportService) {
+      return;
+    }
+
+    this.restartRun(this.viewportService.getSnapshot());
+  };
 
   private restartRun(viewport: ReturnType<ViewportService['getSnapshot']>): void {
     this.runState = createPrototypeRunState(createPrototypeFlightBounds(viewport));
@@ -254,6 +271,8 @@ export class Foundation extends Scene {
 
     this.shutdownHandled = true;
     this.scale.off(Scale.Events.RESIZE, this.handleResize);
+    this.directorRunControls?.destroy();
+    this.directorRunControls = undefined;
     this.directorTuningControls?.destroy();
     this.directorTuningControls = undefined;
     this.directorPanel = undefined;

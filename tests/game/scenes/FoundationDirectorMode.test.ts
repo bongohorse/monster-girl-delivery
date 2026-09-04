@@ -4,6 +4,8 @@ import { createAppServices } from '../../../src/core/AppServices';
 const directorPanelConstructed = vi.hoisted(() => vi.fn());
 const directorControlsConstructed = vi.hoisted(() => vi.fn());
 const directorControlsDestroyed = vi.hoisted(() => vi.fn());
+const directorRunControlsConstructed = vi.hoisted(() => vi.fn());
+const directorRunControlsDestroyed = vi.hoisted(() => vi.fn());
 
 vi.mock('phaser', () => {
   const createText = () => ({
@@ -14,6 +16,9 @@ vi.mock('phaser', () => {
       return this;
     },
     setPosition() {
+      return this;
+    },
+    setText() {
       return this;
     },
     setWordWrapWidth() {
@@ -99,12 +104,26 @@ vi.mock('../../../src/devtools/DirectorTuningControls', () => ({
   },
 }));
 
+vi.mock('../../../src/devtools/DirectorRunControls', () => ({
+  DirectorRunControls: class {
+    constructor(...args: unknown[]) {
+      directorRunControlsConstructed(...args);
+    }
+    destroy() {
+      directorRunControlsDestroyed();
+    }
+    layout() {}
+  },
+}));
+
 import { Foundation } from '../../../src/game/scenes/Foundation';
 
 beforeEach(() => {
   directorPanelConstructed.mockClear();
   directorControlsConstructed.mockClear();
   directorControlsDestroyed.mockClear();
+  directorRunControlsConstructed.mockClear();
+  directorRunControlsDestroyed.mockClear();
   vi.stubGlobal('document', { getElementById: () => null });
 });
 
@@ -123,7 +142,9 @@ describe('Foundation Director mode boundary', () => {
 
     expect(directorPanelConstructed).not.toHaveBeenCalled();
     expect(directorControlsConstructed).not.toHaveBeenCalled();
+    expect(directorRunControlsConstructed).not.toHaveBeenCalled();
     expect(Reflect.get(foundation, 'directorPanel')).toBeUndefined();
+    expect(Reflect.get(foundation, 'directorRunControls')).toBeUndefined();
     expect(Reflect.get(foundation, 'directorTuningControls')).toBeUndefined();
     expect(services.time.getDeltaSeconds()).toBeCloseTo(0.016);
     expect(services.input.getSnapshot().gameplayBlocked).toBe(false);
@@ -138,6 +159,7 @@ describe('Foundation Director mode boundary', () => {
     handleShutdown();
 
     expect(directorControlsDestroyed).not.toHaveBeenCalled();
+    expect(directorRunControlsDestroyed).not.toHaveBeenCalled();
     expect(services.input.getSnapshot().gameplayBlocked).toBe(false);
   });
 
@@ -154,5 +176,37 @@ describe('Foundation Director mode boundary', () => {
       services.runMotion,
       services.input,
     );
+    expect(directorRunControlsConstructed).toHaveBeenCalledWith(
+      foundation,
+      services.input,
+      expect.any(Function),
+    );
+  });
+
+  it('routes the Director action through the same deterministic run reset', () => {
+    const services = createAppServices();
+    const foundation = new Foundation(services, true);
+    foundation.create();
+    const initialRunState = structuredClone(Reflect.get(foundation, 'runState'));
+    const initialHazardStream = Reflect.get(foundation, 'hazardStream');
+    const restartSameSeed = directorRunControlsConstructed.mock.calls[0]?.[2];
+
+    expect(restartSameSeed).toBeTypeOf('function');
+    if (typeof restartSameSeed !== 'function') {
+      throw new TypeError('Director restart callback is unavailable.');
+    }
+
+    foundation.update(0, 50);
+    restartSameSeed();
+
+    expect(Reflect.get(foundation, 'runState')).toEqual(initialRunState);
+    expect(Reflect.get(foundation, 'hazardStream')).toEqual(initialHazardStream);
+
+    foundation.update(0, 50);
+    restartSameSeed();
+
+    expect(Reflect.get(foundation, 'runState')).toEqual(initialRunState);
+    expect(Reflect.get(foundation, 'hazardStream')).toEqual(initialHazardStream);
+    expect(services.input.getSnapshot().gameplayBlocked).toBe(false);
   });
 });

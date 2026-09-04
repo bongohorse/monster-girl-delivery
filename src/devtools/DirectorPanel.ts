@@ -2,7 +2,10 @@ import type { Scene } from 'phaser';
 import type { LifecycleSnapshot } from '../core/LifecycleService';
 import type { ViewportSnapshot } from '../core/ViewportService';
 import type { InputSnapshot } from '../input/InputService';
-import { createDirectorResponsiveLayout } from './DirectorResponsiveLayout';
+import {
+  createDirectorResponsiveLayout,
+  DIRECTOR_DIAGNOSTICS_PANEL_HEIGHT,
+} from './DirectorResponsiveLayout';
 
 /** Minimal read-only diagnostics for Director device testing. */
 export class DirectorPanel {
@@ -12,7 +15,7 @@ export class DirectorPanel {
 
   constructor(scene: Scene) {
     this.background = scene.add
-      .rectangle(0, 0, 360, 164, 0x080a14, 0.88)
+      .rectangle(0, 0, 360, DIRECTOR_DIAGNOSTICS_PANEL_HEIGHT, 0x080a14, 0.88)
       .setOrigin(0)
       .setScrollFactor(0)
       .setDepth(10_000);
@@ -45,6 +48,7 @@ export class DirectorPanel {
     viewport: ViewportSnapshot,
     input: InputSnapshot,
     lifecycle: LifecycleSnapshot,
+    runSeed: number,
   ): void {
     this.elapsedSinceRefresh += frameDeltaMilliseconds;
 
@@ -59,7 +63,8 @@ export class DirectorPanel {
     const pauseState = lifecycle.paused ? lifecycle.pauseReasons.join(', ') : 'running';
 
     this.text.setText([
-      'DIRECTOR DIAGNOSTICS — M1',
+      'DIRECTOR DIAGNOSTICS — M3',
+      `Seed: ${runSeed}`,
       `FPS: ${Math.round(framesPerSecond)}`,
       `Viewport: ${Math.round(viewport.width)} × ${Math.round(viewport.height)}`,
       `Orientation: ${viewport.orientation}`,
