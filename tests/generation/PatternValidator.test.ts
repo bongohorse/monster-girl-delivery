@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { PROTOTYPE_PATTERN_REACHABILITY_CONTEXT } from '../../src/generation/FlightReachability';
 import { createHazardPattern, type HazardPatternEntry } from '../../src/generation/HazardPattern';
 import {
   PROTOTYPE_PATTERN_VALIDATION_CONSTRAINTS,
@@ -106,6 +107,82 @@ describe('validatePattern', () => {
     });
 
     expect(validatePattern(pattern)).toEqual({ valid: true, issues: [] });
+  });
+
+  it('uses initial vertical velocity to accept or reject an otherwise open upward corridor', () => {
+    const upwardCorridor = createHazardPattern({
+      id: 'upward-corridor',
+      runLength: 300,
+      entries: [createEntry('lower-wall', 100, 148, 180, 342)],
+    });
+    const baseReachability = {
+      ...PROTOTYPE_PATTERN_REACHABILITY_CONTEXT,
+      availableReactionTimeSeconds: 0.1,
+    };
+    const reachable = validatePattern(upwardCorridor, PROTOTYPE_PATTERN_VALIDATION_CONSTRAINTS, {
+      ...baseReachability,
+      flightState: { positionY: 200, velocityY: -550 },
+    });
+    const unreachable = validatePattern(upwardCorridor, PROTOTYPE_PATTERN_VALIDATION_CONSTRAINTS, {
+      ...baseReachability,
+      flightState: { positionY: 200, velocityY: 650 },
+    });
+
+    expect(reachable).toEqual({ valid: true, issues: [] });
+    expect(unreachable.valid).toBe(false);
+    expect(unreachable.issues).toHaveLength(1);
+    expect(unreachable.issues[0]).toMatchObject({
+      code: 'vertical-corridor-unreachable',
+      entryIds: ['lower-wall'],
+      reachability: {
+        availableReactionTimeSeconds: 0.1,
+        failureReason: 'safe-corridor-above-reachable-envelope',
+        reachable: false,
+        reachableCenterRange: { top: 261, bottom: 265 },
+        targetCenterRanges: [{ top: 72, bottom: 156 }],
+      },
+      runStart: 100,
+      runEnd: 148,
+    });
+  });
+
+  it('accepts a reachable downward corridor under the same physics-aware rule', () => {
+    const downwardCorridor = createHazardPattern({
+      id: 'downward-corridor',
+      runLength: 300,
+      entries: [createEntry('upper-wall', 100, 148, 48, 200)],
+    });
+
+    expect(
+      validatePattern(downwardCorridor, PROTOTYPE_PATTERN_VALIDATION_CONSTRAINTS, {
+        ...PROTOTYPE_PATTERN_REACHABILITY_CONTEXT,
+        availableReactionTimeSeconds: 0.1,
+        flightState: { positionY: 200, velocityY: 650 },
+      }),
+    ).toEqual({ valid: true, issues: [] });
+  });
+
+  it('does not let a reachable undersized gap rescue an unreachable eligible corridor', () => {
+    const pattern = createHazardPattern({
+      id: 'narrow-alternative',
+      runLength: 300,
+      entries: [createEntry('middle-wall', 100, 148, 180, 300)],
+    });
+    const result = validatePattern(pattern, PROTOTYPE_PATTERN_VALIDATION_CONSTRAINTS, {
+      ...PROTOTYPE_PATTERN_REACHABILITY_CONTEXT,
+      availableReactionTimeSeconds: 0.1,
+      flightState: { positionY: 300, velocityY: 650 },
+      playerExtents: { left: 0, right: 0, top: 0, bottom: 0 },
+    });
+
+    expect(result.valid).toBe(false);
+    expect(result.issues[0]).toMatchObject({
+      code: 'vertical-corridor-unreachable',
+      reachability: {
+        failureReason: 'safe-corridor-above-reachable-envelope',
+        targetCenterRanges: [{ top: 48, bottom: 180 }],
+      },
+    });
   });
 
   it('uses explicit configurable prototype values without changing the pattern', () => {

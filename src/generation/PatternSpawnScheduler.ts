@@ -1,4 +1,5 @@
 import type { LogicalHazard, LogicalHitbox } from '../systems/HazardCollision';
+import type { PatternReachabilityContext } from './FlightReachability';
 import type { HazardPattern, HazardPatternEntryType } from './HazardPattern';
 import { generateNextPattern } from './PatternGenerator';
 import {
@@ -19,6 +20,7 @@ export interface PatternSpawnScheduleRequest {
   readonly maxCandidateAttempts?: number;
   /** Absolute logical run distance where the accepted pattern's local span begins. */
   readonly patternStartDistance: number;
+  readonly reachability?: Readonly<PatternReachabilityContext>;
   readonly state: Readonly<RunGenerationState>;
 }
 
@@ -142,7 +144,7 @@ export const scheduleNextPattern = (
   for (let attempt = 1; attempt <= maxCandidateAttempts; attempt += 1) {
     const candidate = generateNextPattern(state, request.catalog);
     state = candidate.state;
-    const validation = validatePattern(candidate.pattern, constraints);
+    const validation = validatePattern(candidate.pattern, constraints, request.reachability);
 
     if (!validation.valid) {
       rejections.push(

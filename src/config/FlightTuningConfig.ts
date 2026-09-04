@@ -39,6 +39,12 @@ const assertValidMagnitude: (
   }
 };
 
+export const assertValidFlightTuningValues = (values: Readonly<FlightTuningValues>): void => {
+  for (const key of FLIGHT_TUNING_KEYS) {
+    assertValidMagnitude(key, values[key]);
+  }
+};
+
 /** Owns the live M1 flight tuning state shared by gameplay and Director tools. */
 export class FlightTuningConfig {
   private values: FlightTuningValues = { ...PROTOTYPE_FLIGHT_TUNING_DEFAULTS };

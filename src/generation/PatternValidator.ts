@@ -1,3 +1,10 @@
+import {
+  evaluateFlightReachability,
+  type FlightReachabilityResult,
+  type PatternReachabilityContext,
+  PROTOTYPE_PATTERN_REACHABILITY_CONTEXT,
+  type VerticalCorridor,
+} from './FlightReachability';
 import type { HazardPattern, HazardPatternEntry } from './HazardPattern';
 
 export interface PatternValidationConstraints {
@@ -19,16 +26,30 @@ export const PROTOTYPE_PATTERN_VALIDATION_CONSTRAINTS: Readonly<PatternValidatio
 export type PatternValidationIssueCode =
   | 'insufficient-reaction-spacing'
   | 'vertical-corridor-too-narrow'
+  | 'vertical-corridor-unreachable'
   | 'vertical-route-blocked';
 
-export interface PatternValidationIssue {
-  readonly actual: number;
+interface PatternValidationIssueBase {
   readonly code: PatternValidationIssueCode;
   readonly entryIds: ReadonlyArray<string>;
-  readonly required: number;
   readonly runEnd: number;
   readonly runStart: number;
 }
+
+export interface PatternThresholdValidationIssue extends PatternValidationIssueBase {
+  readonly actual: number;
+  readonly code: Exclude<PatternValidationIssueCode, 'vertical-corridor-unreachable'>;
+  readonly required: number;
+}
+
+export interface PatternReachabilityValidationIssue extends PatternValidationIssueBase {
+  readonly code: 'vertical-corridor-unreachable';
+  readonly reachability: Readonly<FlightReachabilityResult>;
+}
+
+export type PatternValidationIssue =
+  | PatternThresholdValidationIssue
+  | PatternReachabilityValidationIssue;
 
 export interface PatternValidationResult {
   readonly issues: ReadonlyArray<Readonly<PatternValidationIssue>>;
@@ -68,16 +89,16 @@ const assertValidConstraints = (constraints: Readonly<PatternValidationConstrain
   }
 };
 
-const createIssue = (issue: PatternValidationIssue): Readonly<PatternValidationIssue> =>
+const createIssue = <Issue extends PatternValidationIssue>(issue: Issue): Readonly<Issue> =>
   Object.freeze({
     ...issue,
     entryIds: Object.freeze([...issue.entryIds]),
-  });
+  }) as Readonly<Issue>;
 
-const getLargestVerticalCorridor = (
+const getVerticalCorridors = (
   entries: ReadonlyArray<Readonly<HazardPatternEntry>>,
   constraints: Readonly<PatternValidationConstraints>,
-): number => {
+): ReadonlyArray<Readonly<VerticalCorridor>> => {
   const occupiedIntervals = entries
     .map((entry) => ({
       top: Math.max(entry.hitbox.top, constraints.playableTop),
@@ -87,19 +108,26 @@ const getLargestVerticalCorridor = (
     .sort((first, second) => first.top - second.top || first.bottom - second.bottom);
 
   let occupiedThrough = constraints.playableTop;
-  let largestCorridor = 0;
+  const corridors: Array<Readonly<VerticalCorridor>> = [];
 
   for (const interval of occupiedIntervals) {
-    largestCorridor = Math.max(largestCorridor, interval.top - occupiedThrough);
+    if (interval.top > occupiedThrough) {
+      corridors.push(Object.freeze({ top: occupiedThrough, bottom: interval.top }));
+    }
     occupiedThrough = Math.max(occupiedThrough, interval.bottom);
   }
 
-  return Math.max(largestCorridor, constraints.playableBottom - occupiedThrough);
+  if (occupiedThrough < constraints.playableBottom) {
+    corridors.push(Object.freeze({ top: occupiedThrough, bottom: constraints.playableBottom }));
+  }
+
+  return Object.freeze(corridors);
 };
 
 const collectVerticalCorridorIssues = (
   pattern: Readonly<HazardPattern>,
   constraints: Readonly<PatternValidationConstraints>,
+  reachabilityContext: Readonly<PatternReachabilityContext>,
 ): ReadonlyArray<Readonly<PatternValidationIssue>> => {
   const verticallyRelevantEntries = pattern.entries.filter(
     (entry) =>
@@ -129,7 +157,14 @@ const collectVerticalCorridorIssues = (
       continue;
     }
 
-    const largestCorridor = getLargestVerticalCorridor(activeEntries, constraints);
+    const corridors = getVerticalCorridors(activeEntries, constraints);
+    const largestCorridor = corridors.reduce(
+      (largest, corridor) => Math.max(largest, corridor.bottom - corridor.top),
+      0,
+    );
+    const eligibleCorridors = corridors.filter(
+      (corridor) => corridor.bottom - corridor.top >= constraints.minimumVerticalCorridor,
+    );
     const entryIds = activeEntries.map((entry) => entry.id);
 
     if (largestCorridor <= 0) {
@@ -154,6 +189,27 @@ const collectVerticalCorridorIssues = (
           runEnd,
         }),
       );
+    } else {
+      const reachability = evaluateFlightReachability(
+        eligibleCorridors,
+        {
+          ceilingY: constraints.playableTop + reachabilityContext.playerExtents.top,
+          floorY: constraints.playableBottom - reachabilityContext.playerExtents.bottom,
+        },
+        reachabilityContext,
+      );
+
+      if (!reachability.reachable) {
+        issues.push(
+          createIssue({
+            code: 'vertical-corridor-unreachable',
+            entryIds,
+            reachability,
+            runStart,
+            runEnd,
+          }),
+        );
+      }
     }
   }
 
@@ -237,15 +293,16 @@ const collectReactionSpacingIssues = (
   return issues;
 };
 
-/** Validates deterministic prototype fairness constraints in logical gameplay space. */
+/** Validates deterministic geometry and flight reachability in logical gameplay space. */
 export const validatePattern = (
   pattern: Readonly<HazardPattern>,
   constraints: Readonly<PatternValidationConstraints> = PROTOTYPE_PATTERN_VALIDATION_CONSTRAINTS,
+  reachabilityContext: Readonly<PatternReachabilityContext> = PROTOTYPE_PATTERN_REACHABILITY_CONTEXT,
 ): Readonly<PatternValidationResult> => {
   assertValidConstraints(constraints);
 
   const issues = Object.freeze([
-    ...collectVerticalCorridorIssues(pattern, constraints),
+    ...collectVerticalCorridorIssues(pattern, constraints, reachabilityContext),
     ...collectReactionSpacingIssues(pattern, constraints),
   ]);
 
