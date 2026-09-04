@@ -18,9 +18,9 @@ The goal is to preserve ideas without forcing early decisions. When a topic beco
 - [C. Level selection, world map and difficulty](#c-level-selection-world-map-and-difficulty)
 - [D. Movement modes, vehicles and gameplay mutators](#d-movement-modes-vehicles-and-gameplay-mutators)
 - [E. Worlds, themes and seasonal events](#e-worlds-themes-and-seasonal-events)
-- [F. Characters, artwork and presentation](#f-characters-artwork-and-presentation)
-- [G. Progression, achievements and collectibles](#g-progression-achievements-and-collectibles)
-- [H. Economy, rewards, loot and monetization ideas](#h-economy-rewards-loot-and-monetization-ideas)
+- [F. Characters, cosmetics, artwork and presentation](#f-characters-cosmetics-artwork-and-presentation)
+- [G. Companions, progression, achievements and collectibles](#g-companions-progression-achievements-and-collectibles)
+- [H. Economy, extraction, fusion, loot and monetization ideas](#h-economy-extraction-fusion-loot-and-monetization-ideas)
 - [I. Dailies, rankings, seasons and community systems](#i-dailies-rankings-seasons-and-community-systems)
 - [J. Side activities, humor minigames and arcade](#j-side-activities-humor-minigames-and-arcade)
 - [K. Smartphone-specific interactions](#k-smartphone-specific-interactions)
@@ -30,6 +30,7 @@ The goal is to preserve ideas without forcing early decisions. When a topic beco
 - [O. Art, rendering and production notes](#o-art-rendering-and-production-notes)
 - [P. Version priorities](#p-version-priorities)
 - [Q. Open design questions](#q-open-design-questions)
+- [Core principle to preserve](#core-principle-to-preserve)
 - [Related documents](#related-documents)
 
 ---
@@ -46,7 +47,7 @@ A useful long-term principle is:
 
 > **One simple core game + many temporary variations + rewarding long-term collection.**
 
-The player should understand the basic controls almost immediately while new worlds, temporary movement modes, characters, cosmetics, missions, collectibles, events, and progression keep the game interesting over time.
+The player should understand the basic controls almost immediately while new worlds, temporary movement modes, characters, cosmetics, companions, missions, collectibles, events, and progression keep the game interesting over time.
 
 ## Core fantasy
 
@@ -70,7 +71,7 @@ Possible deliveries include:
 - living cargo;
 - joke deliveries for strange customers.
 
-This premise is flexible enough to justify almost any world, event, vehicle, or gameplay modifier.
+This premise is flexible enough to justify almost any world, event, vehicle, minigame, or gameplay modifier.
 
 ## Story direction
 
@@ -411,9 +412,9 @@ The permanent control vocabulary should stay small.
 
 > **Do not give the player twenty permanent mechanics. Temporarily change what a few simple inputs mean.**
 
-Possible movement modes:
-
 ## Jetpack / broom flight
+
+Possible visual variants:
 
 - jetpack;
 - witch broom;
@@ -504,8 +505,6 @@ Temporary vehicles can also act as a protective extra hit. Losing one should pro
 # E. Worlds, themes and seasonal events
 
 Long-term variety can come from strongly different locations.
-
-Possible worlds:
 
 ## Monster City
 
@@ -672,7 +671,7 @@ Events can change:
 
 ---
 
-# F. Characters, artwork and presentation
+# F. Characters, cosmetics, artwork and presentation
 
 ## Customization
 
@@ -681,9 +680,11 @@ Players should have many ways to make a favorite character feel like **their ver
 Possible customization:
 
 - full outfits;
+- chromas / color variants;
 - hats;
 - glasses;
 - hair accessories;
+- hair colors;
 - jewelry;
 - shoes;
 - delivery bags;
@@ -693,29 +694,437 @@ Possible customization:
 - trails;
 - aura effects;
 - pickup effects;
-- crash effects;
+- start/spawn effects;
+- crash/fail effects;
 - victory poses;
 - emotes.
 
-## Cheap cosmetics with high value
+## Cosmetic design principle
 
-Especially useful low-cost categories:
+Successful collection-heavy games demonstrate an important lesson:
 
-- profile icons;
-- banners / name cards;
-- titles;
-- badges;
-- portrait frames;
-- stickers;
-- delivery stamps;
-- package skins;
-- simple accessories;
+> **A valuable cosmetic does not need to be a full character skin.**
+
+MGD should deliberately build many cosmetic categories that are cheap to produce, highly visible, easy to collect, and reusable across systems.
+
+Full animated outfits are expensive because every pose/frame may need new art. Profiles, chromas, VFX, stickers, package skins, decorations, and Companion cosmetics can create much more reward volume for less production work.
+
+## Cosmetic ecosystem
+
+A possible long-term cosmetic structure:
+
+```text
+MONSTER GIRL
+├─ Outfit
+├─ Chroma / colors
+├─ Accessories
+├─ Delivery Bag
+├─ Broom / mount appearance
+├─ Trail / aura
+├─ Start VFX
+├─ Pickup VFX
+├─ Crash VFX
+├─ Emote
+└─ Victory pose
+
+PROFILE
+├─ Avatar
+├─ Banner / name card
+├─ Frame
+├─ Title
+├─ Badge
+└─ Sticker / stamp
+
+COMPANION
+├─ Skin / color
+├─ Hat / accessory
+├─ Trail
+└─ cosmetic mutation
+
+DELIVERY HQ
+├─ Furniture
+├─ Posters
+├─ Trophies
+├─ Wallpaper / floor
+├─ Toys
+└─ seasonal decoration
+```
+
+## Chromas / color variants
+
+Color variants are attractive because one underlying asset can generate many collectibles.
+
+Possible examples:
+
+- Demon Girl outfit colors;
+- alternate hair colors;
+- wing/horn colors;
+- Slime colors;
+- broom colors;
+- delivery-bag palettes;
+- Companion colors;
+- seasonal recolors;
+- cyber/neon variants.
+
+A single good outfit may therefore support several cosmetic variants without requiring a completely new animation set.
+
+## Profile cosmetics
+
+Profile cosmetics are extremely cheap compared with full character skins, but become valuable once profiles, friends, rankings, or leaderboards make them visible.
+
+Possible profile elements:
+
+- Monster Girl avatar;
+- Companion avatar;
+- portrait frame;
+- profile banner / name card;
+- title;
+- mastery badge;
+- event badge;
+- selected achievements;
+- favorite Monster Girl;
+- favorite Companion.
+
+Example profile:
+
+```text
+MegaCourier
+Demon Girl Main
+MASTER COURIER
+Season 3 — Diamond
+14,382 Deliveries
+```
+
+### Titles
+
+Titles cost almost no art production and can carry humor or prestige.
+
+Examples:
+
+- Delivery Rookie;
+- Professional Courier;
+- Speed Demon;
+- Package Destroyer;
+- Slime Enjoyer;
+- Certified Witch;
+- Definitely Not Lost;
+- Near-Miss Addict;
+- Employee of the Month;
+- seasonal/event titles.
+
+### Banners and frames
+
+Possible unlocks:
+
+- character mastery banner;
+- lava/demon banner;
+- Halloween graveyard;
+- Christmas delivery scene;
+- global-event banner;
+- ranked top-percent frame;
+- anniversary frame.
+
+## Stickers / delivery stamps
+
+Small stickers can be produced in large quantities and reused in multiple places.
+
+Possible uses:
+
+- profile decoration;
+- Delivery Bag decoration;
+- package decoration;
+- HQ walls;
+- result screen;
+- chat/social systems if those ever exist.
+
+Possible themes:
+
+- character expressions;
+- memes/jokes;
+- customers;
+- hazards;
+- world icons;
+- event logos;
+- delivery stamps.
+
+## Trails and auras
+
+Trails are particularly valuable for a runner because the player sees them throughout normal gameplay.
+
+Possible trails:
+
+- rainbow;
+- hellfire;
+- hearts;
+- stars;
+- ghosts;
+- bats;
+- bubbles;
+- snow;
+- candy;
+- slime;
+- electricity;
+- sakura petals;
+- cyber pixels.
+
+Possible aura effects:
+
+- demon flame;
+- holy glow;
+- electric sparks;
+- floating hearts;
+- snow cloud;
+- glitch aura.
+
+## Pickup / Coin cosmetics
+
+Instead of always changing the collectible itself, cosmetics can change the visual or audio feedback when it is picked up.
+
+Possible variants:
+
+- gold coin;
+- heart;
+- candy;
+- pumpkin;
+- snowflake;
+- star;
+- delivery stamp;
+- sparkle burst;
+- character-themed pickup sound.
+
+The actual collision/gameplay value can remain identical.
+
+## Start / Spawn effects
+
+Possible Delivery-start presentations:
+
+- teleport portal;
+- demon fire;
+- witch circle;
+- lightning strike;
+- slime splash;
+- Delivery Drone drop;
+- confetti entrance.
+
+## Crash / Fail cosmetics
+
+Because the fail state should already be funny, it can also be personalized.
+
+Possible variants:
+
+- ghost leaves the character;
+- confetti explosion;
+- slime splash;
+- cartoon stars;
+- packages explode across the screen;
+- smoke cloud;
+- seasonal effects.
+
+These should remain presentation-only and not alter revive timing or gameplay fairness.
+
+## Delivery Bag cosmetics
+
+The Delivery Bag can become an MGD-specific equivalent of a weapon cosmetic because it naturally belongs to every courier.
+
+Possible bags:
+
+- standard courier bag;
+- pizza bag;
+- demon bag;
+- slime backpack;
+- Mimic bag;
+- transparent aquarium bag;
+- cyber bag;
+- Christmas sack;
+- school backpack.
+
+## Package skins
+
+Packages themselves are another cheap and thematic cosmetic surface.
+
+Examples:
+
+- standard cardboard box;
+- wrapped gift;
+- pizza box;
+- suspicious bomb-like joke parcel;
+- Mimic box;
+- Valentine's package;
+- Halloween pumpkin box;
+- Christmas present;
+- robot parcel.
+
+Package appearance should not hide gameplay-critical information about actual cargo rules.
+
+## Broom / mount / vehicle appearances
+
+Many transport cosmetics can share gameplay behavior while changing silhouette and personality.
+
+Possible broom replacements or skins:
+
+- classic witch broom;
+- neon broom;
+- demon broom;
+- Christmas broom;
+- ridiculous vacuum cleaner;
+- giant paintbrush.
+
+Mount/vehicle skins can similarly create collection without every visual variant needing unique mechanics.
+
+## Companion cosmetics
+
+Companions are especially suitable for combinatorial customization.
+
+Example:
+
+```text
+Species: Slime
+Color: Pink
+Hat: Witch Hat
+Face: Sunglasses
+Trail: Hearts
+```
+
+One base Companion plus several colors/accessories can create many personalized combinations.
+
+Possible Companion cosmetics:
+
+- colors;
+- hats;
+- glasses;
+- bows;
+- collars;
+- tiny backpacks;
 - trails;
-- VFX colors;
-- loading-screen art;
-- UI themes.
+- cosmetic horns/wings;
+- seasonal skins.
 
-These create identity and collection without requiring complete character re-animation.
+## Emotes
+
+Possible Character Viewer / HQ emotes:
+
+- wave;
+- laugh;
+- dance;
+- eat;
+- sleep;
+- flex;
+- annoyed reaction;
+- victory dance;
+- headpat reaction;
+- interact with Companion.
+
+These cost more than static profile items because they require animation, so they belong later than basic profile cosmetics.
+
+## Victory / Delivery poses
+
+Possible result poses:
+
+- peace sign;
+- salute;
+- pose with package;
+- exhausted collapse;
+- sunglasses pose;
+- selfie;
+- hold Companion;
+- seasonal pose.
+
+## Toys / novelty cosmetics
+
+Some collectibles do not need to be worn at all.
+
+Possible HQ toys:
+
+- bubble gun;
+- confetti cannon;
+- water pistol;
+- mini fireworks;
+- camera;
+- Slime launcher;
+- snowball;
+- beach ball;
+- strange Delivery gadget.
+
+A player can collect and activate these for short animations or interactions.
+
+## HQ furniture and decoration
+
+The entire Delivery HQ can eventually become a cosmetic canvas.
+
+Possible decorations:
+
+- beds;
+- sofas;
+- desks;
+- gaming PCs;
+- plants;
+- posters;
+- figures;
+- lamps;
+- rugs;
+- shelves;
+- wallpapers;
+- floor materials;
+- neon signs;
+- trophies;
+- event decorations.
+
+Achievements can physically appear as trophies or souvenirs in the HQ, making progression visible in the world.
+
+## UI / phone cosmetics
+
+Possible low-cost customization:
+
+- UI themes;
+- menu backgrounds;
+- loading-screen artwork;
+- in-game phone wallpaper;
+- phone case if an in-world phone interface exists;
+- notification sound;
+- home-screen theme.
+
+Gallery artwork can potentially double as in-game phone wallpapers.
+
+## Cosmetic production-cost ladder
+
+Approximate relative production effort:
+
+| Cosmetic category | Relative effort | Why it is useful |
+|---|---:|---|
+| Titles | Very low | Text-only prestige/humor |
+| Profile icons / badges | Very low | High collection volume |
+| Banners / frames | Very low–low | Visible in rankings/profile |
+| Stickers / stamps | Low | Can be produced in large sets |
+| Chromas | Low | Reuses existing art |
+| Trails / simple VFX | Low | Visible throughout runs |
+| Package skins | Low | Strong delivery identity |
+| Companion colors/accessories | Low | High combinatorial variety |
+| HQ posters/decor | Low–medium | Supports collection/cozy layer |
+| UI themes | Low–medium | Whole-account personalization |
+| Character accessories | Medium | Visible but needs placement/anchors |
+| Emotes / victory poses | Medium | Requires animation |
+| Broom/mount skins | Medium | Larger gameplay-visible asset |
+| Full outfits | High | Must support character animation |
+| Premium full skin + custom VFX/animation | Very high | Large content package |
+
+### Suggested cosmetic priority
+
+A sensible production order is roughly:
+
+```text
+Profile icons
+→ Titles
+→ Badges / frames / banners
+→ Stickers
+→ Trails / simple VFX
+→ Package / Delivery Bag skins
+→ Companion cosmetics
+→ HQ decoration
+→ Character accessories
+→ Emotes / victory poses
+→ Full outfits
+→ premium high-production skins
+```
 
 ## Gallery
 
@@ -737,6 +1146,8 @@ Possible functions:
 - choose character;
 - change outfit;
 - equip accessories;
+- select chroma;
+- select Delivery Bag;
 - preview trails/auras;
 - view animations;
 - select pose;
@@ -872,18 +1283,430 @@ A bone-based system may help with outfits and reusable motion later, but it is t
 
 ---
 
-# G. Progression, achievements and collectibles
+# G. Companions, progression, achievements and collectibles
+
+## Companion / mini-pet concept
+
+Small pets or Companions can follow the active Monster Girl during runs or live with her in the Delivery HQ.
+
+Possible Companions:
+
+- Mini Dragon;
+- Slime;
+- Bat;
+- Ghost;
+- fantasy bird;
+- Mimic;
+- Mini Dino;
+- robot;
+- living package;
+- tiny demon;
+- weird magical Delivery creature.
+
+Companions should provide personality even when they have no gameplay power.
+
+Possible reactions:
+
+- celebrate coin pickups;
+- panic during Near Misses;
+- react to a crash;
+- play with the courier at the finish;
+- hide from hazards;
+- react differently to worlds/events.
+
+## Companion gameplay philosophy
+
+The safest default is **cosmetic-first, utility-second**.
+
+Avoid making the player choose an ugly Companion solely because it gives the strongest speed or survival multiplier.
+
+If Companions have gameplay effects, favor small utility perks over major direct power.
+
+Possible perks:
+
+- slightly larger pickup radius;
+- occasional missed-coin recovery;
+- small XP bonus;
+- longer power-up duration;
+- extra mission progress;
+- warning for one hazard type;
+- one small utility action per run.
+
+Avoid large raw speed, damage, or score advantages that make competitive play depend on pet ownership.
+
+## Companion skills
+
+Skills can make Companions feel like characters rather than percentage spreadsheets.
+
+Examples:
+
+### Coin Slime
+
+- occasionally collects a narrowly missed Coin;
+- small Coin utility bonus.
+
+### Bat
+
+- gives a brief warning before selected hazards;
+- supports Near-Miss play.
+
+### Mini Dragon
+
+- extends one power-up slightly;
+- can create a small fire-themed utility effect.
+
+### Mimic
+
+- small chance to improve a pickup reward.
+
+### Fairy / Spirit
+
+- extends or refreshes a limited buff under specific conditions.
+
+### Delivery Drone
+
+- occasionally retrieves a distant collectible.
+
+## Competitive normalization
+
+Serious skill-based rankings should not be decided by who owns the best Companion or Support Item.
+
+Possible rule:
+
+```text
+Normal Delivery / Endless
+→ personal builds allowed
+
+Weekly Ranked Challenge
+→ character fixed or normalized
+→ Companion fixed/disabled
+→ Support Items fixed/disabled
+→ identical seed
+```
+
+## Mystery Egg
+
+A strong onboarding/collection idea is to give the player a **Mystery Egg** when the Companion system unlocks.
+
+Possible flow:
+
+```text
+Welcome Package
+→ Mystery Egg
+→ complete several runs / care actions
+→ egg cracks
+→ random Companion hatches
+```
+
+Possible first-pet pool:
+
+- Slime;
+- Bat;
+- Ghost;
+- Mini Dragon;
+- bird;
+- Mimic.
+
+This provides an exciting early surprise without immediately requiring paid gacha.
+
+## Monster Girls and eggs
+
+A normal adult Monster Girl should probably **not** literally hatch as a baby from the same pet egg system.
+
+If a Tamagotchi-like Monster Girl representation is desired, a cleaner fiction is:
+
+- magical Chibi avatar;
+- Courier Spirit;
+- holographic Mini Courier;
+- virtual Pocket Courier;
+- magical copy/mascot of an adult character.
+
+This keeps the adult main characters distinct from pets and avoids confusing the character identity.
+
+## Tamagotchi-style Companion care
+
+The Delivery HQ could contain a lightweight pet-care system.
+
+Possible actions:
+
+- feed;
+- pet;
+- wash;
+- brush;
+- play;
+- put to sleep;
+- buy toys;
+- decorate pet area;
+- play tiny minigames.
+
+Avoid old-school punitive Tamagotchi behavior such as permanent death or severe punishment because the player did not log in for several days.
+
+Better approach:
+
+> The Companion becomes hungry, sleepy, or bored and is happy when the player returns.
+
+The system should encourage affection, not obligation.
+
+## Companion growth / evolution
+
+Possible progression:
+
+```text
+Egg
+→ Baby Companion
+→ Companion
+→ evolved form
+→ rare variant / cosmetic mutation
+```
+
+Evolution might depend partly on player behavior or environment.
+
+Examples:
+
+- many Beach deliveries → Water Slime variant;
+- many Cyber City deliveries → Cyber Slime;
+- many Near Misses → Devil/Risk variant;
+- winter event → Snow variant.
+
+This makes evolved forms reflect how the player used the pet.
+
+## Seasonal Companions
+
+Examples:
+
+### Halloween
+
+- Pumpkin Slime;
+- Tiny Ghost;
+- Vampire Bat.
+
+### Winter
+
+- Christmas Slime;
+- Mini Reindeer;
+- Present Mimic.
+
+### Summer
+
+- Crab;
+- Mini Dolphin;
+- Watermelon Slime.
+
+### Lunar New Year
+
+- Mini Dragon.
+
+## Trait extraction
+
+Companion abilities can potentially be extracted and transferred instead of being permanently locked to the original pet.
+
+Example:
+
+```text
+Mini Dragon
+Skill: Power-up Duration
+
++ Extraction Chip
+
+→ Dragon Trait / Skill Essence
+→ equip or transfer elsewhere
+```
+
+Important anti-frustration rule:
+
+> **Trait extraction should not casually destroy a beloved Companion.**
+
+Possible implementations:
+
+- extractor copies the Trait;
+- duplicate Companion is consumed instead of the original;
+- extraction requires Coins + special item;
+- extracted ability becomes a Skill Chip / Essence / Trait item.
+
+## Companion fusion
+
+Fusion can provide a long-term use for duplicate pets and Traits.
+
+### Same-species fusion
+
+Simple progression model:
+
+```text
+Slime ★
++
+Slime ★
+=
+Slime ★★
+```
+
+Possible benefits:
+
+- additional Trait slot;
+- higher pet progression cap;
+- cosmetic evolution;
+- small utility improvement.
+
+### Trait fusion / inheritance
+
+Combine Traits from two Companions.
+
+Example:
+
+```text
+Slime — Coin Magnet
++
+Dragon — Power-up Duration
+
+→ resulting Companion inherits selected Trait(s)
+```
+
+This can create custom builds.
+
+### Species / hybrid fusion
+
+A much more ambitious later system could create visual hybrids such as:
+
+- Dragon Slime;
+- Bat Slime;
+- Cyber Ghost;
+- Mimic Dragon.
+
+This is expensive because it requires art for combinations, so it should come only if the Companion system becomes important enough to justify it.
+
+### Inheritance model
+
+Potential inherited properties:
+
+- species;
+- element;
+- personality Trait;
+- gameplay Skill;
+- cosmetic mutation;
+- color.
+
+This can create unique Companions without giving the main runner more permanent controls.
+
+## Monster Girl skills and Support Items
+
+A related build system can apply to Monster Girls without permanently fusing the characters themselves.
+
+Possible Character loadout:
+
+```text
+Monster Girl
+├─ Character Skill
+├─ Passive
+├─ Companion
+├─ Support Item 1
+├─ Support Item 2
+└─ optional Support Item 3
+```
+
+Possible Support Items:
+
+- Delivery Bag upgrade;
+- Coin Magnet;
+- Lucky Charm;
+- Package Stabilizer;
+- boots;
+- wing charm;
+- ring;
+- mission booster;
+- power-up extender.
+
+The aim is understandable build choices, not MMO-style stat spreadsheets.
+
+## Example builds
+
+### Coin build
+
+- Coin-oriented Companion;
+- pickup-range Support Item;
+- Lucky Charm.
+
+### Endless survival build
+
+- Shield-like Support Item;
+- power-up duration;
+- utility Companion.
+
+### Score / Near-Miss build
+
+- Near-Miss bonus;
+- combo extension;
+- risk-oriented Companion.
+
+### Mission build
+
+- mission-progress utility;
+- pickup Support Item;
+- route-specific Companion.
+
+## Ability fusion instead of permanent Monster Girl fusion
+
+Permanent Monster Girl fusion is risky because the Monster Girls are named characters players may become attached to.
+
+Avoid a progression loop like:
+
+> Consume three copies of Demon Girl to create a stronger Demon Girl.
+
+A better long-term experiment is to fuse **abilities or Support Traits**.
+
+Examples:
+
+```text
+Shield
++
+Near-Miss Skill
+=
+Danger Shield
+
+After enough Near Misses, gain one temporary shield.
+```
+
+```text
+Bounce Skill
++
+Coin Pickup
+=
+Golden Bounce
+
+Landing pulls nearby Coins toward the player.
+```
+
+Hybrid abilities can create interesting buildcrafting without destroying character identity.
+
+## Temporary Monster Girl fusion forms
+
+Fusion can still work as a temporary gameplay transformation.
+
+Examples:
+
+- Demon Girl + Slime Power → Demon Slime Form;
+- Harpy + Dragon Power → Dragon Wing Form;
+- character temporarily gains another monster Trait.
+
+These can function like vehicles/mutators:
+
+- visually dramatic;
+- temporary;
+- easy to understand;
+- revert to the normal character afterward.
 
 ## Achievements
 
 Examples:
 
 - deliver 100 packages;
-- perform 100 near misses;
+- perform 100 Near Misses;
 - travel 1 km upside down;
 - complete a no-hit route;
 - catch several bonus packages;
 - repeatedly deliver to a memorable customer;
+- hatch first Companion;
+- discover a rare Companion variant;
+- perform first Trait extraction;
+- complete first Fusion;
 - complete seasonal challenges.
 
 Possible rewards:
@@ -892,9 +1715,10 @@ Possible rewards:
 - badge;
 - frame;
 - icon;
-- coins;
+- Coins;
 - cosmetic;
-- artwork.
+- artwork;
+- Companion accessory.
 
 ## Collectibles
 
@@ -906,9 +1730,13 @@ Possible categories:
 - world souvenirs;
 - badges;
 - cosmetics;
+- Companions;
+- Companion variants;
 - plushies;
 - event tokens;
-- trophies.
+- trophies;
+- Toys;
+- Trait/Skill items.
 
 World-specific souvenirs can reinforce exploration.
 
@@ -931,7 +1759,7 @@ Examples:
 
 ## Character progression
 
-Each monster girl could have a personal mastery/progression track.
+Each Monster Girl could have a personal mastery/progression track.
 
 Possible rewards:
 
@@ -944,7 +1772,8 @@ Possible rewards:
 - emote;
 - pose;
 - artwork;
-- accessory.
+- accessory;
+- Support slot or sidegrade if gameplay progression is later approved.
 
 ## Account progression
 
@@ -955,16 +1784,19 @@ Separate overall account XP can come from:
 - missions;
 - achievements;
 - events;
-- challenges.
+- challenges;
+- Companion activities.
 
 Possible rewards:
 
-- coins;
+- Coins;
 - Mystery Packages;
 - profile frames;
 - titles;
 - unlocks;
-- gallery rewards.
+- Gallery rewards;
+- Companion Egg;
+- Extraction/Fusion item.
 
 ## Hardcore skill ceiling
 
@@ -975,7 +1807,7 @@ Possible hardcore goals:
 - no-hit deliveries;
 - perfect routes;
 - speedruns;
-- long near-miss chains;
+- long Near-Miss chains;
 - high Delivery Flow;
 - weekly fixed challenges;
 - Endless leaderboards;
@@ -983,7 +1815,7 @@ Possible hardcore goals:
 
 ---
 
-# H. Economy, rewards, loot and monetization ideas
+# H. Economy, extraction, fusion, loot and monetization ideas
 
 ## Coins
 
@@ -996,8 +1828,143 @@ Possible uses:
 - minigames;
 - arcade machines;
 - character gifts;
+- Companion food/toys;
+- Extraction Chips;
+- Fusion Batteries;
+- Support Items;
 - event shops;
+- HQ upgrades;
 - deterministic unlocks.
+
+A major economy goal should be to create several fun Coin sinks so accumulated currency continues to matter after many hours.
+
+## Extraction items
+
+Trait extraction can require a consumable purchased with normal Coins.
+
+Possible names:
+
+- Extraction Chip;
+- Trait Extractor;
+- Essence Capsule;
+- Skill Scanner.
+
+Example:
+
+```text
+Trait Extraction
+Cost: 500 Coins
+Item: 1× Extraction Chip
+
+→ copy selected Companion Trait
+→ create Skill Essence / Trait Chip
+```
+
+This creates a useful long-term Coin sink while keeping Trait customization deliberate.
+
+## Fusion Battery
+
+Companion fusion can require a dedicated **Fusion Battery**.
+
+Possible sources:
+
+- buy for Coins;
+- Daily/Weekly Mission reward;
+- Mystery Package;
+- Achievement;
+- Event reward;
+- Companion progression.
+
+The basic system should begin with **one battery type** instead of immediately introducing many tiers.
+
+Possible later variants only if needed:
+
+- Stable Fusion Battery — preserve a selected Trait;
+- Advanced Fusion Core — rare hybrid fusion;
+- Mutation Battery — cosmetic mutation chance.
+
+Avoid unnecessary item bloat until the simple version proves fun.
+
+## Fusion Reactor
+
+The Delivery HQ could contain a physical **Fusion Reactor / Companion Lab**.
+
+Possible loop:
+
+```text
+select Companion A
++
+select Companion B / Trait
++
+Fusion Battery
+
+→ Reactor animation
+→ Fusion result
+```
+
+The machine can look questionably safe for humor.
+
+Possible signs:
+
+- `DO NOT INSERT COURIERS`;
+- `98.7% SAFE`;
+- `WARRANTY VOID IF REALITY TEARS`.
+
+Possible character joke:
+
+> "What happened to the other 1.3%?"
+
+## Reactor upgrades
+
+Much later, HQ upgrades could improve the system.
+
+Possible progression:
+
+- Lv. 1 — basic Companion Fusion;
+- Lv. 2 — choose one Trait to preserve;
+- Lv. 3 — preserve more inheritance information;
+- Lv. 4 — rare hybrid/mutation options.
+
+This links Companion progression to Delivery HQ progression without requiring it in the early game.
+
+## Fusion failure philosophy
+
+Do not make the humorous machine destroy valuable pets and resources through random failure.
+
+A "failed" fusion can be a presentation joke while still returning a valid result.
+
+Possible comedy rewards:
+
+- strange temporary color;
+- Reactor Scrap collectible;
+- `Oops` Achievement;
+- cosmetic glitch effect;
+- alarm/lights-out animation.
+
+Chaos should create entertainment, not irreversible frustration.
+
+## Crafting Fusion Batteries
+
+A later material sink could allow battery crafting.
+
+Example:
+
+```text
+3× Battery Scrap
++ 1× Monster Essence
++ 250 Coins
+= Fusion Battery
+```
+
+Possible material sources:
+
+- runs;
+- broken machines;
+- Mystery Packages;
+- missions;
+- events.
+
+This is optional complexity and not needed with the first Fusion implementation.
 
 ## Gems / premium currency
 
@@ -1025,6 +1992,8 @@ Prefer:
 
 Avoid making paid power the primary path to leaderboard success.
 
+Build/Support systems make this especially important: a competitive player should not need premium purchases for required stats.
+
 ## Mystery Packages / loot-box-like rewards
 
 Random rewards fit the delivery theme naturally.
@@ -1039,7 +2008,7 @@ Possible names:
 
 Possible contents:
 
-- coins;
+- Coins;
 - icons;
 - stickers;
 - trails;
@@ -1047,7 +2016,11 @@ Possible contents:
 - badges;
 - accessories;
 - artwork;
-- cosmetics.
+- cosmetics;
+- Companion Eggs;
+- Companion accessories;
+- Extraction Chips;
+- Fusion Batteries.
 
 Early versions should treat them primarily as **earnable gameplay rewards**.
 
@@ -1075,17 +2048,30 @@ Possible gifts:
 
 These can feed a Bond/Friendship system.
 
+### Gifts to Companions
+
+Possible items:
+
+- food;
+- treats;
+- toys;
+- pet accessories;
+- habitat decorations.
+
 ## Shop
 
 Possible sections:
 
-- coin shop;
-- cosmetic shop;
+- Coin Shop;
+- Cosmetic Shop;
 - rotating shop;
-- event shop;
-- Delivery Token shop;
-- character gift shop;
-- premium cosmetic shop.
+- Event Shop;
+- Delivery Token Shop;
+- Character Gift Shop;
+- Companion Shop;
+- Extraction/Fusion supplies;
+- Support Item Shop;
+- premium Cosmetic Shop.
 
 ## Gacha ideas
 
@@ -1116,6 +2102,8 @@ Possible player-friendly structure:
 - carry-over pity where appropriate;
 - earnable pulls from gameplay.
 
+If Companions ever enter a random-reward system, avoid making random premium pulls the only viable source of competitive Companion abilities.
+
 ---
 
 # I. Dailies, rankings, seasons and community systems
@@ -1129,12 +2117,12 @@ Example:
 | Login step | Example reward |
 |---|---|
 | 1 | Coins |
-| 2 | More coins |
+| 2 | More Coins |
 | 3 | Small Mystery Package |
 | 4 | Coins + XP |
-| 5 | Ticket |
-| 6 | Rare package |
-| 7 | Epic Mystery Delivery |
+| 5 | Ticket / Extraction Chip |
+| 6 | Rare Package |
+| 7 | Epic Mystery Delivery / Companion Egg |
 
 Prefer not to reset the whole sequence because one real-world day was missed.
 
@@ -1143,13 +2131,15 @@ Prefer not to reset the whole sequence because one real-world day was missed.
 Examples:
 
 - deliver 3 packages;
-- collect 500 coins;
+- collect 500 Coins;
 - fly 2,000 m with a broom;
-- perform 20 near misses;
+- perform 20 Near Misses;
 - use a vehicle;
 - play a specific character;
 - catch a bonus package;
-- finish without damage.
+- finish without damage;
+- play with/feed a Companion;
+- use a specific utility Companion.
 
 A free daily reroll can reduce frustration.
 
@@ -1164,8 +2154,8 @@ Possible leaderboards:
 - Endless distance;
 - high score;
 - fastest delivery;
-- most coins;
-- longest near-miss chain;
+- most Coins;
+- longest Near-Miss chain;
 - Delivery Flow;
 - weekly challenge;
 - character-specific score;
@@ -1184,7 +2174,14 @@ Possible prestige tiers:
 - Diamond;
 - Master.
 
-Rewards should mostly be visible status/cosmetic items.
+Rewards should mostly be visible status/cosmetic items:
+
+- frame;
+- badge;
+- title;
+- banner;
+- icon;
+- Companion cosmetic.
 
 ## Global community events
 
@@ -1202,7 +2199,7 @@ GLOBAL DELIVERY EVENT
 
 ## Character/team events
 
-Players could support favorite monster girls:
+Players could support favorite Monster Girls:
 
 - Team Demon Girl;
 - Team Slime Girl;
@@ -1210,6 +2207,8 @@ Players could support favorite monster girls:
 - Team Harpy.
 
 Successful deliveries contribute to a global score.
+
+Similar events could later use Companion species or regions as teams.
 
 ## Battle pass / seasonal progression
 
@@ -1221,13 +2220,15 @@ Example:
 
 Rewards:
 
-- coins;
+- Coins;
 - tickets;
 - icons;
 - stickers;
 - trails;
 - banners;
 - artwork;
+- Companion cosmetics;
+- HQ decorations;
 - outfits.
 
 A branching reward structure or ability to revisit old passes may be more player-friendly than a rigid temporary linear track.
@@ -1246,7 +2247,7 @@ Seasonal festivals or a permanent fairground area could contain deliberately goo
 
 ### Dunk Tank / Bullseye
 
-A monster girl sits on a seat above a water tank.
+A Monster Girl sits on a seat above a water tank.
 
 The player throws a ball at a target.
 
@@ -1292,8 +2293,9 @@ Possible rewards:
 - plushies;
 - tiny accessories;
 - stickers;
-- character gifts;
-- carnival badges;
+- Character gifts;
+- Companion toys;
+- Carnival badges;
 - artwork;
 - souvenirs.
 
@@ -1307,7 +2309,7 @@ Concept:
 
 **Courier Emergency Launch Training**
 
-A monster girl is launched through an obstacle course.
+A Monster Girl is launched through an obstacle course.
 
 Possible character-specific physics:
 
@@ -1330,9 +2332,10 @@ MGD can borrow the **best 30–90 seconds** of those fantasies rather than build
 ### Cleaning / pressure-washing style
 
 - clean mud from a courier;
-- clean a delivery vehicle;
+- clean a Delivery vehicle;
 - remove soot from equipment;
 - wash slime off a room;
+- wash a Companion;
 - restore an object from dirty to 100% clean.
 
 This connects directly to Character Care and Artwork Reveal.
@@ -1344,8 +2347,9 @@ Possible uses:
 - open a Mystery Package;
 - unpack collectibles;
 - sort items into shelves;
-- decorate a character room;
-- unpack warehouse stock.
+- decorate a Character room;
+- unpack warehouse stock;
+- unpack a new Companion habitat.
 
 ### Mechanic / workshop style
 
@@ -1366,7 +2370,8 @@ Possible repair targets:
 - jetski;
 - drone;
 - motorcycle;
-- weird monster vehicle.
+- weird monster vehicle;
+- Fusion Reactor component.
 
 ### Logistics / truck-sim inspiration
 
@@ -1389,8 +2394,6 @@ A Delivery HQ arcade could contain cheap, simple games inspired by classic arcad
 
 These should be original MGD-themed implementations rather than direct copyrighted clones.
 
-Possible examples:
-
 ### Package Blocks
 
 Falling-block package-stacking game.
@@ -1405,7 +2408,7 @@ Two sides knock a fireball back and forth.
 
 ### Asteroid Delivery
 
-A delivery drone dodges space hazards and collects parcels.
+A Delivery Drone dodges space hazards and collects parcels.
 
 ### Lamia Snake
 
@@ -1417,7 +2420,7 @@ Cross traffic safely with a package.
 
 ### Crane / claw machine
 
-Win plushies or gifts for characters.
+Win plushies or gifts for Characters/Companions.
 
 ### Arcade rewards
 
@@ -1428,8 +2431,9 @@ Possible rewards:
 - plushies;
 - stickers;
 - cosmetics;
+- Companion toys;
 - achievements;
-- small coin payouts.
+- small Coin payouts.
 
 A major advantage is that the arcade can grow one cheap cabinet at a time.
 
@@ -1448,7 +2452,19 @@ Delivery
 → unlock Artwork
 ```
 
-This is more memorable than simply opening a shop menu and buying one item.
+Another possible loop:
+
+```text
+Delivery
+→ earn Coins
+→ buy Extraction Chip
+→ extract Companion Trait
+→ buy Fusion Battery
+→ use Fusion Reactor
+→ create personalized Companion
+```
+
+This is more memorable than simply opening a shop menu and buying one stat increase.
 
 ---
 
@@ -1467,7 +2483,8 @@ Possible uses:
 - marble/labyrinth minigame;
 - balance water/liquid;
 - control a claw machine;
-- subtle Character Viewer motion.
+- subtle Character Viewer motion;
+- pet toy/balance minigame.
 
 Example:
 
@@ -1497,6 +2514,7 @@ Possible uses:
 - put out a small fire;
 - dry hair after cleanup;
 - inflate a balloon until it pops;
+- interact with a Companion toy;
 - trigger a joke where blowing makes demon fire worse.
 
 ## Haptics / vibration
@@ -1510,10 +2528,12 @@ Possible feedback moments:
 - puzzle piece snaps into place;
 - screw locks;
 - Mystery Package opens;
+- egg cracks;
+- Fusion Reactor activates;
 - character lands;
 - scratch-card reveal;
-- coin pickup streak;
-- crash/near miss.
+- Coin pickup streak;
+- crash/Near Miss.
 
 ## Camera / other phone features
 
@@ -1544,10 +2564,12 @@ Possible rooms/areas:
 - warehouse;
 - garage;
 - locker room;
-- gallery;
+- Gallery;
 - arcade;
 - café;
-- character rooms;
+- Character rooms;
+- Companion room;
+- Fusion Reactor / Companion Lab;
 - event plaza;
 - toy/cosmetic shop.
 
@@ -1567,7 +2589,7 @@ This does not require hundreds of NPCs or a large open world.
 
 ## Odd jobs
 
-Monster girls doing odd jobs fits the premise extremely well.
+Monster Girls doing odd jobs fits the premise extremely well.
 
 Possible side jobs:
 
@@ -1581,11 +2603,11 @@ Serve orders with a simple timing game.
 
 ### Garage shift
 
-Repair delivery equipment.
+Repair Delivery equipment.
 
 ### Cleaning shift
 
-Clean HQ, vehicle, or equipment.
+Clean HQ, vehicle, equipment, or Companion habitat.
 
 ### Carnival shift
 
@@ -1609,6 +2631,66 @@ Watch the warehouse at night and react to odd events.
 
 These jobs can be short, simple minigames rather than deep simulation systems.
 
+## Companion room / habitat
+
+Companions can exist physically in the HQ instead of only in an inventory screen.
+
+Possible interactions:
+
+- feed;
+- wash;
+- play;
+- decorate habitat;
+- equip cosmetic;
+- inspect Traits;
+- choose active Companion;
+- hatch Eggs.
+
+This makes the Companion system part of the world rather than another spreadsheet menu.
+
+## Pocket Courier / Tamagotchi-style minigame
+
+A separate in-world device could contain a virtual **Pocket Courier** or Chibi courier avatar.
+
+Possible activities:
+
+- feed;
+- sleep;
+- decorate tiny room;
+- equip tiny outfits;
+- play minigames;
+- send on tiny automatic deliveries;
+- collect small rewards.
+
+This virtual courier should be treated as a magical/digital Chibi representation, not as a literal child version of an adult Monster Girl.
+
+Possible idle-like loop:
+
+```text
+send Pocket Courier on small job
+→ continue playing normally / close game
+→ return later
+→ tiny delivery complete
+→ Coins / sticker / souvenir / pet item
+```
+
+Avoid punishing the player for not checking constantly.
+
+## Fusion Reactor / Companion Lab
+
+The Reactor can become one of the most recognizable strange machines in the HQ.
+
+Possible interactions:
+
+- Trait extraction;
+- Trait transfer;
+- Companion Fusion;
+- inspect Fusion history;
+- upgrade Reactor later;
+- collect cosmetic machine parts/trophies.
+
+The Reactor's unreliable-looking presentation can provide recurring humor without making the actual system randomly destroy progress.
+
 ## Management layer
 
 Possible long-term management:
@@ -1619,6 +2701,8 @@ Possible long-term management:
 - unlock regions;
 - buy vehicles;
 - decorate rooms;
+- improve Companion facilities;
+- upgrade Fusion Lab;
 - expand garage/warehouse;
 - collect passive company rewards.
 
@@ -1627,8 +2711,9 @@ Possible long-term management:
 Possible activities:
 
 - decorate rooms;
-- talk to characters;
+- talk to Characters;
 - sit around;
+- care for Companions;
 - fish;
 - collect objects;
 - use arcade machines;
@@ -1644,7 +2729,7 @@ The player should be allowed to do things simply because they are enjoyable, not
 A lightweight Bond system can come before any full dating-sim concept.
 
 ```text
-Use character
+Use Character
 → earn Bond XP
 → give gifts
 → unlock dialogue
@@ -1660,6 +2745,7 @@ Possible uses:
 
 - accessibility;
 - previously completed easy deliveries;
+- Pocket Courier jobs;
 - low-pressure passive company activity.
 
 Main risk:
@@ -1680,7 +2766,7 @@ These concepts are best treated as:
 
 1. Event modes;
 2. Arcade side games;
-3. Experimental prototypes;
+3. experimental prototypes;
 4. possible later standalone spin-offs.
 
 ## Main MGD runner
@@ -1704,7 +2790,7 @@ A mode inspired by the broad lane-runner genre:
 - swipe left/right to change lane;
 - swipe up to jump;
 - swipe down to slide;
-- collect coins;
+- collect Coins;
 - dodge obstacles;
 - speed gradually rises.
 
@@ -1714,7 +2800,7 @@ Possible MGD theme:
 
 Possible hazards:
 
-- delivery vans;
+- Delivery vans;
 - market stalls;
 - bins;
 - construction barriers;
@@ -1736,10 +2822,10 @@ Possible joke cabinet names:
 
 Possible exaggerated jokes:
 
-- absurdly perfect coin lines;
-- giant magnet powerup;
+- absurdly perfect Coin lines;
+- giant magnet power-up;
 - ridiculous pursuer;
-- constant "NEW HIGH SCORE" messages;
+- constant `NEW HIGH SCORE` messages;
 - intentionally overdramatic boosters.
 
 The joke should target broad genre conventions rather than copy exact branded content.
@@ -1749,7 +2835,7 @@ The joke should target broad genre conventions rather than copy exact branded co
 Possible structure:
 
 - portrait;
-- camera behind character;
+- camera behind Character;
 - lane/side movement;
 - jump;
 - slide;
@@ -1783,7 +2869,7 @@ Possible features:
 - springs;
 - loops or loop-like set pieces;
 - boost pads;
-- large coin arcs;
+- large Coin arcs;
 - strong flow.
 
 Possible MGD name:
@@ -1802,9 +2888,9 @@ Potential use:
 - redirect package trajectory;
 - move platforms;
 - activate switches;
-- guide a delivery object to the courier.
+- guide a Delivery object to the courier.
 
-Again, use broad mechanic ideas rather than copying branded levels or characters.
+Again, use broad mechanic ideas rather than copying branded levels or Characters.
 
 ## MGD Arcade / Runner Collection
 
@@ -1830,7 +2916,7 @@ Example:
 - portrait;
 - lane runner;
 - same universe;
-- reused characters/cosmetics where practical;
+- reused Characters/cosmetics where practical;
 - separate gameplay balance and UI.
 
 This should be considered only after the main MGD game has proven itself.
@@ -1851,19 +2937,19 @@ Useful lessons:
 - temporary vehicles/mutators;
 - vehicles as protection;
 - safe recovery after vehicle loss;
-- coin patterns that guide movement;
+- Coin patterns that guide movement;
 - entertaining fail state;
 - missions that change player behavior;
 - fast restart;
-- satisfying distance/near-miss statistics.
+- satisfying distance/Near-Miss statistics.
 
 See `ENDLESS_RUNNER_BLUEPRINT.md` for the dedicated reference.
 
 ## Overwatch
 
-Useful for player expression and character identity:
+Useful for player expression and Character identity:
 
-- hero/character levels;
+- Character levels;
 - mastery badges;
 - portrait borders;
 - profile icons;
@@ -1876,27 +2962,67 @@ Useful for player expression and character identity:
 - skins/outfits;
 - seasonal events;
 - rotating modes;
-- battle-pass progression.
+- Battle Pass progression.
 
 Strong lesson:
 
-> Many rewarding cosmetics can be cheap to produce because they do not need to modify the animated character itself.
+> Many rewarding cosmetics can be cheap to produce because they do not need to modify the animated Character itself.
+
+## League of Legends
+
+Useful cosmetic lessons:
+
+- full Character skins can be premium/high-production rewards;
+- **chromas / color variants** can extend existing art with much lower production cost;
+- profile icons and other account-expression items provide collection outside the Character model;
+- different cosmetic tiers can coexist without every reward requiring a new gameplay asset.
+
+For MGD, chromas are particularly attractive for outfits, hair, wings, bags, mounts, and Companions.
+
+## World of Warcraft
+
+Useful collection lessons:
+
+- players enjoy collecting things even when many have no power advantage;
+- outfits/transmog-like appearances;
+- mounts;
+- pets;
+- novelty Toys;
+- trophies/rare status objects;
+- rotating cosmetic shops/reward sources.
+
+Important MGD takeaway:
+
+> Cosmetics can include **things you use, summon, display, ride, or decorate with**, not just things worn by the Character.
+
+This supports Companions, broom/mount skins, HQ Toys, decorations, and trophies.
 
 ## Character-collection / gacha games
 
 Useful ideas:
 
-- strong individual character identity;
+- strong individual Character identity;
 - favorites;
 - affinity/Bond;
 - collection goals;
 - exciting reward reveals;
+- profile cards/name cards;
+- avatars;
+- outfit skins;
+- weapon/gear appearances;
+- glider/wing-like cosmetics;
+- home/lobby backgrounds;
+- battle VFX;
+- Companion skins;
+- stickers/emotes;
 - pity/guarantees;
 - duplicate protection;
 - event reward pools;
 - reruns;
 - free tickets;
 - selectors/wishlists.
+
+The useful lesson is the **breadth of collectible presentation**, not necessarily aggressive monetization.
 
 ## Pokémon
 
@@ -1906,17 +3032,35 @@ Useful ideas:
 - optional minigames;
 - small side activities;
 - places to spend currency;
-- attachment to individual characters/creatures.
+- attachment to individual Characters/creatures;
+- creature traits/evolution as inspiration for Companions.
 
 ## Animal Crossing
 
 Useful ideas:
 
 - calm optional space;
-- decoration;
-- collection;
+- Character clothing;
+- room/home decoration;
+- furniture collection;
+- environmental customization;
 - play at own pace;
 - activities that are fun without being progression-efficient.
+
+For MGD, the strongest takeaway is that **the Delivery HQ itself can become a cosmetic collection surface**.
+
+## Tamagotchi / virtual-pet games
+
+Useful ideas:
+
+- pet attachment;
+- feeding/care;
+- growth/evolution;
+- tiny daily interactions;
+- personalized habitat;
+- visible response to player attention.
+
+MGD should use the affectionate parts while avoiding harsh absence punishment or permanent pet death.
 
 ## Shenmue
 
@@ -1945,7 +3089,7 @@ Useful lesson:
 
 - simple rules can remain fun for decades;
 - tiny arcade games are cheap ways to add optional high-score play;
-- MGD themes can make familiar mechanics feel playful and character-specific.
+- MGD themes can make familiar mechanics feel playful and Character-specific.
 
 ## Mobile runner genre
 
@@ -1958,7 +3102,7 @@ Useful structures to explore:
 - puzzle runner;
 - vehicle runner.
 
-These can inspire event modes, arcade cabinets, or future spin-offs.
+These can inspire Event Modes, Arcade cabinets, or future spin-offs.
 
 ---
 
@@ -1968,9 +3112,9 @@ These can inspire event modes, arcade cabinets, or future spin-offs.
 
 Current exploration favors something like:
 
-- anime/chibi monster girls;
+- anime/chibi Monster Girls;
 - clean cartoon environments;
-- cyber/fantasy delivery flavor;
+- cyber/fantasy Delivery flavor;
 - strong silhouettes;
 - clear mobile readability;
 - modular assets;
@@ -1983,7 +3127,7 @@ Early prototype art should stay small:
 - player;
 - background;
 - obstacle;
-- coin;
+- Coin;
 - effect;
 - minimal UI.
 
@@ -2009,6 +3153,22 @@ Important distinction:
 
 Pixel art remains a prototype convenience, not a permanent commitment.
 
+## Cosmetic-friendly asset pipeline
+
+If customization becomes important, art production should consider modularity early enough to avoid unnecessary rework.
+
+Potential support:
+
+- accessory anchor points;
+- separate Delivery Bag layer;
+- separate hat/glasses layers;
+- independent trail origin;
+- recolorable/chroma-friendly areas;
+- reusable VFX attachment points;
+- Companion accessory anchors.
+
+Do not over-engineer this during the first prototype, but avoid an asset structure that makes every later cosmetic require redrawing the entire Character.
+
 ## Gyroscope in normal gameplay
 
 Continuous tilt-parallax in fast runner gameplay may:
@@ -2018,7 +3178,7 @@ Continuous tilt-parallax in fast runner gameplay may:
 - create motion discomfort;
 - hurt readability.
 
-It is therefore more promising for artwork, menus, character viewing, and small minigames.
+It is therefore more promising for artwork, menus, Character viewing, and small minigames.
 
 ## Skeletal animation
 
@@ -2028,7 +3188,7 @@ Bone/skeletal animation may later help with:
 - layered outfits;
 - accessories;
 - secondary motion;
-- more character variation.
+- more Character variation.
 
 This should remain a future/version-2-level investigation rather than early scope.
 
@@ -2040,19 +3200,19 @@ This should remain a future/version-2-level investigation rather than early scop
 
 Strong early focus:
 
-- one playable monster girl;
+- one playable Monster Girl;
 - responsive one-touch movement;
 - one readable route/world;
 - hazards;
-- coins;
+- Coins;
 - good pacing;
 - satisfying fail behavior;
 - fast restart;
 - basic results;
 - simple missions;
 - one or two gameplay mutators at most;
-- simple gallery/collection hook;
-- basic delivery flavor.
+- simple Gallery/collection hook;
+- basic Delivery flavor.
 
 ## Early follow-up
 
@@ -2061,14 +3221,16 @@ After the runner works:
 - finishable Delivery Mode;
 - Endless Mode;
 - world map;
-- more monster girls;
+- more Monster Girls;
 - more worlds;
 - achievements;
-- character/account XP;
+- Character/account XP;
 - unlockables;
 - earnable Mystery Packages;
-- cheap cosmetics;
+- cheap profile cosmetics;
+- titles/badges/stickers;
 - trails/VFX;
+- package/Delivery Bag skins;
 - Gallery;
 - daily missions;
 - first seasonal experiments.
@@ -2077,8 +3239,19 @@ After the runner works:
 
 Only after the core game is proven:
 
+- Companion system;
+- Mystery Eggs;
+- Companion cosmetics;
+- lightweight Companion care;
+- Support Items / Character build system;
+- Trait Extraction;
+- Companion Fusion;
+- Fusion Reactor / Lab;
+- Pocket Courier / Tamagotchi-style activity;
 - full Locker Room;
 - large outfit library;
+- HQ decoration;
+- Toys;
 - Character Care;
 - Artwork Reveal minigames;
 - portrait/gyro artwork;
@@ -2092,7 +3265,7 @@ Only after the core game is proven:
 - cozy activities;
 - rankings;
 - community events;
-- battle pass;
+- Battle Pass;
 - premium currency;
 - gacha;
 - monetization;
@@ -2104,7 +3277,7 @@ Only after the core game is proven:
 
 Do not build:
 
-**Runner + Dating Sim + Truck Sim + Mechanic Sim + Arcade Collection + Gacha + Open World + Portrait Runner**
+**Runner + Pet RPG + Dating Sim + Truck Sim + Mechanic Sim + Arcade Collection + Gacha + Open World + Portrait Runner**
 
 all at the same time.
 
@@ -2117,7 +3290,7 @@ Instead, treat later systems as small toys added around a strong core.
 ## Core structure
 
 - Should Delivery Mode eventually become the primary mode?
-- Should completing a delivery always end the run?
+- Should completing a Delivery always end the run?
 - How important should Delivery Chains become?
 - How many permanent controls should exist?
 - How often should movement mutators appear?
@@ -2138,10 +3311,44 @@ Instead, treat later systems as small toys added around a strong core.
 
 ## Characters
 
-- Are characters mechanically identical or slightly differentiated?
+- Are Characters mechanically identical or slightly differentiated?
 - How much outfit customization is feasible with the chosen art pipeline?
 - When would skeletal animation become worth the cost?
 - How far should Bond/relationship systems go?
+- Should Character Skills affect normal play, or remain mostly sidegrades?
+- Are temporary fusion forms worth exploring?
+
+## Cosmetics
+
+- Which cosmetic surfaces are most visible during normal gameplay?
+- Should Delivery Bag be a major signature cosmetic category?
+- How many chromas can an outfit support before variants feel cheap?
+- Which profile elements should other players see in rankings?
+- How customizable should Companions become?
+- How much HQ decoration is useful before it becomes a full decorating game?
+- Which cosmetics can be shared across Characters?
+- Should event cosmetics always return eventually?
+
+## Companions
+
+- Are Companions purely cosmetic at first?
+- Which utility perks remain fun without becoming mandatory?
+- Should the first Mystery Egg be random or let the player choose from several eggs?
+- How deep should Companion evolution become?
+- Should evolution depend on gameplay behavior/world usage?
+- How many active Trait slots should a Companion have?
+- Should duplicates be used for fusion, extraction, or both?
+- Is species hybrid fusion worth its art-production cost?
+
+## Extraction / Fusion
+
+- Does extraction copy a Trait, move it, or consume a duplicate?
+- What should an Extraction Chip cost?
+- What should a Fusion Battery cost?
+- How often should Batteries be earnable without the shop?
+- Should Reactor upgrades control Trait inheritance?
+- Should ability fusion create fixed recipes or discoverable combinations?
+- How can Fusion remain exciting without destructive RNG?
 
 ## Artwork and interaction
 
@@ -2154,7 +3361,8 @@ Instead, treat later systems as small toys added around a strong core.
 ## Economy
 
 - How many currencies are actually necessary?
-- What are the best coin sinks?
+- What are the best Coin sinks?
+- Do Extraction Chips/Fusion Batteries provide enough long-term Coin demand?
 - Should Mystery Packages remain gameplay-only?
 - Is gacha useful at all?
 - How can monetization stay primarily cosmetic?
@@ -2162,7 +3370,7 @@ Instead, treat later systems as small toys added around a strong core.
 ## Competition
 
 - Which rankings are worth supporting?
-- Should ranked challenges normalize character stats/upgrades?
+- Should ranked challenges normalize Character, Companion, and Support Item effects?
 - How long should seasons last?
 - Are cooperative community goals more important than direct competition?
 
@@ -2201,15 +3409,16 @@ Instead:
 - one understandable core;
 - responsive game feel;
 - temporary gameplay transformations;
-- strong characters;
+- strong Characters;
 - rewarding collection;
 - visible personalization;
+- Companions with personality;
 - varied worlds;
 - optional side activities;
 - playful use of phone hardware;
 - a world where players can sometimes waste time just for fun.
 
-A mature MGD could eventually let a player start a broom delivery, hit a gravity-flip section, land on a dinosaur, deliver a package, clean up the courier, reveal artwork, spend coins at a rigged carnival booth, win a plushie, give it to a favorite character, play one arcade cabinet, and then immediately start another run — while the core game itself remains understandable within seconds.
+A mature MGD could eventually let a player start a broom Delivery, hit a Gravity Flip section, land on a dinosaur, deliver a package, clean up the courier, reveal artwork, spend Coins at a rigged carnival booth, win a plushie, give it to a favorite Character, hatch a tiny Companion, customize its hat and Trail, extract a Trait, cause a suspicious Fusion Reactor incident, play one arcade cabinet, and then immediately start another run — while the core game itself remains understandable within seconds.
 
 That is the kind of controlled variety MGD should aim for.
 
