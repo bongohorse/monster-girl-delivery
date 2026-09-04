@@ -25,6 +25,7 @@ The GitHub Issues/PRs are the live execution trail. Milestone closeout should up
 | See what is being implemented right now | the current GitHub milestone parent and its child Issues |
 | Browse future ideas that are **not committed scope** | [`BACKLOG.md`](BACKLOG.md) |
 | Browse visual/art ideas | [`ART_DIRECTION_IDEAS.md`](ART_DIRECTION_IDEAS.md) |
+| Review Endless Runner / Jetpack Joyride design lessons | [`ENDLESS_RUNNER_BLUEPRINT.md`](ENDLESS_RUNNER_BLUEPRINT.md) |
 | Understand the technical structure | [`../ARCHITECTURE.md`](../ARCHITECTURE.md) |
 | See development commands and workflow | [`../DEVELOPMENT.md`](../DEVELOPMENT.md) |
 | Review what completed milestones actually delivered | [`milestones/README.md`](milestones/README.md) |
@@ -69,7 +70,7 @@ ARCHITECTURE.md + DEVELOPMENT.md as needed
 existing implementation/tests
 ```
 
-Do **not** treat every idea document as required implementation context. In particular, `BACKLOG.md` and `ART_DIRECTION_IDEAS.md` contain preserved possibilities, not approved current scope.
+Do **not** treat every idea or reference document as required implementation context. In particular, `BACKLOG.md`, `ART_DIRECTION_IDEAS.md`, and `ENDLESS_RUNNER_BLUEPRINT.md` contain preserved possibilities or reference lessons, not approved current scope.
 
 ### AI task routing
 
@@ -81,6 +82,7 @@ Do **not** treat every idea document as required implementation context. In part
 | Workflow / repo tooling | `DEVELOPMENT.md` + `AGENTS.md` | `AI_WORKFLOW.md`, `GITHUB_AI_ACCESS.md` |
 | Historical review / closeout | `milestones/README.md` | milestone report, merged Issues/PRs, actual validation evidence |
 | Art/design exploration | `ART_DIRECTION_IDEAS.md` | `BACKLOG.md`, relevant product constraints in `MASTER_SPEC.md` |
+| Runner design / pacing / progression research | `ENDLESS_RUNNER_BLUEPRINT.md` | `BACKLOG.md`, relevant product constraints in `MASTER_SPEC.md` |
 
 ---
 
@@ -146,7 +148,7 @@ How human direction, AI coordination, coding agents, PRs, Issues, and automation
 
 GitHub/Codespaces AI authentication and permissions reference.
 
-### Preserved ideas — not current requirements
+### Preserved ideas and design references — not current requirements
 
 #### [`BACKLOG.md`](BACKLOG.md)
 
@@ -156,7 +158,11 @@ Future gameplay, tools, modes, progression, content, and reference-game ideas. T
 
 Visual direction, themes, modular art-production ideas, asset pipeline experiments, and future Art Bible concepts.
 
-Nothing in these two files becomes current scope until the Game Director promotes it into the specification, roadmap, or an approved Issue.
+#### [`ENDLESS_RUNNER_BLUEPRINT.md`](ENDLESS_RUNNER_BLUEPRINT.md)
+
+Design-reference document based on lessons from *Jetpack Joyride* and Luke Muscat's Endless Runner design process. Use it when discussing core controls, game feel, pacing waves, gameplay mutators/vehicles, fail states, missions, progression, economy, audio, performance, and Mobile Runner anti-patterns.
+
+Nothing in these files becomes current scope until the Game Director promotes it into the specification, roadmap, or an approved Issue.
 
 ### Historical evidence
 
@@ -184,7 +190,7 @@ Different documents own different kinds of truth. Do not flatten them into one g
 4. **Current approved GitHub Issue** controls the focused implementation scope, within the product and architecture boundaries above.
 5. **`ARCHITECTURE.md`** controls established technical boundaries unless an approved task intentionally changes them.
 6. **`DEVELOPMENT.md`, `AGENTS.md`, and `AI_WORKFLOW.md`** control repository/process behavior.
-7. **`BACKLOG.md` and `ART_DIRECTION_IDEAS.md`** are idea/reference stores only.
+7. **`BACKLOG.md`, `ART_DIRECTION_IDEAS.md`, and `ENDLESS_RUNNER_BLUEPRINT.md`** are idea/reference stores only.
 8. **Milestone closeout reports** are authoritative historical records for what actually happened, but are not forward planning documents.
 
 When two sources appear to contradict each other on the **same kind of decision**, do not silently choose the convenient one. Check whether one explicitly supersedes the other; otherwise flag the conflict for the Game Director.
@@ -200,7 +206,7 @@ To keep this repo readable as it grows:
 - Put supporting/reference material under `docs/`.
 - Put completed milestone history under `docs/milestones/`.
 - Do not mix future ideas into historical closeout reports.
-- Do not turn backlog ideas into roadmap scope without an explicit Director decision.
+- Do not turn backlog/reference ideas into roadmap scope without an explicit Director decision.
 - Update this hub when a new major documentation category is introduced.
 - At milestone closeout, update the current milestone pointer and milestone history index.
 - Avoid moving established files unless the navigation benefit clearly outweighs broken-link/churn risk.
@@ -215,16 +221,17 @@ ARCHITECTURE.md               Technical boundaries
 DEVELOPMENT.md                Development and validation workflow
 
 docs/
-├── README.md                 Documentation hub / navigation map
-├── ROADMAP.md                Approved milestone sequence
-├── BACKLOG.md                Preserved future ideas
-├── ART_DIRECTION_IDEAS.md    Preserved visual/art exploration
-├── AI_WORKFLOW.md            Human ↔ AI workflow
-├── GITHUB_AI_ACCESS.md       GitHub/Codespaces AI access reference
-├── m1-device-report.md       Supporting historical device evidence
+├── README.md                     Documentation hub / navigation map
+├── ROADMAP.md                    Approved milestone sequence
+├── BACKLOG.md                    Preserved future ideas
+├── ART_DIRECTION_IDEAS.md        Preserved visual/art exploration
+├── ENDLESS_RUNNER_BLUEPRINT.md   Endless Runner / Jetpack Joyride design reference
+├── AI_WORKFLOW.md                Human ↔ AI workflow
+├── GITHUB_AI_ACCESS.md           GitHub/Codespaces AI access reference
+├── m1-device-report.md           Supporting historical device evidence
 └── milestones/
-    ├── README.md             Milestone history index
-    ├── TEMPLATE.md           Closeout template
-    ├── M0-foundation.md      Completed M0 history
+    ├── README.md                 Milestone history index
+    ├── TEMPLATE.md               Closeout template
+    ├── M0-foundation.md          Completed M0 history
     └── M1-flight-prototype.md
 ```
