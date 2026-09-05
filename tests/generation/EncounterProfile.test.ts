@@ -69,6 +69,12 @@ describe('encounter profile', () => {
     ).toEqual({ minimumTierIndex: 2, maximumTierIndex: 2 });
   });
 
+  it('accepts the timed pulse tag for later difficulty and pacing eligibility', () => {
+    expect(
+      createEncounterProfile({ ...VALID_PROFILE, behaviorTags: ['timed-pulse'] }).behaviorTags,
+    ).toEqual(['timed-pulse']);
+  });
+
   it('contains no viewport, Phaser, presentation, or mutable policy state', () => {
     const profile = createEncounterProfile(VALID_PROFILE);
     expect(JSON.stringify(profile)).not.toMatch(

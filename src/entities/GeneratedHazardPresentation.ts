@@ -1,14 +1,18 @@
 import type { Scene } from 'phaser';
-import type { LogicalHazardSpawnInstance } from '../generation/PatternSpawnScheduler';
+import {
+  getLogicalHazardSpawnIdentity,
+  type LogicalHazardSpawnInstance,
+} from '../generation/PatternSpawnScheduler';
+import {
+  getTimedHazardLifecycle,
+  type TimedHazardSimulationState,
+} from '../hazards/TimedHazardSimulation';
 import type { RunMotionState } from '../systems/RunMotionSimulation';
 import { PrototypeHazardPresentation } from './PrototypeHazardPresentation';
 
 interface ActiveHazardPresentation {
   readonly presentation: PrototypeHazardPresentation;
 }
-
-const getSpawnIdentity = (spawn: Readonly<LogicalHazardSpawnInstance>): string =>
-  `${spawn.patternId}:${spawn.patternEntryIndex}:${spawn.entryId}:${spawn.runDistance}`;
 
 /** Synchronizes temporary Phaser graphics to the authoritative logical generated-spawn window. */
 export class GeneratedHazardPresentation {
@@ -21,6 +25,7 @@ export class GeneratedHazardPresentation {
     spawns: ReadonlyArray<Readonly<LogicalHazardSpawnInstance>>,
     runState: Readonly<RunMotionState>,
     playerScreenX: number,
+    timedHazards: Readonly<TimedHazardSimulationState>,
   ): void {
     if (this.destroyed) {
       return;
@@ -29,7 +34,7 @@ export class GeneratedHazardPresentation {
     const retainedIdentities = new Set<string>();
 
     for (const spawn of spawns) {
-      const identity = getSpawnIdentity(spawn);
+      const identity = getLogicalHazardSpawnIdentity(spawn);
       retainedIdentities.add(identity);
       let active = this.active.get(identity);
 
@@ -38,7 +43,11 @@ export class GeneratedHazardPresentation {
         this.active.set(identity, active);
       }
 
-      active.presentation.render(runState, playerScreenX);
+      active.presentation.render(
+        runState,
+        playerScreenX,
+        getTimedHazardLifecycle(timedHazards, spawn)?.phase ?? null,
+      );
     }
 
     for (const [identity, active] of this.active) {

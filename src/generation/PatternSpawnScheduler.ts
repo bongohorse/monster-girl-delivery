@@ -37,6 +37,11 @@ export interface LogicalHazardSpawnInstance extends LogicalHazard {
   readonly type: HazardPatternEntryType;
 }
 
+/** Stable serializable identity shared by logical runtime state and Phaser presentation. */
+export const getLogicalHazardSpawnIdentity = (
+  spawn: Readonly<LogicalHazardSpawnInstance>,
+): string => `${spawn.patternId}:${spawn.patternEntryIndex}:${spawn.entryId}:${spawn.runDistance}`;
+
 export interface RejectedPatternCandidate {
   /** One-based position of this candidate within the current scheduling call. */
   readonly attempt: number;

@@ -1,10 +1,11 @@
 import { PACING_INTENSITIES, type PacingIntensity } from '../pacing/PacingSystem';
 
-export type EncounterBehaviorTag = 'moving-barrier' | 'static-barrier';
+export type EncounterBehaviorTag = 'moving-barrier' | 'static-barrier' | 'timed-pulse';
 
 export const ENCOUNTER_BEHAVIOR_TAGS: ReadonlyArray<EncounterBehaviorTag> = Object.freeze([
   'moving-barrier',
   'static-barrier',
+  'timed-pulse',
 ]);
 
 export interface EncounterDifficultyTierRange {

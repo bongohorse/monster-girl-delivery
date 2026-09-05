@@ -1,28 +1,38 @@
 import type { GameObjects, Scene } from 'phaser';
 import {
   isBehavioralLogicalHazard,
+  isTimedPulseHazardBehavior,
   resolveHazardHitboxAtRunDistance,
 } from '../hazards/HazardArchetype';
 import {
   PROTOTYPE_PLACEHOLDER_HAZARD,
   projectHazardHitboxToScreen,
 } from '../hazards/PrototypeHazard';
+import type { TelegraphedHazardPhase } from '../hazards/TelegraphedHazardLifecycle';
 import type { LogicalHazard } from '../systems/HazardCollision';
 import type { RunMotionState } from '../systems/RunMotionSimulation';
 
 /** Temporary barrier presentation; logical collision and generated identity remain outside Phaser. */
 export class PrototypeHazardPresentation {
   private graphics?: GameObjects.Graphics;
+  private timedPhase?: TelegraphedHazardPhase;
 
   constructor(
     scene: Scene,
     private readonly hazard: Readonly<LogicalHazard> = PROTOTYPE_PLACEHOLDER_HAZARD,
   ) {
-    const width = hazard.hitbox.right - hazard.hitbox.left;
-    const height = hazard.hitbox.bottom - hazard.hitbox.top;
     const graphics = scene.add.graphics().setDepth(-50);
     const moving = isBehavioralLogicalHazard(hazard) && hazard.behavior.kind === 'vertical-patrol';
 
+    this.graphics = graphics;
+
+    if (isBehavioralLogicalHazard(hazard) && isTimedPulseHazardBehavior(hazard.behavior)) {
+      this.drawTimedPhase('warning');
+      return;
+    }
+
+    const width = hazard.hitbox.right - hazard.hitbox.left;
+    const height = hazard.hitbox.bottom - hazard.hitbox.top;
     graphics
       .fillStyle(moving ? 0x8a4fff : 0xd93f55, 1)
       .fillRoundedRect(0, 0, width, height, 6)
@@ -33,23 +43,94 @@ export class PrototypeHazardPresentation {
     for (let y = 12; y < height - 8; y += 24) {
       graphics.fillTriangle(8, y, width - 8, y + 8, 8, y + 16);
     }
-
-    this.graphics = graphics;
   }
 
-  render(runState: Readonly<RunMotionState>, playerScreenX: number): void {
+  render(
+    runState: Readonly<RunMotionState>,
+    playerScreenX: number,
+    timedPhase: TelegraphedHazardPhase | null = null,
+  ): void {
     const graphics = this.graphics;
 
     if (!graphics) {
       return;
     }
 
-    const screenHitbox = projectHazardHitboxToScreen(
+    let screenHitbox = projectHazardHitboxToScreen(
       { hitbox: resolveHazardHitboxAtRunDistance(this.hazard, runState.distance) },
       runState,
       playerScreenX,
     );
+
+    if (
+      isBehavioralLogicalHazard(this.hazard) &&
+      isTimedPulseHazardBehavior(this.hazard.behavior)
+    ) {
+      const phase = timedPhase ?? 'warning';
+      this.drawTimedPhase(phase);
+
+      if (phase === 'expired') {
+        return;
+      }
+
+      if (phase === 'warning' || phase === 'lock') {
+        const centerX = (screenHitbox.left + screenHitbox.right) / 2;
+        const centerY = (screenHitbox.top + screenHitbox.bottom) / 2;
+        const geometry = this.hazard.behavior.lifecycle.warningGeometry;
+        screenHitbox = {
+          left: centerX + geometry.leftOffset,
+          right: centerX + geometry.rightOffset,
+          top: centerY + geometry.topOffset,
+          bottom: centerY + geometry.bottomOffset,
+        };
+      }
+    }
+
     graphics.setPosition(screenHitbox.left, screenHitbox.top);
+  }
+
+  private drawTimedPhase(phase: TelegraphedHazardPhase): void {
+    const graphics = this.graphics;
+    if (
+      !graphics ||
+      this.timedPhase === phase ||
+      !isBehavioralLogicalHazard(this.hazard) ||
+      !isTimedPulseHazardBehavior(this.hazard.behavior)
+    ) {
+      return;
+    }
+
+    this.timedPhase = phase;
+    graphics.clear();
+    graphics.setVisible(phase !== 'expired');
+
+    if (phase === 'expired') {
+      return;
+    }
+
+    const warningGeometry = this.hazard.behavior.lifecycle.warningGeometry;
+    const warningWidth = warningGeometry.rightOffset - warningGeometry.leftOffset;
+    const warningHeight = warningGeometry.bottomOffset - warningGeometry.topOffset;
+    const activeWidth = this.hazard.hitbox.right - this.hazard.hitbox.left;
+    const activeHeight = this.hazard.hitbox.bottom - this.hazard.hitbox.top;
+    const safePhase = phase === 'warning' || phase === 'lock';
+    const width = safePhase ? warningWidth : activeWidth;
+    const height = safePhase ? warningHeight : activeHeight;
+    const fillColor = phase === 'warning' ? 0xffd166 : phase === 'lock' ? 0xff9f1c : 0xf72545;
+    const fillAlpha = phase === 'warning' ? 0.16 : phase === 'lock' ? 0.36 : 0.95;
+    const strokeColor = phase === 'active' ? 0xffffff : 0xffd166;
+    const lineWidth = phase === 'warning' ? 3 : 5;
+
+    graphics
+      .fillStyle(fillColor, fillAlpha)
+      .fillRoundedRect(0, 0, width, height, 8)
+      .lineStyle(lineWidth, strokeColor, 1)
+      .strokeRoundedRect(0, 0, width, height, 8)
+      .fillStyle(strokeColor, phase === 'warning' ? 0.45 : 0.9);
+
+    for (let y = 10; y < height - 8; y += 20) {
+      graphics.fillTriangle(8, y, width - 8, y + 6, 8, y + 12);
+    }
   }
 
   destroy(): void {
