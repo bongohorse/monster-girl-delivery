@@ -32,18 +32,18 @@ const number = (value: number | null | undefined): string =>
 const id = (value: string | undefined): string => value ?? 'none';
 /** Compact labels preserve the distinction between hard fairness and budget failures. */
 const REASON_LABELS: Readonly<Record<string, string>> = {
-    'insufficient-reaction-spacing': 'reaction spacing too small',
-    'vertical-corridor-too-narrow': 'corridor too narrow',
-    'vertical-corridor-unreachable': 'corridor unreachable',
-    'vertical-route-blocked': 'route blocked',
-    'non-positive-transition-window': 'no transition time',
-    'next-entry-unreachable-from-exit-envelope': 'entry unreachable from exit',
-    'active-pressure-budget-exceeded': 'pressure cap',
-    'active-readability-budget-exceeded': 'readability cap',
-    'warning-concurrency-exceeded': 'warning cap',
-    'lethal-concurrency-exceeded': 'lethal cap',
-    'tracked-encounter-capacity-exceeded': 'tracked encounter cap',
-  };
+  'insufficient-reaction-spacing': 'reaction spacing too small',
+  'vertical-corridor-too-narrow': 'corridor too narrow',
+  'vertical-corridor-unreachable': 'corridor unreachable',
+  'vertical-route-blocked': 'route blocked',
+  'non-positive-transition-window': 'no transition time',
+  'next-entry-unreachable-from-exit-envelope': 'entry unreachable from exit',
+  'active-pressure-budget-exceeded': 'pressure cap',
+  'active-readability-budget-exceeded': 'readability cap',
+  'warning-concurrency-exceeded': 'warning cap',
+  'lethal-concurrency-exceeded': 'lethal cap',
+  'tracked-encounter-capacity-exceeded': 'tracked encounter cap',
+};
 export const formatEncounterReason = (reason: string): string => REASON_LABELS[reason] ?? reason;
 
 /** Bounded evidence from real scheduling decisions. Formatting occurs only on panel refresh. */
@@ -169,14 +169,20 @@ export class DirectorEncounterDiagnostics {
         ];
       }
       case 5: {
-        const signals = stream.spawns.map(spawn => ({ spawn, lifecycle: getTelegraphedHazardLifecycle(telegraphs, spawn) })).filter(signal => signal.lifecycle && signal.lifecycle.phase !== 'expired');
+        const signals = stream.spawns
+          .map((spawn) => ({ spawn, lifecycle: getTelegraphedHazardLifecycle(telegraphs, spawn) }))
+          .filter((signal) => signal.lifecycle && signal.lifecycle.phase !== 'expired');
         return [
           `Live telegraphs: ${signals.length}`,
-          ...signals.slice(0,3).flatMap(({spawn,lifecycle}) => [
-            `${spawn.behavior.kind}: ${lifecycle?.phase}`,
-            `${spawn.patternId} +${number(lifecycle?.elapsedPhaseSeconds)}s`,
-          ]),
-          signals.length > 3 ? `${signals.length-3} more tracked` : 'Phase time from hazard lifecycle',
+          ...signals
+            .slice(0, 3)
+            .flatMap(({ spawn, lifecycle }) => [
+              `${spawn.behavior.kind}: ${lifecycle?.phase}`,
+              `${spawn.patternId} +${number(lifecycle?.elapsedPhaseSeconds)}s`,
+            ]),
+          signals.length > 3
+            ? `${signals.length - 3} more tracked`
+            : 'Phase time from hazard lifecycle',
         ];
       }
       case 6:
