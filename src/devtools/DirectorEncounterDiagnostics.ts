@@ -51,11 +51,13 @@ export class DirectorEncounterDiagnostics {
   latest: Readonly<EncounterStreamObservation> | undefined;
   accepted: Readonly<EncounterStreamObservation> | undefined;
   rejected: Readonly<EncounterStreamObservation> | undefined;
+  fairness: Readonly<EncounterStreamObservation> | undefined;
   selection: Readonly<LiveEncounterCandidateSelection> | undefined;
 
   readonly observe = (event: Readonly<EncounterStreamObservation>): void => {
     this.latest = event;
     if (event.selection) this.selection = event.selection;
+    if (event.schedule) this.fairness = event;
     if (event.kind === 'accepted') this.accepted = event;
     if (event.kind.endsWith('rejected') || event.kind === 'readability-deferred')
       this.rejected = event;
@@ -66,6 +68,7 @@ export class DirectorEncounterDiagnostics {
     this.latest = undefined;
     this.accepted = undefined;
     this.rejected = undefined;
+    this.fairness = undefined;
     this.selection = undefined;
   }
 
@@ -113,7 +116,7 @@ export class DirectorEncounterDiagnostics {
         ];
       }
       case 2: {
-        const event = this.rejected ?? this.accepted;
+        const event = this.fairness ?? this.accepted;
         const rejection = event?.schedule?.rejections[event.schedule.rejections.length - 1];
         const transition =
           rejection?.transitionValidation ??
@@ -124,14 +127,14 @@ export class DirectorEncounterDiagnostics {
             ? `Margin: ${number(issue.actual - issue.required)} (${number(issue.required)} required)`
             : `Transition time: ${number(transition?.availableTransitionTimeSeconds)}s`;
         return [
-          `Latest: ${this.latest?.kind ?? 'not observed'}`,
+          `Fairness event: ${event?.kind ?? 'not observed'}`,
           `Evidence at: ${number(event?.runDistance)}`,
           `Pattern: ${id(rejection?.patternId ?? (event?.schedule?.status === 'accepted' ? event.schedule.patternId : undefined))}`,
           `Isolated: ${issue ? formatEncounterReason(issue.code) : event?.schedule ? 'pass' : 'not tested'}`,
           `Transition: ${transition?.failureReason ? formatEncounterReason(transition.failureReason) : transition?.valid ? 'pass' : 'not tested'}`,
           threshold,
           `Sample path: ${event?.kind === 'trajectory-rejected' ? 'no survivor' : this.accepted ? 'last accepted passed' : 'not tested'}`,
-          `Reaction floor: ${number(stream.schedulingWindow.minimumReactionTimeSeconds)}s`,
+          `Reaction floor: ${number(event?.selection?.difficulty.minimumReactionTimeSeconds ?? stream.schedulingWindow.minimumReactionTimeSeconds)}s`,
         ];
       }
       case 3:
