@@ -10,6 +10,7 @@ import {
   getHazardSweptHitbox,
   type HazardBehavior,
   resolveHazardHitboxAtRunDistance,
+  resolveTargetLockStrikeHitbox,
 } from '../../src/hazards/HazardArchetype';
 import { isPlayerCollidingWithHazard } from '../../src/systems/HazardCollision';
 import { stepRunMotion } from '../../src/systems/RunMotionSimulation';
@@ -23,6 +24,30 @@ const MOVING_HAZARD = Object.freeze({
     phaseOffset: 0,
   }),
   hitbox: Object.freeze({ left: 1_000, right: 1_048, top: 147, bottom: 195 }),
+  runDistance: 1_000,
+});
+
+const createReactiveBehavior = () => {
+  const behavior = createHazardBehavior({
+    archetype: 'reactive',
+    kind: 'target-lock-strike',
+    lifecycle: {
+      durations: { warningSeconds: 1.4, lockSeconds: 0.4, activeSeconds: 1 },
+      warningGeometry: { leftOffset: -44, rightOffset: 44, topOffset: -34, bottomOffset: 34 },
+    },
+    maximumTargetY: 222,
+    minimumTargetY: 72,
+    strikeHeight: 48,
+  });
+  if (behavior.kind !== 'target-lock-strike') {
+    throw new Error('Expected target-lock strike behavior.');
+  }
+  return behavior;
+};
+
+const REACTIVE_HAZARD = Object.freeze({
+  behavior: createReactiveBehavior(),
+  hitbox: Object.freeze({ left: 1_000, right: 1_064, top: 171, bottom: 219 }),
   runDistance: 1_000,
 });
 
@@ -76,6 +101,44 @@ describe('geometric hazard archetype', () => {
       expect(Object.isFrozen(behavior.lifecycle)).toBe(true);
       expect(Object.isFrozen(behavior.lifecycle.durations)).toBe(true);
     }
+  });
+
+  it('deeply snapshots and deterministically resolves target-lock strike behavior', () => {
+    const source = {
+      archetype: 'reactive' as const,
+      kind: 'target-lock-strike' as const,
+      lifecycle: {
+        durations: { warningSeconds: 1.4, lockSeconds: 0.4, activeSeconds: 1 },
+        warningGeometry: { leftOffset: -44, rightOffset: 44, topOffset: -34, bottomOffset: 34 },
+      },
+      maximumTargetY: 222,
+      minimumTargetY: 72,
+      strikeHeight: 48,
+    };
+    const behavior = createHazardBehavior(source);
+    source.lifecycle.durations.warningSeconds = 10;
+    source.maximumTargetY = 300;
+
+    expect(behavior).toEqual(REACTIVE_HAZARD.behavior);
+    expect(JSON.parse(JSON.stringify(behavior))).toEqual(behavior);
+    expect(Object.isFrozen(behavior)).toBe(true);
+    if (behavior.kind === 'target-lock-strike') {
+      expect(Object.isFrozen(behavior.lifecycle)).toBe(true);
+      expect(Object.isFrozen(behavior.lifecycle.durations)).toBe(true);
+    }
+
+    expect(resolveTargetLockStrikeHitbox(REACTIVE_HAZARD, 200)).toEqual({
+      left: 1_000,
+      right: 1_064,
+      top: 176,
+      bottom: 224,
+    });
+    expect(resolveTargetLockStrikeHitbox(REACTIVE_HAZARD, 500)).toEqual({
+      left: 1_000,
+      right: 1_064,
+      top: 198,
+      bottom: 246,
+    });
   });
 
   it('resolves a deterministic triangle-wave patrol from absolute run progress', () => {
@@ -178,6 +241,15 @@ describe('geometric hazard archetype', () => {
       { ...MOVING_HAZARD.behavior, cycleDistance: Number.POSITIVE_INFINITY },
       { ...MOVING_HAZARD.behavior, phaseOffset: -0.1 },
       { ...MOVING_HAZARD.behavior, phaseOffset: 1 },
+      { ...REACTIVE_HAZARD.behavior, strikeHeight: 0 },
+      { ...REACTIVE_HAZARD.behavior, maximumTargetY: 72 },
+      {
+        ...REACTIVE_HAZARD.behavior,
+        lifecycle: {
+          ...REACTIVE_HAZARD.behavior.lifecycle,
+          durations: { ...REACTIVE_HAZARD.behavior.lifecycle.durations, lockSeconds: 0 },
+        },
+      },
       { archetype: 'unknown', kind: 'static' },
       { archetype: 'geometric', kind: 'unknown' },
     ];
@@ -188,5 +260,6 @@ describe('geometric hazard archetype', () => {
     expect(() => resolveHazardHitboxAtRunDistance(MOVING_HAZARD, Number.NaN)).toThrow(RangeError);
     const invalidAnchor = { ...MOVING_HAZARD, runDistance: -1 };
     expect(() => resolveHazardHitboxAtRunDistance(invalidAnchor, 1_000)).toThrow(RangeError);
+    expect(() => resolveTargetLockStrikeHitbox(REACTIVE_HAZARD, Number.NaN)).toThrow(RangeError);
   });
 });

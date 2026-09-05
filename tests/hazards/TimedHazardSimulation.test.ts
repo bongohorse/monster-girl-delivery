@@ -4,12 +4,12 @@ import { scheduleNextPattern } from '../../src/generation/PatternSpawnScheduler'
 import { PROTOTYPE_TIMED_PULSE_PATTERN } from '../../src/generation/PrototypeHazardPatternFixtures';
 import { createRunGenerationState } from '../../src/generation/RunGenerationState';
 import {
-  createTimedHazardSimulationState,
-  getLethalHazardsForTimedSimulation,
-  getTimedHazardLifecycle,
-  stepTimedHazardSimulation,
-  type TimedHazardSimulationState,
-} from '../../src/hazards/TimedHazardSimulation';
+  createTelegraphedHazardSimulationState as createTimedHazardSimulationState,
+  getLethalHazardsForTelegraphedSimulation as getLethalHazardsForTimedSimulation,
+  getTelegraphedHazardLifecycle as getTimedHazardLifecycle,
+  stepTelegraphedHazardSimulation,
+  type TelegraphedHazardSimulationState as TimedHazardSimulationState,
+} from '../../src/hazards/TelegraphedHazardSimulation';
 import { isPlayerCollidingWithHazard } from '../../src/systems/HazardCollision';
 
 const createTimedSpawn = () => {
@@ -25,6 +25,16 @@ const createTimedSpawn = () => {
 
   return schedule.spawns[0];
 };
+
+const stepTimedHazardSimulation = (
+  state: Readonly<TimedHazardSimulationState>,
+  spawns: Parameters<typeof stepTelegraphedHazardSimulation>[1],
+  elapsedSeconds: number,
+) =>
+  stepTelegraphedHazardSimulation(state, spawns, elapsedSeconds, {
+    positionY: 195,
+    runDistance: 0,
+  });
 
 const getLifecycle = (
   state: Readonly<TimedHazardSimulationState>,

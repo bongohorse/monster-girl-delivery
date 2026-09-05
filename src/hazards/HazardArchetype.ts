@@ -4,7 +4,7 @@ import {
   type TelegraphedHazardLifecycleConfig,
 } from './TelegraphedHazardLifecycle';
 
-export type HazardArchetype = 'geometric' | 'timed';
+export type HazardArchetype = 'geometric' | 'reactive' | 'timed';
 
 export interface StaticGeometricHazardBehavior {
   readonly archetype: 'geometric';
@@ -28,8 +28,19 @@ export interface TimedPulseHazardBehavior {
   readonly lifecycle: Readonly<TelegraphedHazardLifecycleConfig>;
 }
 
+/** PROTOTYPE warning-track, lock, then fixed-height strike with no post-lock tracking. */
+export interface TargetLockStrikeHazardBehavior {
+  readonly archetype: 'reactive';
+  readonly kind: 'target-lock-strike';
+  readonly lifecycle: Readonly<TelegraphedHazardLifecycleConfig>;
+  readonly maximumTargetY: number;
+  readonly minimumTargetY: number;
+  readonly strikeHeight: number;
+}
+
 export type HazardBehavior =
   | StaticGeometricHazardBehavior
+  | TargetLockStrikeHazardBehavior
   | TimedPulseHazardBehavior
   | VerticalPatrolHazardBehavior;
 
@@ -56,7 +67,8 @@ const assertValidHazardBehavior = (definition: Readonly<HazardBehavior>): void =
   const supportedPair =
     (rawDefinition.archetype === 'geometric' &&
       (rawDefinition.kind === 'static' || rawDefinition.kind === 'vertical-patrol')) ||
-    (rawDefinition.archetype === 'timed' && rawDefinition.kind === 'pulse');
+    (rawDefinition.archetype === 'timed' && rawDefinition.kind === 'pulse') ||
+    (rawDefinition.archetype === 'reactive' && rawDefinition.kind === 'target-lock-strike');
   if (!supportedPair) {
     throw new TypeError(
       `Unsupported hazard behavior: ${String(rawDefinition.archetype)}/${String(rawDefinition.kind)}`,
@@ -80,6 +92,19 @@ const assertValidHazardBehavior = (definition: Readonly<HazardBehavior>): void =
       return;
     case 'pulse':
       createTelegraphedHazardLifecycleConfig(definition.lifecycle);
+      return;
+    case 'target-lock-strike':
+      createTelegraphedHazardLifecycleConfig(definition.lifecycle);
+      assertPositiveFinite(definition.strikeHeight, 'Hazard target-lock strikeHeight');
+      if (
+        !Number.isFinite(definition.minimumTargetY) ||
+        !Number.isFinite(definition.maximumTargetY) ||
+        definition.maximumTargetY <= definition.minimumTargetY
+      ) {
+        throw new RangeError(
+          'Hazard target-lock target range must be finite with maximumTargetY above minimumTargetY.',
+        );
+      }
       return;
     default:
       throw new TypeError(
@@ -105,6 +130,11 @@ export const createHazardBehavior = (
         ...definition,
         lifecycle: createTelegraphedHazardLifecycleConfig(definition.lifecycle),
       });
+    case 'target-lock-strike':
+      return Object.freeze({
+        ...definition,
+        lifecycle: createTelegraphedHazardLifecycleConfig(definition.lifecycle),
+      });
   }
 };
 
@@ -112,6 +142,16 @@ export const isTimedPulseHazardBehavior = (
   behavior: Readonly<HazardBehavior>,
 ): behavior is Readonly<TimedPulseHazardBehavior> =>
   behavior.archetype === 'timed' && behavior.kind === 'pulse';
+
+export const isTargetLockStrikeHazardBehavior = (
+  behavior: Readonly<HazardBehavior>,
+): behavior is Readonly<TargetLockStrikeHazardBehavior> =>
+  behavior.archetype === 'reactive' && behavior.kind === 'target-lock-strike';
+
+export const isTelegraphedHazardBehavior = (
+  behavior: Readonly<HazardBehavior>,
+): behavior is Readonly<TargetLockStrikeHazardBehavior | TimedPulseHazardBehavior> =>
+  isTimedPulseHazardBehavior(behavior) || isTargetLockStrikeHazardBehavior(behavior);
 
 export const isBehavioralLogicalHazard = (
   hazard: Readonly<LogicalHazard>,
@@ -164,12 +204,48 @@ export const resolveHazardHitboxAtRunDistance = (
   });
 };
 
+/** Resolves the reactive strike at a sampled or locked target height without mutating spawn data. */
+export const resolveTargetLockStrikeHitbox = (
+  hazard: Readonly<BehavioralLogicalHazard>,
+  targetPositionY: number,
+): Readonly<LogicalHitbox> => {
+  if (!isTargetLockStrikeHazardBehavior(hazard.behavior)) {
+    return hazard.hitbox;
+  }
+  if (!Number.isFinite(targetPositionY)) {
+    throw new RangeError('Hazard target-lock targetPositionY must be finite.');
+  }
+
+  assertValidHazardBehavior(hazard.behavior);
+  const targetY = Math.min(
+    hazard.behavior.maximumTargetY,
+    Math.max(hazard.behavior.minimumTargetY, targetPositionY),
+  );
+  const halfHeight = hazard.behavior.strikeHeight / 2;
+
+  return Object.freeze({
+    left: hazard.hitbox.left,
+    right: hazard.hitbox.right,
+    top: targetY - halfHeight,
+    bottom: targetY + halfHeight,
+  });
+};
+
 /** Conservative authored extent used by the existing geometry/reachability validator. */
 export const getHazardSweptHitbox = (
   hazard: Readonly<LogicalHazard> & { readonly behavior: Readonly<HazardBehavior> },
 ): Readonly<LogicalHitbox> => {
   assertValidHazardBehavior(hazard.behavior);
   const behavior = hazard.behavior;
+  if (behavior.kind === 'target-lock-strike') {
+    const halfHeight = behavior.strikeHeight / 2;
+    return Object.freeze({
+      left: hazard.hitbox.left,
+      right: hazard.hitbox.right,
+      top: behavior.minimumTargetY - halfHeight,
+      bottom: behavior.maximumTargetY + halfHeight,
+    });
+  }
   if (behavior.kind !== 'vertical-patrol') {
     return hazard.hitbox;
   }

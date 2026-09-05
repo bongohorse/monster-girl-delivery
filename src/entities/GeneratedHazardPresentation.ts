@@ -4,9 +4,9 @@ import {
   type LogicalHazardSpawnInstance,
 } from '../generation/PatternSpawnScheduler';
 import {
-  getTimedHazardLifecycle,
-  type TimedHazardSimulationState,
-} from '../hazards/TimedHazardSimulation';
+  getTelegraphedHazardLifecycle,
+  type TelegraphedHazardSimulationState,
+} from '../hazards/TelegraphedHazardSimulation';
 import type { RunMotionState } from '../systems/RunMotionSimulation';
 import { PrototypeHazardPresentation } from './PrototypeHazardPresentation';
 
@@ -25,7 +25,7 @@ export class GeneratedHazardPresentation {
     spawns: ReadonlyArray<Readonly<LogicalHazardSpawnInstance>>,
     runState: Readonly<RunMotionState>,
     playerScreenX: number,
-    timedHazards: Readonly<TimedHazardSimulationState>,
+    telegraphedHazards: Readonly<TelegraphedHazardSimulationState>,
   ): void {
     if (this.destroyed) {
       return;
@@ -46,7 +46,7 @@ export class GeneratedHazardPresentation {
       active.presentation.render(
         runState,
         playerScreenX,
-        getTimedHazardLifecycle(timedHazards, spawn)?.phase ?? null,
+        getTelegraphedHazardLifecycle(telegraphedHazards, spawn),
       );
     }
 

@@ -75,6 +75,13 @@ describe('encounter profile', () => {
     ).toEqual(['timed-pulse']);
   });
 
+  it('accepts the target-lock strike tag for later difficulty and pacing eligibility', () => {
+    expect(
+      createEncounterProfile({ ...VALID_PROFILE, behaviorTags: ['target-lock-strike'] })
+        .behaviorTags,
+    ).toEqual(['target-lock-strike']);
+  });
+
   it('contains no viewport, Phaser, presentation, or mutable policy state', () => {
     const profile = createEncounterProfile(VALID_PROFILE);
     expect(JSON.stringify(profile)).not.toMatch(

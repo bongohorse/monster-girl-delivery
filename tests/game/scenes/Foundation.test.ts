@@ -12,10 +12,10 @@ import {
 import { PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES } from '../../../src/generation/PrototypeHazardPatternFixtures';
 import { resolveHazardHitboxAtRunDistance } from '../../../src/hazards/HazardArchetype';
 import {
-  createTimedHazardSimulationState,
-  stepTimedHazardSimulation,
-  type TimedHazardSimulationState,
-} from '../../../src/hazards/TimedHazardSimulation';
+  createTelegraphedHazardSimulationState,
+  stepTelegraphedHazardSimulation,
+  type TelegraphedHazardSimulationState,
+} from '../../../src/hazards/TelegraphedHazardSimulation';
 import type { PrototypeRunState } from '../../../src/systems/PrototypeRunSimulation';
 import { type RunMotionState, stepRunMotion } from '../../../src/systems/RunMotionSimulation';
 import {
@@ -37,8 +37,10 @@ const getRunState = (foundation: Foundation): PrototypeRunState =>
   Reflect.get(foundation, 'runState') as PrototypeRunState;
 const getHazardStream = (foundation: Foundation): Readonly<GeneratedHazardStreamState> =>
   Reflect.get(foundation, 'hazardStream') as Readonly<GeneratedHazardStreamState>;
-const getTimedHazardState = (foundation: Foundation): Readonly<TimedHazardSimulationState> =>
-  Reflect.get(foundation, 'timedHazardState') as Readonly<TimedHazardSimulationState>;
+const getTelegraphedHazardState = (
+  foundation: Foundation,
+): Readonly<TelegraphedHazardSimulationState> =>
+  Reflect.get(foundation, 'telegraphedHazardState') as Readonly<TelegraphedHazardSimulationState>;
 const TEST_HAZARD_STREAM_CONTEXT = Object.freeze({
   catalog: PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES,
 });
@@ -77,8 +79,13 @@ const createFoundationHarness = () => {
   Reflect.set(foundation, 'hazardStream', hazardStream);
   Reflect.set(
     foundation,
-    'timedHazardState',
-    stepTimedHazardSimulation(createTimedHazardSimulationState(), hazardStream.spawns, 0),
+    'telegraphedHazardState',
+    stepTelegraphedHazardSimulation(
+      createTelegraphedHazardSimulationState(),
+      hazardStream.spawns,
+      0,
+      { positionY: 400, runDistance: 0 },
+    ),
   );
   Reflect.set(foundation, 'instructions', instructions);
   Reflect.set(foundation, 'playerPresentation', playerPresentation);
@@ -154,7 +161,7 @@ describe('Foundation scene gameplay orchestration', () => {
       getHazardStream(foundation).spawns,
       expectedRunMotion,
       100,
-      getTimedHazardState(foundation),
+      getTelegraphedHazardState(foundation),
     );
     expect(directorPanel.update).toHaveBeenLastCalledWith(
       1_000,
@@ -199,13 +206,13 @@ describe('Foundation scene gameplay orchestration', () => {
     const beforePause = getFlightState(foundation);
     const runBeforePause = getRunMotionState(foundation);
     const hazardsBeforePause = getHazardStream(foundation);
-    const timedHazardsBeforePause = getTimedHazardState(foundation);
+    const telegraphedHazardsBeforePause = getTelegraphedHazardState(foundation);
 
     foundation.update(0, 5_000);
     expect(getFlightState(foundation)).toEqual(beforePause);
     expect(getRunMotionState(foundation)).toEqual(runBeforePause);
     expect(getHazardStream(foundation)).toBe(hazardsBeforePause);
-    expect(getTimedHazardState(foundation)).toBe(timedHazardsBeforePause);
+    expect(getTelegraphedHazardState(foundation)).toBe(telegraphedHazardsBeforePause);
     expect(scrollingWorldPresentation.render).toHaveBeenLastCalledWith(
       runBeforePause.distance,
       expect.any(Object),
@@ -217,7 +224,7 @@ describe('Foundation scene gameplay orchestration', () => {
     expect(getFlightState(foundation)).toEqual(beforePause);
     expect(getRunMotionState(foundation)).toEqual(runBeforePause);
     expect(getHazardStream(foundation)).toBe(hazardsBeforePause);
-    expect(getTimedHazardState(foundation)).toBe(timedHazardsBeforePause);
+    expect(getTelegraphedHazardState(foundation)).toBe(telegraphedHazardsBeforePause);
 
     foundation.update(0, 16);
     expect(getFlightState(foundation).positionY).toBeGreaterThan(beforePause.positionY);
@@ -240,7 +247,7 @@ describe('Foundation scene gameplay orchestration', () => {
       services.runMotion.getSnapshot(),
     );
     const collisionHazard = progressedHazardStream.spawns.find(
-      (spawn) => spawn.behavior.archetype !== 'timed',
+      (spawn) => spawn.behavior.archetype === 'geometric',
     );
 
     expect(collisionHazard).toBeDefined();
@@ -289,14 +296,14 @@ describe('Foundation scene gameplay orchestration', () => {
     expect(services.input.isThrustHeld()).toBe(false);
     expect(instructions.setText).toHaveBeenNthCalledWith(
       2,
-      'M4 moving + timed hazard prototypes\nHold touch, mouse, or Space to thrust.',
+      'M4 moving, timed + target-lock hazards\nHold touch, mouse, or Space to thrust.',
     );
     expect(scrollingWorldPresentation.render).toHaveBeenLastCalledWith(0, expect.any(Object));
     expect(generatedHazardPresentation.sync).toHaveBeenLastCalledWith(
       initialHazardStream.spawns,
       { distance: 0 },
       100,
-      getTimedHazardState(foundation),
+      getTelegraphedHazardState(foundation),
     );
   });
 

@@ -156,6 +156,47 @@ export const PROTOTYPE_TIMED_PULSE_PATTERN = createHazardPattern({
   ],
 });
 
+/** PROTOTYPE reactive target-lock strike; timing, target band, and graphics are not final. */
+export const PROTOTYPE_TARGET_LOCK_STRIKE_PATTERN = createHazardPattern({
+  id: 'prototype-target-lock-strike',
+  runLength: 600,
+  profile: {
+    behaviorTags: ['target-lock-strike'],
+    difficultyTierRange: { minimumTierIndex: 1, maximumTierIndex: null },
+    pacingIntensities: ['low', 'medium', 'high', 'peak'],
+    pressureCost: 2,
+    readabilityCost: 3,
+    varietyFamilyId: 'target-lock-strike',
+  },
+  entries: [
+    {
+      behavior: {
+        archetype: 'reactive',
+        kind: 'target-lock-strike',
+        lifecycle: {
+          durations: {
+            warningSeconds: 1.4,
+            lockSeconds: 0.4,
+            activeSeconds: 1,
+          },
+          warningGeometry: {
+            leftOffset: -44,
+            rightOffset: 44,
+            topOffset: -34,
+            bottomOffset: 34,
+          },
+        },
+        minimumTargetY: 72,
+        maximumTargetY: 222,
+        strikeHeight: 48,
+      },
+      id: 'target-lock-strike-1',
+      type: 'placeholder-barrier',
+      hitbox: { left: 120, right: 184, top: 171, bottom: 219 },
+    },
+  ],
+});
+
 export const PROTOTYPE_HAZARD_PATTERN_FIXTURES = Object.freeze([
   PROTOTYPE_LINE_PATTERN,
   PROTOTYPE_CORRIDOR_PATTERN,
@@ -167,4 +208,5 @@ export const PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES = Object.freeze([
   ...PROTOTYPE_HAZARD_PATTERN_FIXTURES,
   PROTOTYPE_VERTICAL_PATROL_PATTERN,
   PROTOTYPE_TIMED_PULSE_PATTERN,
+  PROTOTYPE_TARGET_LOCK_STRIKE_PATTERN,
 ]);

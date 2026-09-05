@@ -5,6 +5,7 @@ import {
   PROTOTYPE_LINE_PATTERN,
   PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES,
   PROTOTYPE_OFFSET_PAIR_PATTERN,
+  PROTOTYPE_TARGET_LOCK_STRIKE_PATTERN,
   PROTOTYPE_TIMED_PULSE_PATTERN,
   PROTOTYPE_VERTICAL_PATROL_PATTERN,
 } from '../../src/generation/PrototypeHazardPatternFixtures';
@@ -91,6 +92,7 @@ describe('prototype hazard pattern fixtures', () => {
       ...PROTOTYPE_HAZARD_PATTERN_FIXTURES,
       PROTOTYPE_VERTICAL_PATROL_PATTERN,
       PROTOTYPE_TIMED_PULSE_PATTERN,
+      PROTOTYPE_TARGET_LOCK_STRIKE_PATTERN,
     ]);
     expect(PROTOTYPE_VERTICAL_PATROL_PATTERN.profile).toEqual({
       behaviorTags: ['moving-barrier'],
@@ -144,5 +146,42 @@ describe('prototype hazard pattern fixtures', () => {
       expect(Object.isFrozen(behavior.lifecycle.warningGeometry)).toBe(true);
     }
     expect(JSON.stringify(PROTOTYPE_TIMED_PULSE_PATTERN)).not.toMatch(/viewport|screen|phaser/i);
+  });
+
+  it('adds an explicitly profiled reactive strike with immutable target-lock data', () => {
+    expect(PROTOTYPE_TARGET_LOCK_STRIKE_PATTERN.profile).toEqual({
+      behaviorTags: ['target-lock-strike'],
+      difficultyTierRange: { minimumTierIndex: 1, maximumTierIndex: null },
+      pacingIntensities: ['low', 'medium', 'high', 'peak'],
+      pressureCost: 2,
+      readabilityCost: 3,
+      varietyFamilyId: 'target-lock-strike',
+    });
+    expect(PROTOTYPE_TARGET_LOCK_STRIKE_PATTERN.entries[0]?.behavior).toEqual({
+      archetype: 'reactive',
+      kind: 'target-lock-strike',
+      lifecycle: {
+        durations: { warningSeconds: 1.4, lockSeconds: 0.4, activeSeconds: 1 },
+        warningGeometry: {
+          leftOffset: -44,
+          rightOffset: 44,
+          topOffset: -34,
+          bottomOffset: 34,
+        },
+      },
+      maximumTargetY: 222,
+      minimumTargetY: 72,
+      strikeHeight: 48,
+    });
+    const behavior = PROTOTYPE_TARGET_LOCK_STRIKE_PATTERN.entries[0]?.behavior;
+    expect(Object.isFrozen(behavior)).toBe(true);
+    if (behavior?.kind === 'target-lock-strike') {
+      expect(Object.isFrozen(behavior.lifecycle)).toBe(true);
+      expect(Object.isFrozen(behavior.lifecycle.durations)).toBe(true);
+      expect(Object.isFrozen(behavior.lifecycle.warningGeometry)).toBe(true);
+    }
+    expect(JSON.stringify(PROTOTYPE_TARGET_LOCK_STRIKE_PATTERN)).not.toMatch(
+      /viewport|screen|phaser/i,
+    );
   });
 });

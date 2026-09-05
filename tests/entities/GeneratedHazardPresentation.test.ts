@@ -3,11 +3,12 @@ import { describe, expect, it, vi } from 'vitest';
 import { GeneratedHazardPresentation } from '../../src/entities/GeneratedHazardPresentation';
 import type { LogicalHazardSpawnInstance } from '../../src/generation/PatternSpawnScheduler';
 import {
-  createTimedHazardSimulationState,
-  stepTimedHazardSimulation,
-} from '../../src/hazards/TimedHazardSimulation';
+  createTelegraphedHazardSimulationState,
+  stepTelegraphedHazardSimulation,
+} from '../../src/hazards/TelegraphedHazardSimulation';
 
-const EMPTY_TIMED_HAZARDS = createTimedHazardSimulationState();
+const PLAYER_TARGET = Object.freeze({ positionY: 195, runDistance: 0 });
+const EMPTY_TIMED_HAZARDS = createTelegraphedHazardSimulationState();
 
 const createSpawn = (entryId: string, left: number): Readonly<LogicalHazardSpawnInstance> => ({
   behavior: { archetype: 'geometric', kind: 'static' },
@@ -48,6 +49,26 @@ const createTimedSpawn = (): Readonly<LogicalHazardSpawnInstance> => ({
   hitbox: { left: 1_000, right: 1_064, top: 155, bottom: 219 },
   patternEntryIndex: 0,
   patternId: 'timed-pattern',
+  runDistance: 1_000,
+  type: 'placeholder-barrier',
+});
+
+const createReactiveSpawn = (): Readonly<LogicalHazardSpawnInstance> => ({
+  behavior: {
+    archetype: 'reactive',
+    kind: 'target-lock-strike',
+    lifecycle: {
+      durations: { warningSeconds: 1.4, lockSeconds: 0.4, activeSeconds: 1 },
+      warningGeometry: { leftOffset: -44, rightOffset: 44, topOffset: -34, bottomOffset: 34 },
+    },
+    maximumTargetY: 222,
+    minimumTargetY: 72,
+    strikeHeight: 48,
+  },
+  entryId: 'reactive',
+  hitbox: { left: 1_000, right: 1_064, top: 171, bottom: 219 },
+  patternEntryIndex: 0,
+  patternId: 'reactive-pattern',
   runDistance: 1_000,
   type: 'placeholder-barrier',
 });
@@ -148,28 +169,78 @@ describe('GeneratedHazardPresentation', () => {
     const { addGraphics, graphicsObjects, scene } = createSceneFake();
     const presentation = new GeneratedHazardPresentation(scene);
     const spawn = createTimedSpawn();
-    let timedState = stepTimedHazardSimulation(EMPTY_TIMED_HAZARDS, [spawn], 0);
+    let timedState = stepTelegraphedHazardSimulation(
+      EMPTY_TIMED_HAZARDS,
+      [spawn],
+      0,
+      PLAYER_TARGET,
+    );
 
     presentation.sync([spawn], { distance: 100 }, 200, timedState);
     expect(addGraphics).toHaveBeenCalledOnce();
     expect(graphicsObjects[0]?.fillStyle).toHaveBeenCalledWith(0xffd166, 0.16);
     expect(graphicsObjects[0]?.setPosition).toHaveBeenLastCalledWith(1_090, 145);
 
-    timedState = stepTimedHazardSimulation(timedState, [spawn], 1);
+    timedState = stepTelegraphedHazardSimulation(timedState, [spawn], 1, PLAYER_TARGET);
     presentation.sync([spawn], { distance: 100 }, 200, timedState);
     expect(graphicsObjects[0]?.fillStyle).toHaveBeenCalledWith(0xff9f1c, 0.36);
 
-    timedState = stepTimedHazardSimulation(timedState, [spawn], 0.25);
+    timedState = stepTelegraphedHazardSimulation(timedState, [spawn], 0.25, PLAYER_TARGET);
     presentation.sync([spawn], { distance: 100 }, 200, timedState);
     expect(graphicsObjects[0]?.fillStyle).toHaveBeenCalledWith(0xf72545, 0.95);
     expect(graphicsObjects[0]?.setPosition).toHaveBeenLastCalledWith(1_100, 155);
 
-    timedState = stepTimedHazardSimulation(timedState, [spawn], 0.75);
+    timedState = stepTelegraphedHazardSimulation(timedState, [spawn], 0.75, PLAYER_TARGET);
     presentation.sync([spawn], { distance: 100 }, 200, timedState);
     expect(graphicsObjects[0]?.setVisible).toHaveBeenLastCalledWith(false);
 
     presentation.sync([], { distance: 100 }, 200, EMPTY_TIMED_HAZARDS);
     expect(graphicsObjects[0]?.destroy).toHaveBeenCalledOnce();
+  });
+
+  it('tracks then freezes one reactive marker before drawing its fixed active strike', () => {
+    const { addGraphics, graphicsObjects, scene } = createSceneFake();
+    const presentation = new GeneratedHazardPresentation(scene);
+    const spawn = createReactiveSpawn();
+    let state = stepTelegraphedHazardSimulation(EMPTY_TIMED_HAZARDS, [spawn], 0, {
+      positionY: 100,
+      runDistance: 0,
+    });
+
+    presentation.sync([spawn], { distance: 100 }, 200, state);
+    expect(addGraphics).toHaveBeenCalledOnce();
+    expect(graphicsObjects[0]?.fillStyle).toHaveBeenCalledWith(0x6fffe9, 0.16);
+    expect(graphicsObjects[0]?.setPosition).toHaveBeenLastCalledWith(1_088, 66);
+
+    state = stepTelegraphedHazardSimulation(state, [spawn], 0.5, {
+      positionY: 180,
+      runDistance: 175,
+    });
+    presentation.sync([spawn], { distance: 100 }, 200, state);
+    expect(graphicsObjects[0]?.setPosition).toHaveBeenLastCalledWith(1_088, 146);
+
+    state = stepTelegraphedHazardSimulation(state, [spawn], 0.9, {
+      positionY: 200,
+      runDistance: 490,
+    });
+    presentation.sync([spawn], { distance: 100 }, 200, state);
+    expect(graphicsObjects[0]?.fillStyle).toHaveBeenCalledWith(0x3a86ff, 0.36);
+    expect(graphicsObjects[0]?.setPosition).toHaveBeenLastCalledWith(1_088, 166);
+
+    state = stepTelegraphedHazardSimulation(state, [spawn], 0.4, {
+      positionY: 80,
+      runDistance: 630,
+    });
+    presentation.sync([spawn], { distance: 100 }, 200, state);
+    expect(graphicsObjects[0]?.fillStyle).toHaveBeenCalledWith(0xff2d95, 0.95);
+    expect(graphicsObjects[0]?.setPosition).toHaveBeenLastCalledWith(1_100, 176);
+
+    state = stepTelegraphedHazardSimulation(state, [spawn], 1, {
+      positionY: 80,
+      runDistance: 980,
+    });
+    presentation.sync([spawn], { distance: 100 }, 200, state);
+    expect(graphicsObjects[0]?.setVisible).toHaveBeenLastCalledWith(false);
   });
 
   it('destroys all active graphics once and ignores later synchronization', () => {
