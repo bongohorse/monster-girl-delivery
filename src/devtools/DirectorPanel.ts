@@ -1,4 +1,4 @@
-import { Core, type Scene } from 'phaser';
+import type { Scene } from 'phaser';
 import type { LifecycleSnapshot } from '../core/LifecycleService';
 import type { ViewportSnapshot } from '../core/ViewportService';
 import type { GeneratedHazardStreamState } from '../generation/GeneratedHazardStream';
@@ -75,8 +75,8 @@ export class DirectorPanel {
     this.pageButton.on('pointerupoutside', this.cancelInteraction);
     this.pageButton.on('pointercancel', this.cancelInteraction);
     this.scene.game.canvas.addEventListener('pointercancel', this.cancelInteraction);
-    this.scene.game.events.on(Core.Events.BLUR, this.cancelInteraction);
-    this.scene.game.events.on(Core.Events.HIDDEN, this.cancelInteraction);
+    this.scene.game.events.on('blur', this.cancelInteraction);
+    this.scene.game.events.on('hidden', this.cancelInteraction);
     this.pageLifecycleTarget.addEventListener('pagehide', this.cancelInteraction);
     this.refreshTitle();
   }
@@ -132,8 +132,8 @@ export class DirectorPanel {
     this.destroyed = true;
     this.cancelInteraction();
     this.scene.game.canvas.removeEventListener('pointercancel', this.cancelInteraction);
-    this.scene.game.events.off(Core.Events.BLUR, this.cancelInteraction);
-    this.scene.game.events.off(Core.Events.HIDDEN, this.cancelInteraction);
+    this.scene.game.events.off('blur', this.cancelInteraction);
+    this.scene.game.events.off('hidden', this.cancelInteraction);
     this.pageLifecycleTarget.removeEventListener('pagehide', this.cancelInteraction);
     this.pageButton.destroy();
     this.text.destroy();
