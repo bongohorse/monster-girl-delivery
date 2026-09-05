@@ -4,13 +4,14 @@
 
 This document describes **authentication and technical repository permissions** for AI/coding tools working on Monster Girl Delivery.
 
-It does **not** grant product authority or automatic permission to merge. Operational behavior is defined by [`../AGENTS.md`](../AGENTS.md), [`AI_WORKFLOW.md`](AI_WORKFLOW.md), repository protections, and the assigned task.
+It does **not** grant product authority or automatic permission to merge. Operational behavior is defined by [`../AGENTS.md`](../AGENTS.md), [`AI_WORKFLOW.md`](AI_WORKFLOW.md), repository protections, and the assigned task. Jules-specific operating rules live in [`JULES_WORKFLOW.md`](JULES_WORKFLOW.md).
 
 ## Recommended model
 
-- **Codespace:** development environment.
+- **Codespace:** development environment for Codex/CLI-style agents and manual repository work.
 - **Git:** use the Codespaces-provided repository credential for normal branch/commit pushes where available.
-- **GitHub CLI:** use a repository-scoped fine-grained PAT stored as Codespaces secret `MGD_GH_TOKEN`; the devcontainer exposes it as `GH_TOKEN`.
+- **GitHub CLI in Codespaces:** use a repository-scoped fine-grained PAT stored as Codespaces secret `MGD_GH_TOKEN`; the devcontainer exposes it as `GH_TOKEN`.
+- **Jules:** use the authorized Jules GitHub App for native Issue/PR integration; do not give Jules the Codespaces PAT by default.
 - **Main branch:** work through branches/PRs; do not bypass repository protections.
 - **CI:** required checks must pass before a merge when those checks apply.
 
@@ -20,7 +21,7 @@ A technically permitted action is not automatically an authorized action for eve
 
 Create a token dedicated to **`bongohorse/monster-girl-delivery` only**.
 
-Typical required repository permissions for broad Issue/PR/Actions work:
+Typical required repository permissions for broad Issue/PR/Actions work in Codespaces/CLI environments:
 
 | Permission | Access |
 |---|---|
@@ -53,6 +54,37 @@ Do **not** grant by default:
 
 Use the least repository/account scope that still supports the approved workflow.
 
+## Jules GitHub App model
+
+Jules uses its own GitHub App integration and should remain separate from the Codespaces PAT model.
+
+Current preferred MGD flow:
+
+```text
+ready focused GitHub Issue
+→ apply label `jules`
+→ Jules starts the task from the Issue
+→ Jules comments on the Issue
+→ Jules publishes/links a Pull Request
+→ review + CI
+→ targeted `@Jules` PR feedback when needed
+```
+
+Important distinctions:
+
+- `ai:coder` means an Issue is generally suitable for a coding agent.
+- `jules` is the native Jules dispatch trigger and should be applied only when that Issue is actually ready for Jules.
+- the Jules GitHub App must be authorized for this repository.
+- broad technical access does not let Jules override Issue scope, `AGENTS.md`, product decisions, or merge policy.
+
+For PR feedback, prefer Jules **Reactive Mode** so Jules acts only when explicitly mentioned with `@Jules`. This avoids ordinary review discussion triggering unsolicited code changes.
+
+Do not put `MGD_GH_TOKEN`, `GH_TOKEN`, or another repository PAT into the Jules environment unless a concrete approved capability cannot be achieved through the native Jules integration and the security trade-off has been explicitly accepted.
+
+Native Jules integration should be preferred over teaching a Jules task to script GitHub administration through `gh`.
+
+See [`JULES_WORKFLOW.md`](JULES_WORKFLOW.md) for dispatch, review, trust, concurrency, scheduled-task, and environment rules.
+
 ## What authenticated agents may technically do
 
 When the assigned task and repository rules authorize it, an authenticated agent may be able to:
@@ -68,6 +100,8 @@ When the assigned task and repository rules authorize it, an authenticated agent
 - create follow-up Issues for useful out-of-scope discoveries;
 - merge a PR **only when the active task/policy explicitly authorizes the agent to merge and required checks pass**.
 
+Do not assume every agent environment exposes every GitHub API operation merely because another environment does. Prefer each agent's documented/native integration path.
+
 ## Prohibited actions
 
 Agents must not:
@@ -78,7 +112,7 @@ Agents must not:
 - silently change repository/account administration;
 - silently change product decisions in `MASTER_SPEC.md`;
 - merge with failing required checks;
-- treat broad PAT capability as permission to perform unrelated repository changes.
+- treat broad PAT/App capability as permission to perform unrelated repository changes.
 
 ## Authentication inside Codespaces
 
@@ -108,6 +142,18 @@ gh run list --limit 5
 
 Git pushes can continue to use the Codespaces-provided Git credential for the current repository where appropriate.
 
+## Jules environment credentials
+
+Default MGD policy for Jules:
+
+- no repository secrets/environment variables unless a task truly requires them;
+- no Codespaces PAT by default;
+- use the Jules GitHub App for Issue/PR integration;
+- keep credentials out of prompts, logs, code, and review comments;
+- network access may be enabled for documentation/package/research access without adding repository credentials.
+
+The Jules environment setup itself is documented in [`JULES_WORKFLOW.md`](JULES_WORKFLOW.md) and should pin the Bun version from `.bun-version` rather than modifying `bun.lock` to match a stale preinstalled toolchain.
+
 ## Merge-policy reminder
 
 This file defines **capability**, not workflow authority.
@@ -116,4 +162,6 @@ For coding agents, the default repository rule is:
 
 > Implement the focused task, validate it, open/update the PR, and stop. Merge only when the assigned task explicitly includes merging.
 
-See [`../AGENTS.md`](../AGENTS.md) and [`AI_WORKFLOW.md`](AI_WORKFLOW.md) for the operational rules.
+For Jules, CI auto-fixing or successful task completion does not change that rule.
+
+See [`../AGENTS.md`](../AGENTS.md), [`AI_WORKFLOW.md`](AI_WORKFLOW.md), and [`JULES_WORKFLOW.md`](JULES_WORKFLOW.md) for the operational rules.
