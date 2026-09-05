@@ -283,10 +283,20 @@ export const evaluateLiveEncounterReadability = (
         scrollSpeed,
         playerExtents,
       );
+      // Pending content retains its applied speed, so these simulation-time windows
+      // map to deterministic pacing distances. Include lead-in and phase crossings.
+      const occupiedLimits = createReservationPacingLimits(
+        reservation,
+        runDistance,
+        scrollSpeed,
+        config,
+      );
+      const candidateLimits = createReadabilityLimits(pacing.intensity);
+      const requestedLimits = intersectReadabilityLimits(candidateLimits, occupiedLimits);
       return Object.freeze({
         decision: reserveEncounterReadabilityBudget(
           state.readability,
-          { candidate: reservation, requestedLimits: createReadabilityLimits(pacing.intensity) },
+          { candidate: reservation, requestedLimits },
           config.readability,
         ),
         intrinsicallyEligible:
@@ -303,6 +313,54 @@ export const evaluateLiveEncounterReadability = (
       });
     }),
   );
+
+const intersectReadabilityLimits = (
+  first: Readonly<EncounterReadabilityLimits>,
+  second: Readonly<EncounterReadabilityLimits>,
+): Readonly<EncounterReadabilityLimits> =>
+  Object.freeze({
+    maximumActivePressureCost: Math.min(
+      first.maximumActivePressureCost,
+      second.maximumActivePressureCost,
+    ),
+    maximumActiveReadabilityCost: Math.min(
+      first.maximumActiveReadabilityCost,
+      second.maximumActiveReadabilityCost,
+    ),
+    maximumConcurrentWarnings: Math.min(
+      first.maximumConcurrentWarnings,
+      second.maximumConcurrentWarnings,
+    ),
+    maximumConcurrentLethalWindows: Math.min(
+      first.maximumConcurrentLethalWindows,
+      second.maximumConcurrentLethalWindows,
+    ),
+  });
+
+/** Use the strictest occupied phase; half-open windows allow an exact phase-end handoff. */
+const createReservationPacingLimits = (
+  reservation: Readonly<EncounterReadabilityReservation>,
+  runDistance: number,
+  scrollSpeed: number,
+  config: Readonly<LiveEncounterPolicyConfig>,
+): Readonly<EncounterReadabilityLimits> => {
+  const startDistance = runDistance + reservation.activeWindow.startSeconds * scrollSpeed;
+  const endDistance = runDistance + reservation.activeWindow.endSeconds * scrollSpeed;
+  let phase = calculatePacing(startDistance, config.pacing);
+  let limits = createReadabilityLimits(phase.intensity);
+  if (endDistance - startDistance >= phase.cycleLength) {
+    return config.pacing.phases.reduce(
+      (result, definition) =>
+        intersectReadabilityLimits(result, createReadabilityLimits(definition.intensity)),
+      limits,
+    );
+  }
+  while (phase.phaseEndDistance < endDistance) {
+    phase = calculatePacing(phase.phaseEndDistance, config.pacing);
+    limits = intersectReadabilityLimits(limits, createReadabilityLimits(phase.intensity));
+  }
+  return limits;
+};
 
 const selectRepresentativeExitStates = (
   states: ReadonlyArray<Readonly<{ positionY: number; velocityY: number }>>,

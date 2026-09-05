@@ -22,6 +22,7 @@ import {
   PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES,
   PROTOTYPE_OFFSET_PAIR_PATTERN,
   PROTOTYPE_TARGET_LOCK_STRIKE_PATTERN,
+  PROTOTYPE_TIMED_PULSE_PATTERN,
 } from '../../src/generation/PrototypeHazardPatternFixtures';
 import { createRunGenerationState } from '../../src/generation/RunGenerationState';
 import { calculatePacing } from '../../src/pacing/PacingSystem';
@@ -89,6 +90,94 @@ const progressPolicyStream = (seed: string) => {
 };
 
 describe('live encounter policy integration', () => {
+  it('allows an exact reservation handoff but rejects pressure extending into a breather', () => {
+    const config = {
+      ...PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG,
+      pacing: {
+        phases: [
+          {
+            intensity: 'low' as const,
+            distanceLength: 1000,
+            maximumPatternEntries: 3,
+            maximumHazardsPer1000Distance: 5,
+          },
+          {
+            intensity: 'breather' as const,
+            distanceLength: 1000,
+            maximumPatternEntries: 1,
+            maximumHazardsPer1000Distance: 1,
+          },
+        ],
+      },
+    };
+    const evaluateAt = (distance: number) =>
+      evaluateLiveEncounterReadability(
+        [PROTOTYPE_TIMED_PULSE_PATTERN],
+        createLiveEncounterPolicyState(distance, REACHABILITY, config),
+        calculatePacing(800, config.pacing),
+        0,
+        800,
+        distance,
+        100,
+        REACHABILITY.playerExtents,
+        config,
+      )[0];
+    expect(evaluateAt(725)?.decision.status).toBe('reserved');
+    expect(evaluateAt(725.01)).toMatchObject({
+      intrinsicallyEligible: true,
+      decision: { status: 'deferred' },
+    });
+  });
+
+  it('holds higher next-phase telegraph pressure to the lower phase occupied by its lead-in', () => {
+    const config = {
+      ...PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG,
+      pacing: {
+        phases: [
+          {
+            intensity: 'low' as const,
+            distanceLength: 1000,
+            maximumPatternEntries: 3,
+            maximumHazardsPer1000Distance: 5,
+          },
+          {
+            intensity: 'high' as const,
+            distanceLength: 2000,
+            maximumPatternEntries: 3,
+            maximumHazardsPer1000Distance: 5,
+          },
+          {
+            intensity: 'breather' as const,
+            distanceLength: 1000,
+            maximumPatternEntries: 1,
+            maximumHazardsPer1000Distance: 1,
+          },
+        ],
+      },
+    };
+    const pulse = createHazardPattern({
+      ...PROTOTYPE_TIMED_PULSE_PATTERN,
+      profile: { ...PROTOTYPE_TIMED_PULSE_PATTERN.profile, pressureCost: 3 },
+    });
+    const evaluateAt = (distance: number) =>
+      evaluateLiveEncounterReadability(
+        [pulse],
+        createLiveEncounterPolicyState(distance, REACHABILITY, config),
+        calculatePacing(1100, config.pacing),
+        0,
+        1100,
+        distance,
+        100,
+        REACHABILITY.playerExtents,
+        config,
+      )[0];
+    expect(evaluateAt(900)).toMatchObject({
+      intrinsicallyEligible: true,
+      decision: { status: 'deferred' },
+    });
+    expect(evaluateAt(1000)?.decision.status).toBe('reserved');
+  });
+
   it('changes authored encounter eligibility at the exact difficulty tier boundary', () => {
     const state = createLiveEncounterPolicyState(2_499, REACHABILITY);
     const beforeBoundary = selectLiveEncounterCandidates(

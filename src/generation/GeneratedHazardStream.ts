@@ -560,6 +560,8 @@ export const createGeneratedHazardStream = (
  * Unsafe speed increases retain the current applied speed. An accepted larger horizon pushes only
  * the unscheduled cursor far enough to preserve the new minimum; existing positions and timing
  * snapshots stay immutable, while a smaller horizon keeps extra lead.
+ * elapsedSeconds describes completed simulation time. A pre-step parameter-resolution pass
+ * supplies zero elapsed time and disables scheduling; the post-step pass ages and fills once.
  */
 export const advanceGeneratedHazardStream = (
   state: Readonly<GeneratedHazardStreamState>,
@@ -567,6 +569,7 @@ export const advanceGeneratedHazardStream = (
   context: Readonly<GeneratedHazardStreamContext>,
   runMotion: Readonly<RunMotionValues>,
   elapsedSeconds = 0,
+  scheduleEncounters = true,
 ): Readonly<GeneratedHazardStreamState> => {
   assertValidRunDistance(runDistance);
 
@@ -651,7 +654,7 @@ export const advanceGeneratedHazardStream = (
         });
 
   // Leave recovery space while accepted content drains under its original motion/tuning.
-  if (parametersDeferred) {
+  if (parametersDeferred || !scheduleEncounters) {
     return freezeState({ ...adjustedState, policy, runDistance, schedulingWindow });
   }
 

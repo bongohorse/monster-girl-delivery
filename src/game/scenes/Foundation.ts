@@ -192,12 +192,14 @@ export class Foundation extends Scene {
       const requestedRunMotion = this.services.runMotion.getSnapshot();
       const flightTuning = this.services.flightTuning.getSnapshot();
       const hazardStreamContext = createLiveHazardStreamContext(flightTuning);
+      // Resolve parameters before movement, without aging or admitting new content.
       this.hazardStream = advanceGeneratedHazardStream(
         this.hazardStream,
         this.runState.motion.distance,
         hazardStreamContext,
         requestedRunMotion,
-        simulationDeltaSeconds,
+        0,
+        false,
       );
       const appliedScrollSpeed = this.hazardStream.schedulingWindow.scrollSpeed;
       const runMotionTuning = Object.freeze({ baseScrollSpeed: appliedScrollSpeed });
@@ -226,11 +228,19 @@ export class Foundation extends Scene {
         this.services.input.releaseAll();
         this.instructions?.setText(DEAD_INSTRUCTIONS);
       } else {
+        // Age existing reservations by the completed frame, then commit new content at t=0.
         this.hazardStream = advanceGeneratedHazardStream(
           this.hazardStream,
           this.runState.motion.distance,
           hazardStreamContext,
           requestedRunMotion,
+          simulationDeltaSeconds,
+        );
+        this.telegraphedHazardState = stepTelegraphedHazardSimulation(
+          this.telegraphedHazardState,
+          this.hazardStream.spawns,
+          0,
+          { positionY: this.runState.flight.positionY, runDistance: this.runState.motion.distance },
         );
       }
     }

@@ -19,6 +19,7 @@ import {
 import { resolveHazardHitboxAtRunDistance } from '../../../src/hazards/HazardArchetype';
 import {
   createTelegraphedHazardSimulationState,
+  getTelegraphedHazardLifecycle,
   stepTelegraphedHazardSimulation,
   type TelegraphedHazardSimulationState,
 } from '../../../src/hazards/TelegraphedHazardSimulation';
@@ -153,6 +154,60 @@ afterEach(() => {
 });
 
 describe('Foundation scene gameplay orchestration', () => {
+  it('commits new telegraphs after the frame step and keeps reservation and lifecycle clocks aligned', () => {
+    const { foundation, services } = createFoundationHarness();
+    const initial = createGeneratedHazardStream(
+      1,
+      createTestHazardStreamContext(services),
+      services.runMotion.getSnapshot(),
+    );
+    Reflect.set(foundation, 'hazardStream', initial);
+    // Moving the scheduling horizon makes the old first-pass path admit a timed pulse.
+    Reflect.set(foundation, 'runState', {
+      phase: 'running',
+      motion: { distance: 1800 },
+      flight: { positionY: 400, velocityY: 0 },
+    });
+    foundation.update(0, 16);
+    const stream = getHazardStream(foundation);
+    const spawn = stream.spawns[0];
+    const reservation = stream.policy?.readability.reservations[0];
+    if (!spawn || !reservation || spawn.behavior.archetype !== 'timed')
+      throw new Error('Expected the seeded timed pulse.');
+    expect(spawn.approachTiming.observedAtRunDistance).toBeCloseTo(1805.6);
+    expect(
+      getTelegraphedHazardLifecycle(getTelegraphedHazardState(foundation), spawn),
+    ).toMatchObject({ phase: 'warning', elapsedPhaseSeconds: 0 });
+    expect(reservation.warningWindows[0]?.endSeconds).toBe(1.85);
+    const durations = spawn.behavior.lifecycle.durations;
+    for (let frame = 0; frame < 180; frame += 1) {
+      foundation.update(0, 16);
+      const lifecycle = getTelegraphedHazardLifecycle(getTelegraphedHazardState(foundation), spawn);
+      const pending = getHazardStream(foundation).policy?.readability.reservations.find(
+        (entry) => entry.encounterId === reservation.encounterId,
+      );
+      if (!lifecycle || lifecycle.phase === 'expired') {
+        expect(pending).toBeUndefined();
+        break;
+      }
+      const elapsed =
+        lifecycle.elapsedPhaseSeconds +
+        (lifecycle.phase === 'warning' ? 0 : durations.warningSeconds) +
+        (lifecycle.phase === 'active' ? durations.lockSeconds : 0);
+      expect(pending?.activeWindow.endSeconds).toBeCloseTo(
+        durations.warningSeconds + durations.lockSeconds + durations.activeSeconds - elapsed,
+      );
+      const warningNow = pending?.warningWindows.some(
+        (window) => window.startSeconds <= 0 && window.endSeconds > 0,
+      );
+      const lethalNow = pending?.lethalWindows.some(
+        (window) => window.startSeconds <= 0 && window.endSeconds > 0,
+      );
+      expect(Boolean(warningNow)).toBe(lifecycle.phase === 'warning' || lifecycle.phase === 'lock');
+      expect(Boolean(lethalNow)).toBe(lifecycle.phase === 'active');
+    }
+  });
+
   it('steps flight and horizontal progress from the same TimeService delta', () => {
     const {
       foundation,

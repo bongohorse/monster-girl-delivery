@@ -11,7 +11,10 @@ import {
   type LiveEncounterPolicyConfig,
   PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG,
 } from '../../src/generation/LiveEncounterPolicy';
-import { PROTOTYPE_TIMED_PULSE_PATTERN } from '../../src/generation/PrototypeHazardPatternFixtures';
+import {
+  PROTOTYPE_TARGET_LOCK_STRIKE_PATTERN,
+  PROTOTYPE_TIMED_PULSE_PATTERN,
+} from '../../src/generation/PrototypeHazardPatternFixtures';
 import { TEST_ENCOUNTER_PROFILE } from '../support/TestEncounterProfile';
 
 const MOTION = { baseScrollSpeed: 350 };
@@ -77,6 +80,43 @@ const contextFor = (
 ): GeneratedHazardStreamContext => ({ catalog, policy: POLICY, reachability: REACHABILITY });
 
 describe('live stream recovery regressions', () => {
+  it('keeps the entire default second breather free of next-phase warning and pressure', () => {
+    const context = {
+      catalog: [PROTOTYPE_TARGET_LOCK_STRIKE_PATTERN],
+      policy: PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG,
+      reachability: REACHABILITY,
+    };
+    let state = createGeneratedHazardStream('breather-lead-in', context, MOTION);
+    let breatherFrames = 0;
+    let countAtPhaseEnd = 0;
+    let sawExactBoundary = false;
+    while (state.runDistance < 9500) {
+      const speed = state.schedulingWindow.scrollSpeed;
+      const boundary = state.runDistance < 7100 ? 7100 : state.runDistance < 8500 ? 8500 : 9500;
+      const distance = Math.min(state.runDistance + speed * 0.05, boundary);
+      state = advanceGeneratedHazardStream(
+        state,
+        distance,
+        context,
+        MOTION,
+        (distance - state.runDistance) / speed,
+      );
+      if (distance >= 7100 && distance < 8500) {
+        breatherFrames += 1;
+        expect(state.policy?.pacing.intensity).toBe('breather');
+        expect(state.policy?.readability.reservations).toEqual([]);
+        countAtPhaseEnd = state.scheduledPatternCount;
+      }
+      if (distance === 8500) {
+        sawExactBoundary = true;
+        expect(state.policy?.pacing.intensity).toBe('low');
+      }
+    }
+    expect(breatherFrames).toBeGreaterThan(50);
+    expect(sawExactBoundary).toBe(true);
+    expect(state.scheduledPatternCount).toBeGreaterThan(countAtPhaseEnd);
+  });
+
   it('resumes after readability expiry with a fresh minimum reaction horizon', () => {
     const pulse = createHazardPattern({
       ...PROTOTYPE_TIMED_PULSE_PATTERN,
