@@ -2,7 +2,7 @@
 
 [← Documentation Hub](README.md)
 
-This document owns the **human ↔ AI orchestration model** for Monster Girl Delivery. Mandatory coding-agent behavior lives in [`../AGENTS.md`](../AGENTS.md); GitHub authentication/permissions live in [`GITHUB_AI_ACCESS.md`](GITHUB_AI_ACCESS.md).
+This document owns the **human ↔ AI orchestration model** for Monster Girl Delivery. Mandatory coding-agent behavior lives in [`../AGENTS.md`](../AGENTS.md); GitHub authentication/permissions live in [`GITHUB_AI_ACCESS.md`](GITHUB_AI_ACCESS.md). Jules-specific dispatch/review mechanics live in [`JULES_WORKFLOW.md`](JULES_WORKFLOW.md).
 
 The workflow is designed to maximize useful completed work while preventing scope drift, speculative architecture, and low-value AI churn.
 
@@ -41,6 +41,14 @@ Before asking, complete all useful work that does not depend on the answer so th
 Do not duplicate the full repository rules into Issues, PRs, skills, or prompts. Link to canonical sources instead.
 
 Skills and references support execution. They do not independently authorize product features or override `AGENTS.md`, the current task, or the owning source of truth.
+
+### 5. Evidence before agent confidence
+
+Treat AI output as a claim to verify, not authority.
+
+A confident explanation, generated test, or elaborate failure scenario is not sufficient evidence by itself. For material findings, verify the real call path, how the state can actually be produced, what invariant fails, and whether the scenario is reachable under current validated/runtime behavior.
+
+Do not create implementation work around impossible synthetic states merely because an agent can construct them in a unit test. The generic evidence/realism rules in [`../AGENTS.md`](../AGENTS.md) apply to implementation agents and reviewers alike.
 
 ---
 
@@ -82,6 +90,35 @@ A coding agent implements **one approved focused task at a time** by default and
 
 It should make routine implementation decisions autonomously inside existing product/architecture boundaries, complete the task rather than stop at partial scaffolding, and avoid silently continuing into the next independent Issue.
 
+### Jules — assisting implementation/review agent
+
+Jules is a regular supporting worker in the MGD workflow, not a replacement for product review or a privileged source of truth.
+
+Preferred uses:
+
+- focused implementation from an approved GitHub Issue;
+- independent review or investigation;
+- fixing verified findings on a Jules-authored PR;
+- narrow scheduled maintenance where "NO ACTION" is an acceptable successful result.
+
+Preferred GitHub-native dispatch for implementation:
+
+```text
+ready focused Issue
+→ label `jules`
+→ Jules task
+→ Jules PR
+→ review + CI
+→ focused `@Jules` PR feedback when needed
+→ re-review exact head
+```
+
+For MGD, Jules should normally operate in **Reactive Mode** for PR feedback so ordinary reviewer discussion does not trigger unsolicited agent changes; explicitly mention `@Jules` when a concrete finding should be fixed.
+
+Do not blindly trust Jules-generated findings, tests, plans, or code. Verify reachability, acceptance-criterion relevance, integration, and evidence. Reject invented APIs, impossible runtime scenarios, speculative hardening, and changes whose practical effect is negligible.
+
+See [`JULES_WORKFLOW.md`](JULES_WORKFLOW.md) for the full operational policy.
+
 ### Specialist / subagent
 
 When supported by the environment, a specialist agent may take an independent bounded workstream such as research, codebase inspection, or review.
@@ -109,6 +146,7 @@ Key sources:
 - current GitHub Issue / PR — focused live scope;
 - `../ARCHITECTURE.md` — technical boundaries;
 - `../DEVELOPMENT.md` — commands, validation, CI/PR mechanics, closeout process;
+- `JULES_WORKFLOW.md` — Jules-specific dispatch, review, environment, and trust model;
 - `BACKLOG.md` — future ideas only;
 - `ENDLESS_RUNNER_BLUEPRINT.md` — design reference only;
 - `milestones/` — completed factual history.
@@ -195,6 +233,19 @@ Multiple independent sub-issues should not be bundled into one agent run/PR unle
 
 Useful discoveries outside scope become follow-up Issues/backlog notes only when they have enough value to justify independent work. Minor observations belong in the final report rather than the backlog.
 
+### Agent dispatch discipline
+
+A coding-agent label or assignment is an execution mechanism, not a scope decision.
+
+Before dispatching a focused Issue to Jules/Codex/another agent:
+
+- verify the Issue is actually unblocked;
+- verify status labels and dependency text are current;
+- confirm no other agent is already implementing the same Issue;
+- confirm the Issue remains in the current approved workstream.
+
+Do not run two implementation agents against the same Issue merely because parallel capacity is available.
+
 ---
 
 ## Scope safety
@@ -251,6 +302,7 @@ Manual playtest/device evidence is required when automated checks cannot prove t
 PR
 → verify intended outcome and scope
 → inspect diff and integration path
+→ verify claimed scenarios are actually reachable/relevant
 → look for dead/scaffold-only work
 → verify tests are meaningful
 → verify exact-head CI when required
@@ -261,6 +313,8 @@ PR
 ```
 
 A reviewer should prioritize issues that can change correctness, user experience, determinism, performance, architecture ownership, safety, or maintainability. Do not block a PR on personal style or optional cleanup that does not matter to the task.
+
+For an AI-generated finding, ask whether the failure can be reached through current supported behavior before treating the finding as a blocker. A complicated synthetic test is not proof that real production code can enter that state.
 
 Human review may be required by the task/repository policy; CI never substitutes for product acceptance.
 
@@ -292,6 +346,8 @@ Use parallel/subagent work when independent workstreams can save meaningful time
 
 Avoid parallel editing of tightly coupled code where coordination cost and merge conflicts outweigh the benefit.
 
+High concurrency is primarily a throughput tool for **independent work**, not permission to multiply speculative tasks. Consolidate duplicate findings and verify them before opening follow-up Issues.
+
 ---
 
 ## Milestone closeout flow
@@ -321,6 +377,8 @@ Authentication mechanisms may differ by agent/environment. See [`GITHUB_AI_ACCES
 That document describes **technical permission capability**, not automatic authorization to perform every permitted action.
 
 For an explicitly requested repository implementation, routine branch/commit/push/PR operations are part of delivering the requested work. Merge/deploy/destructive or account-level operations remain explicit boundaries under [`../AGENTS.md`](../AGENTS.md).
+
+For Jules, prefer its native GitHub App / Issue-label / PR-feedback workflow instead of injecting the Codespaces PAT into the Jules environment. See [`JULES_WORKFLOW.md`](JULES_WORKFLOW.md).
 
 Never expose tokens, weaken repository protections, or change account/repository administration merely to make automation easier.
 
