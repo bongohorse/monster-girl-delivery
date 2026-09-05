@@ -124,7 +124,11 @@ describe('authoritative encounter diagnostics', () => {
   });
   it('shows the finally accepted candidate instead of an earlier rejected scheduler attempt', () => {
     const diagnostics = new DirectorEncounterDiagnostics();
-    const stream = createGeneratedHazardStream('accepted-evidence', { catalog: [pattern], policy }, motion);
+    const stream = createGeneratedHazardStream(
+      'accepted-evidence',
+      { catalog: [pattern], policy },
+      motion,
+    );
     const schedule = Object.freeze({
       status: 'accepted' as const,
       transitionValidation: null,
