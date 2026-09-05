@@ -84,6 +84,7 @@ describe('authoritative encounter diagnostics', () => {
     diagnostics.reset();
     expect(diagnostics.latest).toBeUndefined();
     expect(diagnostics.accepted).toBeUndefined();
+    expect(diagnostics.readability).toBeUndefined();
     expect(diagnostics.selection).toBeUndefined();
   });
   it('maps actual transition rejection with its historical distance and available time', () => {
@@ -121,6 +122,44 @@ describe('authoritative encounter diagnostics', () => {
     expect(diagnostics.lines(2, source(rejected))).toContain('Isolated: pass');
     expect(rejected.scheduledPatternCount).toBe(1);
   });
+  it('shows the finally accepted candidate instead of an earlier rejected scheduler attempt', () => {
+    const diagnostics = new DirectorEncounterDiagnostics();
+    const stream = createGeneratedHazardStream('accepted-evidence', { catalog: [pattern], policy }, motion);
+    const schedule = Object.freeze({
+      status: 'accepted' as const,
+      transitionValidation: null,
+      attempts: 2,
+      catalogIndex: 1,
+      patternId: 'accepted-pattern',
+      patternStartDistance: 600,
+      nextPatternStartDistance: 1200,
+      rejections: Object.freeze([
+        Object.freeze({
+          attempt: 1,
+          catalogIndex: 0,
+          issues: Object.freeze([]),
+          patternId: 'rejected-pattern',
+          reason: 'pattern' as const,
+          transitionValidation: null,
+        }),
+      ]),
+      spawns: Object.freeze([]),
+      state: Object.freeze({ seed: 1, prngState: 2 }),
+    });
+
+    diagnostics.observe({
+      kind: 'accepted',
+      runDistance: 100,
+      patternStartDistance: 600,
+      schedule,
+    });
+
+    const lines = diagnostics.lines(2, source(stream));
+    expect(lines).toContain('Fairness event: accepted');
+    expect(lines).toContain('Pattern: accepted-pattern');
+    expect(lines).toContain('Isolated: pass');
+    expect(lines).not.toContain('Pattern: rejected-pattern');
+  });
   it('maps current occupancy separately from the last budget rejection and requested limits', () => {
     const diagnostics = new DirectorEncounterDiagnostics();
     const pulse = createHazardPattern({
@@ -135,12 +174,31 @@ describe('authoritative encounter diagnostics', () => {
     const initial = createGeneratedHazardStream('budget', context, motion);
     const deferred = advanceGeneratedHazardStream(initial, 600, context, motion, 600 / 350);
     expect(diagnostics.rejected?.kind).toBe('readability-deferred');
+    const readabilityEvidence = diagnostics.readability;
+    expect(readabilityEvidence?.kind).toBe('readability-deferred');
     const lines = diagnostics.lines(4, source(deferred));
     expect(lines).toContain('Now pressure: 2 / 6 hard');
     expect(lines).toContain('Now warnings: 1 / 2 hard');
     expect(lines).toContain('Last request P/R: 2 / 3');
     expect(lines).toContain('Defer: pressure cap');
     expect(lines).toContain('4 > 2 at +0.00s');
+
+    const acceptedSchedule = diagnostics.accepted?.schedule;
+    if (acceptedSchedule === undefined) {
+      throw new TypeError('Expected accepted schedule evidence before the budget defer.');
+    }
+    diagnostics.observe({
+      kind: 'reaction-rejected',
+      runDistance: deferred.runDistance + 1,
+      patternStartDistance: deferred.nextPatternStartDistance,
+      schedule: acceptedSchedule,
+    });
+
+    expect(diagnostics.rejected?.kind).toBe('reaction-rejected');
+    expect(diagnostics.readability).toBe(readabilityEvidence);
+    const preservedLines = diagnostics.lines(4, source(deferred));
+    expect(preservedLines).toContain('Defer: pressure cap');
+    expect(preservedLines).toContain('4 > 2 at +0.00s');
   });
   it('keeps distinct human-readable reasons for isolated, transition and concurrency failures', () => {
     expect(formatEncounterReason('vertical-corridor-unreachable')).toBe('corridor unreachable');
