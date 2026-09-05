@@ -98,6 +98,18 @@ Avoid changes whose main purpose is to appear productive. In particular, do not 
 
 When an out-of-scope discovery is genuinely important, record it briefly as a separate Issue/backlog item only if it has a clear user/game/engineering outcome. Otherwise mention it in the final report and move on.
 
+### Evidence and realism gate
+
+Do not turn an invented or unreachable scenario into production work.
+
+Before reporting a bug, blocker, architecture flaw, or missing guard as material, establish a plausible path from a **real supported entry point** to the claimed failure. Identify how the relevant state is produced through current runtime inputs, validated configuration, lifecycle behavior, persistence/external boundaries, or another supported contract.
+
+A scenario that requires manually mutating private/internal state, bypassing validators, fabricating configuration that normal code rejects, or calling internal methods in an order the application cannot reach is not automatically a product defect. Such synthetic cases are justified only when the assigned task explicitly concerns defensive validation or that state can cross a real external boundary.
+
+For review/audit findings, prefer concrete evidence such as an exact call path, deterministic reproduction, failing test, trace, or observable acceptance-criterion violation. If a concern remains speculative after inspection, label it as such and do not create code/Issues merely to defend against it.
+
+Tests should model realistic behavior or intentional boundary validation. Do not add elaborate tests for impossible states and then use those tests as evidence that production code needed to change.
+
 ## 5. Scope discipline
 
 - One focused task should produce one coherent, reviewable change.
