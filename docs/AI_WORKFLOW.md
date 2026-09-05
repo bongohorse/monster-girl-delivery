@@ -2,7 +2,47 @@
 
 [← Documentation Hub](README.md)
 
-This document owns the **human ↔ AI orchestration model** for Monster Girl Delivery. Coding-agent rules live in [`../AGENTS.md`](../AGENTS.md); GitHub authentication/permissions live in [`GITHUB_AI_ACCESS.md`](GITHUB_AI_ACCESS.md).
+This document owns the **human ↔ AI orchestration model** for Monster Girl Delivery. Mandatory coding-agent behavior lives in [`../AGENTS.md`](../AGENTS.md); GitHub authentication/permissions live in [`GITHUB_AI_ACCESS.md`](GITHUB_AI_ACCESS.md).
+
+The workflow is designed to maximize useful completed work while preventing scope drift, speculative architecture, and low-value AI churn.
+
+## Operating principles
+
+### 1. Outcome over activity
+
+AI work should move an approved game, engineering, documentation, or repository outcome forward. More files, tests, abstractions, Issues, comments, or commits do not automatically mean more value.
+
+A proposed change should be traceable to at least one of:
+
+- an explicit Game Director request;
+- an acceptance criterion;
+- a verified bug or regression risk;
+- necessary integration/validation for the requested outcome;
+- a meaningful architecture, performance, reliability, or maintainability problem already in scope.
+
+Do not manufacture work to make a task look larger or more complete.
+
+### 2. Follow through on authorized work
+
+When the Game Director asks for implementation or repository changes, the responsible AI should carry the task through the available workflow: inspect, change, integrate, validate, and open/update the PR when repository access exists.
+
+Do not stop after saying what could be done, writing a plan, or implementing an isolated helper if the requested outcome still requires wiring or validation.
+
+### 3. Questions are for consequential ambiguity
+
+Do not interrupt routine execution for choices that can be resolved from existing code, architecture, conventions, or a reversible default.
+
+Ask the Game Director when different answers would materially change product intent, game rules, architecture, irreversible/external effects, cost, or another outcome that the repository cannot determine.
+
+Before asking, complete all useful work that does not depend on the answer so the remaining decision is concrete.
+
+### 4. Keep the instruction stack small
+
+Do not duplicate the full repository rules into Issues, PRs, skills, or prompts. Link to canonical sources instead.
+
+Skills and references support execution. They do not independently authorize product features or override `AGENTS.md`, the current task, or the owning source of truth.
+
+---
 
 ## Roles
 
@@ -32,7 +72,7 @@ May help with:
 - milestone closeout/history;
 - merge/repository coordination when the user's task explicitly includes that role.
 
-The coordinator must preserve source ownership and the Game Director's product authority.
+The coordinator should improve the **quality of decisions and work units**, not create administrative overhead. It should challenge vague, redundant, or low-value work before creating Issues for it.
 
 ### Coding agent
 
@@ -40,7 +80,13 @@ Examples include Codex, Claude Code, Gemini CLI, Jules, or another repository-aw
 
 A coding agent implements **one approved focused task at a time** by default and follows [`../AGENTS.md`](../AGENTS.md).
 
-It must not expand product scope or automatically continue into the next independent Issue.
+It should make routine implementation decisions autonomously inside existing product/architecture boundaries, complete the task rather than stop at partial scaffolding, and avoid silently continuing into the next independent Issue.
+
+### Specialist / subagent
+
+When supported by the environment, a specialist agent may take an independent bounded workstream such as research, codebase inspection, or review.
+
+Subagents do not own product decisions and do not expand scope. Their output is input to the primary agent, which remains responsible for reconciling conflicts and delivering one coherent result.
 
 ### GitHub Actions
 
@@ -71,17 +117,57 @@ Do not infer implementation scope from an idea/reference document.
 
 ---
 
-## Task format
+## Writing high-value tasks
 
-A focused coding task should state:
+A focused coding task should normally state:
 
-1. Goal
-2. Context
-3. Scope
-4. Acceptance criteria
-5. Explicit non-goals
-6. Required checks
-7. Dependencies when relevant
+1. **Goal** — what changes for the game/user/developer when this is done?
+2. **Context** — why this work exists now.
+3. **Scope** — systems/files/behaviors expected to change when known.
+4. **Acceptance criteria** — observable conditions that prove completion.
+5. **Non-goals** — only where nearby work is likely to cause scope drift.
+6. **Validation** — automated/manual evidence appropriate to the outcome.
+7. **Dependencies** — only real ordering/blocking relationships.
+
+Acceptance criteria should describe behavior or evidence, not implementation trivia unless a technical constraint itself matters.
+
+Weak criterion:
+
+```text
+Create a new helper class for encounter spacing.
+```
+
+Stronger criterion:
+
+```text
+Generated encounters cannot violate the approved minimum recovery spacing,
+and deterministic tests cover the boundary cases.
+```
+
+The implementation may still use a helper class, but the task is judged on the outcome.
+
+## Issue decomposition test
+
+Create a child Issue only when the work has a meaningful independent outcome and review boundary.
+
+A child Issue should normally have:
+
+- its own acceptance criteria;
+- a coherent change that can be reviewed independently;
+- a reason to schedule/sequence it separately;
+- enough value that completing it alone visibly advances the parent outcome.
+
+Do **not** create separate Issues merely for:
+
+- a tiny helper extraction;
+- adding one obvious test alongside an implementation;
+- renaming/refactoring files needed by the same change;
+- updating docs that naturally belong with the implemented behavior;
+- speculative future polish with no approved need.
+
+This keeps Jules/Codex/other agents from consuming time on administratively neat but low-value fragments.
+
+---
 
 ## Milestone planning
 
@@ -89,9 +175,10 @@ Milestones and large parent Issues are planning containers, not default implemen
 
 Before coding a large milestone:
 
-- split independently reviewable responsibilities into focused child Issues;
-- give each child explicit acceptance criteria;
-- record dependencies/order where relevant;
+- split genuinely independent responsibilities into focused child Issues;
+- give each child outcome-based acceptance criteria;
+- record real dependencies/order where relevant;
+- avoid decomposing below a useful review boundary;
 - obtain Game Director approval for the milestone plan before automatically starting implementation, unless the Director explicitly asked for planning + execution in one task.
 
 ## Default implementation unit
@@ -106,7 +193,7 @@ one focused Issue
 
 Multiple independent sub-issues should not be bundled into one agent run/PR unless the Game Director explicitly asks for that combined operation.
 
-Useful discoveries outside scope become follow-up Issues/backlog notes rather than silent PR expansion.
+Useful discoveries outside scope become follow-up Issues/backlog notes only when they have enough value to justify independent work. Minor observations belong in the final report rather than the backlog.
 
 ---
 
@@ -118,7 +205,9 @@ An AI must not infer a feature merely because it:
 - exists in `BACKLOG.md`;
 - appears in a design reference;
 - exists in a future roadmap milestone;
-- would make implementation easier.
+- appears in an available skill;
+- would make implementation easier;
+- looks like a common “best practice”.
 
 If documentation appears contradictory, apply the ownership rules in [`README.md`](README.md). Surface real conflicts rather than choosing the convenient source.
 
@@ -129,31 +218,79 @@ If documentation appears contradictory, apply the ownership rules in [`README.md
 Default coding-agent flow:
 
 ```text
-approved focused Issue
-→ branch
+approved focused task
+→ inspect authoritative sources
 → inspect existing implementation/tests
-→ implement smallest coherent change
-→ run required checks
+→ identify the real runtime/integration path
+→ implement the smallest coherent production change
+→ integrate it completely
+→ run proportionate checks while iterating
+→ run required completion validation
 → open/update PR
+→ report evidence
 → stop
 ```
 
+“Completely” means the requested behavior is connected to the real system, not merely represented by an unused module, mock, TODO, or isolated unit test.
+
 An implementation agent merges only when its assigned task **explicitly includes merging** and required checks pass.
+
+## Testing calibration
+
+Use tests where they protect behavior, invariants, deterministic rules, or reproduced bugs.
+
+Avoid tests that exist only to mirror internal implementation or inflate apparent completeness. Prefer the narrowest useful check during iteration, then run the repository-required completion checks for code/configuration work.
+
+Documentation-only changes do not need game build/test runs when they cannot affect runtime behavior, unless a documentation-specific validation exists.
+
+Manual playtest/device evidence is required when automated checks cannot prove the acceptance criterion, especially for game feel, touch behavior, presentation, lifecycle, and subjective tuning.
 
 ## Coordination / review flow
 
 ```text
 PR
-→ verify intended scope
-→ inspect diff
-→ verify exact-head CI
+→ verify intended outcome and scope
+→ inspect diff and integration path
+→ look for dead/scaffold-only work
+→ verify tests are meaningful
+→ verify exact-head CI when required
 → evaluate acceptance criteria
 → request/fix blockers if needed
 → merge when explicitly authorized
 → verify main / Issue state when relevant
 ```
 
+A reviewer should prioritize issues that can change correctness, user experience, determinism, performance, architecture ownership, safety, or maintainability. Do not block a PR on personal style or optional cleanup that does not matter to the task.
+
 Human review may be required by the task/repository policy; CI never substitutes for product acceptance.
+
+---
+
+## Research and reference adoption
+
+Research is useful when it changes a decision or improves a concrete task.
+
+When studying another game, repository, framework example, article, or Phaser skill:
+
+1. extract the principle or technique;
+2. explain why it is relevant to MGD;
+3. distinguish proven facts from inference;
+4. map it to existing approved work if appropriate;
+5. create a new Issue only when there is a concrete, valuable implementation outcome not already covered.
+
+Do not copy architecture or create features merely because another project has them.
+
+---
+
+## Parallel work
+
+Use parallel/subagent work when independent workstreams can save meaningful time or provide an independent quality check. Good examples:
+
+- repository inspection in one stream and source/reference research in another;
+- implementation in one stream and independent review in another;
+- multiple unrelated evidence-gathering tasks for a planning decision.
+
+Avoid parallel editing of tightly coupled code where coordination cost and merge conflicts outweigh the benefit.
 
 ---
 
@@ -183,4 +320,20 @@ Authentication mechanisms may differ by agent/environment. See [`GITHUB_AI_ACCES
 
 That document describes **technical permission capability**, not automatic authorization to perform every permitted action.
 
+For an explicitly requested repository implementation, routine branch/commit/push/PR operations are part of delivering the requested work. Merge/deploy/destructive or account-level operations remain explicit boundaries under [`../AGENTS.md`](../AGENTS.md).
+
 Never expose tokens, weaken repository protections, or change account/repository administration merely to make automation easier.
+
+---
+
+## Completion report
+
+A useful agent completion report is short and evidence-based. It should state:
+
+- what outcome is now complete;
+- important implementation/documentation changes;
+- validation performed and its result;
+- PR/Issue state when applicable;
+- real blockers or follow-ups, if any.
+
+Do not add generic praise, repeat the full task, list every command/file touched, or invent optional next work just to end with a recommendation.
