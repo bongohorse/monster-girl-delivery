@@ -3,7 +3,9 @@ import {
   PROTOTYPE_CORRIDOR_PATTERN,
   PROTOTYPE_HAZARD_PATTERN_FIXTURES,
   PROTOTYPE_LINE_PATTERN,
+  PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES,
   PROTOTYPE_OFFSET_PAIR_PATTERN,
+  PROTOTYPE_VERTICAL_PATROL_PATTERN,
 } from '../../src/generation/PrototypeHazardPatternFixtures';
 
 describe('prototype hazard pattern fixtures', () => {
@@ -81,5 +83,32 @@ describe('prototype hazard pattern fixtures', () => {
       { left: 330, right: 378, top: 220, bottom: 292 },
     ]);
     expect(JSON.stringify(PROTOTYPE_OFFSET_PAIR_PATTERN)).not.toMatch(/viewport|screen|phaser/i);
+  });
+
+  it('adds an explicitly profiled moving geometric hazard to the M4 live catalog', () => {
+    expect(PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES).toEqual([
+      ...PROTOTYPE_HAZARD_PATTERN_FIXTURES,
+      PROTOTYPE_VERTICAL_PATROL_PATTERN,
+    ]);
+    expect(PROTOTYPE_VERTICAL_PATROL_PATTERN.profile).toEqual({
+      behaviorTags: ['moving-barrier'],
+      difficultyTierRange: { minimumTierIndex: 1, maximumTierIndex: null },
+      pacingIntensities: ['low', 'medium', 'high', 'peak'],
+      pressureCost: 1,
+      readabilityCost: 2,
+      varietyFamilyId: 'moving-patrol',
+    });
+    expect(PROTOTYPE_VERTICAL_PATROL_PATTERN.entries[0]?.behavior).toEqual({
+      amplitudeY: 48,
+      archetype: 'geometric',
+      cycleDistance: 700,
+      kind: 'vertical-patrol',
+      phaseOffset: 0,
+    });
+    expect(Object.isFrozen(PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES)).toBe(true);
+    expect(Object.isFrozen(PROTOTYPE_VERTICAL_PATROL_PATTERN.entries[0]?.behavior)).toBe(true);
+    expect(JSON.stringify(PROTOTYPE_VERTICAL_PATROL_PATTERN)).not.toMatch(
+      /viewport|screen|phaser/i,
+    );
   });
 });

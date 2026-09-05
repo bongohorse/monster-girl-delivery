@@ -1,3 +1,4 @@
+import { getHazardSweptHitbox } from '../hazards/HazardArchetype';
 import {
   evaluateFlightReachability,
   type FlightReachabilityResult,
@@ -100,9 +101,10 @@ const getVerticalCorridors = (
   constraints: Readonly<PatternValidationConstraints>,
 ): ReadonlyArray<Readonly<VerticalCorridor>> => {
   const occupiedIntervals = entries
-    .map((entry) => ({
-      top: Math.max(entry.hitbox.top, constraints.playableTop),
-      bottom: Math.min(entry.hitbox.bottom, constraints.playableBottom),
+    .map((entry) => getHazardSweptHitbox(entry))
+    .map((hitbox) => ({
+      top: Math.max(hitbox.top, constraints.playableTop),
+      bottom: Math.min(hitbox.bottom, constraints.playableBottom),
     }))
     .filter((interval) => interval.bottom > interval.top)
     .sort((first, second) => first.top - second.top || first.bottom - second.bottom);
@@ -129,11 +131,12 @@ const collectVerticalCorridorIssues = (
   constraints: Readonly<PatternValidationConstraints>,
   reachabilityContext: Readonly<PatternReachabilityContext>,
 ): ReadonlyArray<Readonly<PatternValidationIssue>> => {
-  const verticallyRelevantEntries = pattern.entries.filter(
-    (entry) =>
-      entry.hitbox.bottom > constraints.playableTop &&
-      entry.hitbox.top < constraints.playableBottom,
-  );
+  const verticallyRelevantEntries = pattern.entries.filter((entry) => {
+    const sweptHitbox = getHazardSweptHitbox(entry);
+    return (
+      sweptHitbox.bottom > constraints.playableTop && sweptHitbox.top < constraints.playableBottom
+    );
+  });
   const runBoundaries = [
     ...new Set(
       verticallyRelevantEntries.flatMap((entry) => [entry.hitbox.left, entry.hitbox.right]),

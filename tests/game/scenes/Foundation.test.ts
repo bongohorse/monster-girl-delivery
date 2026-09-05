@@ -9,7 +9,8 @@ import {
   type GeneratedHazardStreamState,
   PROTOTYPE_LIVE_RUN_SEED,
 } from '../../../src/generation/GeneratedHazardStream';
-import { PROTOTYPE_HAZARD_PATTERN_FIXTURES } from '../../../src/generation/PrototypeHazardPatternFixtures';
+import { PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES } from '../../../src/generation/PrototypeHazardPatternFixtures';
+import { resolveHazardHitboxAtRunDistance } from '../../../src/hazards/HazardArchetype';
 import type { PrototypeRunState } from '../../../src/systems/PrototypeRunSimulation';
 import { type RunMotionState, stepRunMotion } from '../../../src/systems/RunMotionSimulation';
 import {
@@ -32,7 +33,7 @@ const getRunState = (foundation: Foundation): PrototypeRunState =>
 const getHazardStream = (foundation: Foundation): Readonly<GeneratedHazardStreamState> =>
   Reflect.get(foundation, 'hazardStream') as Readonly<GeneratedHazardStreamState>;
 const TEST_HAZARD_STREAM_CONTEXT = Object.freeze({
-  catalog: PROTOTYPE_HAZARD_PATTERN_FIXTURES,
+  catalog: PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES,
 });
 
 const createFoundationHarness = () => {
@@ -232,13 +233,17 @@ describe('Foundation scene gameplay orchestration', () => {
     if (!collisionHazard) {
       throw new Error('Expected the live generated stream to contain a collision hazard.');
     }
+    const collisionHitbox = resolveHazardHitboxAtRunDistance(
+      collisionHazard,
+      collisionHazard.hitbox.left,
+    );
 
     Reflect.set(foundation, 'hazardStream', progressedHazardStream);
     Reflect.set(foundation, 'runState', {
       phase: 'running',
       motion: { distance: collisionHazard.hitbox.left - 17.5 },
       flight: {
-        positionY: (collisionHazard.hitbox.top + collisionHazard.hitbox.bottom) / 2,
+        positionY: (collisionHitbox.top + collisionHitbox.bottom) / 2,
         velocityY: 0,
       },
     });
@@ -270,7 +275,7 @@ describe('Foundation scene gameplay orchestration', () => {
     expect(services.input.isThrustHeld()).toBe(false);
     expect(instructions.setText).toHaveBeenNthCalledWith(
       2,
-      'M3 seeded hazard run prototype\nHold touch, mouse, or Space to thrust.',
+      'M4 moving hazard prototype\nHold touch, mouse, or Space to thrust.',
     );
     expect(scrollingWorldPresentation.render).toHaveBeenLastCalledWith(0, expect.any(Object));
     expect(generatedHazardPresentation.sync).toHaveBeenLastCalledWith(

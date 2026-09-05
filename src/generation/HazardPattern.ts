@@ -1,14 +1,25 @@
+import {
+  createHazardBehavior,
+  type HazardBehavior,
+  STATIC_GEOMETRIC_HAZARD_BEHAVIOR,
+} from '../hazards/HazardArchetype';
 import type { LogicalHitbox } from '../systems/HazardCollision';
 import { createEncounterProfile, type EncounterProfile } from './EncounterProfile';
 
 export type HazardPatternEntryType = 'placeholder-barrier';
 
 export interface HazardPatternEntry {
+  readonly behavior: Readonly<HazardBehavior>;
   /** Stable identity within this pattern, used by later diagnostics and spawn mapping. */
   readonly id: string;
   /** Pattern-local logical bounds: left/right are run-distance offsets; top/bottom are vertical. */
   readonly hitbox: Readonly<LogicalHitbox>;
   readonly type: HazardPatternEntryType;
+}
+
+export interface HazardPatternEntryDefinition extends Omit<HazardPatternEntry, 'behavior'> {
+  /** Omitted only by legacy/test definitions; authored runtime fixtures declare behavior explicitly. */
+  readonly behavior?: Readonly<HazardBehavior>;
 }
 
 export interface HazardPattern {
@@ -20,6 +31,10 @@ export interface HazardPattern {
   readonly profile: Readonly<EncounterProfile>;
   /** Logical run-distance span; every entry must remain within zero through this value. */
   readonly runLength: number;
+}
+
+export interface HazardPatternDefinition extends Omit<HazardPattern, 'entries'> {
+  readonly entries: ReadonlyArray<Readonly<HazardPatternEntryDefinition>>;
 }
 
 const assertNonEmptyId = (id: string, name: string): void => {
@@ -60,7 +75,7 @@ const assertValidPatternHitbox = (hitbox: Readonly<LogicalHitbox>, runLength: nu
  * Structural geometry checks here do not replace the focused M3 fairness validator.
  */
 export const createHazardPattern = (
-  definition: Readonly<HazardPattern>,
+  definition: Readonly<HazardPatternDefinition>,
 ): Readonly<HazardPattern> => {
   assertNonEmptyId(definition.id, 'Pattern id');
   assertValidRunLength(definition.runLength);
@@ -85,6 +100,7 @@ export const createHazardPattern = (
     assertValidPatternHitbox(entry.hitbox, definition.runLength);
 
     return Object.freeze({
+      behavior: createHazardBehavior(entry.behavior ?? STATIC_GEOMETRIC_HAZARD_BEHAVIOR),
       id: entry.id,
       type: entry.type,
       hitbox: Object.freeze({ ...entry.hitbox }),

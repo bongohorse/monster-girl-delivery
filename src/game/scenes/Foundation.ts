@@ -15,7 +15,7 @@ import {
   type GeneratedHazardStreamState,
   PROTOTYPE_LIVE_RUN_SEED,
 } from '../../generation/GeneratedHazardStream';
-import { PROTOTYPE_HAZARD_PATTERN_FIXTURES } from '../../generation/PrototypeHazardPatternFixtures';
+import { PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES } from '../../generation/PrototypeHazardPatternFixtures';
 import { PhaserInputAdapter } from '../../input/PhaserInputAdapter';
 import {
   createPrototypeRunState,
@@ -25,11 +25,10 @@ import {
 import { constrainVerticalFlightState } from '../../systems/VerticalFlightSimulation';
 import { createPrototypeFlightBounds, getPrototypePlayerX } from '../PrototypeFlightLayout';
 
-const RUNNING_INSTRUCTIONS =
-  'M3 seeded hazard run prototype\nHold touch, mouse, or Space to thrust.';
+const RUNNING_INSTRUCTIONS = 'M4 moving hazard prototype\nHold touch, mouse, or Space to thrust.';
 const DEAD_INSTRUCTIONS = 'Delivery interrupted\nTap, click, or press Space to restart.';
 const LIVE_HAZARD_STREAM_CONTEXT = Object.freeze({
-  catalog: PROTOTYPE_HAZARD_PATTERN_FIXTURES,
+  catalog: PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES,
 });
 
 export class Foundation extends Scene {

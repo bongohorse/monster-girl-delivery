@@ -4,15 +4,18 @@ import {
   type HazardPattern,
   type HazardPatternEntry,
 } from '../../src/generation/HazardPattern';
+import { STATIC_GEOMETRIC_HAZARD_BEHAVIOR } from '../../src/hazards/HazardArchetype';
 import { TEST_ENCOUNTER_PROFILE } from '../support/TestEncounterProfile';
 
 const VALID_FIRST_ENTRY: Readonly<HazardPatternEntry> = Object.freeze({
+  behavior: STATIC_GEOMETRIC_HAZARD_BEHAVIOR,
   id: 'first',
   type: 'placeholder-barrier',
   hitbox: Object.freeze({ left: 40, right: 88, top: 100, bottom: 180 }),
 });
 
 const VALID_SECOND_ENTRY: Readonly<HazardPatternEntry> = Object.freeze({
+  behavior: STATIC_GEOMETRIC_HAZARD_BEHAVIOR,
   id: 'second',
   type: 'placeholder-barrier',
   hitbox: Object.freeze({ left: 240, right: 288, top: 210, bottom: 290 }),
@@ -33,7 +36,35 @@ describe('createHazardPattern', () => {
     expect(Object.isFrozen(pattern)).toBe(true);
     expect(Object.isFrozen(pattern.entries)).toBe(true);
     expect(Object.isFrozen(pattern.entries[0])).toBe(true);
+    expect(Object.isFrozen(pattern.entries[0]?.behavior)).toBe(true);
     expect(Object.isFrozen(pattern.entries[0]?.hitbox)).toBe(true);
+  });
+
+  it('preserves explicit moving behavior identity in the immutable pattern model', () => {
+    const pattern = createHazardPattern({
+      ...VALID_PATTERN,
+      entries: [
+        {
+          ...VALID_FIRST_ENTRY,
+          behavior: {
+            amplitudeY: 48,
+            archetype: 'geometric',
+            cycleDistance: 400,
+            kind: 'vertical-patrol',
+            phaseOffset: 0.25,
+          },
+        },
+      ],
+    });
+
+    expect(pattern.entries[0]?.behavior).toEqual({
+      amplitudeY: 48,
+      archetype: 'geometric',
+      cycleDistance: 400,
+      kind: 'vertical-patrol',
+      phaseOffset: 0.25,
+    });
+    expect(JSON.stringify(pattern)).toContain('vertical-patrol');
   });
 
   it('preserves authored entry order and deterministic serialization', () => {

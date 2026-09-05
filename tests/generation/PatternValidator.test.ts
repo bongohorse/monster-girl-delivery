@@ -18,6 +18,7 @@ const createEntry = (
   top: number,
   bottom: number,
 ): Readonly<HazardPatternEntry> => ({
+  behavior: { archetype: 'geometric', kind: 'static' },
   id,
   type: 'placeholder-barrier',
   hitbox: { left, right, top, bottom },
@@ -68,6 +69,42 @@ describe('validatePattern', () => {
           actual: 0,
           code: 'vertical-route-blocked',
           entryIds: ['top', 'bottom'],
+          required: 96,
+          runStart: 100,
+          runEnd: 148,
+        },
+      ],
+    });
+  });
+
+  it('validates a moving hazard against its full swept vertical extent', () => {
+    const pattern = createHazardPattern({
+      id: 'moving-too-narrow',
+      runLength: 300,
+      profile: TEST_ENCOUNTER_PROFILE,
+      entries: [
+        {
+          behavior: {
+            amplitudeY: 100,
+            archetype: 'geometric',
+            cycleDistance: 400,
+            kind: 'vertical-patrol',
+            phaseOffset: 0,
+          },
+          id: 'moving-wall',
+          type: 'placeholder-barrier',
+          hitbox: { left: 100, right: 148, top: 150, bottom: 200 },
+        },
+      ],
+    });
+
+    expect(validatePattern(pattern)).toEqual({
+      valid: false,
+      issues: [
+        {
+          actual: 42,
+          code: 'vertical-corridor-too-narrow',
+          entryIds: ['moving-wall'],
           required: 96,
           runStart: 100,
           runEnd: 148,
