@@ -32,7 +32,10 @@ export interface DifficultySnapshot extends DifficultyParameters {
   readonly tierIndex: number;
 }
 
-export type PatternDifficultyIneligibilityReason = 'pattern-density-limit' | 'pattern-entry-limit';
+export type PatternDifficultyIneligibilityReason =
+  | 'profile-difficulty-tier'
+  | 'pattern-density-limit'
+  | 'pattern-entry-limit';
 
 export interface PatternDifficultyEligibility {
   readonly eligible: boolean;
@@ -256,6 +259,14 @@ export const evaluatePatternDifficultyEligibility = (
   }
 
   const reasons: PatternDifficultyIneligibilityReason[] = [];
+  const { minimumTierIndex, maximumTierIndex } = pattern.profile.difficultyTierRange;
+
+  if (
+    difficulty.tierIndex < minimumTierIndex ||
+    (maximumTierIndex !== null && difficulty.tierIndex > maximumTierIndex)
+  ) {
+    reasons.push('profile-difficulty-tier');
+  }
 
   if (patternEntryCount > difficulty.maximumPatternEntries) {
     reasons.push('pattern-entry-limit');

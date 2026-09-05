@@ -64,7 +64,7 @@ describe('pacing pattern selection', () => {
       eligible: false,
       hazardDensityPer1000Distance: 5,
       patternEntryCount: 3,
-      reasons: ['pacing-entry-limit', 'pacing-density-limit'],
+      reasons: ['profile-pacing-intensity', 'pacing-entry-limit', 'pacing-density-limit'],
     });
     expect(validatePattern(BREATHER_PATTERN).valid).toBe(true);
   });
