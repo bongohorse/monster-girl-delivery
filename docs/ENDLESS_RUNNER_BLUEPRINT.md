@@ -181,3 +181,59 @@ Für *Monster Girl Delivery* sind daraus besonders relevant:
 - Missionen/Progression später parallel und ohne einzelne Progressions-Blocker aufbauen.
 - Shop, Cosmetics, Gadgets und Content möglichst datengetrieben/modular halten, damit spätere Erweiterungen kein Re-Engineering erzwingen.
 - Mobile Performance und stabile **60 FPS** bleiben wichtiger als unnötig teure visuelle Effekte.
+
+---
+
+## Technische Ergänzung: übertragbare Phaser-Endless-Runner-Muster
+
+Eine zusätzliche Code-Fallstudie des historischen Phaser-3-Projekts [`rindrajosia/rpg_js`](https://github.com/rindrajosia/rpg_js) ist für MGD vor allem als **Musterquelle**, nicht als Implementierungsbasis, nützlich. Das Projekt ist selbst ein Jetpack-Joyride-artiger Runner, stammt aber im Wesentlichen aus 2020/2021 und verwendet einen deutlich älteren Tooling-/Phaser-Stand. Externer Code und Assets werden nicht übernommen.
+
+### Was MGD daraus beibehält bzw. gezielt adaptiert
+
+1. **Endless Presentation bleibt bounded.**
+   - Wiederkehrende visuelle Objekte dürfen hinter dem Spieler deaktiviert und später vor dem Spieler wiederverwendet werden.
+   - Typische Kandidaten sind Hazards, Coins/Pickups, Partikel/FX und dekorative Props.
+   - Ein stabiler Endless Run soll nicht allein wegen seiner Dauer immer mehr aktive Phaser-Objekte ansammeln.
+
+2. **Logische Run-Distanz und recycelte Presentation bleiben getrennt.**
+   - Autoritative Distanz, Seeds, Spawn-IDs, Difficulty/Pacing und Fairness bleiben in logischem Gameplay-Raum monoton und deterministisch.
+   - Presentation darf lokale Bildschirm-/Weltkoordinaten wiederverwenden, ohne die logische Historie zurückzusetzen oder bereits geplante Encounters umzuschreiben.
+   - Keine Gameplay-Regel darf davon abhängen, wie oft ein sichtbares Objekt recycelt wurde.
+
+3. **Pooling ist gezielt und evidenzbasiert, nicht automatisch.**
+   - Kein generisches Pooling-Framework nur aus Tradition.
+   - Erst #141 bzw. reale Laufzeitdaten sollen zeigen, wo Creation/Destruction, GC oder Objektwachstum relevant werden.
+   - Wenn ein Pool eingeführt wird, muss `acquire/release` den vollständigen Zustand deterministisch zurücksetzen: active/visible, collision, lifecycle, animation/tween/timer, listeners, identity/presentation binding und sonstige mutable Felder.
+   - Inaktive Pool-Objekte dürfen keine Simulation oder teure Updates weiter ausführen.
+
+4. **Scenes koordinieren; Regeln leben außerhalb der Scene.**
+   - Boot/Preload/Game/Results oder spätere zusätzliche Scenes dürfen Lifecycle und High-Level-Flow koordinieren.
+   - Player physics, Run-State, collision/fairness, generation, pacing, score und ähnliche Regeln bleiben in testbaren Authorities/Systems statt in einem großen Phaser-Scene-Script.
+   - Eine neue Scene ist nur sinnvoll, wenn sie einen echten Lifecycle-/Flow-Boundary besitzt; MGD soll nicht für jede kleine Funktion eine Scene erzeugen.
+
+5. **Explizite Zustände statt versteckter Sprite-Zustände.**
+   - Der aktuelle `PrototypeRunState` mit expliziter Run-Phase ist die richtige Richtung.
+   - Spätere Zustände wie Vehicle, Hit/Recovery, Dead oder Results sollen als testbare logische Zustände/Transitions modelliert werden, nicht durch implizite Sprite-Animationen oder Phaser-Callbacks autoritativ werden.
+   - Presentation liest den Zustand und visualisiert ihn; sie entscheidet ihn nicht.
+
+6. **Repeatable Background/Parallax ist Presentation.**
+   - Nahtlose Layer, TileSprite-artige Wiederholung oder recycelte Background-Segmente sind geeignete Werkzeuge für einen Endless Runner.
+   - Mehrere Parallax-Layer dürfen unterschiedliche visuelle Scroll-Faktoren verwenden.
+   - Parallax, DPR, Render Scale oder Background-Segmentbreite dürfen niemals Spawn-Timing, Reaktionszeit oder Fairness verändern.
+   - Der finale Ansatz bleibt abhängig von Art Gate, #102 und gemessener Performance.
+
+### Was ausdrücklich nicht übernommen wird
+
+- keine praktisch unendlichen Phaser-World-/Camera-Bounds via `Number.MAX_SAFE_INTEGER` als Endless-World-Architektur;
+- kein periodisches Zurücksetzen der **autoritativen** Run-Distanz, nur um große Renderkoordinaten zu vermeiden;
+- kein manuelles Verschieben aller Gameplay-Authorities beim visuellen Rebase;
+- keine zufällige Hazard-/Coin-Platzierung, die MGD-Generator, Fairness, Difficulty oder Pacing umgeht;
+- kein kopierter Phaser-3/Webpack/Jest/Babel-Stack;
+- kein Pooling, das Determinismus oder vollständigen Lifecycle-Reset opfert.
+
+### Verknüpfte MGD-Arbeit
+
+- **#29** bewahrt die gezielte Recycling-/Pooling-Idee als Backlog-Konzept.
+- **#141** besitzt die Performance-Baseline, Objekt-Churn-/Growth-Messung und entscheidet anhand von Evidenz, ob konkrete Pools nötig werden.
+- **#102** behandelt High-DPI-/Render-Qualität; Parallax-/Background-Entscheidungen müssen damit kompatibel bleiben.
+- Die bestehende Simulation-/Presentation-Trennung in `ARCHITECTURE.md` bleibt die autoritative technische Grenze.
