@@ -79,7 +79,7 @@ const createFoundationHarness = () => {
     motion: { distance: 0 },
     flight: { positionY: 400, velocityY: 0 },
   });
-  Reflect.set(foundation, 'game', { loop: { actualFps: 60 } });
+  Reflect.set(foundation, 'game', { loop: { actualFps: 60, rawDelta: 16 } });
   Reflect.set(foundation, 'scale', { off: scaleOff });
   Reflect.set(foundation, 'cameras', { resize: cameraResize });
 
@@ -148,7 +148,6 @@ describe('Foundation scene gameplay orchestration', () => {
     );
     expect(directorPanel.update).toHaveBeenLastCalledWith(
       1_000,
-      60,
       viewportService.getSnapshot(),
       services.input.getSnapshot(),
       services.lifecycle.getSnapshot(),
@@ -351,8 +350,10 @@ describe('Foundation scene gameplay orchestration', () => {
     } = createFoundationHarness();
     const inputAdapter = { destroy: vi.fn() };
     const lifecycleAdapter = { destroy: vi.fn() };
+    const directorPerformanceHud = { destroy: vi.fn() };
     Reflect.set(foundation, 'inputAdapter', inputAdapter);
     Reflect.set(foundation, 'lifecycleAdapter', lifecycleAdapter);
+    Reflect.set(foundation, 'directorPerformanceHud', directorPerformanceHud);
     services.input.pressPointer(1, 'touch');
     services.input.setGameplayBlocked(true);
     services.time.update(16);
@@ -374,6 +375,7 @@ describe('Foundation scene gameplay orchestration', () => {
     expect(scaleOff).toHaveBeenCalledOnce();
     expect(directorTuningControls.destroy).toHaveBeenCalledOnce();
     expect(directorRunControls.destroy).toHaveBeenCalledOnce();
+    expect(directorPerformanceHud.destroy).toHaveBeenCalledOnce();
     expect(playerPresentation.destroy).toHaveBeenCalledOnce();
     expect(generatedHazardPresentation.destroy).toHaveBeenCalledOnce();
     expect(scrollingWorldPresentation.destroy).toHaveBeenCalledOnce();

@@ -255,6 +255,8 @@ They must:
 - stay isolated from production gameplay responsibilities;
 - remain easy to exclude/disable in production builds.
 
+The Director performance HUD is read-only instrumentation split between a pure sampler and a lightweight DOM presentation. `PerformanceSampler` records Phaser `game.loop.rawDelta` into a fixed-capacity ring buffer in O(1) work per valid frame; rolling percentiles are computed only on the capped display refresh. `DirectorPerformanceHud` shows Phaser `actualFps` alongside raw frame-time statistics outside the Phaser renderer, suppresses gameplay input around its eye/reset controls, and is created only in Director Mode. Lifecycle-paused frames and the first resume frame are rejected so suspension time cannot contaminate the session. Neither measurement nor presentation feeds values back into `TimeService` or gameplay.
+
 ## 12. Persistence
 
 Persistence is **planned architecture** for the approved later roadmap scope.

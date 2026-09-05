@@ -408,6 +408,8 @@ Director tooling may support, as relevant to implemented systems:
 
 Director tooling must remain isolated from production gameplay and use the same authoritative runtime state/configuration rather than maintaining a parallel version.
 
+Director Mode includes a compact, safe-area-aware performance HUD as development-only instrumentation. Phaser `actualFps` is the glanceable FPS headline, while bounded rolling average/P95/P99, current, worst, and slow-frame metrics use unsmoothed `game.loop.rawDelta`. Sampling continues at frame cadence with fixed storage, but percentile calculation and DOM updates are capped to a low refresh rate. Hidden/background/resume intervals are excluded, and profiler values never affect simulation or content decisions.
+
 ---
 
 ## 15. Asset-production principles
