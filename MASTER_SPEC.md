@@ -227,6 +227,8 @@ M3 extended this foundation with deterministic seeded pattern generation, explic
 
 M4 adds a reusable logical lifecycle for telegraphed hazards: Warning → Lock → Active → Expired. Warning and Lock are safe, Active is the only lethal phase, and targets sampled during warning freeze at the Lock boundary. Phase timing consumes simulation delta already normalized by `TimeService`; wall-clock timers and presentation callbacks do not own gameplay state. Each update crosses at most one boundary so an unexpectedly large delta cannot skip required safe phases, while unused boundary time carries forward for normal frame-rate independence. Phase durations and target-relative warning geometry remain configurable **PROTOTYPE** values. Concrete hazard content and warning presentation remain later focused M4 work.
 
+M4 also adds a typed geometric hazard behavior boundary and one **PROTOTYPE** persistent moving example. Pattern entries and spawned hazards carry a serializable geometric behavior identity. The vertical-patrol example follows a deterministic triangle wave derived from authoritative logical run distance and its immutable spawn anchor, so pause and same-seed replay remain coherent without a second timer or random source. Its full swept extent must pass the existing pattern-fairness validator, and its resolved position uses the shared logical collision rule. Movement values and placeholder graphics remain **PROTOTYPE** rather than final hazard tuning or art.
+
 ### FUTURE
 
 Potential hazard families may later include:

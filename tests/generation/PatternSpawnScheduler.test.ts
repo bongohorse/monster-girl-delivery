@@ -226,6 +226,7 @@ describe('scheduleNextPattern', () => {
     expect(schedule.nextPatternStartDistance).toBe(5_500);
     expect(schedule.spawns).toEqual([
       {
+        behavior: { archetype: 'geometric', kind: 'static' },
         entryId: 'earlier',
         hitbox: { left: 5_100, right: 5_148, top: 160, bottom: 208 },
         patternEntryIndex: 1,
@@ -234,6 +235,7 @@ describe('scheduleNextPattern', () => {
         type: 'placeholder-barrier',
       },
       {
+        behavior: { archetype: 'geometric', kind: 'static' },
         entryId: 'later',
         hitbox: { left: 5_300, right: 5_348, top: 160, bottom: 208 },
         patternEntryIndex: 0,

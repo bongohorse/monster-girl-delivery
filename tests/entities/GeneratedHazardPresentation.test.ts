@@ -4,6 +4,7 @@ import { GeneratedHazardPresentation } from '../../src/entities/GeneratedHazardP
 import type { LogicalHazardSpawnInstance } from '../../src/generation/PatternSpawnScheduler';
 
 const createSpawn = (entryId: string, left: number): Readonly<LogicalHazardSpawnInstance> => ({
+  behavior: { archetype: 'geometric', kind: 'static' },
   entryId,
   hitbox: { left, right: left + 48, top: 120, bottom: 216 },
   patternEntryIndex: 0,
@@ -12,9 +13,27 @@ const createSpawn = (entryId: string, left: number): Readonly<LogicalHazardSpawn
   type: 'placeholder-barrier',
 });
 
+const createMovingSpawn = (): Readonly<LogicalHazardSpawnInstance> => ({
+  behavior: {
+    amplitudeY: 48,
+    archetype: 'geometric',
+    cycleDistance: 400,
+    kind: 'vertical-patrol',
+    phaseOffset: 0,
+  },
+  entryId: 'moving',
+  hitbox: { left: 1_000, right: 1_048, top: 147, bottom: 195 },
+  patternEntryIndex: 0,
+  patternId: 'moving-pattern',
+  runDistance: 1_000,
+  type: 'placeholder-barrier',
+});
+
 const createSceneFake = () => {
   const graphicsObjects: Array<{
     destroy: ReturnType<typeof vi.fn>;
+    fillStyle: ReturnType<typeof vi.fn>;
+    lineStyle: ReturnType<typeof vi.fn>;
     setPosition: ReturnType<typeof vi.fn>;
   }> = [];
   const addGraphics = vi.fn(() => {
@@ -78,6 +97,21 @@ describe('GeneratedHazardPresentation', () => {
     expect(graphicsObjects[0]?.destroy).toHaveBeenCalledOnce();
     expect(graphicsObjects[1]?.destroy).not.toHaveBeenCalled();
     expect(graphicsObjects[1]?.setPosition).toHaveBeenLastCalledWith(1_000, 120);
+  });
+
+  it('reuses one distinct primitive while projecting its logical patrol position', () => {
+    const { addGraphics, graphicsObjects, scene } = createSceneFake();
+    const presentation = new GeneratedHazardPresentation(scene);
+    const spawn = createMovingSpawn();
+
+    presentation.sync([spawn], { distance: 1_000 }, 200);
+    presentation.sync([spawn], { distance: 1_200 }, 200);
+
+    expect(addGraphics).toHaveBeenCalledOnce();
+    expect(graphicsObjects[0]?.fillStyle).toHaveBeenNthCalledWith(1, 0x8a4fff, 1);
+    expect(graphicsObjects[0]?.lineStyle).toHaveBeenCalledWith(4, 0x6fffe9, 1);
+    expect(graphicsObjects[0]?.setPosition).toHaveBeenNthCalledWith(1, 200, 99);
+    expect(graphicsObjects[0]?.setPosition).toHaveBeenNthCalledWith(2, 0, 195);
   });
 
   it('destroys all active graphics once and ignores later synchronization', () => {

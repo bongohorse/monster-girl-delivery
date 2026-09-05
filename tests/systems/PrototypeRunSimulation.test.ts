@@ -72,6 +72,33 @@ describe('prototype run simulation', () => {
     expect(result.state.phase).toBe('dead');
   });
 
+  it('collides against the moving hazard position resolved from the stepped run distance', () => {
+    const movingHazard = {
+      behavior: {
+        amplitudeY: 48,
+        archetype: 'geometric' as const,
+        cycleDistance: 400,
+        kind: 'vertical-patrol' as const,
+        phaseOffset: 0,
+      },
+      hitbox: { left: 1_000, right: 1_048, top: 147, bottom: 195 },
+      runDistance: 1_000,
+    };
+    const upperPlayerState: PrototypeRunState = {
+      phase: 'running',
+      motion: { distance: 982.5 },
+      flight: { positionY: 123, velocityY: 0 },
+    };
+    const centerPlayerState: PrototypeRunState = {
+      ...upperPlayerState,
+      flight: { positionY: 195, velocityY: 0 },
+    };
+    const context = { ...STEP_CONTEXT, hazards: [movingHazard] };
+
+    expect(stepPrototypeRun(upperPlayerState, 0.05, context).enteredDead).toBe(true);
+    expect(stepPrototypeRun(centerPlayerState, 0.05, context).enteredDead).toBe(false);
+  });
+
   it('recreates the same clean state and derived hazard position on every restart', () => {
     const first = createPrototypeRunState(FLIGHT_BOUNDS);
     const repeated = createPrototypeRunState(FLIGHT_BOUNDS);

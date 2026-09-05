@@ -1,5 +1,6 @@
 import type { FlightTuningValues } from '../config/FlightTuningConfig';
 import type { RunMotionValues } from '../config/RunMotionConfig';
+import { resolveHazardHitboxAtRunDistance } from '../hazards/HazardArchetype';
 import type { LogicalHazard } from './HazardCollision';
 import { isPlayerCollidingWithHazard } from './HazardCollision';
 import { type RunMotionState, stepRunMotion } from './RunMotionSimulation';
@@ -72,7 +73,9 @@ export const stepPrototypeRun = (
     context.flightBounds,
   );
   const enteredDead = context.hazards.some((hazard) =>
-    isPlayerCollidingWithHazard(motion, flight, hazard),
+    isPlayerCollidingWithHazard(motion, flight, {
+      hitbox: resolveHazardHitboxAtRunDistance(hazard, motion.distance),
+    }),
   );
 
   return {

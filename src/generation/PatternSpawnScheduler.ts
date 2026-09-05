@@ -1,3 +1,4 @@
+import type { HazardBehavior } from '../hazards/HazardArchetype';
 import type { LogicalHazard, LogicalHitbox } from '../systems/HazardCollision';
 import type { PatternReachabilityContext } from './FlightReachability';
 import type { HazardPattern, HazardPatternEntryType } from './HazardPattern';
@@ -25,6 +26,7 @@ export interface PatternSpawnScheduleRequest {
 }
 
 export interface LogicalHazardSpawnInstance extends LogicalHazard {
+  readonly behavior: Readonly<HazardBehavior>;
   readonly entryId: string;
   readonly hitbox: Readonly<LogicalHitbox>;
   /** Authored entry position retained as a deterministic tie-breaker and diagnostic. */
@@ -105,6 +107,7 @@ const mapPatternToAbsoluteSpawns = (
         }
 
         return Object.freeze({
+          behavior: entry.behavior,
           entryId: entry.id,
           hitbox: Object.freeze({
             left,
