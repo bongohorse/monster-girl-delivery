@@ -243,6 +243,32 @@ describe('Foundation scene gameplay orchestration', () => {
     expect(renderedDistances[1]).toBeGreaterThan(renderedDistances[0] ?? 0);
   });
 
+  it('uses retained policy flight tuning while a Director change waits for accepted hazards', () => {
+    const { foundation, services, viewportService } = createFoundationHarness();
+    const { stream } = createLowPhaseHazardStream(services);
+    const flight = { positionY: 195, velocityY: 0 };
+    Reflect.set(foundation, 'hazardStream', stream);
+    Reflect.set(foundation, 'runState', {
+      phase: 'running',
+      motion: { distance: stream.runDistance },
+      flight,
+    });
+    const acceptedTuning = services.flightTuning.getSnapshot();
+    services.flightTuning.update({ gravity: 200 });
+    foundation.update(0, 16);
+    expect(getHazardStream(foundation).policy?.flightTuning).toEqual(acceptedTuning);
+    expect(getFlightState(foundation)).toEqual(
+      stepVerticalFlight(
+        flight,
+        0.016,
+        false,
+        acceptedTuning,
+        createPrototypeFlightBounds(viewportService.getSnapshot()),
+      ),
+    );
+    expect(services.flightTuning.getSnapshot().gravity).toBe(200);
+  });
+
   it('does not jump while paused or on the first frame after resume', () => {
     const { foundation, scrollingWorldPresentation, services } = createFoundationHarness();
     services.input.pressPointer(7, 'touch');

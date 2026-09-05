@@ -212,7 +212,7 @@ export class Foundation extends Scene {
       );
       const result = stepPrototypeRun(this.runState, simulationDeltaSeconds, {
         flightBounds: createPrototypeFlightBounds(viewport),
-        flightTuning,
+        flightTuning: this.hazardStream.policy?.flightTuning ?? flightTuning,
         hazards: getLethalHazardsForTelegraphedSimulation(
           this.telegraphedHazardState,
           this.hazardStream.spawns,

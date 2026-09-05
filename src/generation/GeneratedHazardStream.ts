@@ -20,9 +20,11 @@ import type { HazardPattern } from './HazardPattern';
 import {
   createLiveEncounterPolicyState,
   createLiveEncounterTransitionContext,
+  deriveLiveEncounterExitEnvelope,
   evaluateLiveEncounterReadability,
   type LiveEncounterPolicyConfig,
   type LiveEncounterPolicyState,
+  rebaseLiveEncounterExitEnvelope,
   recordAcceptedLiveEncounter,
   scaleLiveEncounterRunMotion,
   selectLiveEncounterCandidates,
@@ -102,6 +104,24 @@ export interface HazardSpeedChangeResolution {
 
 const MAX_PATTERNS_PER_ADVANCE = 64;
 
+const hasPendingPolicyContent = (
+  state: Readonly<GeneratedHazardStreamState>,
+  runDistance: number,
+): boolean =>
+  state.policy !== null &&
+  (state.policy.readability.reservations.length > 0 ||
+    runDistance < state.policy.exitEnvelope.runDistance);
+
+const flightTuningChanged = (
+  state: Readonly<LiveEncounterPolicyState>,
+  context: Readonly<GeneratedHazardStreamContext>,
+): boolean => {
+  const requested = (context.reachability ?? PROTOTYPE_PATTERN_REACHABILITY_CONTEXT).flightTuning;
+  return (Object.keys(state.flightTuning) as Array<keyof typeof requested>).some(
+    (key) => state.flightTuning[key] !== requested[key],
+  );
+};
+
 const assertValidConfig = (config: Readonly<GeneratedHazardStreamConfig>): void => {
   if (!Number.isFinite(config.retainBehindDistance) || config.retainBehindDistance < 0) {
     throw new RangeError('Hazard stream retention distance must be non-negative and finite.');
@@ -158,8 +178,8 @@ const getPatternSchedulingBoundary = (
 
 /**
  * Resolves a requested speed against immutable future hazard targets at the transition instant.
- * Decreases apply immediately. An increase is deferred at the current applied speed unless every
- * scheduled future hazard would still provide the configured minimum reaction time.
+ * Legacy decreases apply immediately; increases must preserve every future reaction window.
+ * Policy mode additionally holds either direction until accepted policy content has cleared.
  */
 export const resolveHazardSafeSpeedChange = (
   state: Readonly<GeneratedHazardStreamState>,
@@ -213,7 +233,11 @@ export const resolveHazardSafeSpeedChange = (
         ).meetsMinimumReactionTime,
     );
   const status: HazardSpeedChangeStatus =
-    increaseRequested && !increaseIsSafe ? 'deferred' : 'applied';
+    (increaseRequested && !increaseIsSafe) ||
+    (requestedWindow.scrollSpeed !== state.schedulingWindow.scrollSpeed &&
+      hasPendingPolicyContent(state, runDistance))
+      ? 'deferred'
+      : 'applied';
 
   return Object.freeze({
     appliedScrollSpeed:
@@ -326,10 +350,10 @@ const fillPolicySpawnWindow = (
   );
   const windowEnd = getPatternSchedulingBoundary(runDistance, schedulingWindow);
   let generationState = state.generationState;
-  let nextPatternStartDistance = state.nextPatternStartDistance;
+  let nextPatternStartDistance = Math.max(state.nextPatternStartDistance, windowEnd);
   let policyState = initialPolicyState;
   let scheduledPatternCount = state.scheduledPatternCount;
-  let status = state.status;
+  const status = state.status;
   let policyIterations = 0;
 
   while (
@@ -382,6 +406,7 @@ const fillPolicySpawnWindow = (
 
     // Existing active reservations can clear only through normalized simulation time.
     if (availablePrimary.length === 0 && availableDeferred.length === 0) {
+      nextPatternStartDistance = windowEnd + Math.max(1, schedulingWindow.minimumReactionDistance);
       break;
     }
 
@@ -419,7 +444,7 @@ const fillPolicySpawnWindow = (
     }
 
     if (acceptedSchedule === null) {
-      status = 'exhausted';
+      nextPatternStartDistance = windowEnd + Math.max(1, schedulingWindow.minimumReactionDistance);
       break;
     }
 
@@ -430,18 +455,35 @@ const fillPolicySpawnWindow = (
       throw new TypeError('Accepted live encounter must have a reserved readability decision.');
     }
 
-    retainedSpawns.push(
-      ...acceptedSchedule.spawns.map((spawn) =>
-        Object.freeze({
-          ...spawn,
-          approachTiming: evaluateHazardApproachTiming(
-            Math.max(0, spawn.runDistance - PROTOTYPE_PLAYER_COLLISION_EXTENTS.right),
-            runDistance,
-            schedulingWindow,
-          ),
-        }),
-      ),
+    if (
+      deriveLiveEncounterExitEnvelope(
+        policyState.exitEnvelope,
+        acceptedEvaluation.pattern,
+        nextPatternStartDistance,
+        schedulingWindow.scrollSpeed,
+        reachabilitySource,
+        selection.constraints,
+      ) === null
+    ) {
+      nextPatternStartDistance = windowEnd + Math.max(1, schedulingWindow.minimumReactionDistance);
+      break;
+    }
+
+    const acceptedSpawns = acceptedSchedule.spawns.map((spawn) =>
+      Object.freeze({
+        ...spawn,
+        approachTiming: evaluateHazardApproachTiming(
+          Math.max(0, spawn.runDistance - PROTOTYPE_PLAYER_COLLISION_EXTENTS.right),
+          runDistance,
+          schedulingWindow,
+        ),
+      }),
     );
+    if (acceptedSpawns.some((spawn) => !spawn.approachTiming.meetsMinimumReactionTime)) {
+      nextPatternStartDistance = windowEnd + Math.max(1, schedulingWindow.minimumReactionDistance);
+      break;
+    }
+    retainedSpawns.push(...acceptedSpawns);
     policyState = recordAcceptedLiveEncounter(
       policyState,
       acceptedEvaluation.pattern,
@@ -540,11 +582,35 @@ export const advanceGeneratedHazardStream = (
   if (!Number.isFinite(elapsedSeconds) || elapsedSeconds < 0) {
     throw new RangeError('Hazard stream elapsedSeconds must be non-negative and finite.');
   }
-  const policy =
+  let policy =
     state.policy === null || context.policy === undefined
       ? null
       : stepLiveEncounterPolicyState(state.policy, runDistance, elapsedSeconds, context.policy);
-  const speedChange = resolveHazardSafeSpeedChange(state, runDistance, context, runMotion);
+  const steppedState = policy === state.policy ? state : freezeState({ ...state, policy });
+  const speedChange = resolveHazardSafeSpeedChange(steppedState, runDistance, context, runMotion);
+  const tuningChanged = policy !== null && flightTuningChanged(policy, context);
+  const parametersDeferred =
+    hasPendingPolicyContent(steppedState, runDistance) &&
+    (speedChange.status === 'deferred' || tuningChanged);
+  if (
+    policy !== null &&
+    !parametersDeferred &&
+    (tuningChanged || speedChange.appliedScrollSpeed !== state.schedulingWindow.scrollSpeed)
+  ) {
+    policy = Object.freeze({
+      ...policy,
+      exitEnvelope: rebaseLiveEncounterExitEnvelope(
+        policy,
+        runDistance,
+        state.schedulingWindow.scrollSpeed,
+        context.reachability ?? PROTOTYPE_PATTERN_REACHABILITY_CONTEXT,
+        context.constraints ?? PROTOTYPE_PATTERN_VALIDATION_CONSTRAINTS,
+      ),
+      flightTuning: Object.freeze({
+        ...(context.reachability ?? PROTOTYPE_PATTERN_REACHABILITY_CONTEXT).flightTuning,
+      }),
+    });
+  }
   const schedulingWindow = createHazardReactionWindow(
     { baseScrollSpeed: speedChange.appliedScrollSpeed },
     getReactionTimeConstraint(context, runDistance),
@@ -583,6 +649,11 @@ export const advanceGeneratedHazardStream = (
           policy,
           schedulingWindow,
         });
+
+  // Leave recovery space while accepted content drains under its original motion/tuning.
+  if (parametersDeferred) {
+    return freezeState({ ...adjustedState, policy, runDistance, schedulingWindow });
+  }
 
   return fillSpawnWindow(adjustedState, context, runDistance, schedulingWindow);
 };

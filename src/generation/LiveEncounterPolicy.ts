@@ -9,7 +9,7 @@ import {
   PROTOTYPE_DIFFICULTY_CONFIG,
   scaleRunMotionForDifficulty,
 } from '../difficulty/DifficultySystem';
-import { isTelegraphedHazardBehavior } from '../hazards/HazardArchetype';
+import { getHazardSweptHitbox, isTelegraphedHazardBehavior } from '../hazards/HazardArchetype';
 import {
   createPacingPatternRequest,
   filterPatternsForPacing,
@@ -73,6 +73,7 @@ export const PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG: Readonly<LiveEncounterPolic
 
 export interface LiveEncounterPolicyState {
   readonly difficulty: Readonly<DifficultySnapshot>;
+  readonly flightTuning: Readonly<FlightTuningValues>;
   readonly exitEnvelope: Readonly<EncounterExitStateEnvelope>;
   readonly pacing: Readonly<PacingSnapshot>;
   readonly readability: Readonly<EncounterReadabilityBudgetState>;
@@ -142,6 +143,7 @@ export const createLiveEncounterPolicyState = (
   config: Readonly<LiveEncounterPolicyConfig> = PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG,
 ): Readonly<LiveEncounterPolicyState> =>
   Object.freeze({
+    flightTuning: Object.freeze({ ...reachability.flightTuning }),
     difficulty: calculateDifficulty(runDistance, config.difficulty),
     exitEnvelope: createEncounterExitStateEnvelope({
       runDistance,
@@ -338,21 +340,112 @@ const selectRepresentativeExitStates = (
   );
 };
 
-const advanceExitEnvelope = (
+/**
+ * Bounded one-switch trajectories, checked against every swept hazard slab. Correlated
+ * samples must survive the accepted geometry; failure to find a sample is fail-closed.
+ */
+export const deriveLiveEncounterExitEnvelope = (
   envelope: Readonly<EncounterExitStateEnvelope>,
-  targetRunDistance: number,
+  pattern: Readonly<HazardPattern>,
+  patternStartDistance: number,
   scrollSpeed: number,
-  flightTuning: Readonly<FlightTuningValues>,
-  bounds: Readonly<VerticalFlightBounds>,
-): Readonly<EncounterExitStateEnvelope> => {
-  const elapsedSeconds = (targetRunDistance - envelope.runDistance) / scrollSpeed;
-  if (!Number.isFinite(elapsedSeconds) || elapsedSeconds <= 0) {
-    throw new RangeError('Accepted encounter must advance beyond the previous exit envelope.');
-  }
-  const states = envelope.states.flatMap((state) => [
-    Object.freeze(stepVerticalFlight(state, elapsedSeconds, true, flightTuning, bounds)),
-    Object.freeze(stepVerticalFlight(state, elapsedSeconds, false, flightTuning, bounds)),
-  ]);
+  reachability: Readonly<Omit<PatternReachabilityContext, 'availableReactionTimeSeconds'>>,
+  constraints: Readonly<PatternValidationConstraints>,
+): Readonly<EncounterExitStateEnvelope> | null => {
+  const bounds: Readonly<VerticalFlightBounds> = {
+    ceilingY: constraints.playableTop + reachability.playerExtents.top,
+    floorY: constraints.playableBottom - reachability.playerExtents.bottom,
+  };
+  const lastRight = Math.max(...pattern.entries.map((entry) => getHazardSweptHitbox(entry).right));
+  const clearanceDistance = patternStartDistance + lastRight + reachability.playerExtents.left;
+  const targetRunDistance = Math.max(patternStartDistance + pattern.runLength, clearanceDistance);
+  const elapsedSeconds = (clearanceDistance - envelope.runDistance) / scrollSpeed;
+  if (elapsedSeconds <= 0) return null;
+  const states = envelope.states.flatMap((state) => {
+    const samples = [];
+    for (let index = 0; index <= 32; index += 1) {
+      for (const thrustFirst of [true, false]) {
+        const firstSeconds = (elapsedSeconds * index) / 32;
+        const intermediate = stepVerticalFlight(
+          state,
+          firstSeconds,
+          thrustFirst,
+          reachability.flightTuning,
+          bounds,
+        );
+        const exit = stepVerticalFlight(
+          intermediate,
+          elapsedSeconds - firstSeconds,
+          !thrustFirst,
+          reachability.flightTuning,
+          bounds,
+        );
+        const survives = pattern.entries.every((entry) => {
+          const hitbox = getHazardSweptHitbox(entry);
+          const collisionStart =
+            (patternStartDistance +
+              hitbox.left -
+              reachability.playerExtents.right -
+              envelope.runDistance) /
+            scrollSpeed;
+          const collisionEnd =
+            (patternStartDistance +
+              hitbox.right +
+              reachability.playerExtents.left -
+              envelope.runDistance) /
+            scrollSpeed;
+          return [
+            { initial: state, start: 0, end: firstSeconds, thrust: thrustFirst },
+            {
+              initial: intermediate,
+              start: firstSeconds,
+              end: elapsedSeconds,
+              thrust: !thrustFirst,
+            },
+          ].every((segment) => {
+            const from = Math.max(segment.start, collisionStart);
+            const to = Math.min(segment.end, collisionEnd);
+            if (to <= from) return true;
+            const acceleration =
+              reachability.flightTuning.gravity -
+              (segment.thrust ? reachability.flightTuning.thrust : 0);
+            const initialVelocity = Math.min(
+              reachability.flightTuning.maxFallVelocity,
+              Math.max(-reachability.flightTuning.maxRiseVelocity, segment.initial.velocityY),
+            );
+            const turningTime = segment.start - initialVelocity / acceleration;
+            const times = [from, to];
+            if (turningTime > from && turningTime < to) times.push(turningTime);
+            const positions = times.map(
+              (time) =>
+                stepVerticalFlight(
+                  segment.initial,
+                  time - segment.start,
+                  segment.thrust,
+                  reachability.flightTuning,
+                  bounds,
+                ).positionY,
+            );
+            return (
+              Math.max(...positions) + reachability.playerExtents.bottom <= hitbox.top ||
+              Math.min(...positions) - reachability.playerExtents.top >= hitbox.bottom
+            );
+          });
+        });
+        if (survives) {
+          const recoverySeconds = (targetRunDistance - clearanceDistance) / scrollSpeed;
+          samples.push(
+            stepVerticalFlight(exit, recoverySeconds, true, reachability.flightTuning, bounds),
+          );
+          samples.push(
+            stepVerticalFlight(exit, recoverySeconds, false, reachability.flightTuning, bounds),
+          );
+        }
+      }
+    }
+    return samples;
+  });
+  if (states.length === 0) return null;
 
   return createEncounterExitStateEnvelope({
     runDistance: targetRunDistance,
@@ -372,6 +465,31 @@ export const createLiveEncounterTransitionContext = (
     scrollSpeed,
   });
 
+/** Rebase the historical exit through free recovery using the parameters that actually applied. */
+export const rebaseLiveEncounterExitEnvelope = (
+  state: Readonly<LiveEncounterPolicyState>,
+  runDistance: number,
+  scrollSpeed: number,
+  reachability: Readonly<Omit<PatternReachabilityContext, 'availableReactionTimeSeconds'>>,
+  constraints: Readonly<PatternValidationConstraints>,
+): Readonly<EncounterExitStateEnvelope> => {
+  if (runDistance <= state.exitEnvelope.runDistance || scrollSpeed === 0) return state.exitEnvelope;
+  const elapsedSeconds = (runDistance - state.exitEnvelope.runDistance) / scrollSpeed;
+  const bounds = {
+    ceilingY: constraints.playableTop + reachability.playerExtents.top,
+    floorY: constraints.playableBottom - reachability.playerExtents.bottom,
+  };
+  return createEncounterExitStateEnvelope({
+    runDistance,
+    states: selectRepresentativeExitStates(
+      state.exitEnvelope.states.flatMap((flight) => [
+        stepVerticalFlight(flight, elapsedSeconds, true, state.flightTuning, bounds),
+        stepVerticalFlight(flight, elapsedSeconds, false, state.flightTuning, bounds),
+      ]),
+    ),
+  });
+};
+
 /** Commits only the accepted candidate to variety, readability, and the next transition envelope. */
 export const recordAcceptedLiveEncounter = (
   state: Readonly<LiveEncounterPolicyState>,
@@ -386,20 +504,21 @@ export const recordAcceptedLiveEncounter = (
   if (readability.status !== 'reserved') {
     throw new TypeError('Only a readability-reserved encounter may enter the live stream.');
   }
-  const bounds = Object.freeze({
-    ceilingY: constraints.playableTop + reachability.playerExtents.top,
-    floorY: constraints.playableBottom - reachability.playerExtents.bottom,
-  });
+  const exitEnvelope = deriveLiveEncounterExitEnvelope(
+    state.exitEnvelope,
+    pattern,
+    patternStartDistance,
+    scrollSpeed,
+    reachability,
+    constraints,
+  );
+  if (exitEnvelope === null) {
+    throw new TypeError('Accepted encounter must have a representative exit state.');
+  }
 
   return Object.freeze({
     ...state,
-    exitEnvelope: advanceExitEnvelope(
-      state.exitEnvelope,
-      patternStartDistance + pattern.runLength,
-      scrollSpeed,
-      reachability.flightTuning,
-      bounds,
-    ),
+    exitEnvelope,
     readability: readability.state,
     variety: recordAcceptedEncounterForVariety(state.variety, pattern, config.variety),
   });
