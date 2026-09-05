@@ -3,7 +3,7 @@ import { PROTOTYPE_RUN_MOTION_DEFAULTS } from '../../src/config/RunMotionConfig'
 import { TimeService } from '../../src/core/TimeService';
 import { PROTOTYPE_LIVE_RUN_SEED } from '../../src/generation/GeneratedHazardStream';
 import { scheduleNextPattern } from '../../src/generation/PatternSpawnScheduler';
-import { PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES } from '../../src/generation/PrototypeHazardPatternFixtures';
+import { PROTOTYPE_VERTICAL_PATROL_PATTERN } from '../../src/generation/PrototypeHazardPatternFixtures';
 import { createRunGenerationState } from '../../src/generation/RunGenerationState';
 import {
   createHazardBehavior,
@@ -48,6 +48,34 @@ describe('geometric hazard archetype', () => {
     });
     expect(JSON.parse(JSON.stringify(behavior))).toEqual(behavior);
     expect(Object.isFrozen(behavior)).toBe(true);
+  });
+
+  it('deeply snapshots a serializable timed pulse behavior identity', () => {
+    const source = {
+      archetype: 'timed' as const,
+      kind: 'pulse' as const,
+      lifecycle: {
+        durations: { warningSeconds: 1, lockSeconds: 0.25, activeSeconds: 0.75 },
+        warningGeometry: { leftOffset: -32, rightOffset: 32, topOffset: -32, bottomOffset: 32 },
+      },
+    };
+    const behavior = createHazardBehavior(source);
+    source.lifecycle.durations.warningSeconds = 10;
+
+    expect(behavior).toEqual({
+      archetype: 'timed',
+      kind: 'pulse',
+      lifecycle: {
+        durations: { warningSeconds: 1, lockSeconds: 0.25, activeSeconds: 0.75 },
+        warningGeometry: { leftOffset: -32, rightOffset: 32, topOffset: -32, bottomOffset: 32 },
+      },
+    });
+    expect(JSON.parse(JSON.stringify(behavior))).toEqual(behavior);
+    expect(Object.isFrozen(behavior)).toBe(true);
+    if (behavior.kind === 'pulse') {
+      expect(Object.isFrozen(behavior.lifecycle)).toBe(true);
+      expect(Object.isFrozen(behavior.lifecycle.durations)).toBe(true);
+    }
   });
 
   it('resolves a deterministic triangle-wave patrol from absolute run progress', () => {
@@ -118,7 +146,7 @@ describe('geometric hazard archetype', () => {
   it('replays the same moving spawn and positions from the same seed and progression', () => {
     const createReplay = () => {
       const schedule = scheduleNextPattern({
-        catalog: PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES,
+        catalog: [PROTOTYPE_VERTICAL_PATROL_PATTERN],
         patternStartDistance: 2_000,
         state: createRunGenerationState(PROTOTYPE_LIVE_RUN_SEED),
       });

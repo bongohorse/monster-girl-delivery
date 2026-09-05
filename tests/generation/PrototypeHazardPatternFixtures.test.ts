@@ -5,6 +5,7 @@ import {
   PROTOTYPE_LINE_PATTERN,
   PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES,
   PROTOTYPE_OFFSET_PAIR_PATTERN,
+  PROTOTYPE_TIMED_PULSE_PATTERN,
   PROTOTYPE_VERTICAL_PATROL_PATTERN,
 } from '../../src/generation/PrototypeHazardPatternFixtures';
 
@@ -89,6 +90,7 @@ describe('prototype hazard pattern fixtures', () => {
     expect(PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES).toEqual([
       ...PROTOTYPE_HAZARD_PATTERN_FIXTURES,
       PROTOTYPE_VERTICAL_PATROL_PATTERN,
+      PROTOTYPE_TIMED_PULSE_PATTERN,
     ]);
     expect(PROTOTYPE_VERTICAL_PATROL_PATTERN.profile).toEqual({
       behaviorTags: ['moving-barrier'],
@@ -110,5 +112,37 @@ describe('prototype hazard pattern fixtures', () => {
     expect(JSON.stringify(PROTOTYPE_VERTICAL_PATROL_PATTERN)).not.toMatch(
       /viewport|screen|phaser/i,
     );
+  });
+
+  it('adds an explicitly profiled timed pulse with deeply immutable lifecycle data', () => {
+    expect(PROTOTYPE_TIMED_PULSE_PATTERN.profile).toEqual({
+      behaviorTags: ['timed-pulse'],
+      difficultyTierRange: { minimumTierIndex: 1, maximumTierIndex: null },
+      pacingIntensities: ['low', 'medium', 'high', 'peak'],
+      pressureCost: 1,
+      readabilityCost: 3,
+      varietyFamilyId: 'timed-pulse',
+    });
+    expect(PROTOTYPE_TIMED_PULSE_PATTERN.entries[0]?.behavior).toEqual({
+      archetype: 'timed',
+      kind: 'pulse',
+      lifecycle: {
+        durations: { warningSeconds: 1.6, lockSeconds: 0.25, activeSeconds: 0.9 },
+        warningGeometry: {
+          leftOffset: -42,
+          rightOffset: 42,
+          topOffset: -42,
+          bottomOffset: 42,
+        },
+      },
+    });
+    const behavior = PROTOTYPE_TIMED_PULSE_PATTERN.entries[0]?.behavior;
+    expect(Object.isFrozen(behavior)).toBe(true);
+    if (behavior?.kind === 'pulse') {
+      expect(Object.isFrozen(behavior.lifecycle)).toBe(true);
+      expect(Object.isFrozen(behavior.lifecycle.durations)).toBe(true);
+      expect(Object.isFrozen(behavior.lifecycle.warningGeometry)).toBe(true);
+    }
+    expect(JSON.stringify(PROTOTYPE_TIMED_PULSE_PATTERN)).not.toMatch(/viewport|screen|phaser/i);
   });
 });

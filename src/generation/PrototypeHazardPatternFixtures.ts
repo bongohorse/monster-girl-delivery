@@ -118,6 +118,44 @@ export const PROTOTYPE_VERTICAL_PATROL_PATTERN = createHazardPattern({
   ],
 });
 
+/** PROTOTYPE one-shot timed pulse; lifecycle tuning and presentation are not production content. */
+export const PROTOTYPE_TIMED_PULSE_PATTERN = createHazardPattern({
+  id: 'prototype-timed-pulse',
+  runLength: 600,
+  profile: {
+    behaviorTags: ['timed-pulse'],
+    difficultyTierRange: { minimumTierIndex: 1, maximumTierIndex: null },
+    pacingIntensities: ['low', 'medium', 'high', 'peak'],
+    pressureCost: 1,
+    readabilityCost: 3,
+    varietyFamilyId: 'timed-pulse',
+  },
+  entries: [
+    {
+      behavior: {
+        archetype: 'timed',
+        kind: 'pulse',
+        lifecycle: {
+          durations: {
+            warningSeconds: 1.6,
+            lockSeconds: 0.25,
+            activeSeconds: 0.9,
+          },
+          warningGeometry: {
+            leftOffset: -42,
+            rightOffset: 42,
+            topOffset: -42,
+            bottomOffset: 42,
+          },
+        },
+      },
+      id: 'timed-pulse-1',
+      type: 'placeholder-barrier',
+      hitbox: { left: 120, right: 184, top: 155, bottom: 219 },
+    },
+  ],
+});
+
 export const PROTOTYPE_HAZARD_PATTERN_FIXTURES = Object.freeze([
   PROTOTYPE_LINE_PATTERN,
   PROTOTYPE_CORRIDOR_PATTERN,
@@ -128,4 +166,5 @@ export const PROTOTYPE_HAZARD_PATTERN_FIXTURES = Object.freeze([
 export const PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES = Object.freeze([
   ...PROTOTYPE_HAZARD_PATTERN_FIXTURES,
   PROTOTYPE_VERTICAL_PATROL_PATTERN,
+  PROTOTYPE_TIMED_PULSE_PATTERN,
 ]);

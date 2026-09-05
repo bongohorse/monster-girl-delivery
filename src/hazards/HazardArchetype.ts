@@ -1,6 +1,10 @@
 import type { LogicalHazard, LogicalHitbox } from '../systems/HazardCollision';
+import {
+  createTelegraphedHazardLifecycleConfig,
+  type TelegraphedHazardLifecycleConfig,
+} from './TelegraphedHazardLifecycle';
 
-export type HazardArchetype = 'geometric';
+export type HazardArchetype = 'geometric' | 'timed';
 
 export interface StaticGeometricHazardBehavior {
   readonly archetype: 'geometric';
@@ -17,7 +21,17 @@ export interface VerticalPatrolHazardBehavior {
   readonly phaseOffset: number;
 }
 
-export type HazardBehavior = StaticGeometricHazardBehavior | VerticalPatrolHazardBehavior;
+/** PROTOTYPE one-shot pulse that is safe while warning/locked and lethal only while active. */
+export interface TimedPulseHazardBehavior {
+  readonly archetype: 'timed';
+  readonly kind: 'pulse';
+  readonly lifecycle: Readonly<TelegraphedHazardLifecycleConfig>;
+}
+
+export type HazardBehavior =
+  | StaticGeometricHazardBehavior
+  | TimedPulseHazardBehavior
+  | VerticalPatrolHazardBehavior;
 
 export interface BehavioralLogicalHazard extends LogicalHazard {
   readonly behavior: Readonly<HazardBehavior>;
@@ -38,8 +52,15 @@ const assertPositiveFinite = (value: number, name: string): void => {
 };
 
 const assertValidHazardBehavior = (definition: Readonly<HazardBehavior>): void => {
-  if (definition.archetype !== 'geometric') {
-    throw new TypeError(`Unsupported hazard archetype: ${definition.archetype}`);
+  const rawDefinition = definition as { readonly archetype: unknown; readonly kind: unknown };
+  const supportedPair =
+    (rawDefinition.archetype === 'geometric' &&
+      (rawDefinition.kind === 'static' || rawDefinition.kind === 'vertical-patrol')) ||
+    (rawDefinition.archetype === 'timed' && rawDefinition.kind === 'pulse');
+  if (!supportedPair) {
+    throw new TypeError(
+      `Unsupported hazard behavior: ${String(rawDefinition.archetype)}/${String(rawDefinition.kind)}`,
+    );
   }
 
   switch (definition.kind) {
@@ -57,6 +78,9 @@ const assertValidHazardBehavior = (definition: Readonly<HazardBehavior>): void =
       }
 
       return;
+    case 'pulse':
+      createTelegraphedHazardLifecycleConfig(definition.lifecycle);
+      return;
     default:
       throw new TypeError(
         `Unsupported hazard behavior kind: ${String(
@@ -71,10 +95,23 @@ export const createHazardBehavior = (
   definition: Readonly<HazardBehavior>,
 ): Readonly<HazardBehavior> => {
   assertValidHazardBehavior(definition);
-  return definition.kind === 'static'
-    ? STATIC_GEOMETRIC_HAZARD_BEHAVIOR
-    : Object.freeze({ ...definition });
+  switch (definition.kind) {
+    case 'static':
+      return STATIC_GEOMETRIC_HAZARD_BEHAVIOR;
+    case 'vertical-patrol':
+      return Object.freeze({ ...definition });
+    case 'pulse':
+      return Object.freeze({
+        ...definition,
+        lifecycle: createTelegraphedHazardLifecycleConfig(definition.lifecycle),
+      });
+  }
 };
+
+export const isTimedPulseHazardBehavior = (
+  behavior: Readonly<HazardBehavior>,
+): behavior is Readonly<TimedPulseHazardBehavior> =>
+  behavior.archetype === 'timed' && behavior.kind === 'pulse';
 
 export const isBehavioralLogicalHazard = (
   hazard: Readonly<LogicalHazard>,
@@ -96,7 +133,7 @@ export const resolveHazardHitboxAtRunDistance = (
     throw new RangeError('Hazard behavior currentRunDistance must be non-negative and finite.');
   }
 
-  if (!isBehavioralLogicalHazard(hazard) || hazard.behavior.kind === 'static') {
+  if (!isBehavioralLogicalHazard(hazard) || hazard.behavior.kind !== 'vertical-patrol') {
     return hazard.hitbox;
   }
 
@@ -133,7 +170,7 @@ export const getHazardSweptHitbox = (
 ): Readonly<LogicalHitbox> => {
   assertValidHazardBehavior(hazard.behavior);
   const behavior = hazard.behavior;
-  if (behavior.kind === 'static') {
+  if (behavior.kind !== 'vertical-patrol') {
     return hazard.hitbox;
   }
 
