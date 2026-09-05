@@ -4,6 +4,7 @@ import {
   createDifficultyReactionTimeConstraint,
 } from '../difficulty/DifficultySystem';
 import { PROTOTYPE_PLAYER_COLLISION_EXTENTS } from '../systems/HazardCollision';
+import type { EncounterStreamObservation } from './EncounterStreamObservation';
 import {
   type PatternReachabilityContext,
   PROTOTYPE_PATTERN_REACHABILITY_CONTEXT,
@@ -80,6 +81,8 @@ export interface GeneratedHazardStreamState {
 }
 
 export interface GeneratedHazardStreamContext {
+  /** Development observers receive existing decision evidence; absent in production. */
+  readonly observeEncounter?: (observation: Readonly<EncounterStreamObservation>) => void;
   readonly catalog: ReadonlyArray<Readonly<HazardPattern>>;
   readonly config?: Readonly<GeneratedHazardStreamConfig>;
   readonly constraints?: Readonly<PatternValidationConstraints>;
@@ -393,6 +396,12 @@ const fillPolicySpawnWindow = (
     );
 
     if (intrinsicallyEligible.length === 0) {
+      context.observeEncounter?.({
+        kind: 'no-content',
+        runDistance,
+        patternStartDistance: nextPatternStartDistance,
+        selection,
+      });
       nextPatternStartDistance = selection.nextPolicyBoundaryDistance;
       continue;
     }
@@ -406,6 +415,13 @@ const fillPolicySpawnWindow = (
 
     // Existing active reservations can clear only through normalized simulation time.
     if (availablePrimary.length === 0 && availableDeferred.length === 0) {
+      context.observeEncounter?.({
+        kind: 'readability-deferred',
+        runDistance,
+        patternStartDistance: nextPatternStartDistance,
+        selection,
+        readability: intrinsicallyEligible[0]?.decision,
+      });
       nextPatternStartDistance = windowEnd + Math.max(1, schedulingWindow.minimumReactionDistance);
       break;
     }
@@ -422,6 +438,7 @@ const fillPolicySpawnWindow = (
       schedulingWindow.scrollSpeed,
     );
     let acceptedSchedule: ReturnType<typeof scheduleNextPattern> | null = null;
+    let fallbackUsed = selection.variety.fallbackUsed;
 
     for (const evaluations of [availablePrimary, availableDeferred]) {
       if (evaluations.length === 0) {
@@ -438,9 +455,17 @@ const fillPolicySpawnWindow = (
       });
       generationState = schedule.state;
       if (schedule.status === 'accepted') {
+        fallbackUsed ||= evaluations === availableDeferred;
         acceptedSchedule = schedule;
         break;
       }
+      context.observeEncounter?.({
+        kind: 'scheduler-rejected',
+        runDistance,
+        patternStartDistance: nextPatternStartDistance,
+        selection,
+        schedule,
+      });
     }
 
     if (acceptedSchedule === null) {
@@ -465,6 +490,13 @@ const fillPolicySpawnWindow = (
         selection.constraints,
       ) === null
     ) {
+      context.observeEncounter?.({
+        kind: 'trajectory-rejected',
+        runDistance,
+        patternStartDistance: nextPatternStartDistance,
+        selection,
+        schedule: acceptedSchedule,
+      });
       nextPatternStartDistance = windowEnd + Math.max(1, schedulingWindow.minimumReactionDistance);
       break;
     }
@@ -480,10 +512,26 @@ const fillPolicySpawnWindow = (
       }),
     );
     if (acceptedSpawns.some((spawn) => !spawn.approachTiming.meetsMinimumReactionTime)) {
+      context.observeEncounter?.({
+        kind: 'reaction-rejected',
+        runDistance,
+        patternStartDistance: nextPatternStartDistance,
+        selection,
+        schedule: acceptedSchedule,
+      });
       nextPatternStartDistance = windowEnd + Math.max(1, schedulingWindow.minimumReactionDistance);
       break;
     }
     retainedSpawns.push(...acceptedSpawns);
+    context.observeEncounter?.({
+      kind: 'accepted',
+      runDistance,
+      patternStartDistance: nextPatternStartDistance,
+      selection,
+      schedule: acceptedSchedule,
+      readability: acceptedEvaluation.decision,
+      fallbackUsed,
+    });
     policyState = recordAcceptedLiveEncounter(
       policyState,
       acceptedEvaluation.pattern,
@@ -655,6 +703,12 @@ export const advanceGeneratedHazardStream = (
 
   // Leave recovery space while accepted content drains under its original motion/tuning.
   if (parametersDeferred || !scheduleEncounters) {
+    if (parametersDeferred)
+      context.observeEncounter?.({
+        kind: 'parameters-deferred',
+        runDistance,
+        patternStartDistance: adjustedState.nextPatternStartDistance,
+      });
     return freezeState({ ...adjustedState, policy, runDistance, schedulingWindow });
   }
 

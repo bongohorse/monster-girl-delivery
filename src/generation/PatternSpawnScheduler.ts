@@ -69,6 +69,7 @@ interface PatternSpawnScheduleBase {
 }
 
 export interface AcceptedPatternSpawnSchedule extends PatternSpawnScheduleBase {
+  readonly transitionValidation: Readonly<EncounterTransitionValidationResult> | null;
   readonly catalogIndex: number;
   readonly nextPatternStartDistance: number;
   readonly patternId: string;
@@ -177,8 +178,9 @@ export const scheduleNextPattern = (
       continue;
     }
 
+    let transitionValidation: Readonly<EncounterTransitionValidationResult> | null = null;
     if (request.transition !== undefined) {
-      const transitionValidation = validateEncounterTransition(
+      transitionValidation = validateEncounterTransition(
         candidate.pattern,
         request.patternStartDistance,
         constraints,
@@ -208,6 +210,7 @@ export const scheduleNextPattern = (
 
     return Object.freeze({
       status: 'accepted',
+      transitionValidation,
       attempts: attempt,
       catalogIndex: candidate.catalogIndex,
       patternId: candidate.pattern.id,

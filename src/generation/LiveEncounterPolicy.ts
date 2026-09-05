@@ -45,6 +45,7 @@ import {
   createEncounterVarietyHistoryState,
   type EncounterVarietyHistoryState,
   type EncounterVarietyPolicy,
+  type EncounterVarietySelection,
   PROTOTYPE_ENCOUNTER_VARIETY_POLICY,
   recordAcceptedEncounterForVariety,
   selectPatternsForVariety,
@@ -81,6 +82,7 @@ export interface LiveEncounterPolicyState {
 }
 
 export interface LiveEncounterCandidateSelection {
+  readonly variety: Readonly<EncounterVarietySelection>;
   readonly constraints: Readonly<PatternValidationConstraints>;
   readonly deferredCatalog: ReadonlyArray<Readonly<HazardPattern>>;
   readonly difficulty: Readonly<DifficultySnapshot>;
@@ -200,6 +202,7 @@ export const selectLiveEncounterCandidates = (
 
   return Object.freeze({
     constraints: createDifficultyPatternValidationConstraints(difficulty, baseConstraints),
+    variety,
     deferredCatalog: variety.deferredCatalog,
     difficulty,
     nextPolicyBoundaryDistance: getNextPolicyBoundaryDistance(difficulty, pacing),

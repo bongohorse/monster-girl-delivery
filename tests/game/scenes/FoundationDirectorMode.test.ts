@@ -91,6 +91,8 @@ vi.mock('../../../src/devtools/DirectorPanel', () => ({
     constructor() {
       directorPanelConstructed();
     }
+    destroy() {}
+    reset() {}
     layout() {}
     update() {}
   },

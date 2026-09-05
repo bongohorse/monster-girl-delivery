@@ -83,7 +83,7 @@ const createFoundationHarness = () => {
   const services = createAppServices();
   const foundation = new Foundation(services, true);
   const viewportService = new ViewportService(400, 800);
-  const directorPanel = { layout: vi.fn(), update: vi.fn() };
+  const directorPanel = { layout: vi.fn(), update: vi.fn(), destroy: vi.fn(), reset: vi.fn() };
   const directorRunControls = { destroy: vi.fn(), layout: vi.fn() };
   const directorTuningControls = { destroy: vi.fn(), layout: vi.fn() };
   const generatedHazardPresentation = { destroy: vi.fn(), sync: vi.fn() };
@@ -256,7 +256,8 @@ describe('Foundation scene gameplay orchestration', () => {
       viewportService.getSnapshot(),
       services.input.getSnapshot(),
       services.lifecycle.getSnapshot(),
-      getHazardStream(foundation).generationState.seed,
+      getHazardStream(foundation),
+      getTelegraphedHazardState(foundation),
     );
   });
 

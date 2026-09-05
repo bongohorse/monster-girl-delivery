@@ -1,19 +1,48 @@
 import type { Scene } from 'phaser';
 import type { LifecycleSnapshot } from '../core/LifecycleService';
 import type { ViewportSnapshot } from '../core/ViewportService';
-import type { InputSnapshot } from '../input/InputService';
+import type { GeneratedHazardStreamState } from '../generation/GeneratedHazardStream';
+import type { TelegraphedHazardSimulationState } from '../hazards/TelegraphedHazardSimulation';
+import type { InputService, InputSnapshot } from '../input/InputService';
+import {
+  DIRECTOR_DIAGNOSTIC_PAGES,
+  DirectorEncounterDiagnostics,
+} from './DirectorEncounterDiagnostics';
 import {
   createDirectorResponsiveLayout,
   DIRECTOR_DIAGNOSTICS_PANEL_HEIGHT,
 } from './DirectorResponsiveLayout';
 
-/** Minimal read-only diagnostics for Director device testing. */
+export const fitDirectorDiagnosticLines = (lines: readonly string[], width: number): string[] => {
+  const columns = Math.max(1, Math.floor(width / 6.6));
+  return lines
+    .slice(0, 8)
+    .map((line) => (line.length <= columns ? line : `${line.slice(0, columns - 1)}…`));
+};
+
+interface DirectorPageLifecycleTarget {
+  addEventListener(type: 'pagehide', listener: EventListener): void;
+  removeEventListener(type: 'pagehide', listener: EventListener): void;
+}
+
+/** Paged, read-only evidence at 4 Hz inside the existing Director footprint. */
 export class DirectorPanel {
   private readonly background: Phaser.GameObjects.Rectangle;
   private readonly text: Phaser.GameObjects.Text;
+  private readonly pageButton: Phaser.GameObjects.Text;
+  private readonly evidence = new DirectorEncounterDiagnostics();
+  readonly observeEncounter = this.evidence.observe;
   private elapsedSinceRefresh = Number.POSITIVE_INFINITY;
+  private page = 0;
+  private textWidth = 336;
+  private activePointerId: number | null = null;
+  private destroyed = false;
 
-  constructor(scene: Scene) {
+  constructor(
+    private readonly scene: Scene,
+    private readonly inputService: InputService,
+    private readonly pageLifecycleTarget: DirectorPageLifecycleTarget = window,
+  ) {
     this.background = scene.add
       .rectangle(0, 0, 360, DIRECTOR_DIAGNOSTICS_PANEL_HEIGHT, 0x080a14, 0.88)
       .setOrigin(0)
@@ -22,23 +51,54 @@ export class DirectorPanel {
     this.text = scene.add
       .text(0, 0, '', {
         color: '#eaf1ff',
-        fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-        fontSize: '13px',
-        lineSpacing: 3,
+        fontFamily: 'monospace',
+        fontSize: '11px',
+        lineSpacing: 2,
       })
       .setScrollFactor(0)
       .setDepth(10_001);
+    this.pageButton = scene.add
+      .text(0, 0, '', {
+        color: '#ffffff',
+        backgroundColor: '#26314f',
+        fontFamily: 'monospace',
+        fontSize: '12px',
+        padding: { y: 4 },
+        align: 'center',
+      })
+      .setScrollFactor(0)
+      .setDepth(10_002)
+      .setInteractive();
+    this.pageButton.on('pointerdown', this.handlePointerDown);
+    this.pageButton.on('pointerup', this.handlePointerUp);
+    this.pageButton.on('pointerout', this.cancelInteraction);
+    this.pageButton.on('pointerupoutside', this.cancelInteraction);
+    this.pageButton.on('pointercancel', this.cancelInteraction);
+    this.scene.game.canvas.addEventListener('pointercancel', this.cancelInteraction);
+    this.scene.game.events.on('blur', this.cancelInteraction);
+    this.scene.game.events.on('hidden', this.cancelInteraction);
+    this.pageLifecycleTarget.addEventListener('pagehide', this.cancelInteraction);
+    this.refreshTitle();
+  }
+
+  reset(): void {
+    this.evidence.reset();
+    this.elapsedSinceRefresh = Number.POSITIVE_INFINITY;
+    this.cancelInteraction();
   }
 
   layout(viewport: ViewportSnapshot): void {
+    if (this.destroyed) return;
     const { diagnostics } = createDirectorResponsiveLayout(viewport);
-
+    this.textWidth = Math.max(1, diagnostics.width - 24);
     this.background
       .setPosition(diagnostics.x, diagnostics.y)
       .setSize(diagnostics.width, diagnostics.height);
-    this.text
-      .setPosition(diagnostics.x + 12, diagnostics.y + 10)
-      .setWordWrapWidth(Math.max(40, diagnostics.width - 24));
+    this.pageButton
+      .setPosition(diagnostics.x + 12, diagnostics.y + 8)
+      .setFixedSize(this.textWidth, 24);
+    this.text.setPosition(diagnostics.x + 12, diagnostics.y + 40);
+    this.cancelInteraction();
     this.elapsedSinceRefresh = Number.POSITIVE_INFINITY;
   }
 
@@ -47,29 +107,75 @@ export class DirectorPanel {
     viewport: ViewportSnapshot,
     input: InputSnapshot,
     lifecycle: LifecycleSnapshot,
-    runSeed: number,
+    stream: Readonly<GeneratedHazardStreamState>,
+    telegraphs: Readonly<TelegraphedHazardSimulationState>,
   ): void {
-    this.elapsedSinceRefresh += frameDeltaMilliseconds;
-
-    if (this.elapsedSinceRefresh < 250) {
-      return;
-    }
-
+    if (this.destroyed) return;
+    if (lifecycle.paused) this.cancelInteraction();
+    if (this.page === DIRECTOR_DIAGNOSTIC_PAGES.length - 1) return;
+    this.elapsedSinceRefresh += Math.max(
+      0,
+      Number.isFinite(frameDeltaMilliseconds) ? frameDeltaMilliseconds : 0,
+    );
+    if (this.elapsedSinceRefresh < 250) return;
     this.elapsedSinceRefresh = 0;
-    const pointer = input.pointerHeld
-      ? `${input.pointerSource ?? 'unknown'} #${input.activePointerId ?? '?'}`
-      : 'none';
-    const pauseState = lifecycle.paused ? lifecycle.pauseReasons.join(', ') : 'running';
+    this.text.setText(
+      fitDirectorDiagnosticLines(
+        this.evidence.lines(this.page, { viewport, input, lifecycle, stream, telegraphs }),
+        this.textWidth,
+      ),
+    );
+  }
 
-    this.text.setText([
-      'DIRECTOR DIAGNOSTICS — M3',
-      `Seed: ${runSeed}`,
-      `Viewport: ${Math.round(viewport.width)} × ${Math.round(viewport.height)}`,
-      `Orientation: ${viewport.orientation}`,
-      `Pointer: ${pointer} | Space: ${input.spaceHeld ? 'held' : 'up'}`,
-      `Thrust intent: ${input.thrustHeld ? 'held' : 'idle'}`,
-      `Gameplay blocked: ${input.gameplayBlocked ? 'yes' : 'no'}`,
-      `Lifecycle: ${pauseState}`,
-    ]);
+  destroy(): void {
+    if (this.destroyed) return;
+    this.destroyed = true;
+    this.cancelInteraction();
+    this.scene.game.canvas.removeEventListener('pointercancel', this.cancelInteraction);
+    this.scene.game.events.off('blur', this.cancelInteraction);
+    this.scene.game.events.off('hidden', this.cancelInteraction);
+    this.pageLifecycleTarget.removeEventListener('pagehide', this.cancelInteraction);
+    this.pageButton.destroy();
+    this.text.destroy();
+    this.background.destroy();
+    this.evidence.reset();
+  }
+
+  private readonly handlePointerDown = (
+    pointer: { id: number },
+    _x: number,
+    _y: number,
+    event: { stopPropagation(): void },
+  ): void => {
+    event.stopPropagation();
+    if (this.activePointerId !== null) return;
+    this.activePointerId = pointer.id;
+    this.inputService.setGameplayBlocked(true);
+  };
+
+  private readonly handlePointerUp = (
+    pointer: { id: number },
+    _x: number,
+    _y: number,
+    event: { stopPropagation(): void },
+  ): void => {
+    event.stopPropagation();
+    if (pointer.id !== this.activePointerId) return;
+    this.cancelInteraction();
+    this.page = (this.page + 1) % DIRECTOR_DIAGNOSTIC_PAGES.length;
+    this.text.setText('');
+    this.refreshTitle();
+    this.elapsedSinceRefresh = Number.POSITIVE_INFINITY;
+  };
+
+  private readonly cancelInteraction = (): void => {
+    if (this.activePointerId !== null) this.inputService.setGameplayBlocked(false);
+    this.activePointerId = null;
+  };
+
+  private refreshTitle(): void {
+    this.pageButton.setText(
+      `M4 ${DIRECTOR_DIAGNOSTIC_PAGES[this.page]} ${this.page + 1}/${DIRECTOR_DIAGNOSTIC_PAGES.length} ›`,
+    );
   }
 }
