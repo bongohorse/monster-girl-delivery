@@ -33,8 +33,12 @@ GitHub Issues/PRs are the live execution trail. Completed milestone reports are 
 | Browse unapproved future ideas | [`BACKLOG.md`](BACKLOG.md) |
 | Review Endless Runner / Jetpack Joyride lessons | [`ENDLESS_RUNNER_BLUEPRINT.md`](ENDLESS_RUNNER_BLUEPRINT.md) |
 | Review the detailed Jetpack Joyride wiki research pass | [`JETPACK_JOYRIDE_WIKI_RESEARCH.md`](JETPACK_JOYRIDE_WIKI_RESEARCH.md) |
+| Review the deeper Jetpack Joyride systems/content-grammar analysis | [`JETPACK_JOYRIDE_WIKI_DEEP_DIVE.md`](JETPACK_JOYRIDE_WIKI_DEEP_DIVE.md) |
 | Understand technical boundaries | [`../ARCHITECTURE.md`](../ARCHITECTURE.md) |
 | See commands, CI, testing, Codespaces, or closeout workflow | [`../DEVELOPMENT.md`](../DEVELOPMENT.md) |
+| See human ↔ AI orchestration | [`AI_WORKFLOW.md`](AI_WORKFLOW.md) |
+| Use Jules as a GitHub-native assistant safely | [`JULES_WORKFLOW.md`](JULES_WORKFLOW.md) |
+| Review AI GitHub authentication/permissions | [`GITHUB_AI_ACCESS.md`](GITHUB_AI_ACCESS.md) |
 | Review completed milestones | [`milestones/README.md`](milestones/README.md) |
 | Review M1 real-device evidence | [`milestones/M1-device-report.md`](milestones/M1-device-report.md) |
 
@@ -72,6 +76,8 @@ ARCHITECTURE.md / DEVELOPMENT.md as required
 existing code + tests
 ```
 
+Jules-specific dispatch/review/environment rules live in [`JULES_WORKFLOW.md`](JULES_WORKFLOW.md). They supplement rather than replace `AGENTS.md`.
+
 Do not load the entire backlog/reference library as implementation requirements.
 
 ---
@@ -89,10 +95,12 @@ A **current explicit Game Director decision** controls product intent. Living do
 | [`../DEVELOPMENT.md`](../DEVELOPMENT.md) | commands, verification, Codespaces, CI, PR mechanics, milestone closeout process | product/game design |
 | [`../AGENTS.md`](../AGENTS.md) | mandatory coding-agent behavior and scope discipline | product design |
 | [`AI_WORKFLOW.md`](AI_WORKFLOW.md) | human/AI coordination and role orchestration | authentication setup, product scope |
-| [`GITHUB_AI_ACCESS.md`](GITHUB_AI_ACCESS.md) | GitHub/Codespaces authentication and repository permissions | merge approval policy or product decisions |
+| [`JULES_WORKFLOW.md`](JULES_WORKFLOW.md) | Jules-specific dispatch, planning/review, evidence/trust, concurrency, scheduled-task, and environment rules | product scope, general agent rules |
+| [`GITHUB_AI_ACCESS.md`](GITHUB_AI_ACCESS.md) | GitHub/Codespaces/Jules authentication and repository permissions | merge approval policy or product decisions |
 | [`BACKLOG.md`](BACKLOG.md) | preserved future gameplay/art/content/tooling ideas and open questions | approved current scope |
 | [`ENDLESS_RUNNER_BLUEPRINT.md`](ENDLESS_RUNNER_BLUEPRINT.md) | external design lessons/reference material | MGD requirements |
 | [`JETPACK_JOYRIDE_WIKI_RESEARCH.md`](JETPACK_JOYRIDE_WIKI_RESEARCH.md) | detailed source-backed Jetpack Joyride wiki research and MGD design deductions | approved requirements, milestone scope, final balance/content decisions |
+| [`JETPACK_JOYRIDE_WIKI_DEEP_DIVE.md`](JETPACK_JOYRIDE_WIKI_DEEP_DIVE.md) | deeper Jetpack Joyride system interactions, content grammar, consequence semantics and future design deductions | approved requirements, automatic implementation scope, final balance/content decisions |
 | [`milestones/`](milestones/) | factual completed history and supporting evidence | future planning |
 | Existing code/tests | currently implemented behavior | product intent by themselves |
 
@@ -157,15 +165,19 @@ Use for:
 
 ### `AGENTS.md` — coding-agent contract
 
-Mandatory rules for implementation agents: task entry, scope discipline, architecture/product boundaries, testing, and merge behavior.
+Mandatory rules for implementation agents: task entry, scope discipline, evidence/realism, architecture/product boundaries, testing, and merge behavior.
 
 ### `AI_WORKFLOW.md` — orchestration
 
-Describes how the Game Director, AI coordinator/reviewer, coding agents, GitHub Actions, and Renovate interact.
+Describes how the Game Director, AI coordinator/reviewer, coding agents including Jules, GitHub Actions, and Renovate interact.
+
+### `JULES_WORKFLOW.md` — Jules operating policy
+
+Defines how MGD uses Jules as a supporting implementation/review agent: native GitHub Issue dispatch through the `jules` label, PR feedback through `@Jules`, plan selection, evidence/realism checks, anti-churn rules, concurrency policy, scheduled tasks, and the reproducible Jules environment setup.
 
 ### `GITHUB_AI_ACCESS.md` — permissions/authentication
 
-Describes the repository-scoped PAT/Codespaces model and what repository operations an authenticated agent can technically perform. Operational approval rules still come from `AGENTS.md` / the assigned task.
+Describes the repository-scoped PAT/Codespaces model, the Jules GitHub App model, and what repository operations an authenticated agent can technically perform. Operational approval rules still come from `AGENTS.md` / the assigned task.
 
 ### `BACKLOG.md` — future ideas only
 
@@ -190,6 +202,10 @@ Jetpack Joyride / Endless Runner design lessons. Useful for design research, but
 ### `JETPACK_JOYRIDE_WIKI_RESEARCH.md` — detailed reference supplement
 
 Source-backed notes from a focused Jetpack Joyride Wiki research pass. It records reusable hazard, temporary-mode, collectible-path, mission, loadout, fail-state, event, and progression-layering lessons and maps them onto existing/future MGD Issues. It remains reference material rather than automatic implementation scope.
+
+### `JETPACK_JOYRIDE_WIKI_DEEP_DIVE.md` — deeper systems research
+
+Second-pass research that focuses on interactions between systems rather than feature inventory: global complexity budgeting, hazard-family grammar, movement-mode-specific encounter geometry, consequence classes, chase/set-piece structures, Gear sidegrades, objective taxonomy, achievements, event capability matrices, and historical prototype/deletion lessons. It remains future-design reference material and cannot promote work into the current milestone by itself.
 
 ### `milestones/` — completed history
 
@@ -242,8 +258,11 @@ docs/
 ├── ENDLESS_RUNNER_BLUEPRINT.md   Endless Runner design reference
 ├── JETPACK_JOYRIDE_WIKI_RESEARCH.md
 │                                 Detailed Jetpack Joyride wiki research supplement
+├── JETPACK_JOYRIDE_WIKI_DEEP_DIVE.md
+│                                 Deeper systems/content-grammar research
 ├── AI_WORKFLOW.md                Human ↔ AI orchestration
-├── GITHUB_AI_ACCESS.md           GitHub/Codespaces auth + permissions
+├── JULES_WORKFLOW.md             Jules dispatch/review/trust/environment workflow
+├── GITHUB_AI_ACCESS.md           GitHub/Codespaces/Jules auth + permissions
 ├── GAME_DESIGN_IDEAS.md          Compatibility stub → BACKLOG.md
 ├── ART_DIRECTION_IDEAS.md        Compatibility stub → BACKLOG.md
 └── milestones/
