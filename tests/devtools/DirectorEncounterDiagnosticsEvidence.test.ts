@@ -25,6 +25,12 @@ const policy: LiveEncounterPolicyConfig = {
         maximumPatternEntries: 6,
         maximumHazardsPer1000Distance: 10,
       },
+      {
+        intensity: 'breather',
+        distanceLength: 1_000,
+        maximumPatternEntries: 1,
+        maximumHazardsPer1000Distance: 1,
+      },
     ],
   },
 };
