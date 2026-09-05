@@ -46,6 +46,7 @@ const setup = () => {
     text = objectFake(),
     button = objectFake();
   const canvas = new EventTarget();
+  const pageLifecycle = new EventTarget();
   const events = { on: vi.fn(), off: vi.fn() };
   const scene = {
     add: {
@@ -55,7 +56,7 @@ const setup = () => {
     game: { canvas, events },
   } as unknown as Scene;
   const input = new InputService();
-  const panel = new DirectorPanel(scene, input);
+  const panel = new DirectorPanel(scene, input, pageLifecycle);
   const stream = createGeneratedHazardStream(
     3433278918,
     {
@@ -78,7 +79,19 @@ const setup = () => {
     button.handlers.get('pointerdown')?.({ id }, 0, 0, { stopPropagation: vi.fn() });
     button.handlers.get('pointerup')?.({ id }, 0, 0, { stopPropagation: vi.fn() });
   };
-  return { panel, input, canvas, events, background, text, button, refresh, click, viewport };
+  return {
+    panel,
+    input,
+    canvas,
+    pageLifecycle,
+    events,
+    background,
+    text,
+    button,
+    refresh,
+    click,
+    viewport,
+  };
 };
 describe('DirectorPanel', () => {
   it('displays authoritative values and gates formatting to 4 Hz and visible pages', () => {
@@ -121,10 +134,24 @@ describe('DirectorPanel', () => {
     click();
     panel.destroy();
   });
-  it('cancels on pointer cancellation, resize, and blur and owns cleanup', () => {
-    const { panel, input, button, canvas, events, viewport, background, text, refresh } = setup();
+  it('cancels on pointer cancellation, resize, blur, hidden, and pagehide and owns cleanup', () => {
+    const {
+      panel,
+      input,
+      button,
+      canvas,
+      pageLifecycle,
+      events,
+      viewport,
+      background,
+      text,
+      refresh,
+    } = setup();
     const press = () =>
       button.handlers.get('pointerdown')?.({ id: 1 }, 0, 0, { stopPropagation: vi.fn() });
+    const gameEventHandler = (name: string): Handler | undefined =>
+      events.on.mock.calls.find(([eventName]) => eventName === name)?.[1];
+
     press();
     canvas.dispatchEvent(new Event('pointercancel'));
     expect(input.getSnapshot().gameplayBlocked).toBe(false);
@@ -132,14 +159,24 @@ describe('DirectorPanel', () => {
     panel.layout(viewport);
     expect(input.getSnapshot().gameplayBlocked).toBe(false);
     press();
-    events.on.mock.calls[0]?.[1]();
+    gameEventHandler('blur')?.();
     expect(input.getSnapshot().gameplayBlocked).toBe(false);
+    press();
+    gameEventHandler('hidden')?.();
+    expect(input.getSnapshot().gameplayBlocked).toBe(false);
+    press();
+    pageLifecycle.dispatchEvent(new Event('pagehide'));
+    expect(input.getSnapshot().gameplayBlocked).toBe(false);
+    input.pressPointer(7, 'touch');
+    expect(input.isThrustHeld()).toBe(true);
+    input.releaseAll();
     press();
     panel.destroy();
     panel.destroy();
     refresh();
     expect(input.getSnapshot().gameplayBlocked).toBe(false);
-    expect(events.off).toHaveBeenCalledWith('blur', events.on.mock.calls[0]?.[1]);
+    expect(events.off).toHaveBeenCalledWith('blur', gameEventHandler('blur'));
+    expect(events.off).toHaveBeenCalledWith('hidden', gameEventHandler('hidden'));
     expect(button.destroy).toHaveBeenCalledOnce();
     expect(text.destroy).toHaveBeenCalledOnce();
     expect(background.destroy).toHaveBeenCalledOnce();
