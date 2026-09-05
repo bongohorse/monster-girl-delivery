@@ -318,7 +318,12 @@ const selectRepresentativeExitStates = (
   const byVelocity = [...unique].sort(
     (first, second) => first.velocityY - second.velocityY || first.positionY - second.positionY,
   );
-  const selected = [byPosition[0], byPosition.at(-1), byVelocity[0], byVelocity.at(-1)].filter(
+  const selected = [
+    byPosition[0],
+    byPosition[byPosition.length - 1],
+    byVelocity[0],
+    byVelocity[byVelocity.length - 1],
+  ].filter(
     (state): state is Readonly<{ positionY: number; velocityY: number }> => state !== undefined,
   );
 

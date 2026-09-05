@@ -418,7 +418,7 @@ const fillPolicySpawnWindow = (
       }
     }
 
-    if (acceptedSchedule === null || acceptedSchedule.status === 'exhausted') {
+    if (acceptedSchedule === null) {
       status = 'exhausted';
       break;
     }

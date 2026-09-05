@@ -3,13 +3,19 @@ import { createAppServices } from '../../../src/core/AppServices';
 import { ViewportService } from '../../../src/core/ViewportService';
 import { createPrototypeFlightBounds } from '../../../src/game/PrototypeFlightLayout';
 import { Foundation } from '../../../src/game/scenes/Foundation';
+import { PROTOTYPE_PATTERN_REACHABILITY_CONTEXT } from '../../../src/generation/FlightReachability';
 import {
   advanceGeneratedHazardStream,
   createGeneratedHazardStream,
   type GeneratedHazardStreamState,
   PROTOTYPE_LIVE_RUN_SEED,
 } from '../../../src/generation/GeneratedHazardStream';
-import { PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES } from '../../../src/generation/PrototypeHazardPatternFixtures';
+import type { HazardPattern } from '../../../src/generation/HazardPattern';
+import { PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG } from '../../../src/generation/LiveEncounterPolicy';
+import {
+  PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES,
+  PROTOTYPE_OFFSET_PAIR_PATTERN,
+} from '../../../src/generation/PrototypeHazardPatternFixtures';
 import { resolveHazardHitboxAtRunDistance } from '../../../src/hazards/HazardArchetype';
 import {
   createTelegraphedHazardSimulationState,
@@ -41,9 +47,36 @@ const getTelegraphedHazardState = (
   foundation: Foundation,
 ): Readonly<TelegraphedHazardSimulationState> =>
   Reflect.get(foundation, 'telegraphedHazardState') as Readonly<TelegraphedHazardSimulationState>;
-const TEST_HAZARD_STREAM_CONTEXT = Object.freeze({
-  catalog: PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES,
-});
+const createTestHazardStreamContext = (
+  services: ReturnType<typeof createAppServices>,
+  catalog: ReadonlyArray<Readonly<HazardPattern>> = PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES,
+) =>
+  Object.freeze({
+    catalog,
+    policy: PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG,
+    reachability: Object.freeze({
+      flightState: PROTOTYPE_PATTERN_REACHABILITY_CONTEXT.flightState,
+      flightTuning: services.flightTuning.getSnapshot(),
+      playerExtents: PROTOTYPE_PATTERN_REACHABILITY_CONTEXT.playerExtents,
+    }),
+  });
+
+const createLowPhaseHazardStream = (services: ReturnType<typeof createAppServices>) => {
+  const context = createTestHazardStreamContext(services, [PROTOTYPE_OFFSET_PAIR_PATTERN]);
+  const initial = createGeneratedHazardStream(
+    PROTOTYPE_LIVE_RUN_SEED,
+    context,
+    services.runMotion.getSnapshot(),
+  );
+  const stream = advanceGeneratedHazardStream(
+    initial,
+    1_800,
+    context,
+    services.runMotion.getSnapshot(),
+  );
+
+  return Object.freeze({ context, stream });
+};
 
 const createFoundationHarness = () => {
   const services = createAppServices();
@@ -73,7 +106,7 @@ const createFoundationHarness = () => {
   Reflect.set(foundation, 'generatedHazardPresentation', generatedHazardPresentation);
   const hazardStream = createGeneratedHazardStream(
     PROTOTYPE_LIVE_RUN_SEED,
-    TEST_HAZARD_STREAM_CONTEXT,
+    createTestHazardStreamContext(services),
     services.runMotion.getSnapshot(),
   );
   Reflect.set(foundation, 'hazardStream', hazardStream);
@@ -174,15 +207,26 @@ describe('Foundation scene gameplay orchestration', () => {
 
   it('keeps an unsafe requested speed increase out of the authoritative run path', () => {
     const { foundation, services } = createFoundationHarness();
-    const initialHazardStream = getHazardStream(foundation);
+    const { stream: scheduledHazardStream } = createLowPhaseHazardStream(services);
+
+    expect(scheduledHazardStream.spawns.length).toBeGreaterThan(0);
+
+    Reflect.set(foundation, 'hazardStream', scheduledHazardStream);
+    Reflect.set(foundation, 'runState', {
+      phase: 'running',
+      motion: { distance: scheduledHazardStream.runDistance },
+      flight: { positionY: 400, velocityY: 0 },
+    });
 
     services.runMotion.update({ baseScrollSpeed: 700 });
     foundation.update(0, 0);
 
-    expect(services.runMotion.getSnapshot()).toEqual({ baseScrollSpeed: 350 });
-    expect(getHazardStream(foundation)).toBe(initialHazardStream);
+    expect(services.runMotion.getSnapshot()).toEqual({ baseScrollSpeed: 700 });
+    expect(getHazardStream(foundation)).toBe(scheduledHazardStream);
     expect(getHazardStream(foundation).schedulingWindow.scrollSpeed).toBe(350);
-    expect(getRunMotionState(foundation)).toEqual({ distance: 0 });
+    expect(getRunMotionState(foundation)).toEqual({
+      distance: scheduledHazardStream.runDistance,
+    });
   });
 
   it('keeps player screen-space X stable while the world advances', () => {
@@ -240,13 +284,9 @@ describe('Foundation scene gameplay orchestration', () => {
       scrollingWorldPresentation,
     } = createFoundationHarness();
     const initialHazardStream = getHazardStream(foundation);
-    const progressedHazardStream = advanceGeneratedHazardStream(
-      initialHazardStream,
-      600,
-      TEST_HAZARD_STREAM_CONTEXT,
-      services.runMotion.getSnapshot(),
-    );
-    const collisionHazard = progressedHazardStream.spawns.find(
+    const { context: lowPhaseContext, stream: scheduledHazardStream } =
+      createLowPhaseHazardStream(services);
+    const collisionHazard = scheduledHazardStream.spawns.find(
       (spawn) => spawn.behavior.archetype === 'geometric',
     );
 
@@ -257,6 +297,15 @@ describe('Foundation scene gameplay orchestration', () => {
     const collisionHitbox = resolveHazardHitboxAtRunDistance(
       collisionHazard,
       collisionHazard.hitbox.left,
+    );
+    const collisionRunDistance = collisionHazard.hitbox.left - 17.5;
+    const progressedHazardStream = advanceGeneratedHazardStream(
+      scheduledHazardStream,
+      collisionRunDistance,
+      lowPhaseContext,
+      services.runMotion.getSnapshot(),
+      (collisionRunDistance - scheduledHazardStream.runDistance) /
+        scheduledHazardStream.schedulingWindow.scrollSpeed,
     );
 
     Reflect.set(foundation, 'hazardStream', progressedHazardStream);
