@@ -4,6 +4,14 @@ import { createHazardPattern } from './HazardPattern';
 export const PROTOTYPE_LINE_PATTERN = createHazardPattern({
   id: 'prototype-line',
   runLength: 600,
+  profile: {
+    behaviorTags: ['static-barrier'],
+    difficultyTierRange: { minimumTierIndex: 0, maximumTierIndex: null },
+    pacingIntensities: ['medium', 'high', 'peak'],
+    pressureCost: 3,
+    readabilityCost: 2,
+    varietyFamilyId: 'static-sequence',
+  },
   entries: [
     {
       id: 'line-1',
@@ -27,6 +35,14 @@ export const PROTOTYPE_LINE_PATTERN = createHazardPattern({
 export const PROTOTYPE_CORRIDOR_PATTERN = createHazardPattern({
   id: 'prototype-corridor',
   runLength: 400,
+  profile: {
+    behaviorTags: ['static-barrier'],
+    difficultyTierRange: { minimumTierIndex: 1, maximumTierIndex: null },
+    pacingIntensities: ['medium', 'high', 'peak'],
+    pressureCost: 2,
+    readabilityCost: 2,
+    varietyFamilyId: 'static-corridor',
+  },
   entries: [
     {
       id: 'corridor-top',
@@ -45,6 +61,14 @@ export const PROTOTYPE_CORRIDOR_PATTERN = createHazardPattern({
 export const PROTOTYPE_OFFSET_PAIR_PATTERN = createHazardPattern({
   id: 'prototype-offset-pair',
   runLength: 520,
+  profile: {
+    behaviorTags: ['static-barrier'],
+    difficultyTierRange: { minimumTierIndex: 1, maximumTierIndex: null },
+    pacingIntensities: ['low', 'medium', 'high', 'peak'],
+    pressureCost: 2,
+    readabilityCost: 2,
+    varietyFamilyId: 'static-sequence',
+  },
   entries: [
     {
       id: 'offset-high',

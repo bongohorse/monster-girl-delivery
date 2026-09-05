@@ -11,10 +11,12 @@ import {
   type RunGenerationState,
   stepRunGeneration,
 } from '../../src/generation/RunGenerationState';
+import { TEST_ENCOUNTER_PROFILE } from '../support/TestEncounterProfile';
 
 const INVALID_PATTERN = createHazardPattern({
   id: 'blocked-pattern',
   runLength: 300,
+  profile: TEST_ENCOUNTER_PROFILE,
   entries: [
     {
       id: 'blocked-top',
@@ -32,6 +34,7 @@ const INVALID_PATTERN = createHazardPattern({
 const UNSORTED_VALID_PATTERN = createHazardPattern({
   id: 'unsorted-valid',
   runLength: 500,
+  profile: TEST_ENCOUNTER_PROFILE,
   entries: [
     {
       id: 'later',
@@ -49,6 +52,7 @@ const UNSORTED_VALID_PATTERN = createHazardPattern({
 const UNREACHABLE_UPWARD_PATTERN = createHazardPattern({
   id: 'unreachable-upward',
   runLength: 300,
+  profile: TEST_ENCOUNTER_PROFILE,
   entries: [
     {
       id: 'lower-wall',

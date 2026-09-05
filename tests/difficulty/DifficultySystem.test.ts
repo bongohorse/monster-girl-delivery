@@ -17,10 +17,12 @@ import {
   PROTOTYPE_LINE_PATTERN,
 } from '../../src/generation/PrototypeHazardPatternFixtures';
 import { createRunGenerationState } from '../../src/generation/RunGenerationState';
+import { TEST_ENCOUNTER_PROFILE } from '../support/TestEncounterProfile';
 
 const COMPLEX_PATTERN = createHazardPattern({
   id: 'difficulty-complex',
   runLength: 1_000,
+  profile: TEST_ENCOUNTER_PROFILE,
   entries: [
     {
       id: 'entry-1',
@@ -58,6 +60,7 @@ const COMPLEX_PATTERN = createHazardPattern({
 const DENSE_PATTERN = createHazardPattern({
   id: 'difficulty-dense',
   runLength: 100,
+  profile: TEST_ENCOUNTER_PROFILE,
   entries: [
     {
       id: 'dense-1',

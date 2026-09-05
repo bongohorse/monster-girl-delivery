@@ -19,6 +19,42 @@ describe('prototype hazard pattern fixtures', () => {
       'prototype-offset-pair',
     ]);
     expect(Object.isFrozen(PROTOTYPE_HAZARD_PATTERN_FIXTURES)).toBe(true);
+    expect(
+      PROTOTYPE_HAZARD_PATTERN_FIXTURES.every((pattern) => Object.isFrozen(pattern.profile)),
+    ).toBe(true);
+  });
+
+  it('assigns explicit PROTOTYPE policy profiles to every catalog entry', () => {
+    expect(PROTOTYPE_HAZARD_PATTERN_FIXTURES.map((pattern) => pattern.profile)).toEqual([
+      {
+        behaviorTags: ['static-barrier'],
+        difficultyTierRange: { minimumTierIndex: 0, maximumTierIndex: null },
+        pacingIntensities: ['medium', 'high', 'peak'],
+        pressureCost: 3,
+        readabilityCost: 2,
+        varietyFamilyId: 'static-sequence',
+      },
+      {
+        behaviorTags: ['static-barrier'],
+        difficultyTierRange: { minimumTierIndex: 1, maximumTierIndex: null },
+        pacingIntensities: ['medium', 'high', 'peak'],
+        pressureCost: 2,
+        readabilityCost: 2,
+        varietyFamilyId: 'static-corridor',
+      },
+      {
+        behaviorTags: ['static-barrier'],
+        difficultyTierRange: { minimumTierIndex: 1, maximumTierIndex: null },
+        pacingIntensities: ['low', 'medium', 'high', 'peak'],
+        pressureCost: 2,
+        readabilityCost: 2,
+        varietyFamilyId: 'static-sequence',
+      },
+    ]);
+    expect(
+      new Set(PROTOTYPE_HAZARD_PATTERN_FIXTURES.map((pattern) => pattern.profile.varietyFamilyId))
+        .size,
+    ).toBe(2);
   });
 
   it('represents the line fixture with ordered logical run-distance offsets', () => {

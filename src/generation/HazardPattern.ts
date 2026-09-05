@@ -1,4 +1,5 @@
 import type { LogicalHitbox } from '../systems/HazardCollision';
+import { createEncounterProfile, type EncounterProfile } from './EncounterProfile';
 
 export type HazardPatternEntryType = 'placeholder-barrier';
 
@@ -15,6 +16,8 @@ export interface HazardPattern {
   readonly id: string;
   /** Entries retain this authored order; construction does not sort them. */
   readonly entries: ReadonlyArray<Readonly<HazardPatternEntry>>;
+  /** Explicit immutable metadata for later difficulty, pacing, variety, and readability policy. */
+  readonly profile: Readonly<EncounterProfile>;
   /** Logical run-distance span; every entry must remain within zero through this value. */
   readonly runLength: number;
 }
@@ -92,5 +95,6 @@ export const createHazardPattern = (
     id: definition.id,
     runLength: definition.runLength,
     entries: Object.freeze(entries),
+    profile: createEncounterProfile(definition.profile),
   });
 };

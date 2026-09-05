@@ -9,6 +9,7 @@ import {
   PROTOTYPE_CORRIDOR_PATTERN,
   PROTOTYPE_HAZARD_PATTERN_FIXTURES,
 } from '../../src/generation/PrototypeHazardPatternFixtures';
+import { TEST_ENCOUNTER_PROFILE } from '../support/TestEncounterProfile';
 
 const createEntry = (
   id: string,
@@ -33,6 +34,7 @@ describe('validatePattern', () => {
     const pattern = createHazardPattern({
       id: 'too-narrow',
       runLength: 300,
+      profile: TEST_ENCOUNTER_PROFILE,
       entries: [createEntry('top', 100, 148, 48, 180), createEntry('bottom', 100, 148, 270, 342)],
     });
 
@@ -55,6 +57,7 @@ describe('validatePattern', () => {
     const pattern = createHazardPattern({
       id: 'blocked-route',
       runLength: 300,
+      profile: TEST_ENCOUNTER_PROFILE,
       entries: [createEntry('top', 100, 148, 48, 220), createEntry('bottom', 100, 148, 200, 342)],
     });
 
@@ -77,6 +80,7 @@ describe('validatePattern', () => {
     const pattern = createHazardPattern({
       id: 'too-close',
       runLength: 400,
+      profile: TEST_ENCOUNTER_PROFILE,
       entries: [createEntry('first', 60, 108, 160, 208), createEntry('second', 200, 248, 160, 208)],
     });
 
@@ -99,6 +103,7 @@ describe('validatePattern', () => {
     const pattern = createHazardPattern({
       id: 'exact-minimums',
       runLength: 400,
+      profile: TEST_ENCOUNTER_PROFILE,
       entries: [
         createEntry('top', 100, 148, 48, 171),
         createEntry('bottom', 100, 148, 267, 342),
@@ -113,6 +118,7 @@ describe('validatePattern', () => {
     const upwardCorridor = createHazardPattern({
       id: 'upward-corridor',
       runLength: 300,
+      profile: TEST_ENCOUNTER_PROFILE,
       entries: [createEntry('lower-wall', 100, 148, 180, 342)],
     });
     const baseReachability = {
@@ -150,6 +156,7 @@ describe('validatePattern', () => {
     const downwardCorridor = createHazardPattern({
       id: 'downward-corridor',
       runLength: 300,
+      profile: TEST_ENCOUNTER_PROFILE,
       entries: [createEntry('upper-wall', 100, 148, 48, 200)],
     });
 
@@ -166,6 +173,7 @@ describe('validatePattern', () => {
     const pattern = createHazardPattern({
       id: 'narrow-alternative',
       runLength: 300,
+      profile: TEST_ENCOUNTER_PROFILE,
       entries: [createEntry('middle-wall', 100, 148, 180, 300)],
     });
     const result = validatePattern(pattern, PROTOTYPE_PATTERN_VALIDATION_CONSTRAINTS, {

@@ -174,7 +174,9 @@ M4 difficulty is owned by a pure distance-to-snapshot authority with an explicit
 
 M4 pacing has its own pure distance-to-snapshot authority in `src/pacing/`. An explicit repeating **PROTOTYPE** cycle alternates breather, low, medium, high, and peak pressure. Immutable snapshots expose intensity, cycle/phase indices, distance boundaries, remaining distance, and pressure ceilings for encounter selection and later Director diagnostics. The cycle consumes no PRNG draws and requires an explicit breather in its configuration. Whole logical phase lengths keep cycle boundaries stable; authoritative run distance may be fractional. Pausing progress holds the snapshot, and restarting at zero restores the opening phase.
 
-The pacing adapter requests entry/density limits and a maximum pattern span. For future encounters, callers derive pacing at the proposed pattern start distance so authored spans cannot cross the next phase boundary. Filtering preserves catalog order, may return no matching content, and never falls back to higher pressure. Callers must handle empty selections explicitly, intersect pacing with difficulty eligibility, and retain hard geometry/reachability validation. Typed encounter profiles (#123), full live scheduling/gap handling (#120), and Director panel integration (#86) remain separate focused work; this authority does not yet change the live hazard stream.
+The pacing adapter requests entry/density limits and a maximum pattern span. For future encounters, callers derive pacing at the proposed pattern start distance so authored spans cannot cross the next phase boundary. Filtering preserves catalog order, may return no matching content, and never falls back to higher pressure. Callers must handle empty selections explicitly, intersect pacing with difficulty eligibility, and retain hard geometry/reachability validation. Full live scheduling/gap handling (#120) and Director panel integration (#86) remain separate focused work; this authority does not yet change the live hazard stream.
+
+Each logical hazard pattern owns a required immutable encounter profile. This policy-only metadata records an inclusive difficulty-tier range, allowed pacing intensities, typed behavior tags, a stable variety-family identity, and bounded **PROTOTYPE** whole-unit pressure/readability costs. The constructor validates and snapshots every nested field without importing Phaser or viewport state. Current catalog fixtures declare their values explicitly. The generator continues to select the same catalog positions because profiles consume no random state and are not yet applied by selection; #125 owns recent-history policy, #126 owns the active readability budget, and #120 owns combined live policy integration.
 
 ## 9. Gameplay vs. presentation
 
@@ -227,6 +229,7 @@ Rules:
 - difficulty-based eligibility may narrow the candidate catalog but never replaces hard geometry or reachability validation;
 - pacing/intensity remains a separate responsibility from difficulty even when both later influence encounter selection.
 - pacing pressure ceilings only restrict candidate selection, and explicit recovery windows recur independently of difficulty or random pattern choices; they do not prove sequence-level fairness or active-hazard concurrency limits.
+- encounter profiles describe policy eligibility and costs but do not select, weight, validate, or spawn content by themselves.
 
 ## 11. Director/developer tools
 

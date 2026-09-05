@@ -17,11 +17,13 @@ import {
   filterPatternsForPacing,
 } from '../../src/pacing/PacingPatternSelection';
 import { calculatePacing, PROTOTYPE_PACING_CONFIG } from '../../src/pacing/PacingSystem';
+import { TEST_ENCOUNTER_PROFILE } from '../support/TestEncounterProfile';
 
-// Authored sparse content for headless policy evidence; live catalog/profile migration is #123/#120.
+// Authored sparse content for headless pacing evidence; live catalog integration remains #120.
 const BREATHER_PATTERN = createHazardPattern({
   id: 'pacing-sparse',
   runLength: 500,
+  profile: TEST_ENCOUNTER_PROFILE,
   entries: [
     {
       id: 'sparse-1',
