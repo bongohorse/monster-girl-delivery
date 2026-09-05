@@ -114,6 +114,20 @@ Use a manual Jules task when there is no useful GitHub implementation unit, for 
 
 If a manual task results in code that should land, publish it through a focused branch/PR so GitHub remains the durable review trail.
 
+### Reusable task archetypes
+
+Prefer a small set of outcome-oriented task shapes over a large prompt catalog. These archetypes are starting structures, not authority to expand scope or bypass the Issue, `AGENTS.md`, or the reality/value gates.
+
+| Archetype | Use it when | Required shape |
+|---|---|---|
+| **Issue scoping** | an approved outcome is too large or ambiguous for one implementation unit | inspect authoritative sources; return goal, runtime path, smallest coherent scope, acceptance criteria, non-goals, validation, and real dependencies; do not implement |
+| **Verified bug fix** | a concrete defect is reported | reproduce through a supported path; identify the violated invariant; add the smallest meaningful regression test when appropriate; implement the smallest coherent fix; if the scenario is not reachable, report `NO JUSTIFIED CHANGE` |
+| **Adversarial audit** | an independent review of a bounded system/invariant is useful | read-only by default; actively try to disprove suspected findings; report only findings with a real entry point, reachable state origin, violated invariant, concrete evidence, current test coverage, and smallest reasonable correction |
+| **Invariant/property test** | a stable deterministic rule has plausible regression risk not covered by the current suite | prefer seeded, parameterized, or property-style checks around behavior/invariants; add nothing if the test would only raise coverage or introduce flaky/randomized noise |
+| **Dependency hygiene** | direct dependencies need a focused health/usage check | verify actual imports/runtime/tooling use before reporting removal; report only demonstrably unused, obsolete, unmaintained, duplicated, or materially risky dependencies; leave routine version bumps to Renovate |
+
+Do not copy generic prompts such as "improve the codebase", "add more tests", "find tech debt", or "generate feature ideas" into MGD tasks. They reward activity rather than approved outcomes and duplicate safeguards already owned by this workflow.
+
 ## 4. Planning approach selection
 
 Every normal Jules coding task generates a plan. Use the standard task flow for clear work and **Interactive Plan** when ambiguity or risk benefits from an explicit planning conversation. When a material implementation plan is awaiting approval, inspect it before execution when practical; Jules may auto-approve a standard plan after its approval window.
@@ -155,6 +169,22 @@ Review in this order:
 8. **Manual evidence** — if the criterion concerns feel, device behavior, presentation, or lifecycle, has real manual evidence been supplied instead of simulated claims?
 
 A large diff is not proof of thoroughness. Prefer the smallest coherent change that fully satisfies the Issue.
+
+### Visual verification for browser-facing changes
+
+When a task materially changes rendered browser output, use Jules' web-app visual verification as **additional evidence** when practical: ask it to run/render the relevant app state and return a screenshot of the result.
+
+Good candidates include:
+
+- Director/debug UI;
+- HUD and menus;
+- responsive layout and viewport behavior;
+- CSS/DOM presentation;
+- obvious browser rendering regressions.
+
+A screenshot proves only the rendered state it shows. It does **not** prove game feel, touch behavior, timing/fairness, animation quality across time, pause/background lifecycle, performance, or device-specific behavior. Keep the existing manual/device evidence requirements for those criteria.
+
+Do not add screenshot artifacts to the repository merely to demonstrate that Jules rendered the page. Commit visual artifacts only when the assigned task explicitly requires them as durable project output.
 
 ## 6. PR feedback loop
 
