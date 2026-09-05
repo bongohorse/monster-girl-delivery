@@ -16,6 +16,8 @@ import {
   type GeneratedHazardStreamState,
   PROTOTYPE_LIVE_RUN_SEED,
 } from '../../generation/GeneratedHazardStream';
+import { PROTOTYPE_PATTERN_REACHABILITY_CONTEXT } from '../../generation/FlightReachability';
+import { PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG } from '../../generation/LiveEncounterPolicy';
 import { PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES } from '../../generation/PrototypeHazardPatternFixtures';
 import {
   createTelegraphedHazardSimulationState,
@@ -35,9 +37,18 @@ import { createPrototypeFlightBounds, getPrototypePlayerX } from '../PrototypeFl
 const RUNNING_INSTRUCTIONS =
   'M4 moving, timed + target-lock hazards\nHold touch, mouse, or Space to thrust.';
 const DEAD_INSTRUCTIONS = 'Delivery interrupted\nTap, click, or press Space to restart.';
-const LIVE_HAZARD_STREAM_CONTEXT = Object.freeze({
-  catalog: PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES,
-});
+const createLiveHazardStreamContext = (
+  flightTuning: ReturnType<AppServices['flightTuning']['getSnapshot']>,
+) =>
+  Object.freeze({
+    catalog: PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES,
+    policy: PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG,
+    reachability: Object.freeze({
+      flightState: PROTOTYPE_PATTERN_REACHABILITY_CONTEXT.flightState,
+      flightTuning,
+      playerExtents: PROTOTYPE_PATTERN_REACHABILITY_CONTEXT.playerExtents,
+    }),
+  });
 
 export class Foundation extends Scene {
   private title?: Phaser.GameObjects.Text;
@@ -103,7 +114,7 @@ export class Foundation extends Scene {
     this.runState = createPrototypeRunState(bounds);
     this.hazardStream = createGeneratedHazardStream(
       PROTOTYPE_LIVE_RUN_SEED,
-      LIVE_HAZARD_STREAM_CONTEXT,
+      createLiveHazardStreamContext(this.services.flightTuning.getSnapshot()),
       this.services.runMotion.getSnapshot(),
     );
     this.telegraphedHazardState = stepTelegraphedHazardSimulation(
@@ -179,19 +190,17 @@ export class Foundation extends Scene {
       // While running, primary presses are thrust input rather than queued restart requests.
       this.services.input.consumePrimaryActionPress();
       const requestedRunMotion = this.services.runMotion.getSnapshot();
+      const flightTuning = this.services.flightTuning.getSnapshot();
+      const hazardStreamContext = createLiveHazardStreamContext(flightTuning);
       this.hazardStream = advanceGeneratedHazardStream(
         this.hazardStream,
         this.runState.motion.distance,
-        LIVE_HAZARD_STREAM_CONTEXT,
+        hazardStreamContext,
         requestedRunMotion,
+        simulationDeltaSeconds,
       );
       const appliedScrollSpeed = this.hazardStream.schedulingWindow.scrollSpeed;
-
-      if (appliedScrollSpeed !== requestedRunMotion.baseScrollSpeed) {
-        this.services.runMotion.update({ baseScrollSpeed: appliedScrollSpeed });
-      }
-
-      const runMotionTuning = this.services.runMotion.getSnapshot();
+      const runMotionTuning = Object.freeze({ baseScrollSpeed: appliedScrollSpeed });
       this.telegraphedHazardState = stepTelegraphedHazardSimulation(
         this.telegraphedHazardState,
         this.hazardStream.spawns,
@@ -203,7 +212,7 @@ export class Foundation extends Scene {
       );
       const result = stepPrototypeRun(this.runState, simulationDeltaSeconds, {
         flightBounds: createPrototypeFlightBounds(viewport),
-        flightTuning: this.services.flightTuning.getSnapshot(),
+        flightTuning,
         hazards: getLethalHazardsForTelegraphedSimulation(
           this.telegraphedHazardState,
           this.hazardStream.spawns,
@@ -220,8 +229,8 @@ export class Foundation extends Scene {
         this.hazardStream = advanceGeneratedHazardStream(
           this.hazardStream,
           this.runState.motion.distance,
-          LIVE_HAZARD_STREAM_CONTEXT,
-          runMotionTuning,
+          hazardStreamContext,
+          requestedRunMotion,
         );
       }
     }
@@ -315,7 +324,7 @@ export class Foundation extends Scene {
     this.runState = createPrototypeRunState(createPrototypeFlightBounds(viewport));
     this.hazardStream = createGeneratedHazardStream(
       PROTOTYPE_LIVE_RUN_SEED,
-      LIVE_HAZARD_STREAM_CONTEXT,
+      createLiveHazardStreamContext(this.services.flightTuning.getSnapshot()),
       this.services.runMotion.getSnapshot(),
     );
     this.telegraphedHazardState = stepTelegraphedHazardSimulation(

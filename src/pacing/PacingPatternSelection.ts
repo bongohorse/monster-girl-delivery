@@ -13,6 +13,7 @@ export interface PacingPatternRequest extends PacingPressureLimits {
 }
 
 export type PatternPacingIneligibilityReason =
+  | 'profile-pacing-intensity'
   | 'pacing-entry-limit'
   | 'pacing-density-limit'
   | 'pacing-window-limit';
@@ -61,6 +62,10 @@ export const evaluatePatternPacingEligibility = (
 
   const reasons: PatternPacingIneligibilityReason[] = [];
 
+  if (!pattern.profile.pacingIntensities.includes(request.intensity)) {
+    reasons.push('profile-pacing-intensity');
+  }
+
   if (patternEntryCount > request.maximumPatternEntries) {
     reasons.push('pacing-entry-limit');
   }
@@ -83,7 +88,7 @@ export const evaluatePatternPacingEligibility = (
  * Preserves catalog order and consumes no RNG. Intersect with difficulty eligibility and pass
  * candidates through the existing fairness validator/scheduler. An empty result means no match;
  * callers must explicitly leave recovery space or supply suitable content, never relax limits
- * or pass an empty catalog to the generator. Live orchestration belongs to #120.
+ * or pass an empty catalog to the generator.
  */
 export const filterPatternsForPacing = (
   catalog: ReadonlyArray<Readonly<HazardPattern>>,
