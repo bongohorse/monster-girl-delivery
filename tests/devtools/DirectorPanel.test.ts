@@ -45,7 +45,6 @@ describe('DirectorPanel', () => {
     panel.layout(viewport);
     panel.update(
       16,
-      60,
       viewport,
       {
         activePointerId: null,

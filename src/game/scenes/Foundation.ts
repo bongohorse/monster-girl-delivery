@@ -3,6 +3,7 @@ import type { AppServices } from '../../core/AppServices';
 import { PhaserLifecycleAdapter } from '../../core/PhaserLifecycleAdapter';
 import { readSafeAreaInsets, ViewportService } from '../../core/ViewportService';
 import { DirectorPanel } from '../../devtools/DirectorPanel';
+import { DirectorPerformanceHud } from '../../devtools/DirectorPerformanceHud';
 import { createDirectorResponsiveLayout } from '../../devtools/DirectorResponsiveLayout';
 import { DirectorRunControls } from '../../devtools/DirectorRunControls';
 import { DirectorTuningControls } from '../../devtools/DirectorTuningControls';
@@ -36,6 +37,7 @@ export class Foundation extends Scene {
   private instructions?: Phaser.GameObjects.Text;
   private viewportService?: ViewportService;
   private directorPanel?: DirectorPanel;
+  private directorPerformanceHud?: DirectorPerformanceHud;
   private directorRunControls?: DirectorRunControls;
   private directorTuningControls?: DirectorTuningControls;
   private inputAdapter?: PhaserInputAdapter;
@@ -67,6 +69,12 @@ export class Foundation extends Scene {
     this.lifecycleAdapter = new PhaserLifecycleAdapter(this.game, this.services.lifecycle);
 
     if (this.directorMode) {
+      const gameContainer = document.getElementById('game-container');
+      if (!gameContainer) {
+        throw new Error('Director performance HUD requires the game container.');
+      }
+
+      this.directorPerformanceHud = new DirectorPerformanceHud(gameContainer, this.services.input);
       this.directorPanel = new DirectorPanel(this);
       this.directorTuningControls = new DirectorTuningControls(
         this,
@@ -128,6 +136,20 @@ export class Foundation extends Scene {
 
     const simulationDeltaSeconds = this.services.time.update(delta);
     const viewport = this.viewportService.getSnapshot();
+    const directorLifecycle =
+      this.directorPerformanceHud || this.directorPanel
+        ? this.services.lifecycle.getSnapshot()
+        : undefined;
+
+    if (this.directorPerformanceHud && directorLifecycle) {
+      const rawFrameTimeMilliseconds = this.game.loop.rawDelta;
+      this.directorPerformanceHud.update(
+        rawFrameTimeMilliseconds,
+        this.game.loop.actualFps,
+        directorLifecycle.paused,
+        !directorLifecycle.paused && rawFrameTimeMilliseconds > 0 && simulationDeltaSeconds === 0,
+      );
+    }
 
     if (this.runState.phase === 'dead') {
       const restartPressed = this.services.input.consumePrimaryActionPress();
@@ -176,14 +198,15 @@ export class Foundation extends Scene {
 
     this.renderRun(viewport);
 
-    this.directorPanel?.update(
-      delta,
-      this.game.loop.actualFps,
-      viewport,
-      this.services.input.getSnapshot(),
-      this.services.lifecycle.getSnapshot(),
-      this.hazardStream.generationState.seed,
-    );
+    if (this.directorPanel && directorLifecycle) {
+      this.directorPanel.update(
+        delta,
+        viewport,
+        this.services.input.getSnapshot(),
+        directorLifecycle,
+        this.hazardStream.generationState.seed,
+      );
+    }
   }
 
   private readonly handleResize = (gameSize: Phaser.Structs.Size): void => {
@@ -244,6 +267,7 @@ export class Foundation extends Scene {
       ?.setPosition(centerX, instructionsY)
       .setWordWrapWidth(Math.max(120, safeWidth - 32));
     this.renderRun(viewport);
+    this.directorPerformanceHud?.layout(viewport);
     this.directorPanel?.layout(viewport);
     this.directorRunControls?.layout(viewport);
     this.directorTuningControls?.layout(viewport);
@@ -291,6 +315,8 @@ export class Foundation extends Scene {
     this.directorRunControls = undefined;
     this.directorTuningControls?.destroy();
     this.directorTuningControls = undefined;
+    this.directorPerformanceHud?.destroy();
+    this.directorPerformanceHud = undefined;
     this.directorPanel = undefined;
     this.scrollingWorldPresentation?.destroy();
     this.scrollingWorldPresentation = undefined;

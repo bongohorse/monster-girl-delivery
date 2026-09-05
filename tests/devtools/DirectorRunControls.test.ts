@@ -51,7 +51,7 @@ describe('DirectorRunControls', () => {
       expect.objectContaining({ fixedWidth: 336 }),
     );
     expect(button.setInteractive).toHaveBeenCalledOnce();
-    expect(button.setPosition).toHaveBeenLastCalledWith(24, 176);
+    expect(button.setPosition).toHaveBeenLastCalledWith(24, 208);
     expect(button.setFixedSize).toHaveBeenLastCalledWith(336, 32);
   });
 

@@ -44,7 +44,6 @@ export class DirectorPanel {
 
   update(
     frameDeltaMilliseconds: number,
-    framesPerSecond: number,
     viewport: ViewportSnapshot,
     input: InputSnapshot,
     lifecycle: LifecycleSnapshot,
@@ -65,7 +64,6 @@ export class DirectorPanel {
     this.text.setText([
       'DIRECTOR DIAGNOSTICS — M3',
       `Seed: ${runSeed}`,
-      `FPS: ${Math.round(framesPerSecond)}`,
       `Viewport: ${Math.round(viewport.width)} × ${Math.round(viewport.height)}`,
       `Orientation: ${viewport.orientation}`,
       `Pointer: ${pointer} | Space: ${input.spaceHeld ? 'held' : 'up'}`,
