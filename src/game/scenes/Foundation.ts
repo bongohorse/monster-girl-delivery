@@ -10,6 +10,7 @@ import { DirectorTuningControls } from '../../devtools/DirectorTuningControls';
 import { GeneratedHazardPresentation } from '../../entities/GeneratedHazardPresentation';
 import { PrototypePlayerPresentation } from '../../entities/PrototypePlayerPresentation';
 import { PrototypeScrollingWorldPresentation } from '../../entities/PrototypeScrollingWorldPresentation';
+import type { EncounterStreamObservation } from '../../generation/EncounterStreamObservation';
 import { PROTOTYPE_PATTERN_REACHABILITY_CONTEXT } from '../../generation/FlightReachability';
 import {
   advanceGeneratedHazardStream,
@@ -39,9 +40,11 @@ const RUNNING_INSTRUCTIONS =
 const DEAD_INSTRUCTIONS = 'Delivery interrupted\nTap, click, or press Space to restart.';
 const createLiveHazardStreamContext = (
   flightTuning: ReturnType<AppServices['flightTuning']['getSnapshot']>,
+  observeEncounter?: (observation: Readonly<EncounterStreamObservation>) => void,
 ) =>
   Object.freeze({
     catalog: PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES,
+    observeEncounter,
     policy: PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG,
     reachability: Object.freeze({
       flightState: PROTOTYPE_PATTERN_REACHABILITY_CONTEXT.flightState,
@@ -88,14 +91,14 @@ export class Foundation extends Scene {
     this.inputAdapter = new PhaserInputAdapter(this, this.services.input);
     this.lifecycleAdapter = new PhaserLifecycleAdapter(this.game, this.services.lifecycle);
 
-    if (this.directorMode) {
+    if (import.meta.env.DEV && this.directorMode) {
       const gameContainer = document.getElementById('game-container');
       if (!gameContainer) {
         throw new Error('Director performance HUD requires the game container.');
       }
 
       this.directorPerformanceHud = new DirectorPerformanceHud(gameContainer, this.services.input);
-      this.directorPanel = new DirectorPanel(this);
+      this.directorPanel = new DirectorPanel(this, this.services.input);
       this.directorTuningControls = new DirectorTuningControls(
         this,
         this.services.flightTuning,
@@ -114,7 +117,10 @@ export class Foundation extends Scene {
     this.runState = createPrototypeRunState(bounds);
     this.hazardStream = createGeneratedHazardStream(
       PROTOTYPE_LIVE_RUN_SEED,
-      createLiveHazardStreamContext(this.services.flightTuning.getSnapshot()),
+      createLiveHazardStreamContext(
+        this.services.flightTuning.getSnapshot(),
+        this.directorPanel?.observeEncounter,
+      ),
       this.services.runMotion.getSnapshot(),
     );
     this.telegraphedHazardState = stepTelegraphedHazardSimulation(
@@ -191,7 +197,10 @@ export class Foundation extends Scene {
       this.services.input.consumePrimaryActionPress();
       const requestedRunMotion = this.services.runMotion.getSnapshot();
       const flightTuning = this.services.flightTuning.getSnapshot();
-      const hazardStreamContext = createLiveHazardStreamContext(flightTuning);
+      const hazardStreamContext = createLiveHazardStreamContext(
+        flightTuning,
+        this.directorPanel?.observeEncounter,
+      );
       // Resolve parameters before movement, without aging or admitting new content.
       this.hazardStream = advanceGeneratedHazardStream(
         this.hazardStream,
@@ -253,7 +262,8 @@ export class Foundation extends Scene {
         viewport,
         this.services.input.getSnapshot(),
         directorLifecycle,
-        this.hazardStream.generationState.seed,
+        this.hazardStream,
+        this.telegraphedHazardState,
       );
     }
   }
@@ -331,10 +341,14 @@ export class Foundation extends Scene {
   };
 
   private restartRun(viewport: ReturnType<ViewportService['getSnapshot']>): void {
+    this.directorPanel?.reset();
     this.runState = createPrototypeRunState(createPrototypeFlightBounds(viewport));
     this.hazardStream = createGeneratedHazardStream(
       PROTOTYPE_LIVE_RUN_SEED,
-      createLiveHazardStreamContext(this.services.flightTuning.getSnapshot()),
+      createLiveHazardStreamContext(
+        this.services.flightTuning.getSnapshot(),
+        this.directorPanel?.observeEncounter,
+      ),
       this.services.runMotion.getSnapshot(),
     );
     this.telegraphedHazardState = stepTelegraphedHazardSimulation(
@@ -376,6 +390,7 @@ export class Foundation extends Scene {
     this.directorTuningControls = undefined;
     this.directorPerformanceHud?.destroy();
     this.directorPerformanceHud = undefined;
+    this.directorPanel?.destroy();
     this.directorPanel = undefined;
     this.scrollingWorldPresentation?.destroy();
     this.scrollingWorldPresentation = undefined;
