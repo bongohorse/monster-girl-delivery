@@ -11,21 +11,28 @@ body:
     validations:
       required: true
   - type: textarea
+    id: evidence
+    attributes:
+      label: Current need / evidence
+      description: What concrete problem, acceptance criterion, regression risk, or current workflow need justifies this work now? Link reproduction/evidence where available.
+    validations:
+      required: true
+  - type: textarea
     id: scope
     attributes:
       label: Scope
-      description: Files/systems expected to change.
+      description: Files/systems/behaviors expected to change. Keep this to one coherent reviewable outcome.
     validations:
       required: true
   - type: textarea
     id: acceptance
     attributes:
       label: Acceptance criteria
-      description: Concrete checks for completion.
+      description: Observable behavior or evidence that proves completion; avoid criteria that only request a helper/class/test without an outcome.
     validations:
       required: true
   - type: textarea
     id: non_goals
     attributes:
       label: Non-goals
-      description: Related work that must stay outside this Issue.
+      description: Related work that must stay outside this Issue. Do not add speculative future work merely to fill this section.

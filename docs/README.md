@@ -36,6 +36,9 @@ GitHub Issues/PRs are the live execution trail. Completed milestone reports are 
 | Review the deeper Jetpack Joyride systems/content-grammar analysis | [`JETPACK_JOYRIDE_WIKI_DEEP_DIVE.md`](JETPACK_JOYRIDE_WIKI_DEEP_DIVE.md) |
 | Understand technical boundaries | [`../ARCHITECTURE.md`](../ARCHITECTURE.md) |
 | See commands, CI, testing, Codespaces, or closeout workflow | [`../DEVELOPMENT.md`](../DEVELOPMENT.md) |
+| See human ↔ AI orchestration | [`AI_WORKFLOW.md`](AI_WORKFLOW.md) |
+| Use Jules as a GitHub-native assistant safely | [`JULES_WORKFLOW.md`](JULES_WORKFLOW.md) |
+| Review AI GitHub authentication/permissions | [`GITHUB_AI_ACCESS.md`](GITHUB_AI_ACCESS.md) |
 | Review completed milestones | [`milestones/README.md`](milestones/README.md) |
 | Review M1 real-device evidence | [`milestones/M1-device-report.md`](milestones/M1-device-report.md) |
 
@@ -73,6 +76,8 @@ ARCHITECTURE.md / DEVELOPMENT.md as required
 existing code + tests
 ```
 
+Jules-specific dispatch/review/environment rules live in [`JULES_WORKFLOW.md`](JULES_WORKFLOW.md). They supplement rather than replace `AGENTS.md`.
+
 Do not load the entire backlog/reference library as implementation requirements.
 
 ---
@@ -90,7 +95,8 @@ A **current explicit Game Director decision** controls product intent. Living do
 | [`../DEVELOPMENT.md`](../DEVELOPMENT.md) | commands, verification, Codespaces, CI, PR mechanics, milestone closeout process | product/game design |
 | [`../AGENTS.md`](../AGENTS.md) | mandatory coding-agent behavior and scope discipline | product design |
 | [`AI_WORKFLOW.md`](AI_WORKFLOW.md) | human/AI coordination and role orchestration | authentication setup, product scope |
-| [`GITHUB_AI_ACCESS.md`](GITHUB_AI_ACCESS.md) | GitHub/Codespaces authentication and repository permissions | merge approval policy or product decisions |
+| [`JULES_WORKFLOW.md`](JULES_WORKFLOW.md) | Jules-specific dispatch, planning/review, evidence/trust, concurrency, scheduled-task, and environment rules | product scope, general agent rules |
+| [`GITHUB_AI_ACCESS.md`](GITHUB_AI_ACCESS.md) | GitHub/Codespaces/Jules authentication and repository permissions | merge approval policy or product decisions |
 | [`BACKLOG.md`](BACKLOG.md) | preserved future gameplay/art/content/tooling ideas and open questions | approved current scope |
 | [`ENDLESS_RUNNER_BLUEPRINT.md`](ENDLESS_RUNNER_BLUEPRINT.md) | external design lessons/reference material | MGD requirements |
 | [`JETPACK_JOYRIDE_WIKI_RESEARCH.md`](JETPACK_JOYRIDE_WIKI_RESEARCH.md) | detailed source-backed Jetpack Joyride wiki research and MGD design deductions | approved requirements, milestone scope, final balance/content decisions |
@@ -159,15 +165,19 @@ Use for:
 
 ### `AGENTS.md` — coding-agent contract
 
-Mandatory rules for implementation agents: task entry, scope discipline, architecture/product boundaries, testing, and merge behavior.
+Mandatory rules for implementation agents: task entry, scope discipline, evidence/realism, architecture/product boundaries, testing, and merge behavior.
 
 ### `AI_WORKFLOW.md` — orchestration
 
-Describes how the Game Director, AI coordinator/reviewer, coding agents, GitHub Actions, and Renovate interact.
+Describes how the Game Director, AI coordinator/reviewer, coding agents including Jules, GitHub Actions, and Renovate interact.
+
+### `JULES_WORKFLOW.md` — Jules operating policy
+
+Defines how MGD uses Jules as a supporting implementation/review agent: native GitHub Issue dispatch through the `jules` label, PR feedback through `@Jules`, plan selection, evidence/realism checks, anti-churn rules, concurrency policy, scheduled tasks, and the reproducible Jules environment setup.
 
 ### `GITHUB_AI_ACCESS.md` — permissions/authentication
 
-Describes the repository-scoped PAT/Codespaces model and what repository operations an authenticated agent can technically perform. Operational approval rules still come from `AGENTS.md` / the assigned task.
+Describes the repository-scoped PAT/Codespaces model, the Jules GitHub App model, and what repository operations an authenticated agent can technically perform. Operational approval rules still come from `AGENTS.md` / the assigned task.
 
 ### `BACKLOG.md` — future ideas only
 
@@ -251,7 +261,8 @@ docs/
 ├── JETPACK_JOYRIDE_WIKI_DEEP_DIVE.md
 │                                 Deeper systems/content-grammar research
 ├── AI_WORKFLOW.md                Human ↔ AI orchestration
-├── GITHUB_AI_ACCESS.md           GitHub/Codespaces auth + permissions
+├── JULES_WORKFLOW.md             Jules dispatch/review/trust/environment workflow
+├── GITHUB_AI_ACCESS.md           GitHub/Codespaces/Jules auth + permissions
 ├── GAME_DESIGN_IDEAS.md          Compatibility stub → BACKLOG.md
 ├── ART_DIRECTION_IDEAS.md        Compatibility stub → BACKLOG.md
 └── milestones/
