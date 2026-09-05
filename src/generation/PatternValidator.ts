@@ -63,7 +63,9 @@ interface HorizontalEncounterGroup {
   readonly start: number;
 }
 
-const assertValidConstraints = (constraints: Readonly<PatternValidationConstraints>): void => {
+export const assertValidPatternValidationConstraints = (
+  constraints: Readonly<PatternValidationConstraints>,
+): void => {
   if (
     !Number.isFinite(constraints.playableTop) ||
     !Number.isFinite(constraints.playableBottom) ||
@@ -96,7 +98,8 @@ const createIssue = <Issue extends PatternValidationIssue>(issue: Issue): Readon
     entryIds: Object.freeze([...issue.entryIds]),
   }) as Readonly<Issue>;
 
-const getVerticalCorridors = (
+/** Returns immutable playable corridors after subtracting conservative swept hazard geometry. */
+export const getSafeVerticalCorridors = (
   entries: ReadonlyArray<Readonly<HazardPatternEntry>>,
   constraints: Readonly<PatternValidationConstraints>,
 ): ReadonlyArray<Readonly<VerticalCorridor>> => {
@@ -160,7 +163,7 @@ const collectVerticalCorridorIssues = (
       continue;
     }
 
-    const corridors = getVerticalCorridors(activeEntries, constraints);
+    const corridors = getSafeVerticalCorridors(activeEntries, constraints);
     const largestCorridor = corridors.reduce(
       (largest, corridor) => Math.max(largest, corridor.bottom - corridor.top),
       0,
@@ -302,7 +305,7 @@ export const validatePattern = (
   constraints: Readonly<PatternValidationConstraints> = PROTOTYPE_PATTERN_VALIDATION_CONSTRAINTS,
   reachabilityContext: Readonly<PatternReachabilityContext> = PROTOTYPE_PATTERN_REACHABILITY_CONTEXT,
 ): Readonly<PatternValidationResult> => {
-  assertValidConstraints(constraints);
+  assertValidPatternValidationConstraints(constraints);
 
   const issues = Object.freeze([
     ...collectVerticalCorridorIssues(pattern, constraints, reachabilityContext),

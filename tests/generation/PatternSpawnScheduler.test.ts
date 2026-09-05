@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { PROTOTYPE_FLIGHT_TUNING_DEFAULTS } from '../../src/config/FlightTuningConfig';
 import { PROTOTYPE_PATTERN_REACHABILITY_CONTEXT } from '../../src/generation/FlightReachability';
 import { createHazardPattern, type HazardPattern } from '../../src/generation/HazardPattern';
 import { scheduleNextPattern } from '../../src/generation/PatternSpawnScheduler';
@@ -11,6 +12,7 @@ import {
   type RunGenerationState,
   stepRunGeneration,
 } from '../../src/generation/RunGenerationState';
+import { PROTOTYPE_PLAYER_COLLISION_EXTENTS } from '../../src/systems/HazardCollision';
 import { TEST_ENCOUNTER_PROFILE } from '../support/TestEncounterProfile';
 
 const INVALID_PATTERN = createHazardPattern({
@@ -204,12 +206,57 @@ describe('scheduleNextPattern', () => {
             },
           ],
           patternId: 'unreachable-upward',
+          reason: 'pattern',
+          transitionValidation: null,
         },
       ],
       status: 'exhausted',
     });
     expect('spawns' in schedule).toBe(false);
     expect(schedule.state).toEqual(advanceGenerationState(initialState, 1));
+  });
+
+  it('distinguishes transition rejection and consumes one generator step per rejected candidate', () => {
+    const initialState = createRunGenerationState('unreachable-transition');
+    const schedule = scheduleNextPattern({
+      catalog: [UNREACHABLE_UPWARD_PATTERN],
+      maxCandidateAttempts: 3,
+      patternStartDistance: 1_000,
+      state: initialState,
+      transition: {
+        exitEnvelope: {
+          runDistance: 1_000,
+          states: [{ positionY: 300, velocityY: 650 }],
+        },
+        flightTuning: PROTOTYPE_FLIGHT_TUNING_DEFAULTS,
+        playerExtents: PROTOTYPE_PLAYER_COLLISION_EXTENTS,
+        scrollSpeed: 350,
+      },
+    });
+
+    expect(schedule).toMatchObject({
+      attempts: 3,
+      rejections: [
+        {
+          attempt: 1,
+          issues: [],
+          patternId: 'unreachable-upward',
+          reason: 'transition',
+          transitionValidation: {
+            failureReason: 'next-entry-unreachable-from-exit-envelope',
+            valid: false,
+          },
+        },
+        { attempt: 2, issues: [], reason: 'transition' },
+        { attempt: 3, issues: [], reason: 'transition' },
+      ],
+      status: 'exhausted',
+    });
+    expect('spawns' in schedule).toBe(false);
+    expect(schedule.state).toEqual(advanceGenerationState(initialState, 3));
+    expect(schedule.rejections[1]?.transitionValidation).toEqual(
+      schedule.rejections[0]?.transitionValidation,
+    );
   });
 
   it('maps local hitboxes to monotonically ordered absolute run distances', () => {
