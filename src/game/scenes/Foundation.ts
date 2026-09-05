@@ -18,11 +18,11 @@ import {
 } from '../../generation/GeneratedHazardStream';
 import { PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES } from '../../generation/PrototypeHazardPatternFixtures';
 import {
-  createTimedHazardSimulationState,
-  getLethalHazardsForTimedSimulation,
-  stepTimedHazardSimulation,
-  type TimedHazardSimulationState,
-} from '../../hazards/TimedHazardSimulation';
+  createTelegraphedHazardSimulationState,
+  getLethalHazardsForTelegraphedSimulation,
+  stepTelegraphedHazardSimulation,
+  type TelegraphedHazardSimulationState,
+} from '../../hazards/TelegraphedHazardSimulation';
 import { PhaserInputAdapter } from '../../input/PhaserInputAdapter';
 import {
   createPrototypeRunState,
@@ -33,7 +33,7 @@ import { constrainVerticalFlightState } from '../../systems/VerticalFlightSimula
 import { createPrototypeFlightBounds, getPrototypePlayerX } from '../PrototypeFlightLayout';
 
 const RUNNING_INSTRUCTIONS =
-  'M4 moving + timed hazard prototypes\nHold touch, mouse, or Space to thrust.';
+  'M4 moving, timed + target-lock hazards\nHold touch, mouse, or Space to thrust.';
 const DEAD_INSTRUCTIONS = 'Delivery interrupted\nTap, click, or press Space to restart.';
 const LIVE_HAZARD_STREAM_CONTEXT = Object.freeze({
   catalog: PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES,
@@ -53,8 +53,8 @@ export class Foundation extends Scene {
   private hazardStream?: Readonly<GeneratedHazardStreamState>;
   private playerPresentation?: PrototypePlayerPresentation;
   private scrollingWorldPresentation?: PrototypeScrollingWorldPresentation;
-  private timedHazardState: Readonly<TimedHazardSimulationState> =
-    createTimedHazardSimulationState();
+  private telegraphedHazardState: Readonly<TelegraphedHazardSimulationState> =
+    createTelegraphedHazardSimulationState();
   private runState: PrototypeRunState = {
     phase: 'running',
     motion: { distance: 0 },
@@ -106,10 +106,14 @@ export class Foundation extends Scene {
       LIVE_HAZARD_STREAM_CONTEXT,
       this.services.runMotion.getSnapshot(),
     );
-    this.timedHazardState = stepTimedHazardSimulation(
-      createTimedHazardSimulationState(),
+    this.telegraphedHazardState = stepTelegraphedHazardSimulation(
+      createTelegraphedHazardSimulationState(),
       this.hazardStream.spawns,
       0,
+      {
+        positionY: this.runState.flight.positionY,
+        runDistance: this.runState.motion.distance,
+      },
     );
     this.services.input.releaseAll();
     this.scrollingWorldPresentation = new PrototypeScrollingWorldPresentation(this);
@@ -188,16 +192,20 @@ export class Foundation extends Scene {
       }
 
       const runMotionTuning = this.services.runMotion.getSnapshot();
-      this.timedHazardState = stepTimedHazardSimulation(
-        this.timedHazardState,
+      this.telegraphedHazardState = stepTelegraphedHazardSimulation(
+        this.telegraphedHazardState,
         this.hazardStream.spawns,
         simulationDeltaSeconds,
+        {
+          positionY: this.runState.flight.positionY,
+          runDistance: this.runState.motion.distance,
+        },
       );
       const result = stepPrototypeRun(this.runState, simulationDeltaSeconds, {
         flightBounds: createPrototypeFlightBounds(viewport),
         flightTuning: this.services.flightTuning.getSnapshot(),
-        hazards: getLethalHazardsForTimedSimulation(
-          this.timedHazardState,
+        hazards: getLethalHazardsForTelegraphedSimulation(
+          this.telegraphedHazardState,
           this.hazardStream.spawns,
         ),
         runMotionTuning,
@@ -310,10 +318,14 @@ export class Foundation extends Scene {
       LIVE_HAZARD_STREAM_CONTEXT,
       this.services.runMotion.getSnapshot(),
     );
-    this.timedHazardState = stepTimedHazardSimulation(
-      createTimedHazardSimulationState(),
+    this.telegraphedHazardState = stepTelegraphedHazardSimulation(
+      createTelegraphedHazardSimulationState(),
       this.hazardStream.spawns,
       0,
+      {
+        positionY: this.runState.flight.positionY,
+        runDistance: this.runState.motion.distance,
+      },
     );
     this.services.input.releaseAll();
     this.instructions?.setText(RUNNING_INSTRUCTIONS);
@@ -327,7 +339,7 @@ export class Foundation extends Scene {
       this.hazardStream?.spawns ?? [],
       this.runState.motion,
       playerScreenX,
-      this.timedHazardState,
+      this.telegraphedHazardState,
     );
     this.playerPresentation?.setPosition(playerScreenX, this.runState.flight.positionY);
   }
@@ -351,7 +363,7 @@ export class Foundation extends Scene {
     this.generatedHazardPresentation?.destroy();
     this.generatedHazardPresentation = undefined;
     this.hazardStream = undefined;
-    this.timedHazardState = createTimedHazardSimulationState();
+    this.telegraphedHazardState = createTelegraphedHazardSimulationState();
     this.playerPresentation?.destroy();
     this.playerPresentation = undefined;
     this.inputAdapter?.destroy();

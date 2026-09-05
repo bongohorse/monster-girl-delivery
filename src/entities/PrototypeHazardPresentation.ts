@@ -1,21 +1,26 @@
 import type { GameObjects, Scene } from 'phaser';
 import {
   isBehavioralLogicalHazard,
-  isTimedPulseHazardBehavior,
+  isTargetLockStrikeHazardBehavior,
+  isTelegraphedHazardBehavior,
   resolveHazardHitboxAtRunDistance,
+  resolveTargetLockStrikeHitbox,
 } from '../hazards/HazardArchetype';
 import {
   PROTOTYPE_PLACEHOLDER_HAZARD,
   projectHazardHitboxToScreen,
 } from '../hazards/PrototypeHazard';
-import type { TelegraphedHazardPhase } from '../hazards/TelegraphedHazardLifecycle';
+import type {
+  TelegraphedHazardLifecycleState,
+  TelegraphedHazardPhase,
+} from '../hazards/TelegraphedHazardLifecycle';
 import type { LogicalHazard } from '../systems/HazardCollision';
 import type { RunMotionState } from '../systems/RunMotionSimulation';
 
 /** Temporary barrier presentation; logical collision and generated identity remain outside Phaser. */
 export class PrototypeHazardPresentation {
   private graphics?: GameObjects.Graphics;
-  private timedPhase?: TelegraphedHazardPhase;
+  private telegraphedPhase?: TelegraphedHazardPhase;
 
   constructor(
     scene: Scene,
@@ -26,8 +31,8 @@ export class PrototypeHazardPresentation {
 
     this.graphics = graphics;
 
-    if (isBehavioralLogicalHazard(hazard) && isTimedPulseHazardBehavior(hazard.behavior)) {
-      this.drawTimedPhase('warning');
+    if (isBehavioralLogicalHazard(hazard) && isTelegraphedHazardBehavior(hazard.behavior)) {
+      this.drawTelegraphedPhase('warning');
       return;
     }
 
@@ -48,7 +53,7 @@ export class PrototypeHazardPresentation {
   render(
     runState: Readonly<RunMotionState>,
     playerScreenX: number,
-    timedPhase: TelegraphedHazardPhase | null = null,
+    lifecycle: Readonly<TelegraphedHazardLifecycleState> | null = null,
   ): void {
     const graphics = this.graphics;
 
@@ -64,13 +69,27 @@ export class PrototypeHazardPresentation {
 
     if (
       isBehavioralLogicalHazard(this.hazard) &&
-      isTimedPulseHazardBehavior(this.hazard.behavior)
+      isTelegraphedHazardBehavior(this.hazard.behavior)
     ) {
-      const phase = timedPhase ?? 'warning';
-      this.drawTimedPhase(phase);
+      const phase = lifecycle?.phase ?? 'warning';
+      this.drawTelegraphedPhase(phase);
 
       if (phase === 'expired') {
         return;
+      }
+
+      const target =
+        lifecycle === null
+          ? null
+          : phase === 'warning'
+            ? lifecycle.latestObservedTarget
+            : (lifecycle.lockedTarget ?? lifecycle.latestObservedTarget);
+      if (isTargetLockStrikeHazardBehavior(this.hazard.behavior) && target) {
+        screenHitbox = projectHazardHitboxToScreen(
+          { hitbox: resolveTargetLockStrikeHitbox(this.hazard, target.positionY) },
+          runState,
+          playerScreenX,
+        );
       }
 
       if (phase === 'warning' || phase === 'lock') {
@@ -89,18 +108,18 @@ export class PrototypeHazardPresentation {
     graphics.setPosition(screenHitbox.left, screenHitbox.top);
   }
 
-  private drawTimedPhase(phase: TelegraphedHazardPhase): void {
+  private drawTelegraphedPhase(phase: TelegraphedHazardPhase): void {
     const graphics = this.graphics;
     if (
       !graphics ||
-      this.timedPhase === phase ||
+      this.telegraphedPhase === phase ||
       !isBehavioralLogicalHazard(this.hazard) ||
-      !isTimedPulseHazardBehavior(this.hazard.behavior)
+      !isTelegraphedHazardBehavior(this.hazard.behavior)
     ) {
       return;
     }
 
-    this.timedPhase = phase;
+    this.telegraphedPhase = phase;
     graphics.clear();
     graphics.setVisible(phase !== 'expired');
 
@@ -112,13 +131,26 @@ export class PrototypeHazardPresentation {
     const warningWidth = warningGeometry.rightOffset - warningGeometry.leftOffset;
     const warningHeight = warningGeometry.bottomOffset - warningGeometry.topOffset;
     const activeWidth = this.hazard.hitbox.right - this.hazard.hitbox.left;
-    const activeHeight = this.hazard.hitbox.bottom - this.hazard.hitbox.top;
+    const activeHeight = isTargetLockStrikeHazardBehavior(this.hazard.behavior)
+      ? this.hazard.behavior.strikeHeight
+      : this.hazard.hitbox.bottom - this.hazard.hitbox.top;
     const safePhase = phase === 'warning' || phase === 'lock';
     const width = safePhase ? warningWidth : activeWidth;
     const height = safePhase ? warningHeight : activeHeight;
-    const fillColor = phase === 'warning' ? 0xffd166 : phase === 'lock' ? 0xff9f1c : 0xf72545;
+    const reactive = isTargetLockStrikeHazardBehavior(this.hazard.behavior);
+    const fillColor = reactive
+      ? phase === 'warning'
+        ? 0x6fffe9
+        : phase === 'lock'
+          ? 0x3a86ff
+          : 0xff2d95
+      : phase === 'warning'
+        ? 0xffd166
+        : phase === 'lock'
+          ? 0xff9f1c
+          : 0xf72545;
     const fillAlpha = phase === 'warning' ? 0.16 : phase === 'lock' ? 0.36 : 0.95;
-    const strokeColor = phase === 'active' ? 0xffffff : 0xffd166;
+    const strokeColor = phase === 'active' ? 0xffffff : reactive ? 0x6fffe9 : 0xffd166;
     const lineWidth = phase === 'warning' ? 3 : 5;
 
     graphics
