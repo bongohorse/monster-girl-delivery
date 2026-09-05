@@ -24,6 +24,11 @@ export interface EncounterTraceEntry {
   readonly reason?: string;
 }
 
+export interface LongRunEncounterTraceResult {
+  readonly trace: ReadonlyArray<Readonly<EncounterTraceEntry>>;
+  readonly finalState: ReturnType<typeof createGeneratedHazardStream>;
+}
+
 export class LongRunEncounterHarness {
   constructor(
     private readonly catalog: ReadonlyArray<
@@ -32,7 +37,7 @@ export class LongRunEncounterHarness {
     private readonly policy: Readonly<LiveEncounterPolicyConfig> = PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG,
   ) {}
 
-  run(seed: string | number, maxDistance: number): EncounterTraceEntry[] {
+  run(seed: string | number, maxDistance: number): LongRunEncounterTraceResult {
     const trace: EncounterTraceEntry[] = [];
 
     // Create Context
@@ -101,11 +106,21 @@ export class LongRunEncounterHarness {
     const timeStep = 1 / 60;
     let limit = 0;
     while (distance < maxDistance && limit < 1000000) {
-      // Assume constant speed for simple harness logic
-      const speed = PROTOTYPE_RUN_MOTION_DEFAULTS.baseScrollSpeed;
-      distance += speed * timeStep;
+      // Miror live progression two-phase evaluation:
+      // Pre-step parameter resolution pass (elapsedSeconds = 0, scheduleEncounters = false)
+      stream = advanceGeneratedHazardStream(
+        stream,
+        distance,
+        context,
+        PROTOTYPE_RUN_MOTION_DEFAULTS,
+        0,
+        false,
+      );
 
-      // Advance Simulation
+      // Progress distance by active scroll speed
+      distance += stream.schedulingWindow.scrollSpeed * timeStep;
+
+      // Post-step scheduling and advancing pass
       stream = advanceGeneratedHazardStream(
         stream,
         distance,
@@ -114,13 +129,17 @@ export class LongRunEncounterHarness {
         timeStep,
         true,
       );
+
       if (stream.status === 'exhausted') {
         break;
       }
       limit++;
     }
 
-    return trace;
+    return {
+      trace: Object.freeze(trace),
+      finalState: stream,
+    };
   }
 }
 /**
