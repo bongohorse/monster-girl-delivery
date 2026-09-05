@@ -52,12 +52,14 @@ export class DirectorEncounterDiagnostics {
   accepted: Readonly<EncounterStreamObservation> | undefined;
   rejected: Readonly<EncounterStreamObservation> | undefined;
   fairness: Readonly<EncounterStreamObservation> | undefined;
+  readability: Readonly<EncounterStreamObservation> | undefined;
   selection: Readonly<LiveEncounterCandidateSelection> | undefined;
 
   readonly observe = (event: Readonly<EncounterStreamObservation>): void => {
     this.latest = event;
     if (event.selection) this.selection = event.selection;
     if (event.schedule) this.fairness = event;
+    if (event.readability) this.readability = event;
     if (event.kind === 'accepted') this.accepted = event;
     if (event.kind.endsWith('rejected') || event.kind === 'readability-deferred')
       this.rejected = event;
@@ -69,6 +71,7 @@ export class DirectorEncounterDiagnostics {
     this.accepted = undefined;
     this.rejected = undefined;
     this.fairness = undefined;
+    this.readability = undefined;
     this.selection = undefined;
   }
 
@@ -117,23 +120,37 @@ export class DirectorEncounterDiagnostics {
       }
       case 2: {
         const event = this.fairness ?? this.accepted;
-        const rejection = event?.schedule?.rejections[event.schedule.rejections.length - 1];
+        const schedule = event?.schedule;
+        const rejection =
+          schedule?.status === 'exhausted'
+            ? schedule.rejections[schedule.rejections.length - 1]
+            : undefined;
         const transition =
           rejection?.transitionValidation ??
-          (event?.schedule?.status === 'accepted' ? event.schedule.transitionValidation : null);
+          (schedule?.status === 'accepted' ? schedule.transitionValidation : null);
         const issue = rejection?.issues[0];
         const threshold =
           issue && 'actual' in issue
             ? `Margin: ${number(issue.actual - issue.required)} (${number(issue.required)} required)`
             : `Transition time: ${number(transition?.availableTransitionTimeSeconds)}s`;
+        const samplePath =
+          event?.kind === 'trajectory-rejected'
+            ? 'no survivor'
+            : event?.kind === 'reaction-rejected'
+              ? 'geometry passed; reaction failed'
+              : schedule?.status === 'accepted'
+                ? 'accepted candidate passed'
+                : this.accepted
+                  ? 'last accepted passed'
+                  : 'not tested';
         return [
           `Fairness event: ${event?.kind ?? 'not observed'}`,
           `Evidence at: ${number(event?.runDistance)}`,
-          `Pattern: ${id(rejection?.patternId ?? (event?.schedule?.status === 'accepted' ? event.schedule.patternId : undefined))}`,
-          `Isolated: ${issue ? formatEncounterReason(issue.code) : event?.schedule ? 'pass' : 'not tested'}`,
+          `Pattern: ${id(rejection?.patternId ?? (schedule?.status === 'accepted' ? schedule.patternId : undefined))}`,
+          `Isolated: ${issue ? formatEncounterReason(issue.code) : schedule ? 'pass' : 'not tested'}`,
           `Transition: ${transition?.failureReason ? formatEncounterReason(transition.failureReason) : transition?.valid ? 'pass' : 'not tested'}`,
           threshold,
-          `Sample path: ${event?.kind === 'trajectory-rejected' ? 'no survivor' : this.accepted ? 'last accepted passed' : 'not tested'}`,
+          `Sample path: ${samplePath}`,
           `Reaction floor: ${number(event?.selection?.difficulty.minimumReactionTimeSeconds ?? stream.schedulingWindow.minimumReactionTimeSeconds)}s`,
         ];
       }
@@ -156,7 +173,7 @@ export class DirectorEncounterDiagnostics {
         const containsNow = (window: { startSeconds: number; endSeconds: number }) =>
           window.startSeconds <= 0 && window.endSeconds > 0;
         const limits = PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG.readability;
-        const decision = this.rejected?.readability ?? this.accepted?.readability;
+        const decision = this.readability?.readability;
         const issue = decision?.issues[0];
         return [
           `Now pressure: ${active.reduce((sum, value) => sum + value.pressureCost, 0)} / ${limits.hardLimits.maximumActivePressureCost} hard`,
