@@ -114,16 +114,16 @@ Use a manual Jules task when there is no useful GitHub implementation unit, for 
 
 If a manual task results in code that should land, publish it through a focused branch/PR so GitHub remains the durable review trail.
 
-## 4. Planning mode selection
+## 4. Planning approach selection
 
-Choose the lightest mode that still controls risk.
+Every normal Jules coding task generates a plan. Use the standard task flow for clear work and **Interactive Plan** when ambiguity or risk benefits from an explicit planning conversation. When a material implementation plan is awaiting approval, inspect it before execution when practical; Jules may auto-approve a standard plan after its approval window.
 
-| Work | Preferred mode |
+| Work | Preferred approach |
 |---|---|
-| Read-only status/inspection | Start |
-| Small, explicit, low-risk implementation | Start or Review |
-| Normal focused implementation Issue | Review |
-| Architecture-sensitive, ambiguous, or high-risk implementation | Interactive plan / explicit plan review |
+| Read-only status/inspection | Standard task |
+| Small, explicit, low-risk implementation | Standard plan |
+| Normal focused implementation Issue | Standard plan; review before execution when practical |
+| Architecture-sensitive, ambiguous, or high-risk implementation | Interactive Plan |
 | Narrow recurring maintenance | Scheduled task |
 
 For non-trivial implementation, plan review is valuable because it can catch invented scope, parallel abstractions, and irrelevant work before code is written.
@@ -183,6 +183,21 @@ Keep the fix scoped to this finding and rerun the required validation.
 ```
 
 Do not scatter optional style suggestions that cause unnecessary agent churn.
+
+### Coordinator ↔ Jules communication contract
+
+GitHub is the durable handoff channel between the coordinator/reviewer and Jules. The Game Director should not have to relay routine implementation or review text manually between agents.
+
+- Put approved implementation scope, dependencies, and acceptance criteria in the Issue.
+- Put concrete code-review findings on the PR that owns the change.
+- In Reactive Mode, a coordinator/reviewer that wants Jules to act on a finding should mention `@Jules` in that PR comment instead of only reporting the finding in chat.
+- Each actionable comment should identify the affected behavior or location, the evidence/failure, the desired invariant/outcome, and any validation that matters.
+- Keep discussion on the owning Issue/PR so Jules, reviewers, CI, and the Game Director share one durable execution trail.
+- After Jules pushes a fix, re-read the response, inspect the new exact head, and verify the finding is actually resolved; do not treat an acknowledgement or green CI as proof by itself.
+- If Jules disputes a finding, resolve the disagreement from repository/runtime evidence rather than agent authority.
+- Do not ask the Game Director to copy/paste messages between ChatGPT/Codex/Jules when the GitHub-native comment path is available.
+
+Use top-level PR comments for cross-cutting findings and inline review comments when a precise diff location materially improves the handoff. Consolidate closely related observations so Jules receives a coherent fix request rather than a noisy stream of micro-comments.
 
 ## 7. CI fixer is not approval
 
