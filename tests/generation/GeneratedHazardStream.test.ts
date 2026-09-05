@@ -11,12 +11,14 @@ import { evaluateHazardApproachTiming } from '../../src/generation/HazardApproac
 import { createHazardPattern } from '../../src/generation/HazardPattern';
 import { PROTOTYPE_HAZARD_PATTERN_FIXTURES } from '../../src/generation/PrototypeHazardPatternFixtures';
 import { PROTOTYPE_PLAYER_COLLISION_EXTENTS } from '../../src/systems/HazardCollision';
+import { TEST_ENCOUNTER_PROFILE } from '../support/TestEncounterProfile';
 
 const LIVE_CONTEXT = Object.freeze({ catalog: PROTOTYPE_HAZARD_PATTERN_FIXTURES });
 
 const BLOCKED_PATTERN = createHazardPattern({
   id: 'blocked-stream-pattern',
   runLength: 300,
+  profile: TEST_ENCOUNTER_PROFILE,
   entries: [
     {
       id: 'top',
@@ -34,6 +36,7 @@ const BLOCKED_PATTERN = createHazardPattern({
 const ZERO_OFFSET_PATTERN = createHazardPattern({
   id: 'zero-offset',
   runLength: 200,
+  profile: TEST_ENCOUNTER_PROFILE,
   entries: [
     {
       id: 'at-pattern-start',
@@ -46,6 +49,7 @@ const ZERO_OFFSET_PATTERN = createHazardPattern({
 const UPWARD_ONLY_PATTERN = createHazardPattern({
   id: 'upward-only',
   runLength: 300,
+  profile: TEST_ENCOUNTER_PROFILE,
   entries: [
     {
       id: 'lower-wall',

@@ -310,6 +310,8 @@ M4 difficulty is derived deterministically from logical run distance and one exp
 
 M4 pacing now has a separate deterministic logical-distance authority. Its **PROTOTYPE** policy repeats Breather → Low → Medium → High → Peak → Breather, with explicit recovery windows and entry/density ceilings that request sparse content even after difficulty caps. Snapshots expose phase boundaries and intensity for encounter selection and later Director diagnostics. Pacing does not consume random draws, depend on physical viewport size, or alter one-button input. Selection adapters narrow eligible patterns and prevent their authored spans from crossing phase boundaries; fairness validation remains mandatory. Full live encounter-policy integration remains #120, so the current live stream does not yet apply these pressure requests.
 
+M4 pattern data now includes an immutable typed encounter profile for later policy integration. Each profile explicitly declares an inclusive difficulty-tier range, supported pacing intensities, available behavior tags, a stable variety-family identity, and bounded **PROTOTYPE** pressure/readability costs. These fields are deterministic, serializable, and independent of Phaser and physical viewport dimensions. Current prototype fixtures are explicitly profiled, but the existing generator does not yet consume the metadata; live selection remains #120, recent-history use remains #125, and active-readability budgeting remains #126.
+
 ### FUTURE
 
 Difficulty and pacing values must be tuned through playtesting. Live encounter integration should realize readable pressure/recovery rather than permanent maximum intensity, keeping pacing separate from the difficulty tier.

@@ -1,5 +1,13 @@
 export type PacingIntensity = 'breather' | 'low' | 'medium' | 'high' | 'peak';
 
+export const PACING_INTENSITIES: ReadonlyArray<PacingIntensity> = Object.freeze([
+  'breather',
+  'low',
+  'medium',
+  'high',
+  'peak',
+]);
+
 /** Pressure ceilings narrow allowed content; they never raise difficulty or waive fairness. */
 export interface PacingPressureLimits {
   readonly maximumHazardsPer1000Distance: number;
@@ -89,7 +97,7 @@ export const assertValidPacingConfig = (config: Readonly<PacingConfig>): void =>
   let cycleLength = 0;
 
   for (const phase of config.phases) {
-    if (!['breather', 'low', 'medium', 'high', 'peak'].includes(phase.intensity)) {
+    if (!PACING_INTENSITIES.includes(phase.intensity)) {
       throw new TypeError('Unsupported pacing intensity.');
     }
 

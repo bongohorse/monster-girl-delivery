@@ -16,6 +16,7 @@ import {
 import { createRunGenerationState } from '../../src/generation/RunGenerationState';
 import type { SeedInput } from '../../src/generation/SeededPrng';
 import { PROTOTYPE_PLAYER_COLLISION_EXTENTS } from '../../src/systems/HazardCollision';
+import { TEST_ENCOUNTER_PROFILE } from '../support/TestEncounterProfile';
 
 interface AcceptedPatternTrace {
   readonly patternId: string;
@@ -93,6 +94,7 @@ const REPRESENTATIVE_TRACES: ReadonlyArray<{
 const BLOCKED_PATTERN = createHazardPattern({
   id: 'blocked-validation-pattern',
   runLength: 300,
+  profile: TEST_ENCOUNTER_PROFILE,
   entries: [
     {
       id: 'blocked-top',

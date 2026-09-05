@@ -4,6 +4,7 @@ import {
   type HazardPattern,
   type HazardPatternEntry,
 } from '../../src/generation/HazardPattern';
+import { TEST_ENCOUNTER_PROFILE } from '../support/TestEncounterProfile';
 
 const VALID_FIRST_ENTRY: Readonly<HazardPatternEntry> = Object.freeze({
   id: 'first',
@@ -21,6 +22,7 @@ const VALID_PATTERN: Readonly<HazardPattern> = Object.freeze({
   id: 'test-pattern',
   runLength: 500,
   entries: Object.freeze([VALID_FIRST_ENTRY, VALID_SECOND_ENTRY]),
+  profile: TEST_ENCOUNTER_PROFILE,
 });
 
 describe('createHazardPattern', () => {
@@ -51,6 +53,12 @@ describe('createHazardPattern', () => {
     const mutableDefinition = {
       id: 'mutable-source',
       runLength: 300,
+      profile: {
+        ...TEST_ENCOUNTER_PROFILE,
+        behaviorTags: [...TEST_ENCOUNTER_PROFILE.behaviorTags],
+        difficultyTierRange: { ...TEST_ENCOUNTER_PROFILE.difficultyTierRange },
+        pacingIntensities: [...TEST_ENCOUNTER_PROFILE.pacingIntensities],
+      },
       entries: [
         {
           id: 'entry',
@@ -64,8 +72,16 @@ describe('createHazardPattern', () => {
 
     expect(mutableDefinition).toEqual(original);
     mutableHitbox.left = 75;
+    mutableDefinition.profile.pacingIntensities.length = 0;
 
     expect(pattern.entries[0]?.hitbox.left).toBe(50);
+    expect(pattern.profile.pacingIntensities).toEqual([
+      'breather',
+      'low',
+      'medium',
+      'high',
+      'peak',
+    ]);
   });
 
   it('rejects non-positive or non-finite pattern run lengths', () => {
