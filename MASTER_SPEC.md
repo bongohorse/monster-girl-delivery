@@ -308,9 +308,11 @@ M4 pattern validation also checks whether a geometrically open corridor intersec
 
 M4 difficulty is derived deterministically from logical run distance and one explicit, capped **PROTOTYPE** tier configuration. Its immutable snapshot centralizes scroll-speed scaling, reaction-time and safe-corridor targets, reaction spacing, and pattern entry/density eligibility limits. Progression increases challenge across multiple parameters rather than only making the world faster. Difficulty has no viewport, FPS, wall-clock, failure-history, or pacing/intensity input. Typed adapters expose the snapshot to run motion, timing, validation, pattern selection, and later Director diagnostics; full live encounter-policy integration remains focused work under #120.
 
+M4 pacing now has a separate deterministic logical-distance authority. Its **PROTOTYPE** policy repeats Breather → Low → Medium → High → Peak → Breather, with explicit recovery windows and entry/density ceilings that request sparse content even after difficulty caps. Snapshots expose phase boundaries and intensity for encounter selection and later Director diagnostics. Pacing does not consume random draws, depend on physical viewport size, or alter one-button input. Selection adapters narrow eligible patterns and prevent their authored spans from crossing phase boundaries; fairness validation remains mandatory. Full live encounter-policy integration remains #120, so the current live stream does not yet apply these pressure requests.
+
 ### FUTURE
 
-Difficulty and pacing values must be tuned through playtesting. The separate pacing system should include readable pressure/recovery rather than permanent maximum intensity, and must not be collapsed into the difficulty tier.
+Difficulty and pacing values must be tuned through playtesting. Live encounter integration should realize readable pressure/recovery rather than permanent maximum intensity, keeping pacing separate from the difficulty tier.
 
 Scheduling belongs in [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
