@@ -225,6 +225,8 @@ M2 delivered:
 
 M3 extended this foundation with deterministic seeded pattern generation, explicit prototype fairness validation, bounded logical spawn scheduling, and a live generated hazard stream. The catalog, geometry, fairness constraints, retry bounds, and stream distances remain **PROTOTYPE**.
 
+M4 adds a reusable logical lifecycle for telegraphed hazards: Warning → Lock → Active → Expired. Warning and Lock are safe, Active is the only lethal phase, and targets sampled during warning freeze at the Lock boundary. Phase timing consumes simulation delta already normalized by `TimeService`; wall-clock timers and presentation callbacks do not own gameplay state. Each update crosses at most one boundary so an unexpectedly large delta cannot skip required safe phases, while unused boundary time carries forward for normal frame-rate independence. Phase durations and target-relative warning geometry remain configurable **PROTOTYPE** values. Concrete hazard content and warning presentation remain later focused M4 work.
+
 ### FUTURE
 
 Potential hazard families may later include:

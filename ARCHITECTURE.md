@@ -178,6 +178,8 @@ The pacing adapter requests entry/density limits and a maximum pattern span. For
 
 Each logical hazard pattern owns a required immutable encounter profile. This policy-only metadata records an inclusive difficulty-tier range, allowed pacing intensities, typed behavior tags, a stable variety-family identity, and bounded **PROTOTYPE** whole-unit pressure/readability costs. The constructor validates and snapshots every nested field without importing Phaser or viewport state. Current catalog fixtures declare their values explicitly. The generator continues to select the same catalog positions because profiles consume no random state and are not yet applied by selection; #125 owns recent-history policy, #126 owns the active readability budget, and #120 owns combined live policy integration.
 
+Telegraphed hazards use a pure logical lifecycle in `src/hazards/`: warning → lock → active → expired. Callers pass simulation delta already normalized by `TimeService`; Phaser clocks, callbacks, and presentation never own phase timing. The warning phase may update a minimal logical target snapshot, while the warning-to-lock boundary freezes that target for every later phase. Only active is lethal. A step crosses at most one phase boundary so an unexpectedly large delta cannot hide required safe phases, while boundary overflow carries forward to preserve normal frame-partition independence. Immutable state, transition data, **PROTOTYPE** phase durations, and target-relative warning geometry are serializable without Phaser. Concrete timed/reactive archetypes and presentation remain focused follow-up work.
+
 ## 9. Gameplay vs. presentation
 
 Keep deterministic rules independent of Phaser rendering where practical.
@@ -230,6 +232,7 @@ Rules:
 - pacing/intensity remains a separate responsibility from difficulty even when both later influence encounter selection.
 - pacing pressure ceilings only restrict candidate selection, and explicit recovery windows recur independently of difficulty or random pattern choices; they do not prove sequence-level fairness or active-hazard concurrency limits.
 - encounter profiles describe policy eligibility and costs but do not select, weight, validate, or spawn content by themselves.
+- telegraphed hazard timing consumes only normalized simulation delta, freezes target information at lock, and keeps logical lethality separate from warning presentation.
 
 ## 11. Director/developer tools
 
