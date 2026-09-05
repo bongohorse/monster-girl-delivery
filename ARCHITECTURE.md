@@ -170,7 +170,11 @@ M4 hazard-approach scheduling converts a typed **PROTOTYPE** minimum reaction ti
 
 M4 pattern reachability remains a pure logical validation rule. It reuses the authoritative analytical vertical-flight integrator to compute conservative continuous-thrust and released-input position extremes over the available reaction time. Hazard-free vertical corridors are reduced by the player collision extents into safe center-position ranges; inclusive intersection with the reachable envelope passes. The context carries explicit flight state and tuning, defaulting to a **PROTOTYPE** representative state for live generation, and never reads Phaser, FPS, viewport size, or presentation state.
 
-M4 difficulty is owned by a pure distance-to-snapshot authority with an explicit capped **PROTOTYPE** tier configuration. The snapshot centralizes speed scale, reaction and corridor targets, spacing, and pattern entry/density eligibility. Consumer adapters translate that snapshot into existing run-motion, timing, validator, and catalog boundaries without bypassing their validation. Difficulty deliberately contains no pacing/intensity state; #82 owns that separate authority, and #120 owns full live encounter-policy integration.
+M4 difficulty is owned by a pure distance-to-snapshot authority with an explicit capped **PROTOTYPE** tier configuration. The snapshot centralizes speed scale, reaction and corridor targets, spacing, and pattern entry/density eligibility. Consumer adapters translate that snapshot into existing run-motion, timing, validator, and catalog boundaries without bypassing their validation. Difficulty deliberately contains no pacing/intensity state; #120 owns full live encounter-policy integration.
+
+M4 pacing has its own pure distance-to-snapshot authority in `src/pacing/`. An explicit repeating **PROTOTYPE** cycle alternates breather, low, medium, high, and peak pressure. Immutable snapshots expose intensity, cycle/phase indices, distance boundaries, remaining distance, and pressure ceilings for encounter selection and later Director diagnostics. The cycle consumes no PRNG draws and requires an explicit breather in its configuration. Whole logical phase lengths keep cycle boundaries stable; authoritative run distance may be fractional. Pausing progress holds the snapshot, and restarting at zero restores the opening phase.
+
+The pacing adapter requests entry/density limits and a maximum pattern span. For future encounters, callers derive pacing at the proposed pattern start distance so authored spans cannot cross the next phase boundary. Filtering preserves catalog order, may return no matching content, and never falls back to higher pressure. Callers must handle empty selections explicitly, intersect pacing with difficulty eligibility, and retain hard geometry/reachability validation. Typed encounter profiles (#123), full live scheduling/gap handling (#120), and Director panel integration (#86) remain separate focused work; this authority does not yet change the live hazard stream.
 
 ## 9. Gameplay vs. presentation
 
@@ -222,6 +226,7 @@ Rules:
 - difficulty snapshots derive only from logical run distance and explicit configuration, remain deterministic and immutable, and never read viewport, frame, wall-clock, or player-failure state;
 - difficulty-based eligibility may narrow the candidate catalog but never replaces hard geometry or reachability validation;
 - pacing/intensity remains a separate responsibility from difficulty even when both later influence encounter selection.
+- pacing pressure ceilings only restrict candidate selection, and explicit recovery windows recur independently of difficulty or random pattern choices; they do not prove sequence-level fairness or active-hazard concurrency limits.
 
 ## 11. Director/developer tools
 
