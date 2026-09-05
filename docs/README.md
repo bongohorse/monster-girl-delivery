@@ -32,6 +32,7 @@ GitHub Issues/PRs are the live execution trail. Completed milestone reports are 
 | Check an approved game/product rule | [`../MASTER_SPEC.md`](../MASTER_SPEC.md) |
 | Browse unapproved future ideas | [`BACKLOG.md`](BACKLOG.md) |
 | Review Endless Runner / Jetpack Joyride lessons | [`ENDLESS_RUNNER_BLUEPRINT.md`](ENDLESS_RUNNER_BLUEPRINT.md) |
+| Review the detailed Jetpack Joyride wiki research pass | [`JETPACK_JOYRIDE_WIKI_RESEARCH.md`](JETPACK_JOYRIDE_WIKI_RESEARCH.md) |
 | Understand technical boundaries | [`../ARCHITECTURE.md`](../ARCHITECTURE.md) |
 | See commands, CI, testing, Codespaces, or closeout workflow | [`../DEVELOPMENT.md`](../DEVELOPMENT.md) |
 | Review completed milestones | [`milestones/README.md`](milestones/README.md) |
@@ -91,6 +92,7 @@ A **current explicit Game Director decision** controls product intent. Living do
 | [`GITHUB_AI_ACCESS.md`](GITHUB_AI_ACCESS.md) | GitHub/Codespaces authentication and repository permissions | merge approval policy or product decisions |
 | [`BACKLOG.md`](BACKLOG.md) | preserved future gameplay/art/content/tooling ideas and open questions | approved current scope |
 | [`ENDLESS_RUNNER_BLUEPRINT.md`](ENDLESS_RUNNER_BLUEPRINT.md) | external design lessons/reference material | MGD requirements |
+| [`JETPACK_JOYRIDE_WIKI_RESEARCH.md`](JETPACK_JOYRIDE_WIKI_RESEARCH.md) | detailed source-backed Jetpack Joyride wiki research and MGD design deductions | approved requirements, milestone scope, final balance/content decisions |
 | [`milestones/`](milestones/) | factual completed history and supporting evidence | future planning |
 | Existing code/tests | currently implemented behavior | product intent by themselves |
 
@@ -185,6 +187,10 @@ Nothing in the backlog becomes implementation scope until deliberately promoted.
 
 Jetpack Joyride / Endless Runner design lessons. Useful for design research, but never automatically binding on MGD.
 
+### `JETPACK_JOYRIDE_WIKI_RESEARCH.md` — detailed reference supplement
+
+Source-backed notes from a focused Jetpack Joyride Wiki research pass. It records reusable hazard, temporary-mode, collectible-path, mission, loadout, fail-state, event, and progression-layering lessons and maps them onto existing/future MGD Issues. It remains reference material rather than automatic implementation scope.
+
 ### `milestones/` — completed history
 
 [`milestones/README.md`](milestones/README.md) indexes factual closeout reports and supporting evidence.
@@ -234,6 +240,8 @@ docs/
 ├── ROADMAP.md                    Approved milestone sequence
 ├── BACKLOG.md                    Unified future ideas / exploration
 ├── ENDLESS_RUNNER_BLUEPRINT.md   Endless Runner design reference
+├── JETPACK_JOYRIDE_WIKI_RESEARCH.md
+│                                 Detailed Jetpack Joyride wiki research supplement
 ├── AI_WORKFLOW.md                Human ↔ AI orchestration
 ├── GITHUB_AI_ACCESS.md           GitHub/Codespaces auth + permissions
 ├── GAME_DESIGN_IDEAS.md          Compatibility stub → BACKLOG.md
