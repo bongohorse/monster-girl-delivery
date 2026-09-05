@@ -1,5 +1,8 @@
 import type { RunMotionValues } from '../config/RunMotionConfig';
-import { calculateDifficulty, createDifficultyReactionTimeConstraint } from '../difficulty/DifficultySystem';
+import {
+  calculateDifficulty,
+  createDifficultyReactionTimeConstraint,
+} from '../difficulty/DifficultySystem';
 import { PROTOTYPE_PLAYER_COLLISION_EXTENTS } from '../systems/HazardCollision';
 import {
   type PatternReachabilityContext,
@@ -371,12 +374,10 @@ const fillPolicySpawnWindow = (
     }
 
     const availablePrimary = primaryEvaluations.filter(
-      (evaluation) =>
-        evaluation.intrinsicallyEligible && evaluation.decision.status === 'reserved',
+      (evaluation) => evaluation.intrinsicallyEligible && evaluation.decision.status === 'reserved',
     );
     const availableDeferred = deferredEvaluations.filter(
-      (evaluation) =>
-        evaluation.intrinsicallyEligible && evaluation.decision.status === 'reserved',
+      (evaluation) => evaluation.intrinsicallyEligible && evaluation.decision.status === 'reserved',
     );
 
     // Existing active reservations can clear only through normalized simulation time.

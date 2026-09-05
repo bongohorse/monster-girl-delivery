@@ -10,13 +10,13 @@ import { DirectorTuningControls } from '../../devtools/DirectorTuningControls';
 import { GeneratedHazardPresentation } from '../../entities/GeneratedHazardPresentation';
 import { PrototypePlayerPresentation } from '../../entities/PrototypePlayerPresentation';
 import { PrototypeScrollingWorldPresentation } from '../../entities/PrototypeScrollingWorldPresentation';
+import { PROTOTYPE_PATTERN_REACHABILITY_CONTEXT } from '../../generation/FlightReachability';
 import {
   advanceGeneratedHazardStream,
   createGeneratedHazardStream,
   type GeneratedHazardStreamState,
   PROTOTYPE_LIVE_RUN_SEED,
 } from '../../generation/GeneratedHazardStream';
-import { PROTOTYPE_PATTERN_REACHABILITY_CONTEXT } from '../../generation/FlightReachability';
 import { PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG } from '../../generation/LiveEncounterPolicy';
 import { PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES } from '../../generation/PrototypeHazardPatternFixtures';
 import {

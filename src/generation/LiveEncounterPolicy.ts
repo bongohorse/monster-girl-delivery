@@ -11,16 +11,16 @@ import {
 } from '../difficulty/DifficultySystem';
 import { isTelegraphedHazardBehavior } from '../hazards/HazardArchetype';
 import {
+  createPacingPatternRequest,
+  filterPatternsForPacing,
+} from '../pacing/PacingPatternSelection';
+import {
   calculatePacing,
   type PacingConfig,
   type PacingIntensity,
   type PacingSnapshot,
   PROTOTYPE_PACING_CONFIG,
 } from '../pacing/PacingSystem';
-import {
-  createPacingPatternRequest,
-  filterPatternsForPacing,
-} from '../pacing/PacingPatternSelection';
 import type { PrototypePlayerCollisionExtents } from '../systems/HazardCollision';
 import { stepVerticalFlight, type VerticalFlightBounds } from '../systems/VerticalFlightSimulation';
 import {
@@ -185,8 +185,7 @@ export const selectLiveEncounterCandidates = (
   patternStartDistance: number,
   state: Readonly<LiveEncounterPolicyState>,
   config: Readonly<LiveEncounterPolicyConfig> = PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG,
-  baseConstraints: Readonly<PatternValidationConstraints> =
-    PROTOTYPE_PATTERN_VALIDATION_CONSTRAINTS,
+  baseConstraints: Readonly<PatternValidationConstraints> = PROTOTYPE_PATTERN_VALIDATION_CONSTRAINTS,
 ): Readonly<LiveEncounterCandidateSelection> => {
   const difficulty = calculateDifficulty(patternStartDistance, config.difficulty);
   const pacing = calculatePacing(patternStartDistance, config.pacing);
@@ -406,7 +405,4 @@ export const scaleLiveEncounterRunMotion = (
   runDistance: number,
   config: Readonly<LiveEncounterPolicyConfig> = PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG,
 ): Readonly<RunMotionValues> =>
-  scaleRunMotionForDifficulty(
-    baseRunMotion,
-    calculateDifficulty(runDistance, config.difficulty),
-  );
+  scaleRunMotionForDifficulty(baseRunMotion, calculateDifficulty(runDistance, config.difficulty));
