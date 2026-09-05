@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { PROTOTYPE_RUN_MOTION_DEFAULTS } from '../../src/config/RunMotionConfig';
+import { createEncounterExitStateEnvelope } from '../../src/generation/EncounterTransitionValidator';
+import { createEncounterVarietyHistoryState } from '../../src/generation/EncounterVarietyPolicy';
+import { PROTOTYPE_PATTERN_REACHABILITY_CONTEXT } from '../../src/generation/FlightReachability';
 import {
   advanceGeneratedHazardStream,
   createGeneratedHazardStream,
 } from '../../src/generation/GeneratedHazardStream';
-import { createEncounterExitStateEnvelope } from '../../src/generation/EncounterTransitionValidator';
-import { createEncounterVarietyHistoryState } from '../../src/generation/EncounterVarietyPolicy';
-import { PROTOTYPE_PATTERN_REACHABILITY_CONTEXT } from '../../src/generation/FlightReachability';
 import { createHazardPattern } from '../../src/generation/HazardPattern';
 import {
   createLiveEncounterPolicyState,
@@ -96,11 +96,7 @@ describe('live encounter policy integration', () => {
       2_499,
       state,
     );
-    const atBoundary = selectLiveEncounterCandidates(
-      [PROTOTYPE_OFFSET_PAIR_PATTERN],
-      2_500,
-      state,
-    );
+    const atBoundary = selectLiveEncounterCandidates([PROTOTYPE_OFFSET_PAIR_PATTERN], 2_500, state);
 
     expect(beforeBoundary).toMatchObject({
       difficulty: { tierIndex: 0 },
@@ -128,11 +124,7 @@ describe('live encounter policy integration', () => {
       14_200,
       state,
     );
-    const highPressure = selectLiveEncounterCandidates(
-      [PROTOTYPE_LINE_PATTERN],
-      19_200,
-      state,
-    );
+    const highPressure = selectLiveEncounterCandidates([PROTOTYPE_LINE_PATTERN], 19_200, state);
 
     expect(first).toEqual(replay);
     expect(first).toMatchObject({
