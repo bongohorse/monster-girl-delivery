@@ -1,5 +1,10 @@
 import type { HazardBehavior } from '../hazards/HazardArchetype';
 import type { LogicalHazard, LogicalHitbox } from '../systems/HazardCollision';
+import {
+  type EncounterTransitionContext,
+  type EncounterTransitionValidationResult,
+  validateEncounterTransition,
+} from './EncounterTransitionValidator';
 import type { PatternReachabilityContext } from './FlightReachability';
 import type { HazardPattern, HazardPatternEntryType } from './HazardPattern';
 import { generateNextPattern } from './PatternGenerator';
@@ -23,6 +28,8 @@ export interface PatternSpawnScheduleRequest {
   readonly patternStartDistance: number;
   readonly reachability?: Readonly<PatternReachabilityContext>;
   readonly state: Readonly<RunGenerationState>;
+  /** Optional sequence-level fairness input; live stream policy integration remains separate. */
+  readonly transition?: Readonly<EncounterTransitionContext>;
 }
 
 export interface LogicalHazardSpawnInstance extends LogicalHazard {
@@ -48,6 +55,8 @@ export interface RejectedPatternCandidate {
   readonly catalogIndex: number;
   readonly issues: ReadonlyArray<Readonly<PatternValidationIssue>>;
   readonly patternId: string;
+  readonly reason: 'pattern' | 'transition';
+  readonly transitionValidation: Readonly<EncounterTransitionValidationResult> | null;
 }
 
 interface PatternSpawnScheduleBase {
@@ -161,9 +170,34 @@ export const scheduleNextPattern = (
           catalogIndex: candidate.catalogIndex,
           issues: validation.issues,
           patternId: candidate.pattern.id,
+          reason: 'pattern',
+          transitionValidation: null,
         }),
       );
       continue;
+    }
+
+    if (request.transition !== undefined) {
+      const transitionValidation = validateEncounterTransition(
+        candidate.pattern,
+        request.patternStartDistance,
+        constraints,
+        request.transition,
+      );
+
+      if (!transitionValidation.valid) {
+        rejections.push(
+          createRejection({
+            attempt,
+            catalogIndex: candidate.catalogIndex,
+            issues: [],
+            patternId: candidate.pattern.id,
+            reason: 'transition',
+            transitionValidation,
+          }),
+        );
+        continue;
+      }
     }
 
     const nextPatternStartDistance = request.patternStartDistance + candidate.pattern.runLength;
