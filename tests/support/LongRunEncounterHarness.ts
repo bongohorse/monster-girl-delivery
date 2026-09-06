@@ -1,4 +1,5 @@
 import { PROTOTYPE_RUN_MOTION_DEFAULTS } from '../../src/config/RunMotionConfig';
+import type { EncounterTransitionValidationResult } from '../../src/generation/EncounterTransitionValidator';
 import { PROTOTYPE_PATTERN_REACHABILITY_CONTEXT } from '../../src/generation/FlightReachability';
 import {
   advanceGeneratedHazardStream,
@@ -22,11 +23,15 @@ export interface EncounterTraceEntry {
   readonly type: 'reserved' | 'rejected' | 'deferred';
   readonly patternId?: string;
   readonly reason?: string;
+  readonly transitionValidation?: Readonly<EncounterTransitionValidationResult> | null;
 }
 
 export interface LongRunEncounterTraceResult {
   readonly trace: ReadonlyArray<Readonly<EncounterTraceEntry>>;
   readonly finalState: ReturnType<typeof createGeneratedHazardStream>;
+  readonly maxRetainedSpawns: number;
+  readonly maxReservations: number;
+  readonly maxRecentFamilies: number;
 }
 
 export class LongRunEncounterHarness {
@@ -66,12 +71,28 @@ export class LongRunEncounterHarness {
                   : undefined),
             )?.varietyFamilyId,
             reason: event.kind,
+            transitionValidation:
+              event.schedule && event.schedule.status === 'accepted'
+                ? event.schedule.transitionValidation
+                : null,
           });
         } else if (
           event.kind === 'scheduler-rejected' ||
           event.kind === 'trajectory-rejected' ||
           event.kind === 'reaction-rejected'
         ) {
+          // If scheduler rejected it, pick the last rejection reason from attempts if any
+          let tValidation: Readonly<EncounterTransitionValidationResult> | null = null;
+          if (
+            event.kind === 'scheduler-rejected' &&
+            event.schedule &&
+            event.schedule.rejections &&
+            event.schedule.rejections.length > 0
+          ) {
+            tValidation =
+              event.schedule.rejections[event.schedule.rejections.length - 1].transitionValidation;
+          }
+
           trace.push({
             runDistance: event.runDistance,
             difficultyTier: event.selection?.difficulty.tierIndex || 0,
@@ -82,6 +103,7 @@ export class LongRunEncounterHarness {
                 ? event.schedule.patternId
                 : undefined,
             reason: event.kind,
+            transitionValidation: tValidation,
           });
         } else if (
           event.kind === 'readability-deferred' ||
@@ -105,6 +127,11 @@ export class LongRunEncounterHarness {
     let distance = 0;
     const timeStep = 1 / 60;
     let limit = 0;
+
+    let maxRetainedSpawns = 0;
+    let maxReservations = 0;
+    let maxRecentFamilies = 0;
+
     while (distance < maxDistance && limit < 1000000) {
       // Miror live progression two-phase evaluation:
       // Pre-step parameter resolution pass (elapsedSeconds = 0, scheduleEncounters = false)
@@ -130,6 +157,16 @@ export class LongRunEncounterHarness {
         true,
       );
 
+      // Track absolute maxima
+      maxRetainedSpawns = Math.max(maxRetainedSpawns, stream.spawns.length);
+      if (stream.policy) {
+        maxReservations = Math.max(maxReservations, stream.policy.readability.reservations.length);
+        maxRecentFamilies = Math.max(
+          maxRecentFamilies,
+          stream.policy.variety.recentFamilyIds.length,
+        );
+      }
+
       if (stream.status === 'exhausted') {
         break;
       }
@@ -139,6 +176,9 @@ export class LongRunEncounterHarness {
     return {
       trace: Object.freeze(trace),
       finalState: stream,
+      maxRetainedSpawns,
+      maxReservations,
+      maxRecentFamilies,
     };
   }
 }

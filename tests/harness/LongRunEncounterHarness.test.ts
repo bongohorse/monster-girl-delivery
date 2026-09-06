@@ -79,19 +79,22 @@ describe('LongRunEncounterHarness', () => {
 
   it('completes bounded long run successfully', () => {
     const harness = new LongRunEncounterHarness();
-    const { trace, finalState } = harness.run(300, 50000); // long run
+    const { trace, finalState, maxRetainedSpawns, maxReservations, maxRecentFamilies } =
+      harness.run(300, 50000); // long run
 
     expect(trace.length).toBeGreaterThan(10);
 
     // Check that internal states are bounded properly
+    // Verify that the maximum growth at any point during the run is strictly bounded by active policy/cleanup constraints
+    expect(maxRetainedSpawns).toBeLessThan(50);
+    expect(maxReservations).toBeLessThan(20);
+    expect(maxRecentFamilies).toBeLessThanOrEqual(2);
+
     // Spawns should be drained over distance
-    expect(finalState.spawns.length).toBeLessThan(100);
+    expect(finalState.spawns.length).toBeLessThan(50);
     if (finalState.policy) {
-      expect(finalState.policy.readability.reservations.length).toBeLessThan(100);
-      expect(finalState.policy.variety.recentFamilyIds.length).toBeLessThanOrEqual(
-        // we can safely assert length is less than or equal to window size hardcoded 2
-        2,
-      );
+      expect(finalState.policy.readability.reservations.length).toBeLessThan(20);
+      expect(finalState.policy.variety.recentFamilyIds.length).toBeLessThanOrEqual(2);
     }
   });
 
@@ -121,13 +124,22 @@ describe('LongRunEncounterHarness', () => {
     const hasReserved = trace.some((t) => t.type === 'reserved');
     expect(hasReserved).toBe(false);
 
-    // We should specifically see valid rejection records since the candidate fails bounds/deadlock validation
-    // Since there's no difficulty entry or valid profile for `BLOCKED_PATTERN` at tier >= 1,
-    // it will emit `no-content` at higher tiers or `scheduler-rejected`/`no-content` based on tier constraints.
-    // But importantly, we assert it hits a deferred 'no-content' or a proper structured rejection, and definitely no reservations.
+    // We should specifically see valid structured rejection records since the candidate fails bounds/deadlock validation.
+    // If the tier explicitly denies `TEST_ENCOUNTER_PROFILE` it will defer out as `no-content`.
+    // We expect it to at least explicitly defer or reject cleanly instead of deadlocking.
+    // Because `TEST_ENCOUNTER_PROFILE` requires difficulty tier > 0 implicitly or causes a `no-content` based on budget
+    // For this specific test we should verify we get at least some structured tracking of why it didn't pass (e.g., defer due to no valid content available).
     const hasDeferredOrRejection = trace.some(
       (t) => t.type === 'rejected' || t.type === 'deferred',
     );
     expect(hasDeferredOrRejection).toBe(true);
+
+    const hasStructuredReason = trace.some(
+      (t) =>
+        t.reason === 'no-content' ||
+        t.reason === 'scheduler-rejected' ||
+        t.reason === 'trajectory-rejected',
+    );
+    expect(hasStructuredReason).toBe(true);
   });
 });
