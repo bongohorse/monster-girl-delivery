@@ -6,61 +6,95 @@ This document defines the **Jules-specific operating workflow** for Monster Girl
 
 Mandatory behavior for every coding agent still comes from [`../AGENTS.md`](../AGENTS.md). Human/AI orchestration is owned by [`AI_WORKFLOW.md`](AI_WORKFLOW.md). GitHub authentication and permission boundaries are owned by [`GITHUB_AI_ACCESS.md`](GITHUB_AI_ACCESS.md).
 
-Jules is a **supporting implementation/review agent**, not a product authority and not a source of truth. Its output must be treated as a proposal backed by code, tests, CI, and review—not as fact merely because the agent sounds confident.
+Jules is a **supporting research/scoping/review capability with a retained coding integration**, not a product authority and not a source of truth. Its output must be treated as a proposal backed by repository evidence—not as fact merely because the agent sounds confident.
 
-## 1. Role in MGD
+## 1. Current operational status
 
-Use Jules to increase throughput and provide an independent implementation/review perspective.
+**Jules coding is currently paused for MGD.**
 
-Good Jules work includes:
+Recent MGD evaluations found useful repository understanding and occasional strong findings, but implementation reliability was not consistently high enough to offset the review, correction, and cleanup work created by Jules-authored code. The repository therefore keeps the Jules integration and coding workflow documented for future use without treating the current Jules models as approved implementation agents.
 
-- implementing one approved focused GitHub Issue;
-- fixing verified defects on its own PR;
-- independently reviewing a bounded system or PR;
-- running deterministic/test-oriented engineering work;
-- narrow recurring maintenance where the trigger and success condition are objective.
+This is a capability decision, not a permanent rejection of Jules and not a rule tied to a specific model name.
 
-Do not use Jules as an autonomous product designer, backlog generator, or general "make the repo better" bot.
+### Enabled now
 
-Jules must not promote `FUTURE`, `EXPERIMENT`, `TBD`, backlog, reference, or research material into implementation scope.
+Use Jules for bounded work where a wrong answer cannot silently become production code:
+
+- repository and architecture research;
+- Issue scoping and implementation-boundary analysis;
+- research for an already proposed feature or feature request;
+- comparing implementation approaches before an Issue is ready;
+- bounded adversarial audits that are **read-only by default**;
+- documentation, API, dependency, browser/platform, and toolchain research;
+- browser-facing visual verification as additional evidence;
+- scheduled research, monitoring, and compatibility/model-capability watches.
+
+Important research findings should be promoted into the normal GitHub Issue/PR/review trail before they influence implementation scope.
+
+### Paused now
+
+Do not currently dispatch Jules to:
+
+- implement features;
+- fix production defects;
+- refactor production code;
+- add or rewrite tests as an implementation task;
+- remove or change dependencies;
+- auto-fix CI failures by changing code;
+- perform autonomous cleanup, optimization, hardening, or maintenance PRs;
+- act as the implementation owner of a GitHub Issue.
+
+Keep Reactive Mode enabled where practical so Jules does not act on repository work unless deliberately invoked.
+
+### Coding capability gate
+
+Do not re-enable Jules coding merely because a new model name appears in the UI.
+
+When Jules receives a materially improved model or agent revision, run a focused MGD capability re-evaluation before changing this policy. The evaluation should include at least:
+
+1. a bounded read-only adversarial code audit with findings checked against the repository;
+2. a small reproducible bug fix with a clear supported runtime path and regression criterion; and
+3. a bounded integration task with explicit acceptance criteria and existing architecture constraints.
+
+Evaluate the result on correctness, scope discipline, runtime integration, test quality, invented assumptions, and **net review/repair burden**. Coding should be re-enabled only when the new Jules capability is a clear productivity gain rather than merely capable of producing a passing PR.
+
+A Game Director decision is required to change the current `coding paused` status.
 
 ## 2. Trust model: verify, do not assume
 
-Jules can produce useful code quickly, but it can also:
+Jules can produce useful analysis quickly, but it can also:
 
 - state repository facts that are not true;
 - invent APIs/files/behavior that do not exist;
 - propose defensive code for states the application cannot actually reach;
 - construct synthetic tests around absurd or impossible scenarios;
-- add helpers/abstractions/tests that technically work but do not advance the task;
+- recommend helpers/abstractions/tests that do not advance the task;
 - mistake a passing isolated test for real runtime integration.
 
-Therefore every Jules finding and PR passes two gates.
+Therefore every Jules finding passes two gates.
 
 ### Reality gate
 
-A reported defect should normally be reachable from the current production/test contract.
+A reported defect or risk should normally be reachable from the current production/test contract.
 
 Before treating a Jules finding as actionable, verify:
 
 1. **Entry point** — what real public/runtime path reaches the code?
 2. **State origin** — how can the problematic state be produced through supported inputs/configuration/lifecycle?
 3. **Failure** — what observable invariant or acceptance criterion is violated?
-4. **Evidence** — exact code path, deterministic reproduction, failing test, trace, or other concrete evidence.
+4. **Evidence** — exact code path, deterministic reproduction, failing test, trace, authoritative external source, or other concrete evidence.
 
 A scenario that requires mutating private fields, bypassing existing validators, fabricating impossible configuration, or calling an internal method in an order the application never can is **not automatically a product bug**.
 
-Such synthetic cases are useful only when the task explicitly concerns defensive validation or the supposedly impossible state can cross a real external boundary.
-
 ### Value gate
 
-Even a real observation does not automatically justify code.
+Even a real observation does not automatically justify implementation work.
 
-A change should materially satisfy an acceptance criterion, fix a reachable defect, protect a meaningful invariant, complete required integration, or address a demonstrated performance/reliability/maintenance problem.
+A follow-up should materially satisfy an acceptance criterion, fix a reachable defect, protect a meaningful invariant, complete required integration, or address a demonstrated performance/reliability/maintenance problem.
 
-Do not accept a Jules change merely because it:
+Do not promote a Jules suggestion merely because it:
 
-- adds another test;
+- proposes another test;
 - extracts a helper;
 - introduces a wrapper or interface;
 - handles a theoretical state;
@@ -68,94 +102,108 @@ Do not accept a Jules change merely because it:
 - follows a generic "best practice";
 - makes code look more architecturally elaborate.
 
-If removing the change would not meaningfully affect the approved outcome, it probably does not belong in the PR.
+If the observation would not meaningfully affect an approved outcome, it probably does not deserve implementation work.
 
-## 3. Preferred GitHub-native dispatch
+## 3. Active Jules task shapes
 
-For approved implementation work, prefer GitHub as the handoff layer instead of copying prompts between tools.
+Prefer a small set of outcome-oriented task shapes over a large prompt catalog. These are starting structures, not authority to expand scope or bypass the Issue, `AGENTS.md`, or the reality/value gates.
 
-### Existing focused Issue
+| Task shape | Use it when | Required outcome |
+|---|---|---|
+| **Issue scoping** | an approved outcome is too large or ambiguous for one implementation unit | inspect authoritative sources; return goal, runtime path, smallest coherent scope, acceptance criteria, non-goals, validation, and real dependencies; do not implement |
+| **Research / feature-request research** | a proposed feature, dependency, API, browser behavior, reference game, tool, or approach needs evidence before a decision | answer the bounded question with repository/external evidence, tradeoffs, applicability to MGD, and unresolved decisions; do not silently promote the subject into approved scope |
+| **Adversarial audit** | an independent review of a bounded system/invariant is useful | read-only; actively try to disprove suspected findings; report only findings with a real entry point, reachable state origin, violated invariant, concrete evidence, current coverage, and smallest reasonable follow-up |
+| **Visual verification** | a browser-facing state needs additional rendered evidence | render the relevant state when practical; report exactly what the screenshot demonstrates and what it cannot prove |
+| **Scheduled research/watch** | a recurring external or repository condition can change and the result would inform a later decision | inspect and report material changes; no code changes or autonomous PRs while coding is paused |
 
-Preferred flow:
+Do not copy generic prompts such as "improve the codebase", "add more tests", "find tech debt", "optimize everything", or "generate useful features" into MGD tasks. They reward activity rather than approved outcomes.
+
+### Dormant coding task shapes
+
+The following shapes remain documented conceptually so the integration can be restored quickly after the coding capability gate passes, but they are **not currently authorized Jules tasks**:
+
+- verified bug fix;
+- invariant/property-test implementation;
+- dependency cleanup;
+- focused feature implementation;
+- CI-fix code changes.
+
+If coding is re-enabled later, these tasks must still use the same reality/value gates, focused Issue ownership, exact-head review, and required repository validation.
+
+## 4. GitHub-native coordination
+
+GitHub remains the durable handoff layer between the Game Director, coordinator/reviewer, Jules research, and any implementation agent.
+
+### Current rule while coding is paused
+
+Do **not** use the `jules` label to dispatch implementation Issues while the coding gate is closed.
+
+Keep `ai:coder` as the general coding-agent-suitable classification where useful. A future reactivation of Jules coding may reuse the existing `jules` label dispatch model without redesigning the workflow.
+
+Use manual Jules tasks or other bounded Jules entry points for current research/scoping/audit work. When a result matters:
+
+```text
+bounded Jules research/audit
+→ coordinator verifies evidence
+→ useful finding is recorded on the owning Issue/PR or promoted into a focused Issue
+→ approved implementation goes to the currently trusted implementation agent
+```
+
+Do not ask the Game Director to relay routine text manually when a durable GitHub comment or Issue can carry the result.
+
+### Dormant implementation dispatch
+
+If the coding capability gate is reopened, the retained implementation flow is:
 
 ```text
 approved focused Issue
 → verify dependencies / status
 → add GitHub label `jules`
 → Jules starts from the Issue
-→ Jules comments on the Issue
 → Jules implements + validates
 → Jules opens/links a Pull Request
 → review exact PR diff + CI
-→ feedback via PR comments
+→ targeted feedback through the owning PR
 → merge only when explicitly authorized
 ```
 
-The `jules` label is a **dispatch trigger**, not product approval by itself. Only apply it to work that is already approved and ready.
+The `jules` label is a dispatch trigger, never product approval by itself.
 
-Keep `ai:coder` as the general "coding-agent suitable" classification where useful; use `jules` to actually dispatch the Issue to Jules.
+## 5. Planning approach
 
-Do not apply `jules` to:
-
-- blocked Issues;
-- parent/umbrella Issues that are not implementation units;
-- `FUTURE`/`EXPERIMENT` work that has not been promoted;
-- vague cleanup ideas;
-- an Issue another coding agent is already implementing.
-
-### Manual Jules task
-
-Use a manual Jules task when there is no useful GitHub implementation unit, for example:
-
-- a one-off read-only investigation;
-- comparing two implementation approaches before an Issue is ready;
-- an independent adversarial review;
-- checking Jules environment/setup behavior.
-
-If a manual task results in code that should land, publish it through a focused branch/PR so GitHub remains the durable review trail.
-
-### Reusable task archetypes
-
-Prefer a small set of outcome-oriented task shapes over a large prompt catalog. These archetypes are starting structures, not authority to expand scope or bypass the Issue, `AGENTS.md`, or the reality/value gates.
-
-| Archetype | Use it when | Required shape |
-|---|---|---|
-| **Issue scoping** | an approved outcome is too large or ambiguous for one implementation unit | inspect authoritative sources; return goal, runtime path, smallest coherent scope, acceptance criteria, non-goals, validation, and real dependencies; do not implement |
-| **Verified bug fix** | a concrete defect is reported | reproduce through a supported path; identify the violated invariant; add the smallest meaningful regression test when appropriate; implement the smallest coherent fix; if the scenario is not reachable, report `NO JUSTIFIED CHANGE` |
-| **Adversarial audit** | an independent review of a bounded system/invariant is useful | read-only by default; actively try to disprove suspected findings; report only findings with a real entry point, reachable state origin, violated invariant, concrete evidence, current test coverage, and smallest reasonable correction |
-| **Invariant/property test** | a stable deterministic rule has plausible regression risk not covered by the current suite | prefer seeded, parameterized, or property-style checks around behavior/invariants; add nothing if the test would only raise coverage or introduce flaky/randomized noise |
-| **Dependency hygiene** | direct dependencies need a focused health/usage check | verify actual imports/runtime/tooling use before reporting removal; report only demonstrably unused, obsolete, unmaintained, duplicated, or materially risky dependencies; leave routine version bumps to Renovate |
-
-Do not copy generic prompts such as "improve the codebase", "add more tests", "find tech debt", or "generate feature ideas" into MGD tasks. They reward activity rather than approved outcomes and duplicate safeguards already owned by this workflow.
-
-## 4. Planning approach selection
-
-Every normal Jules coding task generates a plan. Use the standard task flow for clear work and **Interactive Plan** when ambiguity or risk benefits from an explicit planning conversation. When a material implementation plan is awaiting approval, inspect it before execution when practical; Jules may auto-approve a standard plan after its approval window.
+For current Jules use:
 
 | Work | Preferred approach |
 |---|---|
-| Read-only status/inspection | Standard task |
-| Small, explicit, low-risk implementation | Standard plan |
-| Normal focused implementation Issue | Standard plan; review before execution when practical |
-| Architecture-sensitive, ambiguous, or high-risk implementation | Interactive Plan |
-| Narrow recurring maintenance | Scheduled task |
+| Read-only repository status/inspection | Standard task |
+| Issue scoping | Standard task or Interactive Plan when ambiguity benefits from discussion |
+| Bounded adversarial audit | Standard task, explicitly read-only |
+| External/API/tool/reference research | Standard task |
+| Recurring research/compatibility watch | Scheduled task |
+| Production implementation | **Paused** |
 
-For non-trivial implementation, plan review is valuable because it can catch invented scope, parallel abstractions, and irrelevant work before code is written.
+A good research/scoping plan should identify the real question, authoritative sources, repository relevance, evidence required, and explicit non-goals. Reject plans whose deliverable is mainly speculative architecture or activity without a decision-relevant result.
 
-A good Jules plan should identify:
+## 6. Visual verification
 
-- the real runtime/integration path;
-- existing abstractions to reuse;
-- acceptance criteria → implementation/test mapping;
-- files/systems that actually need change;
-- concrete validation;
-- explicit non-goals when nearby scope is tempting.
+Jules supports browser-facing visual verification. Use it as **additional evidence**, not as a substitute for the evidence class an acceptance criterion actually requires.
 
-Reject plans whose deliverable is mainly scaffolding, speculative architecture, or synthetic edge-case handling unrelated to reachable behavior.
+Good candidates include:
 
-## 5. PR review standard for Jules code
+- Director/debug UI;
+- HUD and menus;
+- responsive layout and viewport behavior;
+- CSS/DOM presentation;
+- obvious browser rendering regressions;
+- comparison of a proposed browser-facing behavior during research.
 
-Jules-authored code receives the same review standard as any other agent code. Do not auto-merge it because CI is green.
+A screenshot proves only the rendered state it shows. It does **not** prove game feel, touch behavior, timing/fairness, animation quality across time, pause/background lifecycle, performance, or device-specific behavior.
+
+Do not add screenshot artifacts to the repository merely to demonstrate that Jules rendered the page. Commit visual artifacts only when the assigned task explicitly requires them as durable project output.
+
+## 7. Jules-authored code review standard — dormant but retained
+
+If the coding capability gate is reopened later, Jules-authored code receives the same review standard as any other agent code. Green CI is not approval.
 
 Review in this order:
 
@@ -165,108 +213,71 @@ Review in this order:
 4. **Authority** — are timing, input, randomness, generation, collision, persistence, and Director boundaries preserved?
 5. **Value** — did Jules add low-value wrappers, tests, abstractions, comments, or defensive code unrelated to the outcome?
 6. **Regression evidence** — do tests protect behavior/invariants rather than mirror implementation details?
-7. **Validation** — required local checks and exact-head CI are green where applicable?
+7. **Validation** — are required local checks and exact-head CI green?
 8. **Manual evidence** — if the criterion concerns feel, device behavior, presentation, or lifecycle, has real manual evidence been supplied instead of simulated claims?
+9. **Repair burden** — did review require enough correction that Jules was not actually a productivity gain?
 
-A large diff is not proof of thoroughness. Prefer the smallest coherent change that fully satisfies the Issue.
+A large diff is not proof of thoroughness.
 
-### Visual verification for browser-facing changes
+## 8. PR feedback and CI fixer — paused for Jules coding
 
-When a task materially changes rendered browser output, use Jules' web-app visual verification as **additional evidence** when practical: ask it to run/render the relevant app state and return a screenshot of the result.
+Jules can respond to PR feedback and can automatically react to CI failures on PRs it creates. Those capabilities remain useful platform features, but **MGD does not currently use them to authorize Jules production-code changes**.
 
-Good candidates include:
+While coding is paused:
 
-- Director/debug UI;
-- HUD and menus;
-- responsive layout and viewport behavior;
-- CSS/DOM presentation;
-- obvious browser rendering regressions.
+- do not mention `@Jules` with instructions to implement fixes on production PRs;
+- do not rely on Jules CI auto-fixing as an implementation loop;
+- use Jules comments for bounded research/analysis only when useful;
+- route approved code changes to the currently trusted implementation workflow.
 
-A screenshot proves only the rendered state it shows. It does **not** prove game feel, touch behavior, timing/fairness, animation quality across time, pause/background lifecycle, performance, or device-specific behavior. Keep the existing manual/device evidence requirements for those criteria.
-
-Do not add screenshot artifacts to the repository merely to demonstrate that Jules rendered the page. Commit visual artifacts only when the assigned task explicitly requires them as durable project output.
-
-## 6. PR feedback loop
-
-Jules can respond to GitHub PR feedback. For MGD, prefer **Reactive Mode** in Jules settings so the agent only acts when explicitly mentioned.
-
-Recommended feedback flow:
+If coding is re-enabled later, prefer Reactive Mode and keep the retained feedback sequence:
 
 ```text
 review finding
-→ leave focused PR comment
-→ mention `@Jules`
-→ Jules acknowledges / fixes
-→ new commit
+→ focused owning-PR comment
+→ explicitly invoke Jules
+→ fix
 → CI
 → re-review exact head
 ```
 
-A useful comment describes the concrete failing behavior and desired invariant, not an open-ended request to "improve" the code.
+Automatic CI fixing must never weaken tests, lint/type safety, architecture constraints, or product behavior merely to make a check green.
 
-Example:
-
-```text
-@Jules this path advances policy state during a zero-delta update.
-Preserve the existing pause invariant and add the smallest deterministic regression test.
-Keep the fix scoped to this finding and rerun the required validation.
-```
-
-Do not scatter optional style suggestions that cause unnecessary agent churn.
-
-### Coordinator ↔ Jules communication contract
-
-GitHub is the durable handoff channel between the coordinator/reviewer and Jules. The Game Director should not have to relay routine implementation or review text manually between agents.
-
-- Put approved implementation scope, dependencies, and acceptance criteria in the Issue.
-- Put concrete code-review findings on the PR that owns the change.
-- In Reactive Mode, a coordinator/reviewer that wants Jules to act on a finding should mention `@Jules` in that PR comment instead of only reporting the finding in chat.
-- Each actionable comment should identify the affected behavior or location, the evidence/failure, the desired invariant/outcome, and any validation that matters.
-- Keep discussion on the owning Issue/PR so Jules, reviewers, CI, and the Game Director share one durable execution trail.
-- After Jules pushes a fix, re-read the response, inspect the new exact head, and verify the finding is actually resolved; do not treat an acknowledgement or green CI as proof by itself.
-- If Jules disputes a finding, resolve the disagreement from repository/runtime evidence rather than agent authority.
-- Do not ask the Game Director to copy/paste messages between ChatGPT/Codex/Jules when the GitHub-native comment path is available.
-
-Use top-level PR comments for cross-cutting findings and inline review comments when a precise diff location materially improves the handoff. Consolidate closely related observations so Jules receives a coherent fix request rather than a noisy stream of micro-comments.
-
-## 7. CI fixer is not approval
-
-Jules may automatically react to CI failures on PRs it creates.
-
-That loop is useful for mechanical failures, but it does not authorize Jules to:
-
-- change product behavior to make a test pass;
-- weaken tests, lint rules, type safety, or CI protections;
-- broaden scope;
-- replace an acceptance criterion with an easier assertion.
-
-After any automatic CI fix, review the new exact head—not only the original diff.
-
-## 8. Concurrency policy
+## 9. Concurrency policy
 
 Jules can run many tasks in parallel, but available concurrency is not a reason to create more work.
 
-Rules:
+Current rules:
 
-- one active implementation owner per focused Issue;
-- do not have Jules and Codex independently edit the same task at the same time;
-- avoid parallel writers in the same tightly coupled subsystem unless the branches are intentionally independent;
-- use high parallelism mainly for independent read-only investigation/review or unrelated Issues;
-- reconcile independent audit findings before creating follow-up implementation work.
+- use parallelism mainly for genuinely independent read-only research questions;
+- do not run multiple agents to repeat the same weak hypothesis;
+- reconcile independent audit findings before creating follow-up implementation work;
+- do not have Jules research and another agent implementation race on an unsettled product/architecture decision;
+- if Jules coding is re-enabled later, one active implementation owner per focused Issue remains mandatory.
 
-Ten independent agents repeating the same weak hypothesis do not make the hypothesis true. Verify against code/runtime evidence.
+## 10. Scheduled tasks
 
-## 9. Scheduled tasks
+Scheduled Jules tasks are currently most valuable to MGD as **research/reporting automation**, not autonomous code maintenance.
 
-Scheduled Jules tasks are appropriate only when the recurring trigger and useful outcome are clear.
+Good current categories include:
 
-Good categories:
+- Phaser, Bun, Vite, TypeScript, browser, or mobile-Web compatibility/release watch relevant to the current stack;
+- material upstream changes that could affect an existing MGD system;
+- dependency/API documentation watch where a future migration decision may be needed;
+- research on a bounded proposed feature or reference-game system;
+- browser/platform behavior research relevant to current mobile targets;
+- Jules product/model/capability watch to identify when another coding capability evaluation is justified;
+- periodic re-checks of a known external uncertainty with a clear decision consequence.
 
-- material regression watch;
-- determinism/fairness regression watch;
-- lifecycle/unbounded-growth watch;
-- measured performance regression watch;
-- narrow toolchain/compatibility maintenance.
+A current scheduled task should normally behave like:
+
+```text
+inspect the bounded question
+→ identify material new evidence since the previous run
+→ report evidence + MGD relevance
+→ recommend NO ACTION or a focused human/coordinator decision
+→ do not change production code
+```
 
 Avoid schedules such as:
 
@@ -276,42 +287,28 @@ Optimize performance.
 Increase test coverage.
 Refactor messy code.
 Find useful features.
+Fix whatever is wrong.
 ```
 
-Those prompts reward activity instead of value and tend to produce low-value churn.
+Do not allow a scheduled Jules report that exists only in the Jules UI to become sole project authority. Important findings should be recorded in GitHub before they influence project scope.
 
-For MGD, a scheduled maintenance task should normally behave like:
-
-```text
-verified material regression found
-→ smallest justified fix
-→ meaningful regression test when appropriate
-→ required validation
-→ focused PR
-
-no material regression
-→ NO ACTION
-```
-
-Do not use a read-only scheduled Jules report as the sole durable project evidence if the result exists only in the Jules UI. Important findings should be promoted into GitHub through a real Issue/PR/review trail before they influence project scope.
-
-## 10. Suggested tasks
+## 11. Suggested tasks
 
 Treat Jules Suggested Tasks as **untrusted proposals**, not backlog items.
 
-Before accepting one, require:
+Suggested Tasks must not bypass the current coding pause. Before accepting even a research-oriented suggestion, require:
 
-- a concrete current problem;
+- a concrete current question/problem;
 - a meaningful outcome;
 - evidence that the scenario exists in MGD;
 - no duplication of an existing Issue/system;
 - appropriate milestone timing.
 
-Reject suggested TODO cleanup, abstractions, generic hardening, or micro-optimization when no current MGD outcome justifies it.
+Reject TODO cleanup, speculative abstractions, generic hardening, micro-optimization, or autonomous feature generation when no current MGD outcome justifies it.
 
-## 11. Environment policy
+## 12. Environment policy
 
-Jules environment setup should reproduce the repository toolchain rather than accepting stale preinstalled versions.
+Keep the Jules repository environment ready so future research, visual verification, and capability re-evaluation can run reproducibly without rebuilding the integration from scratch.
 
 Current working setup pattern:
 
@@ -353,25 +350,25 @@ Default Jules repository environment policy:
 
 - no extra environment variables unless a concrete task requires them;
 - no repository PAT/`MGD_GH_TOKEN` in Jules by default;
-- use Jules' GitHub App integration for its native Issue/PR workflow;
+- use Jules' GitHub App integration for native repository access;
 - network access may remain enabled for documentation/package/research access;
 - never expose credentials in task prompts, logs, code, or comments.
 
-## 12. Failure handling
+## 13. Failure handling
 
-If Jules cannot complete a task:
+If Jules cannot complete a research/scoping/audit task:
 
-- distinguish environment/tooling failure from implementation failure;
+- distinguish environment/tooling failure from an evidence gap;
 - fix the environment rather than weakening repository invariants;
-- if a manual task cannot retrieve an Issue, prefer the native GitHub Issue + `jules` label path rather than repeatedly copying scope text;
 - if prerequisites are genuinely missing, stop as blocked instead of inventing substitutes;
-- if Jules claims a blocker, verify it against GitHub/repository state before changing scope.
+- if Jules claims a blocker, verify it against GitHub/repository state before changing scope;
+- a correct `NO JUSTIFIED FINDING`, `NO MATERIAL CHANGE`, or genuine blocker is preferable to manufactured work.
 
-A task that correctly reports "no justified change" or a genuine blocker can be more valuable than a PR that manufactures work.
+If a future coding capability evaluation fails, leave Jules coding paused and record the concrete failure mode rather than loosening the gate to force adoption.
 
-## 13. External Jules references
+## 14. External Jules references
 
-Jules product behavior changes over time. Re-check current documentation when changing the integration itself:
+Jules product behavior changes over time. Re-check current documentation when changing this integration or evaluating a new capability:
 
 - Running tasks: https://jules.google/docs/running-tasks/
 - Reviewing plans: https://jules.google/docs/review-plan/
@@ -382,4 +379,4 @@ Jules product behavior changes over time. Re-check current documentation when ch
 - FAQ: https://jules.google/docs/faq/
 - Changelog: https://jules.google/docs/changelog/
 
-Do not encode temporary Jules UI behavior as an MGD product/architecture requirement.
+Do not encode a temporary Jules UI model name or feature state as an MGD product/architecture requirement. Current coding eligibility is owned by the capability gate above, not by marketing/version naming.
