@@ -281,8 +281,13 @@ describe('frame partition simulation harness', () => {
       }
     });
 
-    it('demonstrates current-runtime collision partition divergence on an authored corridor fixture', () => {
-      // Authored pattern fixture scheduled through official generator/scheduler authority:
+    it('demonstrates collision partition divergence on authored corridor geometry mapped through the scheduler', () => {
+      // Uses authored PROTOTYPE_CORRIDOR_PATTERN geometry mapped through the PatternSpawnScheduler.
+      // Evidence boundary note: this fixture isolates the collision behavior of authoritative
+      // stepPrototypeRun using authored/scheduled hazard geometry and normal flight bounds.
+      // This exact corridor-at-distance-zero arrangement is NOT claimed to be admitted by current
+      // live difficulty/pacing policy (corridor requires tier 1, which starts at distance 2500).
+      // It serves as an authored-content collision counterexample disproving universal partition invariance.
       const scheduleResult = scheduleNextPattern({
         catalog: [PROTOTYPE_CORRIDOR_PATTERN],
         patternStartDistance: 0,
