@@ -251,7 +251,50 @@ describe('frame partition simulation harness', () => {
     });
   });
 
-  describe('scenario 4: collision partition-sensitivity probe', () => {
+  describe('scenario 4: boundary contact followed by release', () => {
+    it('keeps the exact #175/#176 authoritative flight state equivalent across all schedules', () => {
+      const initialState = createPrototypeRunState(FLIGHT_BOUNDS);
+      const totalDuration = 1.3;
+      const inputScript = [
+        { time: 0, thrustHeld: true },
+        { time: 0.522, thrustHeld: false },
+      ];
+
+      const results = SCHEDULE_ENTRIES.map(([_name, schedule]) =>
+        runPartitionedSimulation({
+          initialState,
+          totalDuration,
+          schedule,
+          flightBounds: FLIGHT_BOUNDS,
+          hazards: [],
+          initialThrustHeld: true,
+          inputScript,
+        }),
+      );
+
+      const [baseline, ...others] = results;
+
+      expect(baseline.finalState.phase).toBe('running');
+      expect(baseline.totalSimulatedTime).toBe(totalDuration);
+      expect(baseline.finalState.flight.positionY).toBeCloseTo(239.721_669_612_155, 9);
+      expect(baseline.finalState.flight.velocityY).toBe(
+        PROTOTYPE_FLIGHT_TUNING_DEFAULTS.maxFallVelocity,
+      );
+
+      for (const result of others) {
+        expect(result.finalState.phase).toBe('running');
+        expect(result.totalSimulatedTime).toBe(totalDuration);
+        expect(
+          Math.abs(result.finalState.flight.positionY - baseline.finalState.flight.positionY),
+        ).toBeLessThanOrEqual(FLOATING_POINT_TOLERANCE);
+        expect(
+          Math.abs(result.finalState.flight.velocityY - baseline.finalState.flight.velocityY),
+        ).toBeLessThanOrEqual(FLOATING_POINT_TOLERANCE);
+      }
+    });
+  });
+
+  describe('scenario 5: collision partition-sensitivity probe', () => {
     it('detects collision across all schedules on a standard broad hazard', () => {
       // Starting just before the placeholder hazard [1200, 1248]
       const initialState: PrototypeRunState = {
