@@ -10,12 +10,16 @@ import {
   type GeneratedHazardStreamState,
   PROTOTYPE_LIVE_RUN_SEED,
 } from '../../../src/generation/GeneratedHazardStream';
+import { evaluateHazardApproachTiming } from '../../../src/generation/HazardApproachTiming';
 import type { HazardPattern } from '../../../src/generation/HazardPattern';
 import { PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG } from '../../../src/generation/LiveEncounterPolicy';
+import { scheduleNextPattern } from '../../../src/generation/PatternSpawnScheduler';
 import {
   PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES,
   PROTOTYPE_OFFSET_PAIR_PATTERN,
+  PROTOTYPE_TARGET_LOCK_STRIKE_PATTERN,
 } from '../../../src/generation/PrototypeHazardPatternFixtures';
+import { createRunGenerationState } from '../../../src/generation/RunGenerationState';
 import { resolveHazardHitboxAtRunDistance } from '../../../src/hazards/HazardArchetype';
 import {
   createTelegraphedHazardSimulationState,
@@ -540,5 +544,126 @@ describe('Foundation scene gameplay orchestration', () => {
     expect(services.lifecycle.isPaused()).toBe(false);
     expect(services.time.isPaused()).toBe(false);
     expect(services.time.update(16)).toBeCloseTo(0.016);
+  });
+
+  it('samples the moving player target at the exact warning-to-lock boundary during update', () => {
+    const { foundation, services, viewportService } = createFoundationHarness();
+
+    // 1. Establish a real target-lock spawn through the scheduler authority
+    const scheduleResult = scheduleNextPattern({
+      catalog: [PROTOTYPE_TARGET_LOCK_STRIKE_PATTERN],
+      patternStartDistance: 1_000,
+      state: createRunGenerationState('foundation-target-lock-regression'),
+    });
+    if (scheduleResult.status !== 'accepted' || !scheduleResult.spawns[0]) {
+      throw new Error('Expected target lock pattern to be accepted.');
+    }
+    const rawSpawn = scheduleResult.spawns[0];
+    const currentStream = Reflect.get(foundation, 'hazardStream') as GeneratedHazardStreamState;
+    const targetLockSpawn = Object.freeze({
+      ...rawSpawn,
+      approachTiming: evaluateHazardApproachTiming(
+        rawSpawn.runDistance,
+        0,
+        currentStream.schedulingWindow,
+      ),
+    });
+
+    // Inject into stream ahead of current distance so it is retained by generation
+    Reflect.set(foundation, 'hazardStream', {
+      ...currentStream,
+      spawns: [targetLockSpawn],
+    });
+
+    // 2. Place the lifecycle shortly before the warning -> lock boundary.
+    // Authored warning duration is 1.40s. Place elapsed at 1.38s (boundary is at delta 0.02s).
+    const preInitialTarget = { positionY: 150, runDistance: 100 };
+    const initialTelegraphedState = stepTelegraphedHazardSimulation(
+      createTelegraphedHazardSimulationState(),
+      [targetLockSpawn],
+      1.38,
+      preInitialTarget,
+    );
+    Reflect.set(foundation, 'telegraphedHazardState', initialTelegraphedState);
+
+    const beforeLifecycle = getTelegraphedHazardLifecycle(
+      getTelegraphedHazardState(foundation),
+      targetLockSpawn,
+    );
+    expect(beforeLifecycle?.phase).toBe('warning');
+    expect(beforeLifecycle?.elapsedPhaseSeconds).toBeCloseTo(1.38, 9);
+    expect(beforeLifecycle?.lockedTarget).toBeNull();
+
+    // 3. Use a player state that is moving at the boundary
+    const initialFlight: VerticalFlightState = { positionY: 150, velocityY: 100 };
+    const initialMotion: RunMotionState = { distance: 100 };
+    Reflect.set(foundation, 'runState', {
+      phase: 'running',
+      flight: initialFlight,
+      motion: initialMotion,
+    });
+    services.input.setSpaceHeld(false);
+
+    // 4. Run one foundation.update() whose normalized delta crosses that boundary.
+    // 30 ms raw delta produces 0.030s simulation delta.
+    // Boundary transition occurs at 1.40s - 1.38s = 0.020s into the frame.
+    const updateDeltaMs = 30;
+    const boundaryDeltaSeconds = 1.4 - 1.38; // 0.02s
+
+    foundation.update(0, updateDeltaMs);
+
+    // 5. Assert:
+    const afterLifecycle = getTelegraphedHazardLifecycle(
+      getTelegraphedHazardState(foundation),
+      targetLockSpawn,
+    );
+    expect(afterLifecycle).not.toBeNull();
+    if (!afterLifecycle) {
+      throw new Error('Expected telegraphed hazard lifecycle.');
+    }
+
+    // Lifecycle must have entered lock phase
+    expect(afterLifecycle.phase).toBe('lock');
+    expect(afterLifecycle.elapsedPhaseSeconds).toBeCloseTo(0.03 - boundaryDeltaSeconds, 9);
+    expect(afterLifecycle.lockedTarget).not.toBeNull();
+
+    // Authoritative expected flight at exact boundary delta (0.02s)
+    const flightBounds = createPrototypeFlightBounds(viewportService.getSnapshot());
+    const stream = Reflect.get(foundation, 'hazardStream') as GeneratedHazardStreamState;
+    const activeFlightTuning = stream.policy?.flightTuning ?? services.flightTuning.getSnapshot();
+    const expectedBoundaryFlight = stepVerticalFlight(
+      initialFlight,
+      boundaryDeltaSeconds,
+      false,
+      activeFlightTuning,
+      flightBounds,
+    );
+
+    // Authoritative expected motion at exact boundary delta (0.02s)
+    const runMotionTuning = Object.freeze({
+      baseScrollSpeed: stream.schedulingWindow.scrollSpeed,
+    });
+    const expectedBoundaryMotion = stepRunMotion(
+      initialMotion,
+      boundaryDeltaSeconds,
+      runMotionTuning,
+    );
+
+    // Assert lockedTarget matches authoritative motion at the exact boundary delta
+    expect(afterLifecycle.lockedTarget?.positionY).toBeCloseTo(expectedBoundaryFlight.positionY, 9);
+    expect(afterLifecycle.lockedTarget?.runDistance).toBeCloseTo(
+      expectedBoundaryMotion.distance,
+      9,
+    );
+
+    // Assert the locked target is not merely the pre-step player target
+    expect(afterLifecycle.lockedTarget?.positionY).not.toBe(initialFlight.positionY);
+    expect(afterLifecycle.lockedTarget?.runDistance).not.toBe(initialMotion.distance);
+    expect(
+      Math.abs((afterLifecycle.lockedTarget?.positionY ?? 0) - initialFlight.positionY),
+    ).toBeGreaterThan(1.0);
+    expect(
+      Math.abs((afterLifecycle.lockedTarget?.runDistance ?? 0) - initialMotion.distance),
+    ).toBeGreaterThan(5.0);
   });
 });
