@@ -223,7 +223,7 @@ Current completed reports:
 
 Current M4 planning and implementation scope is owned by GitHub Issue #116 and its deliberately promoted child Issues.
 
-Current M4 supporting evidence: [`milestones/M4-run-pacing-validation.md`](milestones/M4-run-pacing-validation.md). This report remains pending the Game Director manual gameplay matrix and acceptance required by Issue #121.
+Current M4 supporting evidence: [`milestones/M4-run-pacing-validation.md`](milestones/M4-run-pacing-validation.md). Issue #121 validation is accepted by the Game Director; formal M4 closeout remains the separate #122 task.
 
 Historical reports should be corrected only when factual evidence is wrong, not rewritten to match later plans.
 
