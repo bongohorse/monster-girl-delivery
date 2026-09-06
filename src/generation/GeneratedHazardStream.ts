@@ -57,7 +57,7 @@ export const PROTOTYPE_GENERATED_HAZARD_STREAM_CONFIG: Readonly<GeneratedHazardS
     retainBehindDistance: 160,
   });
 
-/** Fixed prototype live seed exposed by development-only Director diagnostics/restart tooling. */
+/** Initial prototype live seed exposed by development-only Director diagnostics/restart tooling. */
 export const PROTOTYPE_LIVE_RUN_SEED: SeedInput = 'm3-live-run';
 
 export type GeneratedHazardStreamStatus = 'active' | 'exhausted';

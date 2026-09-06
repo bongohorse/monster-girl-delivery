@@ -7,37 +7,31 @@ interface PointerEventData {
   stopPropagation?: () => void;
 }
 
-/** Development-only action for replaying the current deterministic run from its initial seed. */
+interface PointerData {
+  id: number;
+}
+
+type RunAction = 'new-seed' | 'restart';
+
+const BUTTON_GAP = 8;
+
+/** Development-only actions for restarting or replacing the current deterministic run seed. */
 export class DirectorRunControls {
   private readonly restartButton: Phaser.GameObjects.Text;
+  private readonly newSeedButton: Phaser.GameObjects.Text;
   private destroyed = false;
-  private restartPressed = false;
+  private activePointerId: number | null = null;
+  private pressedAction: RunAction | null = null;
 
   constructor(
-    scene: Scene,
+    private readonly scene: Scene,
     private readonly inputService: InputService,
     private readonly restartSameSeed: () => void,
+    private readonly startNewSeed: () => void,
   ) {
-    this.restartButton = scene.add
-      .text(0, 0, 'Restart same seed', {
-        align: 'center',
-        backgroundColor: '#26314f',
-        color: '#ffffff',
-        fixedWidth: 336,
-        fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-        fontSize: '14px',
-        fontStyle: 'bold',
-        padding: { y: 6 },
-      })
-      .setScrollFactor(0)
-      .setDepth(10_002)
-      .setInteractive();
-
-    this.restartButton.on('pointerover', this.blockGameplay);
-    this.restartButton.on('pointerdown', this.handlePointerDown);
-    this.restartButton.on('pointerup', this.handlePointerUp);
-    this.restartButton.on('pointerout', this.cancelInteraction);
-    this.restartButton.on('pointerupoutside', this.cancelInteraction);
+    this.restartButton = this.createButton(scene, 'Restart same seed', 'restart');
+    this.newSeedButton = this.createButton(scene, 'New random seed', 'new-seed');
+    this.scene.game.canvas.addEventListener('pointercancel', this.cancelInteraction);
   }
 
   layout(viewport: ViewportSnapshot): void {
@@ -46,9 +40,14 @@ export class DirectorRunControls {
     }
 
     const { diagnostics } = createDirectorResponsiveLayout(viewport);
-    this.restartButton
-      .setPosition(diagnostics.x + 12, diagnostics.y + diagnostics.height - 40)
-      .setFixedSize(Math.max(0, diagnostics.width - 24), 32);
+    const controlsWidth = Math.max(0, diagnostics.width - 24);
+    const buttonWidth = Math.max(0, (controlsWidth - BUTTON_GAP) / 2);
+    const y = diagnostics.y + diagnostics.height - 40;
+
+    this.restartButton.setPosition(diagnostics.x + 12, y).setFixedSize(buttonWidth, 32);
+    this.newSeedButton
+      .setPosition(diagnostics.x + 12 + buttonWidth + BUTTON_GAP, y)
+      .setFixedSize(buttonWidth, 32);
   }
 
   destroy(): void {
@@ -57,44 +56,80 @@ export class DirectorRunControls {
     }
 
     this.destroyed = true;
-    this.restartPressed = false;
-    this.inputService.setGameplayBlocked(false);
+    this.cancelInteraction();
+    this.scene.game.canvas.removeEventListener('pointercancel', this.cancelInteraction);
     this.restartButton.destroy();
+    this.newSeedButton.destroy();
   }
 
   private readonly blockGameplay = (): void => {
     this.inputService.setGameplayBlocked(true);
   };
 
-  private readonly handlePointerDown = (
-    _pointer?: unknown,
-    _localX?: unknown,
-    _localY?: unknown,
-    event?: PointerEventData,
-  ): void => {
-    event?.stopPropagation?.();
-    this.blockGameplay();
-    this.restartPressed = true;
-  };
+  private createButton(scene: Scene, label: string, action: RunAction): Phaser.GameObjects.Text {
+    const button = scene.add
+      .text(0, 0, label, {
+        align: 'center',
+        backgroundColor: '#26314f',
+        color: '#ffffff',
+        fixedWidth: 164,
+        fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+        fontSize: '12px',
+        fontStyle: 'bold',
+        padding: { y: 6 },
+      })
+      .setScrollFactor(0)
+      .setDepth(10_002)
+      .setInteractive();
 
-  private readonly handlePointerUp = (
-    _pointer?: unknown,
-    _localX?: unknown,
-    _localY?: unknown,
-    event?: PointerEventData,
-  ): void => {
-    event?.stopPropagation?.();
-    const shouldRestart = this.restartPressed;
-    this.restartPressed = false;
-    this.inputService.setGameplayBlocked(false);
+    button.on('pointerover', this.blockGameplay);
+    button.on(
+      'pointerdown',
+      (pointer: PointerData, _localX: number, _localY: number, event: PointerEventData) => {
+        this.handlePointerDown(action, pointer, event);
+      },
+    );
+    button.on(
+      'pointerup',
+      (pointer: PointerData, _localX: number, _localY: number, event: PointerEventData) => {
+        this.handlePointerUp(action, pointer, event);
+      },
+    );
+    button.on('pointerout', this.cancelInteraction);
+    button.on('pointerupoutside', this.cancelInteraction);
 
-    if (shouldRestart) {
-      this.restartSameSeed();
+    return button;
+  }
+
+  private handlePointerDown(
+    action: RunAction,
+    pointer: PointerData,
+    event?: PointerEventData,
+  ): void {
+    event?.stopPropagation?.();
+    if (this.activePointerId !== null) {
+      return;
     }
-  };
+
+    this.blockGameplay();
+    this.activePointerId = pointer.id;
+    this.pressedAction = action;
+  }
+
+  private handlePointerUp(action: RunAction, pointer: PointerData, event?: PointerEventData): void {
+    event?.stopPropagation?.();
+    if (pointer.id !== this.activePointerId || action !== this.pressedAction) {
+      return;
+    }
+
+    this.cancelInteraction();
+    if (action === 'restart') this.restartSameSeed();
+    else this.startNewSeed();
+  }
 
   private readonly cancelInteraction = (): void => {
-    this.restartPressed = false;
+    this.activePointerId = null;
+    this.pressedAction = null;
     this.inputService.setGameplayBlocked(false);
   };
 }
