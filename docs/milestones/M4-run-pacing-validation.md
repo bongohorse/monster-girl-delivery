@@ -8,11 +8,11 @@
 
 ## Purpose and status
 
-Record the integrated automated and development-browser evidence available for Issue #121, separately from the Game Director observations actually reported.
+Record the integrated automated, development-browser, and Game Director evidence for Issue #121 while keeping those evidence classes separate.
 
 All ordered M4 implementation dependencies are merged on `main` at `db08cd167b32dc4096630669b005050923296844`, including the long-run harness from PR #160 and the Director-tooling corrections from PR #165. No reproducible implementation blocker was found in the evidence performed.
 
-Issue #121 is **not accepted by this report**. Its required manual gameplay matrix and explicit Game Director acceptance have not been reported, so #121 remains open. This is supporting validation evidence, not the M4 closeout owned by #122.
+Issue #121 is **accepted by the Game Director**. After the remaining #121 gameplay matrix was requested, the Game Director reported that the playtest passed. Missing device/browser/viewport/play-duration metadata remains explicitly unknown rather than inferred. This is the focused validation evidence for #121, not the M4 closeout owned by #122.
 
 ## Automated evidence
 
@@ -67,39 +67,32 @@ This browser-driven tooling check is engineering evidence. It is not represented
 
 ## Game Director manual evidence
 
-The Game Director reported these observations during M4 validation:
+During the first M4 validation pass, the Game Director reported two concrete tooling problems:
 
 - the performance HUD eye control left performance values visible; and
 - practical validation needed a way to start a run with a new/random seed.
 
-PR #165 corrected both tooling problems and was independently reviewed and accepted. Discovering and resolving those problems is valid manual validation feedback, but the fix does not establish that the remaining #121 gameplay rows were exercised.
+PR #165 corrected both tooling problems and was independently reviewed and accepted.
 
-No Game Director result is currently recorded for:
+After those fixes merged, the Game Director was asked to perform the remaining #121 manual gameplay matrix covering smartphone Landscape, tablet Landscape, desktop browser development view, sustained difficulty/pacing changes, a breather, promoted hazard archetypes, repetition/overlap readability, same-seed restart, pause/background-resume, resize where applicable, and the overall readability/variety acceptance decision.
 
-- smartphone Landscape gameplay;
-- tablet Landscape gameplay;
-- desktop browser development gameplay beyond the engineering tooling check;
-- sustained play through difficulty and pacing changes;
-- a manually observed breather;
-- each promoted hazard archetype in real play;
-- repetition or overlapping-warning readability;
-- a manual same-seed gameplay replay;
-- pause/background-resume or resize during this M4 validation; or
-- acceptance of the representative M4 run as sufficiently readable and varied.
+The Game Director subsequently reported that the **playtest passed**. That is recorded as a PASS for the requested #121 manual gameplay evaluation and as explicit acceptance of the representative M4 run as sufficiently readable and varied to proceed.
 
-Device models, operating systems, mobile/tablet browser versions, viewports, play duration, hazard observations, and the other unreported manual metadata remain unknown and are not inferred from automated evidence or earlier milestones.
+No finer-grained manual metadata was reported. Device models, operating systems, mobile/tablet browser versions, exact viewports, play duration, seed values, and per-row qualitative notes therefore remain unknown and are not invented here. The earlier Chrome tooling check remains engineering evidence rather than a substitute for the Director's gameplay report.
 
 ## Repository validation
 
-The final evidence branch passed the required repository commands on 2026-09-06:
+The evidence branch passed the required repository commands on 2026-09-06 before the final documentation-only acceptance update:
 
 - `bun run ci:check` — PASS, 125 files checked;
 - `bun run typecheck` — PASS;
 - `bun run test` — PASS, 56 test files / 393 tests; and
 - `bun run build` — PASS.
 
+GitHub Actions CI also passed on the evidence PR before the final documentation-only acceptance update. The final PR head must remain green before merge.
+
 ## Evidence limits and conclusion
 
 Seeds `42`, `100`, `200`, and `300`, including one 50,000-distance soak, are finite representative samples. They are engineering evidence of the integrated deterministic policy and current prototype catalog, not universal proof for every seed, run length, device, or future configuration. Current content and tuning remain **PROTOTYPE**.
 
-The automated acceptance evidence is complete enough to proceed with the requested manual gameplay evaluation, and no focused M4 defect Issue is justified by the current results. Issue #121 cannot honestly close until the missing manual matrix and explicit Game Director acceptance are actually reported.
+Automated evidence, Director-tooling verification, and the Game Director's final manual playtest acceptance now satisfy Issue #121. No reproducible M4 blocker remains from this validation pass. The next milestone task is the separate M4 closeout owned by #122.
