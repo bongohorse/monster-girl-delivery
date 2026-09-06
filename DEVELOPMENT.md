@@ -86,7 +86,10 @@ A new Codespace should:
 2. provide Git and GitHub CLI;
 3. install the Bun version defined by the repository setup;
 4. install project dependencies;
-5. forward port `8080` for Vite preview/testing.
+5. install Codex CLI and Google Antigravity CLI as optional coding-agent tools;
+6. forward port `8080` for Vite preview/testing.
+
+The Antigravity installer places `agy` in the user environment, so a newly created Codespace can launch it directly with `agy` after setup completes. Authentication remains user-specific and is not stored in the repository.
 
 ### GitHub CLI authentication
 
