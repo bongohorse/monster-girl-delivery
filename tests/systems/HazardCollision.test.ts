@@ -240,6 +240,28 @@ describe('hazard collision', () => {
     ).toBe(true);
   });
 
+  it('uses the authoritative post-boundary remaining-time flight path', () => {
+    const trajectory = createVerticalFlightTrajectory(
+      { positionY: 100.01, velocityY: -20 },
+      0.05,
+      false,
+      { gravity: 1_400, thrust: 2_200, maxFallVelocity: 650, maxRiseVelocity: 550 },
+      { ceilingY: 100, floorY: 500 },
+    );
+
+    expect(trajectory.finalState.positionY).toBeCloseTo(101.714_546_482_928, 10);
+    expect(
+      isPlayerCollidingWithHazardDuringStep(
+        { distance: 0 },
+        trajectory,
+        0.05,
+        { baseScrollSpeed: 0 },
+        { hitbox: { left: -1, right: 1, top: 101.49, bottom: 101.51 } },
+        { left: 0.01, right: 0.01, top: 0.01, bottom: 0.01 },
+      ),
+    ).toBe(true);
+  });
+
   it('does not create a swept collision at zero delta', () => {
     const hazard = { hitbox: { left: 40, right: 50, top: -5, bottom: 5 } };
     expect(testContinuousCollision({ positionY: 0, velocityY: 0 }, 0, hazard)).toBe(false);

@@ -311,7 +311,7 @@ const getRelativeVerticalRange = (
  * linear. Flight is the exact bounded polynomial trajectory produced by VerticalFlightSimulation;
  * vertical patrol is an exact triangle wave. Each relative-motion segment is checked at its
  * endpoints and derivative zero, with patrol turns reduced to a constant extrema set. At most 12
- * candidates are evaluated for each of the trajectory's at most eight segments: 96 position checks
+ * candidates are evaluated for each of the trajectory's at most five segments: 60 position checks
  * per hazard per run step, independent of elapsed time, patrol cycles, or run distance.
  */
 export const isPlayerCollidingWithHazardDuringStep = (

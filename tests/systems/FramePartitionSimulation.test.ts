@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { PROTOTYPE_FLIGHT_TUNING_DEFAULTS } from '../../src/config/FlightTuningConfig';
 import { scheduleNextPattern } from '../../src/generation/PatternSpawnScheduler';
-import { PROTOTYPE_CORRIDOR_PATTERN } from '../../src/generation/PrototypeHazardPatternFixtures';
+import {
+  PROTOTYPE_CORRIDOR_PATTERN,
+  PROTOTYPE_LINE_PATTERN,
+} from '../../src/generation/PrototypeHazardPatternFixtures';
 import { createRunGenerationState } from '../../src/generation/RunGenerationState';
 import { PROTOTYPE_PLACEHOLDER_HAZARD } from '../../src/hazards/PrototypeHazard';
 import {
@@ -295,6 +298,46 @@ describe('frame partition simulation harness', () => {
   });
 
   describe('scenario 5: collision partition-sensitivity probe', () => {
+    it('keeps the former #175 flight-boundary blocker collision outcome equivalent', () => {
+      const scheduleResult = scheduleNextPattern({
+        catalog: [PROTOTYPE_LINE_PATTERN],
+        patternStartDistance: 350,
+        state: createRunGenerationState('frame-partition-test-seed'),
+      });
+      if (scheduleResult.status !== 'accepted') {
+        throw new Error('Expected PROTOTYPE_LINE_PATTERN to be accepted by scheduler.');
+      }
+
+      const initialState = createPrototypeRunState(FLIGHT_BOUNDS);
+      const results = SCHEDULE_ENTRIES.map(([_name, schedule]) =>
+        runPartitionedSimulation({
+          initialState,
+          totalDuration: 1.87,
+          schedule,
+          flightBounds: FLIGHT_BOUNDS,
+          hazards: scheduleResult.spawns,
+          initialThrustHeld: true,
+          inputScript: [
+            { time: 0, thrustHeld: true },
+            { time: 0.522, thrustHeld: false },
+          ],
+        }),
+      );
+      const [baseline, ...others] = results;
+
+      expect(baseline.finalState.phase).toBe('running');
+      expect(baseline.deathRecordedAtTime).toBeNull();
+      expect(baseline.finalState.flight).toEqual({ positionY: FLIGHT_BOUNDS.floorY, velocityY: 0 });
+      for (const result of others) {
+        expect(result.finalState.phase).toBe('running');
+        expect(result.deathRecordedAtTime).toBeNull();
+        expect(result.finalState.flight).toEqual(baseline.finalState.flight);
+        expect(
+          Math.abs(result.finalState.motion.distance - baseline.finalState.motion.distance),
+        ).toBeLessThanOrEqual(FLOATING_POINT_TOLERANCE);
+      }
+    });
+
     it('detects collision across all schedules on a standard broad hazard', () => {
       // Starting just before the placeholder hazard [1200, 1248]
       const initialState: PrototypeRunState = {
