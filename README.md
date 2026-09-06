@@ -3,7 +3,7 @@
 2D mobile-first sidescroller built with Phaser 4 and TypeScript.
 
 **Current project phase:** Pre-Production  
-**Current milestone:** M4 — Run Pacing & Hazard Language ([Issue #116](https://github.com/bongohorse/monster-girl-delivery/issues/116))
+**Current milestone:** Pre-M5 transition (M4 complete; M5 pending approved parent plan)
 
 > Start with the [`Documentation Hub`](docs/README.md) for product decisions, roadmap ownership, architecture, future ideas, AI workflow, and milestone history.
 
@@ -125,4 +125,4 @@ The current core game is **Landscape**, left-to-right, with one-button flight. T
 
 Portrait remains a **FUTURE** separate-mode/variant possibility, not current core gameplay.
 
-For exact current M4 scope, use [Issue #116](https://github.com/bongohorse/monster-girl-delivery/issues/116) rather than copying the full milestone specification into this README.
+For completed M4 scope and evidence, see [`docs/milestones/M4-run-pacing-hazard-language.md`](docs/milestones/M4-run-pacing-hazard-language.md); M5 implementation begins when its focused parent plan is approved.

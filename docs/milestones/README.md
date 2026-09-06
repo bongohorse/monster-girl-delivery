@@ -16,6 +16,7 @@ They are **not** a substitute for the current roadmap or the current GitHub mile
 | M1 — Flight Prototype | Playable deterministic one-button vertical flight prototype; mobile/tablet validation; Landscape selected for core play | [`M1-flight-prototype.md`](M1-flight-prototype.md) | [`M1-device-report.md`](M1-device-report.md) |
 | M2 — Horizontal Run & First Hazard | Deterministic left-to-right run foundation with one lethal hazard, death/restart, and accepted Landscape validation | [`M2-horizontal-run-first-hazard.md`](M2-horizontal-run-first-hazard.md) | automated and Director-reported device/browser evidence recorded in report |
 | M3 — Seeded Generation & Fairness | Deterministic seeded generator → validator → scheduler → live-stream pipeline with same-seed Director tooling | [`M3-seeded-generation-fairness.md`](M3-seeded-generation-fairness.md) | [`M3-seeded-run-validation.md`](M3-seeded-run-validation.md) |
+| M4 — Run Pacing & Hazard Language | Deterministic difficulty progression, 7,100m pacing cycle with breathers, time-to-impact fairness, reachability, transition validation, 3 hazard archetypes, variety and readability budgets, and Director-accepted gameplay validation | [`M4-run-pacing-hazard-language.md`](M4-run-pacing-hazard-language.md) | [`M4-run-pacing-validation.md`](M4-run-pacing-validation.md) |
 
 ## Current / future milestones
 
@@ -23,9 +24,9 @@ Do not create historical reports in advance. Current and future milestone planni
 
 A new report is added here only when the milestone has factual implementation and validation evidence to close out.
 
-M4 — Run Pacing & Hazard Language is current. Its planning and implementation scope is owned by GitHub Issue #116 and its deliberately promoted child Issues.
+M4 — Run Pacing & Hazard Language is complete. Its factual closeout is recorded in [`M4-run-pacing-hazard-language.md`](M4-run-pacing-hazard-language.md) with supporting evidence in [`M4-run-pacing-validation.md`](M4-run-pacing-validation.md).
 
-Current supporting evidence: [`M4-run-pacing-validation.md`](M4-run-pacing-validation.md). Issue #121 validation is accepted by the Game Director; the report remains supporting evidence rather than the M4 closeout report. Formal M4 closeout is owned by #122.
+The next milestone in the approved roadmap sequence is M5 — Complete Arcade Loop & Skill Layer. M5 implementation remains unstarted until an approved focused M5 parent plan is established.
 
 ## Closeout rule for M2+
 
