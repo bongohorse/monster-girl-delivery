@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { PROTOTYPE_FLIGHT_TUNING_DEFAULTS } from '../../src/config/FlightTuningConfig';
 import { scheduleNextPattern } from '../../src/generation/PatternSpawnScheduler';
-import { PROTOTYPE_CORRIDOR_PATTERN } from '../../src/generation/PrototypeHazardPatternFixtures';
+import {
+  PROTOTYPE_CORRIDOR_PATTERN,
+  PROTOTYPE_LINE_PATTERN,
+} from '../../src/generation/PrototypeHazardPatternFixtures';
 import { createRunGenerationState } from '../../src/generation/RunGenerationState';
 import { PROTOTYPE_PLACEHOLDER_HAZARD } from '../../src/hazards/PrototypeHazard';
 import {
@@ -295,6 +298,46 @@ describe('frame partition simulation harness', () => {
   });
 
   describe('scenario 5: collision partition-sensitivity probe', () => {
+    it('keeps the former #175 flight-boundary blocker collision outcome equivalent', () => {
+      const scheduleResult = scheduleNextPattern({
+        catalog: [PROTOTYPE_LINE_PATTERN],
+        patternStartDistance: 350,
+        state: createRunGenerationState('frame-partition-test-seed'),
+      });
+      if (scheduleResult.status !== 'accepted') {
+        throw new Error('Expected PROTOTYPE_LINE_PATTERN to be accepted by scheduler.');
+      }
+
+      const initialState = createPrototypeRunState(FLIGHT_BOUNDS);
+      const results = SCHEDULE_ENTRIES.map(([_name, schedule]) =>
+        runPartitionedSimulation({
+          initialState,
+          totalDuration: 1.87,
+          schedule,
+          flightBounds: FLIGHT_BOUNDS,
+          hazards: scheduleResult.spawns,
+          initialThrustHeld: true,
+          inputScript: [
+            { time: 0, thrustHeld: true },
+            { time: 0.522, thrustHeld: false },
+          ],
+        }),
+      );
+      const [baseline, ...others] = results;
+
+      expect(baseline.finalState.phase).toBe('running');
+      expect(baseline.deathRecordedAtTime).toBeNull();
+      expect(baseline.finalState.flight).toEqual({ positionY: FLIGHT_BOUNDS.floorY, velocityY: 0 });
+      for (const result of others) {
+        expect(result.finalState.phase).toBe('running');
+        expect(result.deathRecordedAtTime).toBeNull();
+        expect(result.finalState.flight).toEqual(baseline.finalState.flight);
+        expect(
+          Math.abs(result.finalState.motion.distance - baseline.finalState.motion.distance),
+        ).toBeLessThanOrEqual(FLOATING_POINT_TOLERANCE);
+      }
+    });
+
     it('detects collision across all schedules on a standard broad hazard', () => {
       // Starting just before the placeholder hazard [1200, 1248]
       const initialState: PrototypeRunState = {
@@ -324,7 +367,7 @@ describe('frame partition simulation harness', () => {
       }
     });
 
-    it('demonstrates collision partition divergence on authored corridor geometry mapped through the scheduler', () => {
+    it('detects the authored corridor collision across every frame partition', () => {
       // Uses authored PROTOTYPE_CORRIDOR_PATTERN geometry mapped through the PatternSpawnScheduler.
       // Evidence boundary note: this fixture isolates the collision behavior of authoritative
       // stepPrototypeRun using authored/scheduled hazard geometry and normal flight bounds.
@@ -356,13 +399,9 @@ describe('frame partition simulation harness', () => {
       // Player exits vertical overlap (y - 24 > 132 -> y > 156) at t ≈ 0.4326s.
       // Overlap window: t in (0.4057s, 0.4326s).
       //
-      // Partition divergence:
-      // - 60 Hz, 90 Hz, 120 Hz, 144 Hz, and jittered schedules sample inside the overlap window
-      //   (at t ≈ 0.408s - 0.420s), detecting collision with corridor-top and transitioning to 'dead'.
-      // - 30 Hz steps at t = 0.4000s (x + 18 = 158 < 160, not yet overlapping in X)
-      //   and t = 0.4333s (y - 24 = 132.06 > 132, already below corridor-top in Y).
-      // - 30 Hz steps completely over the corner without evaluating collision during the overlap window,
-      //   surviving to the end with phase 'running'.
+      // The pre-#173 endpoint-only check let 30 Hz step from t=0.4000s to t=0.4333s across
+      // this entire overlap window and survive. Continuous logical collision must agree with the
+      // finer schedules without changing the authored fixture or scheduler path.
       const inputScript = [
         { time: 0, thrustHeld: true },
         { time: 0.252, thrustHeld: false },
@@ -383,22 +422,17 @@ describe('frame partition simulation harness', () => {
         ]),
       );
 
-      // Fine and jittered schedules detect the collision on corridor-top:
-      expect(results['60hz'].finalState.phase).toBe('dead');
-      expect(results['90hz'].finalState.phase).toBe('dead');
-      expect(results['120hz'].finalState.phase).toBe('dead');
-      expect(results['144hz'].finalState.phase).toBe('dead');
-      expect(results.jittered.finalState.phase).toBe('dead');
+      for (const result of Object.values(results)) {
+        expect(result.finalState.phase).toBe('dead');
+        expect(result.deathRecordedAtTime).not.toBeNull();
+      }
 
+      expect(results['30hz'].deathRecordedAtTime).toBeCloseTo(0.4333, 3);
       expect(results['60hz'].deathRecordedAtTime).toBeCloseTo(0.4167, 3);
       expect(results['90hz'].deathRecordedAtTime).toBeCloseTo(0.4111, 3);
       expect(results['120hz'].deathRecordedAtTime).toBeCloseTo(0.4083, 3);
       expect(results['144hz'].deathRecordedAtTime).toBeCloseTo(0.4097, 3);
       expect(results.jittered.deathRecordedAtTime).toBeCloseTo(0.42, 2);
-
-      // 30 Hz steps completely over the corner and tunnels through:
-      expect(results['30hz'].finalState.phase).toBe('running');
-      expect(results['30hz'].deathRecordedAtTime).toBeNull();
     });
   });
 });

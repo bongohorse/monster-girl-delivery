@@ -44,7 +44,14 @@ export interface TelegraphedHazardPhaseTransition {
   readonly to: Exclude<TelegraphedHazardPhase, 'warning'>;
 }
 
+/** Half-open lethal interval relative to the start of the most recent lifecycle step. */
+export interface TelegraphedHazardActiveInterval {
+  readonly endSeconds: number;
+  readonly startSeconds: number;
+}
+
 export interface TelegraphedHazardLifecycleStep {
+  readonly activeInterval: Readonly<TelegraphedHazardActiveInterval> | null;
   readonly state: Readonly<TelegraphedHazardLifecycleState>;
   /** At most one transition can occur in one update, even for an unexpectedly large delta. */
   readonly transition: Readonly<TelegraphedHazardPhaseTransition> | null;
@@ -169,6 +176,12 @@ const createTransition = (
   to: Exclude<TelegraphedHazardPhase, 'warning'>,
 ): Readonly<TelegraphedHazardPhaseTransition> => Object.freeze({ from, to });
 
+const createActiveInterval = (
+  startSeconds: number,
+  endSeconds: number,
+): Readonly<TelegraphedHazardActiveInterval> | null =>
+  endSeconds > startSeconds ? Object.freeze({ endSeconds, startSeconds }) : null;
+
 /**
  * Advances from delta already normalized by TimeService. No Phaser Clock, callback, or wall clock
  * owns gameplay timing. Overflow carries into the next phase for frame-rate-independent timing,
@@ -193,7 +206,7 @@ export const stepTelegraphedHazardLifecycle = (
   assertValidTelegraphedHazardLifecycleConfig(config);
 
   if (elapsedSeconds === 0 || state.phase === 'expired') {
-    return Object.freeze({ state, transition: null });
+    return Object.freeze({ activeInterval: null, state, transition: null });
   }
 
   const duration = getPhaseDuration(state.phase, config.durations);
@@ -212,6 +225,7 @@ export const stepTelegraphedHazardLifecycle = (
         : state.latestObservedTarget;
 
     return Object.freeze({
+      activeInterval: state.phase === 'active' ? createActiveInterval(0, elapsedSeconds) : null,
       state: freezeState({
         ...state,
         elapsedPhaseSeconds,
@@ -222,14 +236,14 @@ export const stepTelegraphedHazardLifecycle = (
   }
 
   const nextPhase = PHASE_AFTER[state.phase];
+  const timeToBoundary = Math.max(
+    0,
+    Math.min(elapsedSeconds, duration - state.elapsedPhaseSeconds),
+  );
   let lockedTarget = state.lockedTarget;
   let latestObservedTarget = state.latestObservedTarget;
 
   if (state.phase === 'warning') {
-    const timeToBoundary = Math.max(
-      0,
-      Math.min(elapsedSeconds, duration - state.elapsedPhaseSeconds),
-    );
     const boundaryTarget = resolveTargetAtDelta
       ? resolveTargetAtDelta(timeToBoundary)
       : observedTarget;
@@ -245,6 +259,12 @@ export const stepTelegraphedHazardLifecycle = (
   });
 
   return Object.freeze({
+    activeInterval:
+      state.phase === 'lock'
+        ? createActiveInterval(timeToBoundary, elapsedSeconds)
+        : state.phase === 'active'
+          ? createActiveInterval(0, timeToBoundary)
+          : null,
     state: nextState,
     transition: createTransition(state.phase, nextPhase),
   });

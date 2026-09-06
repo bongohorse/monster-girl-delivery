@@ -23,6 +23,7 @@ import {
 import { createRunGenerationState } from '../../src/generation/RunGenerationState';
 import {
   createTelegraphedHazardSimulationState,
+  getCollisionHazardsForTelegraphedSimulation,
   getLethalHazardsForTelegraphedSimulation,
   getTelegraphedHazardLifecycle,
   stepTelegraphedHazardSimulation,
@@ -188,7 +189,7 @@ const runScriptedTelegraphedSimulation = (
           resolvePlayerTargetAtDelta,
         );
 
-        const lethalHazards = getLethalHazardsForTelegraphedSimulation(
+        const lethalHazards = getCollisionHazardsForTelegraphedSimulation(
           telegraphedState,
           telegraphedSpawns,
         );
@@ -363,7 +364,7 @@ describe('system frame partition evidence', () => {
             runDistance: 350 * t,
           }));
           const lifecycle = getTelegraphedHazardLifecycle(state, strikeSpawn);
-          const lethals = getLethalHazardsForTelegraphedSimulation(state, [strikeSpawn]);
+          const lethals = getCollisionHazardsForTelegraphedSimulation(state, [strikeSpawn]);
           return [name, { lethalHitbox: lethals[0]?.hitbox, lifecycle }];
         }),
       );

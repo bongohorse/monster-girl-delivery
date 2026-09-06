@@ -23,7 +23,7 @@ import { PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES } from '../../generation/Prototype
 import type { TelegraphedHazardTarget } from '../../hazards/TelegraphedHazardLifecycle';
 import {
   createTelegraphedHazardSimulationState,
-  getLethalHazardsForTelegraphedSimulation,
+  getCollisionHazardsForTelegraphedSimulation,
   stepTelegraphedHazardSimulation,
   type TelegraphedHazardSimulationState,
 } from '../../hazards/TelegraphedHazardSimulation';
@@ -261,7 +261,7 @@ export class Foundation extends Scene {
       const result = stepPrototypeRun(this.runState, simulationDeltaSeconds, {
         flightBounds,
         flightTuning: activeFlightTuning,
-        hazards: getLethalHazardsForTelegraphedSimulation(
+        hazards: getCollisionHazardsForTelegraphedSimulation(
           this.telegraphedHazardState,
           this.hazardStream.spawns,
         ),

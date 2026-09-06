@@ -6,6 +6,7 @@ import { createRunGenerationState } from '../../src/generation/RunGenerationStat
 import { getHazardSweptHitbox } from '../../src/hazards/HazardArchetype';
 import {
   createTelegraphedHazardSimulationState,
+  getCollisionHazardsForTelegraphedSimulation,
   getLethalHazardsForTelegraphedSimulation,
   getTelegraphedHazardLifecycle,
   stepTelegraphedHazardSimulation,
@@ -158,6 +159,10 @@ describe('reactive target-lock hazard', () => {
     expect(getLethalHazardsForTelegraphedSimulation(state, [spawn])[0]?.hitbox).toEqual(
       activeHazard.hitbox,
     );
+    expect(getCollisionHazardsForTelegraphedSimulation(state, [spawn])[0]).toMatchObject({
+      collisionInterval: { startSeconds: 0, endSeconds: 0.2 },
+      hitbox: activeHazard.hitbox,
+    });
 
     state = stepTelegraphedHazardSimulation(state, [spawn], 0.8, {
       positionY: 220,

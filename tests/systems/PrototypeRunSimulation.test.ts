@@ -99,6 +99,48 @@ describe('prototype run simulation', () => {
     expect(stepPrototypeRun(centerPlayerState, 0.05, context).enteredDead).toBe(false);
   });
 
+  it('detects the same vertical-patrol crossing with one coarse step and fine partitions', () => {
+    const movingHazard = {
+      behavior: {
+        amplitudeY: 50,
+        archetype: 'geometric' as const,
+        cycleDistance: 140,
+        kind: 'vertical-patrol' as const,
+        phaseOffset: 0.25,
+      },
+      hitbox: { left: -100, right: 1_000, top: 49, bottom: 51 },
+      runDistance: 0,
+    };
+    const initialState: PrototypeRunState = {
+      phase: 'running',
+      motion: { distance: 0 },
+      flight: { positionY: 0, velocityY: 0 },
+    };
+    const context = {
+      flightBounds: { ceilingY: -1_000, floorY: 1_000 },
+      flightTuning: { gravity: 0, thrust: 0, maxFallVelocity: 1_000, maxRiseVelocity: 1_000 },
+      hazards: [movingHazard],
+      runMotionTuning: PROTOTYPE_RUN_MOTION_DEFAULTS,
+      thrustHeld: false,
+    };
+
+    const finalEndpointState: PrototypeRunState = {
+      ...initialState,
+      motion: { distance: 140 },
+    };
+    expect(stepPrototypeRun(initialState, 0, context).enteredDead).toBe(false);
+    expect(stepPrototypeRun(finalEndpointState, 0, context).enteredDead).toBe(false);
+
+    const coarse = stepPrototypeRun(initialState, 0.4, context);
+    let fine: Readonly<PrototypeRunState> = initialState;
+    for (let stepIndex = 0; stepIndex < 40 && fine.phase === 'running'; stepIndex += 1) {
+      fine = stepPrototypeRun(fine, 0.01, context).state;
+    }
+
+    expect(coarse.enteredDead).toBe(true);
+    expect(fine.phase).toBe('dead');
+  });
+
   it('recreates the same clean state and derived hazard position on every restart', () => {
     const first = createPrototypeRunState(FLIGHT_BOUNDS);
     const repeated = createPrototypeRunState(FLIGHT_BOUNDS);

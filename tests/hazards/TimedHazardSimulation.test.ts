@@ -5,12 +5,14 @@ import { PROTOTYPE_TIMED_PULSE_PATTERN } from '../../src/generation/PrototypeHaz
 import { createRunGenerationState } from '../../src/generation/RunGenerationState';
 import {
   createTelegraphedHazardSimulationState as createTimedHazardSimulationState,
+  getCollisionHazardsForTelegraphedSimulation as getCollisionHazardsForTimedSimulation,
   getLethalHazardsForTelegraphedSimulation as getLethalHazardsForTimedSimulation,
   getTelegraphedHazardLifecycle as getTimedHazardLifecycle,
   stepTelegraphedHazardSimulation,
   type TelegraphedHazardSimulationState as TimedHazardSimulationState,
 } from '../../src/hazards/TelegraphedHazardSimulation';
 import { isPlayerCollidingWithHazard } from '../../src/systems/HazardCollision';
+import { stepPrototypeRun } from '../../src/systems/PrototypeRunSimulation';
 
 const createTimedSpawn = () => {
   const schedule = scheduleNextPattern({
@@ -122,6 +124,72 @@ describe('timed hazard simulation', () => {
 
     state = stepTimedHazardSimulation(state, [spawn], 0.9);
     expect(getLethalHazardsForTimedSimulation(state, [spawn])).toEqual([]);
+  });
+
+  it('exposes only the active suffix and prefix of lifecycle boundary steps to collision', () => {
+    const spawn = createTimedSpawn();
+    let state = stepTimedHazardSimulation(createTimedHazardSimulationState(), [spawn], 0);
+    state = stepTimedHazardSimulation(state, [spawn], 1.6);
+    state = stepTimedHazardSimulation(state, [spawn], 0.22);
+
+    state = stepTimedHazardSimulation(state, [spawn], 0.04);
+    const activationHazard = getCollisionHazardsForTimedSimulation(state, [spawn])[0];
+    expect(activationHazard?.collisionInterval?.startSeconds).toBeCloseTo(0.03, 12);
+    expect(activationHazard?.collisionInterval?.endSeconds).toBeCloseTo(0.04, 12);
+
+    state = stepTimedHazardSimulation(state, [spawn], 0.87);
+    state = stepTimedHazardSimulation(state, [spawn], 0.04);
+    const expiringHazard = getCollisionHazardsForTimedSimulation(state, [spawn])[0];
+    expect(getLifecycle(state, spawn).phase).toBe('expired');
+    expect(expiringHazard?.collisionInterval?.startSeconds).toBe(0);
+    expect(expiringHazard?.collisionInterval?.endSeconds).toBeCloseTo(0.02, 12);
+
+    state = stepTimedHazardSimulation(state, [spawn], 0);
+    expect(getCollisionHazardsForTimedSimulation(state, [spawn])).toEqual([]);
+  });
+
+  it('applies boundary-step collision only inside the reported active time', () => {
+    const spawn = createTimedSpawn();
+    let state = stepTimedHazardSimulation(createTimedHazardSimulationState(), [spawn], 0);
+    state = stepTimedHazardSimulation(state, [spawn], 1.6);
+    state = stepTimedHazardSimulation(state, [spawn], 0.22);
+    state = stepTimedHazardSimulation(state, [spawn], 0.04);
+    const activationHazards = getCollisionHazardsForTimedSimulation(state, [spawn]);
+    const context = {
+      flightBounds: { ceilingY: -1_000, floorY: 1_000 },
+      flightTuning: { gravity: 0, thrust: 0, maxFallVelocity: 1_000, maxRiseVelocity: 1_000 },
+      hazards: activationHazards,
+      runMotionTuning: { baseScrollSpeed: 10_000 },
+      thrustHeld: false,
+    };
+    const flight = {
+      positionY: (spawn.hitbox.top + spawn.hitbox.bottom) / 2,
+      velocityY: 0,
+    };
+
+    const beforeActivation = stepPrototypeRun(
+      { phase: 'running', motion: { distance: 950 }, flight },
+      0.04,
+      context,
+    );
+    expect(beforeActivation.state.phase).toBe('running');
+
+    state = stepTimedHazardSimulation(state, [spawn], 0.87);
+    state = stepTimedHazardSimulation(state, [spawn], 0.04);
+    const expiryHazards = getCollisionHazardsForTimedSimulation(state, [spawn]);
+    const duringActivePrefix = stepPrototypeRun(
+      { phase: 'running', motion: { distance: 950 }, flight },
+      0.04,
+      { ...context, hazards: expiryHazards },
+    );
+    const afterExpiry = stepPrototypeRun(
+      { phase: 'running', motion: { distance: 800 }, flight },
+      0.04,
+      { ...context, hazards: expiryHazards },
+    );
+
+    expect(duringActivePrefix.state.phase).toBe('dead');
+    expect(afterExpiry.state.phase).toBe('running');
   });
 
   it('replays the same scheduled behavior and lifecycle trace from the same seed and deltas', () => {
