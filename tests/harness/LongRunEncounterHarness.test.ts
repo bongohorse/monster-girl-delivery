@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import { PROTOTYPE_ENCOUNTER_READABILITY_BUDGET_CONFIG } from '../../src/generation/EncounterReadabilityBudget';
+import { PROTOTYPE_ENCOUNTER_VARIETY_POLICY } from '../../src/generation/EncounterVarietyPolicy';
 import { createHazardPattern } from '../../src/generation/HazardPattern';
-import { LongRunEncounterHarness } from '../support/LongRunEncounterHarness';
+import {
+  type EncounterTraceEntry,
+  LongRunEncounterHarness,
+} from '../support/LongRunEncounterHarness';
 import { TEST_ENCOUNTER_PROFILE } from '../support/TestEncounterProfile';
 
 describe('LongRunEncounterHarness', () => {
@@ -26,7 +31,7 @@ describe('LongRunEncounterHarness', () => {
     expect(trace1).not.toEqual(trace2);
 
     // Both preserve invariants
-    const assertInvariants = (trace: typeof trace1) => {
+    const assertInvariants = (trace: ReadonlyArray<Readonly<EncounterTraceEntry>>) => {
       // Must not exhaust scheduler
       expect(trace.length).toBeGreaterThan(0);
 
@@ -34,32 +39,36 @@ describe('LongRunEncounterHarness', () => {
       const hasBreathers = trace.some((t) => t.pacingIntensity === 'breather');
       expect(hasBreathers).toBe(true);
 
-      // We should see reserved encounters
-      const hasReserved = trace.some((t) => t.type === 'reserved');
-      expect(hasReserved).toBe(true);
-
-      // Ensure the history remains bounded and repetition guard is active
       const reserved = trace.filter((t) => t.type === 'reserved');
-      let fallbackInstances = 0;
-      for (let i = 1; i < reserved.length; i++) {
-        if (
-          reserved[i].varietyFamilyId &&
-          reserved[i].varietyFamilyId === reserved[i - 1].varietyFamilyId
-        ) {
-          fallbackInstances++;
+
+      // Every accepted encounter must carry transition-fairness evidence proving it passed
+      // the active sequence policy; acceptance without a valid transition is a policy bypass.
+      expect(reserved.length).toBeGreaterThan(0);
+      for (const entry of reserved) {
+        expect(entry.transitionValidation).not.toBeNull();
+        expect(entry.transitionValidation?.valid).toBe(true);
+        expect(entry.transitionValidation?.failureReason).toBeNull();
+      }
+
+      // The recent-history variety guard defers recent families to the fallback catalog, so a
+      // non-fallback acceptance must never repeat a family inside the configured window. The
+      // window holds only accepted families because rejected candidates never enter history.
+      const recentFamilies: string[] = [];
+      for (const entry of reserved) {
+        expect(entry.varietyFamilyId).toBeDefined();
+        expect(entry.fallbackUsed).toBeDefined();
+        const familyId = entry.varietyFamilyId as string;
+        if (entry.fallbackUsed === false) {
+          expect(recentFamilies).not.toContain(familyId);
+        }
+        recentFamilies.push(familyId);
+        while (recentFamilies.length > PROTOTYPE_ENCOUNTER_VARIETY_POLICY.recentFamilyWindowSize) {
+          recentFamilies.shift();
         }
       }
 
-      // We expect the repetition guard to keep repeated families bounded
-      // Since PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES catalog is small, some fallback is expected
-      // over a run of 10000 distance. The guard ensures it only falls back when no valid distinct family fits.
-      expect(fallbackInstances).toBeLessThan(reserved.length / 2);
-
-      // Verify that all 'reserved' patterns logically passed the transition policy.
-      // We ensure that we do not see widespread trajectory or schedule rejections immediately
-      // following an accepted item without any parameter updates or spacing.
-      // There shouldn't be excessive consecutive trajectory rejections if the transition fairness handles sequencing cleanly.
-      // Since it simulates multiple candidates, some rejection is natural but there shouldn't be endless unbroken rejection loops.
+      // Deadlock guard (separate from transition fairness above): scheduling must keep making
+      // progress instead of looping on endless unbroken rejection runs.
       let consecutiveRejections = 0;
       let maxConsecutiveRejections = 0;
       for (const entry of trace) {
@@ -70,7 +79,7 @@ describe('LongRunEncounterHarness', () => {
           consecutiveRejections = 0;
         }
       }
-      expect(maxConsecutiveRejections).toBeLessThan(10); // Deadlock assertion / transition fairness
+      expect(maxConsecutiveRejections).toBeLessThan(10);
     };
 
     assertInvariants(trace1);
@@ -79,29 +88,73 @@ describe('LongRunEncounterHarness', () => {
 
   it('completes bounded long run successfully', () => {
     const harness = new LongRunEncounterHarness();
-    const { trace, finalState, maxRetainedSpawns, maxReservations, maxRecentFamilies } =
-      harness.run(300, 50000); // long run
+    const {
+      trace,
+      finalState,
+      maxRetainedSpawns,
+      maxReservations,
+      maxRecentFamilies,
+      maxConcurrentWarnings,
+      maxConcurrentLethalWindows,
+      maxActivePressureCost,
+      maxActiveReadabilityCost,
+    } = harness.run(300, 50000); // long run
 
     expect(trace.length).toBeGreaterThan(10);
 
-    // Check that internal states are bounded properly
-    // Verify that the maximum growth at any point during the run is strictly bounded by active policy/cleanup constraints
+    // The scheduler must never exhaust the prototype catalog mid-run; exhaustion would break
+    // the loop early and hide a generation deadlock behind a short trace.
+    expect(finalState.status).toBe('active');
+
+    // Bounded growth is asserted against the configured policy authorities, using maxima
+    // tracked throughout the run rather than only the drained final state.
+    expect(maxReservations).toBeLessThanOrEqual(
+      PROTOTYPE_ENCOUNTER_READABILITY_BUDGET_CONFIG.maximumTrackedEncounters,
+    );
+    expect(maxRecentFamilies).toBeLessThanOrEqual(
+      PROTOTYPE_ENCOUNTER_VARIETY_POLICY.recentFamilyWindowSize,
+    );
+
+    // Accepted concurrency usage must respect the configured hard readability limits.
+    expect(maxConcurrentWarnings).toBeLessThanOrEqual(
+      PROTOTYPE_ENCOUNTER_READABILITY_BUDGET_CONFIG.hardLimits.maximumConcurrentWarnings,
+    );
+    expect(maxConcurrentLethalWindows).toBeLessThanOrEqual(
+      PROTOTYPE_ENCOUNTER_READABILITY_BUDGET_CONFIG.hardLimits.maximumConcurrentLethalWindows,
+    );
+    expect(maxActivePressureCost).toBeLessThanOrEqual(
+      PROTOTYPE_ENCOUNTER_READABILITY_BUDGET_CONFIG.hardLimits.maximumActivePressureCost,
+    );
+    expect(maxActiveReadabilityCost).toBeLessThanOrEqual(
+      PROTOTYPE_ENCOUNTER_READABILITY_BUDGET_CONFIG.hardLimits.maximumActiveReadabilityCost,
+    );
+
+    // Retained logical spawns have no single configured cap; this generous regression tripwire
+    // (far above the observed steady state of a handful of spawns) catches retention/cleanup
+    // regressions without pinning an exact count.
     expect(maxRetainedSpawns).toBeLessThan(50);
-    expect(maxReservations).toBeLessThan(20);
-    expect(maxRecentFamilies).toBeLessThanOrEqual(2);
 
     // Spawns should be drained over distance
     expect(finalState.spawns.length).toBeLessThan(50);
     if (finalState.policy) {
-      expect(finalState.policy.readability.reservations.length).toBeLessThan(20);
-      expect(finalState.policy.variety.recentFamilyIds.length).toBeLessThanOrEqual(2);
+      expect(finalState.policy.readability.reservations.length).toBeLessThanOrEqual(
+        PROTOTYPE_ENCOUNTER_READABILITY_BUDGET_CONFIG.maximumTrackedEncounters,
+      );
+      expect(finalState.policy.variety.recentFamilyIds.length).toBeLessThanOrEqual(
+        PROTOTYPE_ENCOUNTER_VARIETY_POLICY.recentFamilyWindowSize,
+      );
     }
   });
 
   it('preserves boundary conditions and rejects properly on deliberate invalid fixture', () => {
+    // Two entries over runLength 1000 keeps hazard density (2 per 1000) inside the difficulty
+    // and pacing eligibility limits, so this fixture reaches the scheduler on non-breather
+    // phases and fails there on its blocked geometry instead of being filtered earlier as
+    // no-content. (Breather phases still defer it as no-content because 2 entries exceed the
+    // breather allowance; that is correct policy behavior, not the asserted failure path.)
     const BLOCKED_PATTERN = createHazardPattern({
       id: 'blocked-validation-pattern',
-      runLength: 300,
+      runLength: 1000,
       profile: TEST_ENCOUNTER_PROFILE,
       entries: [
         {
@@ -120,26 +173,23 @@ describe('LongRunEncounterHarness', () => {
     const harness = new LongRunEncounterHarness([BLOCKED_PATTERN]);
     const { trace } = harness.run(400, 5000);
 
-    // The policy rejects/defers the unreadable blocks and will not spawn it
+    // The blocked geometry must never spawn.
     const hasReserved = trace.some((t) => t.type === 'reserved');
     expect(hasReserved).toBe(false);
 
-    // We should specifically see valid structured rejection records since the candidate fails bounds/deadlock validation.
-    // If the tier explicitly denies `TEST_ENCOUNTER_PROFILE` it will defer out as `no-content`.
-    // We expect it to at least explicitly defer or reject cleanly instead of deadlocking.
-    // Because `TEST_ENCOUNTER_PROFILE` requires difficulty tier > 0 implicitly or causes a `no-content` based on budget
-    // For this specific test we should verify we get at least some structured tracking of why it didn't pass (e.g., defer due to no valid content available).
-    const hasDeferredOrRejection = trace.some(
-      (t) => t.type === 'rejected' || t.type === 'deferred',
-    );
-    expect(hasDeferredOrRejection).toBe(true);
-
-    const hasStructuredReason = trace.some(
+    // The failure must be the specific scheduler geometry rejection for the blocked pattern,
+    // not a generic no-content defer: every candidate attempt fails pattern validation with
+    // no passable vertical corridor.
+    const geometryRejections = trace.filter(
       (t) =>
-        t.reason === 'no-content' ||
-        t.reason === 'scheduler-rejected' ||
-        t.reason === 'trajectory-rejected',
+        t.type === 'rejected' &&
+        t.reason === 'scheduler-rejected' &&
+        t.patternId === 'blocked-validation-pattern' &&
+        t.rejectionReason === 'pattern',
     );
-    expect(hasStructuredReason).toBe(true);
+    expect(geometryRejections.length).toBeGreaterThan(0);
+    for (const rejection of geometryRejections) {
+      expect(rejection.rejectionIssueCodes).toContain('vertical-route-blocked');
+    }
   });
 });
