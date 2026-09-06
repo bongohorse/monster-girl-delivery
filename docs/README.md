@@ -10,10 +10,10 @@ The hub is intentionally a navigation/ownership document, not another specificat
 ## Current project pointer
 
 - **Project phase:** Pre-Production
-- **Current milestone:** M4 — Run Pacing & Hazard Language
-- **Current milestone parent:** [GitHub Issue #116](https://github.com/bongohorse/monster-girl-delivery/issues/116)
+- **Current milestone:** Pre-M5 transition (M4 complete; M5 pending approved parent plan)
+- **Current milestone parent:** None (M4 parent [GitHub Issue #116](https://github.com/bongohorse/monster-girl-delivery/issues/116) closed on closeout merge; M5 parent pending)
+- **Latest completed milestone:** M4 — [`milestones/M4-run-pacing-hazard-language.md`](milestones/M4-run-pacing-hazard-language.md)
 - **Current validation evidence:** [`milestones/M4-run-pacing-validation.md`](milestones/M4-run-pacing-validation.md)
-- **Latest completed milestone:** M3 — [`milestones/M3-seeded-generation-fairness.md`](milestones/M3-seeded-generation-fairness.md)
 - **Roadmap:** [`ROADMAP.md`](ROADMAP.md)
 - **Product/game specification:** [`../MASTER_SPEC.md`](../MASTER_SPEC.md)
 
@@ -218,12 +218,12 @@ Current completed reports:
 - [`milestones/M1-flight-prototype.md`](milestones/M1-flight-prototype.md)
 - [`milestones/M2-horizontal-run-first-hazard.md`](milestones/M2-horizontal-run-first-hazard.md)
 - [`milestones/M3-seeded-generation-fairness.md`](milestones/M3-seeded-generation-fairness.md)
+- [`milestones/M4-run-pacing-hazard-language.md`](milestones/M4-run-pacing-hazard-language.md)
 - supporting M1 evidence: [`milestones/M1-device-report.md`](milestones/M1-device-report.md)
 - supporting M3 evidence: [`milestones/M3-seeded-run-validation.md`](milestones/M3-seeded-run-validation.md)
+- supporting M4 evidence: [`milestones/M4-run-pacing-validation.md`](milestones/M4-run-pacing-validation.md)
 
-Current M4 planning and implementation scope is owned by GitHub Issue #116 and its deliberately promoted child Issues.
-
-Current M4 supporting evidence: [`milestones/M4-run-pacing-validation.md`](milestones/M4-run-pacing-validation.md). Issue #121 validation is accepted by the Game Director; formal M4 closeout remains the separate #122 task.
+M4 closeout is recorded in [`milestones/M4-run-pacing-hazard-language.md`](milestones/M4-run-pacing-hazard-language.md) with supporting evidence in [`milestones/M4-run-pacing-validation.md`](milestones/M4-run-pacing-validation.md). M5 implementation remains unstarted until an approved focused M5 parent plan is established.
 
 Historical reports should be corrected only when factual evidence is wrong, not rewritten to match later plans.
 
@@ -280,7 +280,9 @@ docs/
     ├── M3-seeded-generation-fairness.md
     │                             Completed M3 history
     ├── M4-run-pacing-validation.md
-    │                             Current M4 supporting validation evidence
+    │                             Supporting M4 validation evidence
+    ├── M4-run-pacing-hazard-language.md
+    │                             Completed M4 history
     └── M1-device-report.md       Supporting M1 device evidence
 ```
 

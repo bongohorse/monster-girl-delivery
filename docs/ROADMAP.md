@@ -4,7 +4,7 @@
 **Approved by:** Game Director / Product Owner  
 **Originally approved:** 2026-09-03  
 **Roadmap 2.0 revision:** 2026-09-04  
-**Current milestone:** M4 — Run Pacing & Hazard Language
+**Current milestone:** Pre-M5 transition (M4 complete; M5 pending approved parent plan)
 
 > [!IMPORTANT]
 > This file is the **single source of truth for milestone sequencing and milestone-level future scope**. `MASTER_SPEC.md` owns durable product/game decisions; focused GitHub Issues own live implementation scope.
@@ -232,7 +232,7 @@ Supporting validation: [`milestones/M3-seeded-run-validation.md`](milestones/M3-
 
 ## M4 — Run Pacing & Hazard Language
 
-**Status: CURRENT**
+**Status: COMPLETE**
 
 **Purpose:** turn technically valid generated encounters into runs that remain readable, varied, fair, and interesting over time.
 
@@ -275,9 +275,11 @@ M4 may close only when:
 
 **Explicitly not part of M4:** final production content volume, final balance values, full economy/meta, production art scaling, or release-level content variety.
 
-Current parent: [Issue #116](https://github.com/bongohorse/monster-girl-delivery/issues/116)
+Completed parent: [Issue #116](https://github.com/bongohorse/monster-girl-delivery/issues/116)
 
-The existing Jetpack Joyride-derived umbrella Issue #78 remains a long-term reference. Only the work explicitly promoted and ordered by M4 parent Issue #116 is current M4 scope.
+Historical report: [`milestones/M4-run-pacing-hazard-language.md`](milestones/M4-run-pacing-hazard-language.md)
+
+Supporting validation: [`milestones/M4-run-pacing-validation.md`](milestones/M4-run-pacing-validation.md)
 
 ---
 
@@ -633,9 +635,9 @@ M2  Horizontal Run & First Hazard      COMPLETE
  ↓
 M3  Seeded Generation & Fairness       COMPLETE
  ↓
-M4  Run Pacing & Hazard Language       CURRENT
+M4  Run Pacing & Hazard Language       COMPLETE
  ↓
-M5  Complete Arcade Loop & Skill Layer
+M5  Complete Arcade Loop & Skill Layer (PENDING PARENT PLAN)
  ↓
 PRODUCT GATE A — define release core game
 ART GATE       — lock minimum production visual direction
