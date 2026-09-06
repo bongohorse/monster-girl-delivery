@@ -20,6 +20,7 @@ import {
 } from '../../generation/GeneratedHazardStream';
 import { PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG } from '../../generation/LiveEncounterPolicy';
 import { PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES } from '../../generation/PrototypeHazardPatternFixtures';
+import type { TelegraphedHazardTarget } from '../../hazards/TelegraphedHazardLifecycle';
 import {
   createTelegraphedHazardSimulationState,
   getLethalHazardsForTelegraphedSimulation,
@@ -32,7 +33,11 @@ import {
   type PrototypeRunState,
   stepPrototypeRun,
 } from '../../systems/PrototypeRunSimulation';
-import { constrainVerticalFlightState } from '../../systems/VerticalFlightSimulation';
+import { stepRunMotion } from '../../systems/RunMotionSimulation';
+import {
+  constrainVerticalFlightState,
+  stepVerticalFlight,
+} from '../../systems/VerticalFlightSimulation';
 import { createPrototypeFlightBounds, getPrototypePlayerX } from '../PrototypeFlightLayout';
 
 const RUNNING_INSTRUCTIONS =
@@ -224,6 +229,25 @@ export class Foundation extends Scene {
       );
       const appliedScrollSpeed = this.hazardStream.schedulingWindow.scrollSpeed;
       const runMotionTuning = Object.freeze({ baseScrollSpeed: appliedScrollSpeed });
+      const flightBounds = createPrototypeFlightBounds(viewport);
+      const activeFlightTuning = this.hazardStream.policy?.flightTuning ?? flightTuning;
+      const thrustHeld = this.services.input.isThrustHeld();
+      const initialFlight = this.runState.flight;
+      const initialMotion = this.runState.motion;
+      const resolvePlayerTargetAtDelta = (deltaSeconds: number): TelegraphedHazardTarget => {
+        const subFlight = stepVerticalFlight(
+          initialFlight,
+          deltaSeconds,
+          thrustHeld,
+          activeFlightTuning,
+          flightBounds,
+        );
+        const subMotion = stepRunMotion(initialMotion, deltaSeconds, runMotionTuning);
+        return {
+          positionY: subFlight.positionY,
+          runDistance: subMotion.distance,
+        };
+      };
       this.telegraphedHazardState = stepTelegraphedHazardSimulation(
         this.telegraphedHazardState,
         this.hazardStream.spawns,
@@ -232,16 +256,17 @@ export class Foundation extends Scene {
           positionY: this.runState.flight.positionY,
           runDistance: this.runState.motion.distance,
         },
+        resolvePlayerTargetAtDelta,
       );
       const result = stepPrototypeRun(this.runState, simulationDeltaSeconds, {
-        flightBounds: createPrototypeFlightBounds(viewport),
-        flightTuning: this.hazardStream.policy?.flightTuning ?? flightTuning,
+        flightBounds,
+        flightTuning: activeFlightTuning,
         hazards: getLethalHazardsForTelegraphedSimulation(
           this.telegraphedHazardState,
           this.hazardStream.spawns,
         ),
         runMotionTuning,
-        thrustHeld: this.services.input.isThrustHeld(),
+        thrustHeld,
       });
       this.runState = result.state;
 
