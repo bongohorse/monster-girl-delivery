@@ -11,8 +11,8 @@ import { type PrototypeRunState, stepPrototypeRun } from '../../src/systems/Prot
 import type { VerticalFlightBounds } from '../../src/systems/VerticalFlightSimulation';
 
 export interface FrameSchedule {
-  readonly name: string;
   readonly getNextDelta: (elapsedSeconds: number, stepIndex: number) => number;
+  readonly name: string;
 }
 
 export const createFixedRateSchedule = (name: string, fps: number): FrameSchedule => {
@@ -59,32 +59,27 @@ export const STANDARD_FRAME_SCHEDULES: Readonly<Record<string, FrameSchedule>> =
 
 export interface ScriptedInputTransition {
   /** The exact simulation time in seconds when this transition takes effect. */
-  readonly time: number;
   readonly thrustHeld: boolean;
+  readonly time: number;
 }
 
 export interface PartitionedSimulationOptions {
-  readonly initialState: Readonly<PrototypeRunState>;
-  readonly totalDuration: number;
-  readonly schedule: FrameSchedule;
   readonly flightBounds: Readonly<VerticalFlightBounds>;
   readonly flightTuning?: Readonly<FlightTuningValues>;
-  readonly runMotionTuning?: Readonly<RunMotionValues>;
   readonly hazards?: ReadonlyArray<Readonly<LogicalHazard>>;
   readonly initialThrustHeld?: boolean;
+  readonly initialState: Readonly<PrototypeRunState>;
   readonly inputScript?: ReadonlyArray<ScriptedInputTransition>;
-  /** When true, stepping halts immediately once state.phase enters 'dead'. */
-  readonly stopOnDeath?: boolean;
+  readonly runMotionTuning?: Readonly<RunMotionValues>;
+  readonly schedule: FrameSchedule;
+  readonly totalDuration: number;
 }
 
 export interface PartitionedSimulationResult {
-  readonly scheduleName: string;
+  readonly deathRecordedAtDistance: number | null;
+  readonly deathRecordedAtTime: number | null;
   readonly finalState: Readonly<PrototypeRunState>;
   readonly totalSimulatedTime: number;
-  readonly logicalFrames: number;
-  readonly actualSteps: number;
-  readonly deathRecordedAtTime: number | null;
-  readonly deathRecordedAtDistance: number | null;
 }
 
 const EPSILON = 1e-12;
@@ -102,7 +97,6 @@ export const runPartitionedSimulation = (
     hazards = [],
     initialThrustHeld = false,
     inputScript = [],
-    stopOnDeath = false,
   } = options;
 
   if (!Number.isFinite(totalDuration) || totalDuration <= 0) {
@@ -125,7 +119,6 @@ export const runPartitionedSimulation = (
   let currentThrustHeld = initialThrustHeld;
   let scriptIndex = 0;
   let logicalFrames = 0;
-  let actualSteps = 0;
   let deathRecordedAtTime: number | null = state.phase === 'dead' ? 0 : null;
   let deathRecordedAtDistance: number | null =
     state.phase === 'dead' ? state.motion.distance : null;
@@ -137,10 +130,6 @@ export const runPartitionedSimulation = (
   }
 
   while (currentSimulatedTime < totalDuration - EPSILON) {
-    if (stopOnDeath && state.phase === 'dead') {
-      break;
-    }
-
     const nominalDelta = schedule.getNextDelta(currentSimulatedTime, logicalFrames);
     if (!Number.isFinite(nominalDelta) || nominalDelta <= 0) {
       throw new RangeError(
@@ -154,10 +143,6 @@ export const runPartitionedSimulation = (
     const frameEndTime = isFinalFrame ? totalDuration : currentSimulatedTime + nominalDelta;
 
     while (currentSimulatedTime < frameEndTime - EPSILON) {
-      if (stopOnDeath && state.phase === 'dead') {
-        break;
-      }
-
       // Check if next input transition falls strictly within (currentSimulatedTime, frameEndTime)
       let nextTargetTime = frameEndTime;
       let transitionToApply: ScriptedInputTransition | null = null;
@@ -172,7 +157,6 @@ export const runPartitionedSimulation = (
 
       const stepDelta = nextTargetTime - currentSimulatedTime;
       if (stepDelta > EPSILON) {
-        actualSteps += 1;
         const stepResult = stepPrototypeRun(state, stepDelta, {
           flightBounds,
           flightTuning,
@@ -215,16 +199,10 @@ export const runPartitionedSimulation = (
     }
   }
 
-  const finalSimulatedTime =
-    stopOnDeath && state.phase === 'dead' ? currentSimulatedTime : totalDuration;
-
   return {
-    scheduleName: schedule.name,
-    finalState: state,
-    totalSimulatedTime: finalSimulatedTime,
-    logicalFrames,
-    actualSteps,
-    deathRecordedAtTime,
     deathRecordedAtDistance,
+    deathRecordedAtTime,
+    finalState: state,
+    totalSimulatedTime: totalDuration,
   };
 };
