@@ -180,7 +180,7 @@ Issue #127 / PR #160 added a headless soak harness in `tests/support/LongRunEnco
 
 Issue #121 / PR #166 collected and documented the automated, browser-tooling, and Game Director evidence in [`docs/milestones/M4-run-pacing-validation.md`](M4-run-pacing-validation.md).
 
-- Automated soak evidence proved policy boundedness and multi-archetype participation across seeds `42`, `100`, `200`, and `300`.
+- Automated soak evidence demonstrated that policy state remained bounded and all promoted archetypes participated across representative seeds `42`, `100`, `200`, and `300`.
 - Tooling fixes in PR #165 resolved Director HUD eye button collapse behavior and added new-random-seed controls.
 - The Game Director conducted playtesting on the updated representative build and explicitly accepted the run pacing, hazard language, readability, and variety as a **PASS**.
 
@@ -270,11 +270,12 @@ Infrastructure and research work completed while M4 was current:
 
 M4 deliberately excluded:
 
-- complete start → run → crash → results → restart arcade loop (#85, M5 scope);
-- separate core-hitbox and Graze collision layer (#90, M5 scope);
-- deterministic score foundation (#94, M5 scope);
-- collectible flight paths and coins (#84, M5 scope);
-- Delivery Contracts, themed districts, boss encounters, or meta progression;
+- complete start → run → crash → results → restart arcade loop (future arcade-loop direction aligned with backlog Issue #85; planned M5 roadmap scope);
+- separate core-hitbox and Graze collision layer (backlog Issue #90; planned M5 roadmap scope);
+- deterministic score foundation (no focused score implementation Issue has been promoted yet; planned M5 roadmap scope);
+- collectible flight paths and coins (backlog Issue #84; planned M5 roadmap scope);
+- boss and set-piece encounters (backlog Issue #94; FUTURE);
+- Delivery Contracts (backlog Issue #88; FUTURE), themed districts, or meta progression;
 - final production art, animation pipelines, or audio/music;
 - automatic graphics-quality switching or 3D engine techniques;
 - exhaustive mathematical verification of all possible RNG seeds.
@@ -282,20 +283,21 @@ M4 deliberately excluded:
 ## 8. Deferred/open work at exit
 
 - **Parallel Track B tasks:** Open engineering tasks that continue alongside milestones:
-  - Issue #102: Improve High-DPI rendering / device-pixel-ratio handling;
-  - Issue #140: Harden browser/WebView input lifecycle and gesture cancellation;
-  - Issue #141: Establish runtime performance budget and regression tripwires;
-  - Issue #143: Validate frame-rate independence and variable-delta resilience.
-- **M5 preparation:** Core arcade-loop features (#85, #90, #94, #84) remain in the backlog/future status until formally scheduled under an approved M5 parent plan.
+  - Issue #102: Improve High-DPI rendering and eliminate blurry canvas output;
+  - Issue #140: Harden browser/WebView input defaults and add regression coverage;
+  - Issue #141: Establish runtime performance budgets and profiling baseline;
+  - Issue #143: Validate frame-rate independence across 60/90/120 Hz and define fixed-step policy.
+- **Future backlog items aligned with M5 roadmap direction:** Backlog items such as #85 (death-to-retry flow), #90 (Graze collision layers), and #84 (collectible paths) align with M5 roadmap goals, but remain unpromoted FUTURE backlog issues until formally scheduled under an approved M5 parent plan. No focused implementation Issue has been promoted for scoring.
+- **Later FUTURE backlog work:** Set-piece and boss encounters (#94) and Delivery Contracts (#88) remain preserved in the backlog for later milestones.
 - No blocking M4 defects remain.
 
 ## 9. Exit decision
 
 M4 is complete because:
 
-1. All 15 ordered child tasks in parent Issue #116 are complete and merged.
+1. Preceding ordered M4 implementation and validation tasks (#79–#83, #86, #89, #117–#121, #123–#127) are merged on `main`; this closeout report completes the final ordered #122 closeout step on merge.
 2. Multi-layer fairness (time-to-impact, reachability, transition fairness) and readability bounds (variety guard, concurrency budgets) are fully integrated into the live procedural stream.
-3. The 50,000m soak harness proves policy boundedness without scheduler deadlock.
+3. The representative 50,000m soak provides evidence that policy state remained bounded and the scheduler remained live in the sampled run without scheduler deadlock.
 4. Director tooling corrections (PR #165) enabled satisfactory playtesting.
 5. The Game Director conducted real-gameplay playtesting and explicitly accepted the run structure, readability, and variety.
 6. Required automated validation checks (`ci:check`, `typecheck`, `test`, `build`) pass cleanly.
@@ -326,7 +328,7 @@ Before merging this completion report:
 - [x] Main implementation Issues/PRs are linked (#79–#83, #86, #89, #116–#127, #130–#136, #138, #142, #147, #151–#154, #160, #165, #166).
 - [x] Automated validation is recorded accurately (393 tests, 56 test files, 50,000m soak).
 - [x] Manual/device evidence is recorded only when actually performed (playtest pass; missing device metadata noted).
-- [x] Deferred work is explicit and linked (Track B: #102, #140, #141, #143; M5: #85, #90, #94, #84).
+- [x] Deferred work is explicit and linked (Track B: #102, #140, #141, #143; FUTURE backlog items: #84, #85, #88, #90, #94).
 - [x] Supporting maintenance is separated from milestone product scope (#106, PR #137, PR #165, PR #157, PR #164, reference docs).
 - [x] Product/architecture decision states are accurate (prototype tuning preserved).
 - [x] Exit decision is explicit (all #116 exit criteria satisfied; Game Director acceptance).
