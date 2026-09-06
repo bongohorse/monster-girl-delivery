@@ -148,4 +148,17 @@ describe('PhaserLifecycleAdapter', () => {
     expect(browserWindow.listenerCount('pagehide')).toBe(0);
     expect(browserWindow.listenerCount('pageshow')).toBe(0);
   });
+
+  it('pauses with hidden reason if instantiated while document is already hidden', () => {
+    installBrowserFakes(true);
+    const { game } = createGame();
+    const services = createAppServices();
+    new PhaserLifecycleAdapter(game, services.lifecycle);
+
+    expect(services.lifecycle.getSnapshot()).toEqual({
+      pauseReasons: ['hidden'],
+      paused: true,
+    });
+    expect(services.time.isPaused()).toBe(true);
+  });
 });

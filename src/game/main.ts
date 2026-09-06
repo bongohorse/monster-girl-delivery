@@ -4,21 +4,28 @@ import { Boot } from './scenes/Boot';
 import { Foundation } from './scenes/Foundation';
 import { Preloader } from './scenes/Preloader';
 
-interface StartGameOptions {
+export interface StartGameOptions {
   directorMode: boolean;
 }
 
-const StartGame = (parent: string, options: StartGameOptions) => {
+export const createGameConfig = (
+  parent: string,
+  options: StartGameOptions,
+): Phaser.Types.Core.GameConfig => {
   const services = createAppServices();
-  const config: Phaser.Types.Core.GameConfig = {
+  return {
     type: AUTO,
     backgroundColor: '#121426',
     disableContextMenu: true,
     input: {
       activePointers: 2,
       keyboard: true,
-      mouse: true,
-      touch: true,
+      mouse: {
+        preventDefaultWheel: true,
+      },
+      touch: {
+        capture: true,
+      },
       windowEvents: true,
     },
     scale: {
@@ -29,8 +36,10 @@ const StartGame = (parent: string, options: StartGameOptions) => {
     },
     scene: [Boot, Preloader, new Foundation(services, options.directorMode)],
   };
+};
 
-  return new Game(config);
+const StartGame = (parent: string, options: StartGameOptions) => {
+  return new Game(createGameConfig(parent, options));
 };
 
 export default StartGame;
