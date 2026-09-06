@@ -87,9 +87,9 @@ This is a description of the current major structure, not a requirement to creat
 
 Supporting project areas include tests, Vite configuration, GitHub Actions, Codespaces configuration, and public runtime files.
 
-## 5. Time authority
+## 5. Time authority and simulation-step policy
 
-`TimeService` is the shared authority for gameplay simulation time.
+`TimeService` is the sole authority for gameplay simulation time.
 
 Responsibilities:
 
@@ -99,11 +99,22 @@ Responsibilities:
 - represent pause/resume state;
 - prevent inactive/background time from creating physics jumps.
 
-Rules:
+### Simulation-step policy
 
-- gameplay movement is time-based, not frame-count based;
-- do not duplicate delta clamping in individual gameplay classes;
-- lifecycle transitions must keep time state coherent.
+The project operates under an explicit **variable-delta simulation policy**:
+
+- **Normalized variable delta**: Authoritative gameplay consumes normalized `TimeService` delta in seconds. Display refresh rate or render update frequency must never define gameplay behavior.
+- **No central fixed-step accumulator**: Authoritative simulation advances once per frame using the clamped, normalized delta. The engine does not accumulate elapsed time into fixed quanta or run an inner catch-up step loop.
+- **Local resolution of step sensitivity**: Any gameplay system that is mathematically step-sensitive must resolve that sensitivity locally rather than imposing a global fixed timestep. Supported local remedies include:
+  - analytical integration (e.g. vertical flight free-motion integration under gravity, thrust, and velocity caps);
+  - exact boundary handling (e.g. analytical flight ceiling/floor contact root-solving and post-contact motion; reactive target-lock exact warning-to-lock boundary sampling);
+  - continuous / swept logical intersection (e.g. swept hazard collision evaluating continuous player trajectory polynomials and patrol reversals across the step);
+  - explicit bounded subdivision only where mathematically necessary and strictly bounded in computational cost.
+- **Verification standard**: Any new or modified gameplay authority where frame-partition sensitivity is plausible must pass representative headless frame-partition evidence across 30, 60, 90, 120, and 144 Hz schedules plus deterministic jitter before adoption.
+- **Central accumulator threshold**: A central fixed-step accumulator must not be introduced without new, reproducible evidence demonstrating that local analytical or continuous methods cannot preserve correctness for an authoritative system.
+- **Single clock invariant**: Do not introduce a second gameplay clock, separate physics timer, or independent accumulator.
+- **Framework physics boundary**: If Phaser-owned physics (such as Arcade Physics or Matter.js) is ever adopted, its built-in fixed-step or variable-delta mechanics must be explicitly reconciled with `TimeService` to ensure a single time authority.
+- **Profiling isolation**: Profiling telemetry and raw frame intervals (such as `actualFps` or `rawDelta` in the Director performance HUD) are presentation and diagnostic tools only; they must never feed back into `TimeService` or influence gameplay simulation.
 
 ## 6. Input boundary
 
