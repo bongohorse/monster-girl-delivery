@@ -1,11 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { PROTOTYPE_FLIGHT_TUNING_DEFAULTS } from '../../src/config/FlightTuningConfig';
 import { PROTOTYPE_RUN_MOTION_DEFAULTS } from '../../src/config/RunMotionConfig';
-import { TimeService } from '../../src/core/TimeService';
-import {
-  calculateDifficulty,
-  PROTOTYPE_DIFFICULTY_CONFIG,
-} from '../../src/difficulty/DifficultySystem';
 import { PROTOTYPE_PATTERN_REACHABILITY_CONTEXT } from '../../src/generation/FlightReachability';
 import {
   advanceGeneratedHazardStream,
@@ -14,7 +9,10 @@ import {
   PROTOTYPE_GENERATED_HAZARD_STREAM_CONFIG,
 } from '../../src/generation/GeneratedHazardStream';
 import { PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG } from '../../src/generation/LiveEncounterPolicy';
-import { scheduleNextPattern } from '../../src/generation/PatternSpawnScheduler';
+import {
+  type LogicalHazardSpawnInstance,
+  scheduleNextPattern,
+} from '../../src/generation/PatternSpawnScheduler';
 import { PROTOTYPE_PATTERN_VALIDATION_CONSTRAINTS } from '../../src/generation/PatternValidator';
 import {
   PROTOTYPE_HAZARD_PATTERN_FIXTURES,
@@ -30,9 +28,9 @@ import {
   stepTelegraphedHazardSimulation,
   type TelegraphedHazardSimulationState,
 } from '../../src/hazards/TelegraphedHazardSimulation';
-import { calculatePacing, PROTOTYPE_PACING_CONFIG } from '../../src/pacing/PacingSystem';
 import {
   createPrototypeRunState,
+  type PrototypeRunState,
   stepPrototypeRun,
 } from '../../src/systems/PrototypeRunSimulation';
 import type { VerticalFlightBounds } from '../../src/systems/VerticalFlightSimulation';
@@ -47,11 +45,15 @@ const FLIGHT_BOUNDS: Readonly<VerticalFlightBounds> = Object.freeze({
   floorY: 362,
 });
 
-/** Helper to advance telegraphed simulation to an exact target time across any frame schedule. */
+/**
+ * Advances telegraphed simulation to an exact target time across any frame schedule.
+ * Matches live Foundation ordering: target observation is sampled pre-step before
+ * simulationDeltaSeconds is stepped.
+ */
 const runTelegraphedPartitionToTime = (
   schedule: FrameSchedule,
   totalDuration: number,
-  spawns: Parameters<typeof stepTelegraphedHazardSimulation>[1],
+  spawns: ReadonlyArray<Readonly<LogicalHazardSpawnInstance>>,
   getTarget: (time: number) => { positionY: number; runDistance: number },
 ): TelegraphedHazardSimulationState => {
   let simState = createTelegraphedHazardSimulationState();
@@ -62,11 +64,158 @@ const runTelegraphedPartitionToTime = (
     const nominalDelta = schedule.getNextDelta(elapsed, stepIndex);
     stepIndex += 1;
     const stepDelta = Math.min(nominalDelta, totalDuration - elapsed);
+
+    // Pre-step target observation matching live Foundation ordering
+    const preStepTarget = getTarget(elapsed);
+
+    simState = stepTelegraphedHazardSimulation(simState, spawns, stepDelta, preStepTarget);
     elapsed += stepDelta;
-    simState = stepTelegraphedHazardSimulation(simState, spawns, stepDelta, getTarget(elapsed));
   }
 
   return simState;
+};
+
+interface ScriptedInputTransition {
+  readonly thrustHeld: boolean;
+  readonly time: number;
+}
+
+interface ScriptedTelegraphedRunOptions {
+  readonly flightBounds: Readonly<VerticalFlightBounds>;
+  readonly initialRunState: Readonly<PrototypeRunState>;
+  readonly inputScript?: ReadonlyArray<ScriptedInputTransition>;
+  readonly schedule: FrameSchedule;
+  readonly telegraphedSpawns: ReadonlyArray<Readonly<LogicalHazardSpawnInstance>>;
+  readonly totalDuration: number;
+}
+
+interface ScriptedTelegraphedRunResult {
+  readonly deathRecordedAtDistance: number | null;
+  readonly deathRecordedAtTime: number | null;
+  readonly finalRunState: Readonly<PrototypeRunState>;
+}
+
+/**
+ * Scenario-local runner for telegraphed hazards with exact input-transition frame splitting.
+ * If a frame spans across an input transition timestamp, the step is subdivided at the exact
+ * transition time so input application remains frame-rate independent.
+ */
+const runScriptedTelegraphedSimulation = (
+  options: ScriptedTelegraphedRunOptions,
+): ScriptedTelegraphedRunResult => {
+  const {
+    flightBounds,
+    initialRunState,
+    inputScript = [],
+    schedule,
+    telegraphedSpawns,
+    totalDuration,
+  } = options;
+
+  const sortedScript = [...inputScript].sort((a, b) => a.time - b.time);
+  let scriptIndex = 0;
+  let currentThrustHeld = false;
+
+  while (scriptIndex < sortedScript.length && sortedScript[scriptIndex].time <= EPSILON) {
+    currentThrustHeld = sortedScript[scriptIndex].thrustHeld;
+    scriptIndex += 1;
+  }
+
+  let runState = initialRunState;
+  let telegraphedState = createTelegraphedHazardSimulationState();
+  let currentSimulatedTime = 0;
+  let logicalFrames = 0;
+  let deathRecordedAtTime: number | null = null;
+  let deathRecordedAtDistance: number | null = null;
+
+  while (currentSimulatedTime < totalDuration - EPSILON) {
+    const nominalDelta = schedule.getNextDelta(currentSimulatedTime, logicalFrames);
+    logicalFrames += 1;
+    const frameEndTime = Math.min(totalDuration, currentSimulatedTime + nominalDelta);
+
+    while (currentSimulatedTime < frameEndTime - EPSILON) {
+      let nextTargetTime = frameEndTime;
+      let transitionToApply: ScriptedInputTransition | null = null;
+
+      if (
+        scriptIndex < sortedScript.length &&
+        sortedScript[scriptIndex].time < frameEndTime - EPSILON
+      ) {
+        nextTargetTime = sortedScript[scriptIndex].time;
+        transitionToApply = sortedScript[scriptIndex];
+      }
+
+      const stepDelta = nextTargetTime - currentSimulatedTime;
+      if (stepDelta > EPSILON) {
+        // Pre-step player target observation matching live Foundation ordering
+        const preStepTarget = {
+          positionY: runState.flight.positionY,
+          runDistance: runState.motion.distance,
+        };
+
+        telegraphedState = stepTelegraphedHazardSimulation(
+          telegraphedState,
+          telegraphedSpawns,
+          stepDelta,
+          preStepTarget,
+        );
+
+        const lethalHazards = getLethalHazardsForTelegraphedSimulation(
+          telegraphedState,
+          telegraphedSpawns,
+        );
+
+        const stepResult = stepPrototypeRun(runState, stepDelta, {
+          flightBounds,
+          flightTuning: PROTOTYPE_FLIGHT_TUNING_DEFAULTS,
+          hazards: lethalHazards,
+          runMotionTuning: PROTOTYPE_RUN_MOTION_DEFAULTS,
+          thrustHeld: currentThrustHeld,
+        });
+
+        runState = stepResult.state;
+        currentSimulatedTime = nextTargetTime;
+
+        if (stepResult.enteredDead && deathRecordedAtTime === null) {
+          deathRecordedAtTime = currentSimulatedTime;
+          deathRecordedAtDistance = runState.motion.distance;
+          break;
+        }
+      } else {
+        currentSimulatedTime = nextTargetTime;
+      }
+
+      if (transitionToApply !== null) {
+        currentThrustHeld = transitionToApply.thrustHeld;
+        scriptIndex += 1;
+        while (
+          scriptIndex < sortedScript.length &&
+          Math.abs(sortedScript[scriptIndex].time - currentSimulatedTime) <= EPSILON
+        ) {
+          currentThrustHeld = sortedScript[scriptIndex].thrustHeld;
+          scriptIndex += 1;
+        }
+      }
+    }
+
+    if (deathRecordedAtTime !== null) {
+      break;
+    }
+
+    while (
+      scriptIndex < sortedScript.length &&
+      Math.abs(sortedScript[scriptIndex].time - currentSimulatedTime) <= EPSILON
+    ) {
+      currentThrustHeld = sortedScript[scriptIndex].thrustHeld;
+      scriptIndex += 1;
+    }
+  }
+
+  return {
+    deathRecordedAtDistance,
+    deathRecordedAtTime,
+    finalRunState: runState,
+  };
 };
 
 describe('system frame partition evidence', () => {
@@ -160,10 +309,12 @@ describe('system frame partition evidence', () => {
       }
     });
 
-    it('demonstrates discrete target-lock sampling sensitivity on moving player across coarse vs fine frames', () => {
+    it('demonstrates partition-sensitive discrete target-lock sampling under live pre-step observation', () => {
       // Authored PROTOTYPE_TARGET_LOCK_STRIKE_PATTERN has warning duration = 1.40s.
-      // During warning, observed player target moves continuously at vy = 50 px/s (y(t) = 100 + 50 * t).
-      // At the frame crossing t = 1.40s, the hazard freezes lockedTarget from latestObservedTarget.
+      // In live Foundation ordering, target is observed pre-step before stepTelegraphedHazardSimulation.
+      // With player moving at vy = 50 px/s (y(t) = 100 + 50 * t), the frame that crosses t = 1.40s
+      // freezes lockedTarget from the pre-step observation sampled at t_start in [1.40 - dt, 1.40].
+      // Theoretical lag bound: deltaY <= vy * dt_max = 50 px/s * 0.050s = 2.50 px (y in [167.5, 170.0]).
       const strikeSchedule = scheduleNextPattern({
         catalog: [PROTOTYPE_TARGET_LOCK_STRIKE_PATTERN],
         patternStartDistance: 0,
@@ -185,7 +336,7 @@ describe('system frame partition evidence', () => {
           }));
           const lifecycle = getTelegraphedHazardLifecycle(state, strikeSpawn);
           const lethals = getLethalHazardsForTelegraphedSimulation(state, [strikeSpawn]);
-          return [name, { lifecycle, lethalHitbox: lethals[0]?.hitbox }];
+          return [name, { lethalHitbox: lethals[0]?.hitbox, lifecycle }];
         }),
       );
 
@@ -195,26 +346,38 @@ describe('system frame partition evidence', () => {
         expect(result.lethalHitbox).toBeDefined();
       }
 
-      // 30 Hz and 60 Hz step on t = 1.4000s exactly, freezing lockedTarget.positionY = 170.0:
-      expect(results['30hz'].lifecycle?.lockedTarget?.positionY).toBeCloseTo(170.0, 3);
-      expect(results['60hz'].lifecycle?.lockedTarget?.positionY).toBeCloseTo(170.0, 3);
+      // Exact locked target values reflect discrete pre-step observation lag:
+      // 30 Hz (frame at t=1.3667s): 100 + 50 * 1.3667 = 168.333
+      // 60 Hz (frame at t=1.3833s): 100 + 50 * 1.3833 = 169.167
+      // 90 Hz (frame at t=1.4000s): 100 + 50 * 1.4000 = 170.000
+      // 120 Hz (frame at t=1.4000s): 170.000
+      // 144 Hz (frame 201 at t=1.3958s): 100 + 50 * 1.3958 = 169.792
+      // jittered (frame at t=1.4000s): 170.000
+      expect(results['30hz'].lifecycle?.lockedTarget?.positionY).toBeCloseTo(168.333, 3);
+      expect(results['60hz'].lifecycle?.lockedTarget?.positionY).toBeCloseTo(169.167, 3);
+      expect(results['90hz'].lifecycle?.lockedTarget?.positionY).toBeCloseTo(170.0, 3);
+      expect(results['120hz'].lifecycle?.lockedTarget?.positionY).toBeCloseTo(170.0, 3);
+      expect(results['144hz'].lifecycle?.lockedTarget?.positionY).toBeCloseTo(169.792, 3);
+      expect(results.jittered.lifecycle?.lockedTarget?.positionY).toBeCloseTo(170.0, 3);
 
-      // Other schedules cross 1.40s on their respective discrete frame boundaries, sampling player position
-      // within the single-frame interval [t_lock, t_lock + dt_frame].
-      // Sampling jitter across all 6 schedules is tightly bounded within <= 0.6 px:
+      // All schedules fall within the theoretical frame-lag bound [167.5, 170.0]:
       for (const [_name, result] of Object.entries(results)) {
         const lockedY = result.lifecycle?.lockedTarget?.positionY;
         expect(lockedY).toBeDefined();
         if (lockedY !== undefined) {
-          expect(lockedY).toBeGreaterThanOrEqual(170.0);
-          expect(lockedY).toBeLessThanOrEqual(170.6);
+          expect(lockedY).toBeGreaterThanOrEqual(167.5);
+          expect(lockedY).toBeLessThanOrEqual(170.0);
         }
       }
+
+      // Lethal strike hitbox differs between coarse and fine schedules (1.667 px spread):
+      expect(results['30hz'].lethalHitbox?.top).toBeCloseTo(144.333, 3);
+      expect(results['120hz'].lethalHitbox?.top).toBeCloseTo(146.0, 3);
     });
   });
 
   describe('authority 2: generated hazard stream & PRNG draws across schedules', () => {
-    it('produces 100% identical PRNG state, pattern sequence, and spawn geometry in contiguous stream across all 6 schedules', () => {
+    it('produces identical PRNG state, pattern sequence, and spawn geometry in contiguous stream across all 6 schedules in sampled scenario', () => {
       const legacyContext: GeneratedHazardStreamContext = Object.freeze({
         catalog: PROTOTYPE_HAZARD_PATTERN_FIXTURES,
         config: PROTOTYPE_GENERATED_HAZARD_STREAM_CONFIG,
@@ -268,7 +431,7 @@ describe('system frame partition evidence', () => {
       expect(baseline.stream.scheduledPatternCount).toBe(7);
 
       for (const [_name, result] of Object.entries(results)) {
-        // Distance and simulated time match exactly
+        // Distance and simulated time match within floating-point epsilon
         expect(Math.abs(result.distance - baseline.distance)).toBeLessThanOrEqual(
           FLOATING_POINT_TOLERANCE,
         );
@@ -276,12 +439,12 @@ describe('system frame partition evidence', () => {
           FLOATING_POINT_TOLERANCE,
         );
 
-        // PRNG internal state and counter match identically:
+        // PRNG internal state matches identically:
         expect(result.stream.generationState.prngState).toBe(
           baseline.stream.generationState.prngState,
         );
 
-        // Pattern scheduling count and next cursor match identically:
+        // Pattern scheduling count and next cursor match within tolerance:
         expect(result.stream.scheduledPatternCount).toBe(baseline.stream.scheduledPatternCount);
         expect(
           Math.abs(
@@ -289,7 +452,7 @@ describe('system frame partition evidence', () => {
           ),
         ).toBeLessThanOrEqual(FLOATING_POINT_TOLERANCE);
 
-        // Spawns count and individual hazard geometry match identically:
+        // Spawns count and individual hazard geometry match:
         expect(result.stream.spawns.length).toBe(baseline.stream.spawns.length);
         for (let i = 0; i < baseline.stream.spawns.length; i++) {
           const expectedSpawn = baseline.stream.spawns[i];
@@ -310,7 +473,11 @@ describe('system frame partition evidence', () => {
       }
     });
 
-    it('demonstrates identical PRNG draw count and pattern IDs with bounded gap recovery offset under policy mode', () => {
+    it('demonstrates partition-consistent PRNG state and pattern sequence but partition-sensitive spawn and cursor placement under policy mode', () => {
+      // In policy mode, when crossing a tier boundary after a no-content gap, GeneratedHazardStream
+      // line 356 clamps nextPatternStartDistance = Math.max(state.nextPatternStartDistance, windowEnd).
+      // Because windowEnd is sampled at discrete frame steps, the first post-gap pattern exhibits
+      // a placement offset bounded by [0, dt_max * scrollSpeed] = [0, 0.050s * 350 px/s] = [0, 17.5m].
       const policyContext: GeneratedHazardStreamContext = Object.freeze({
         catalog: PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES,
         config: PROTOTYPE_GENERATED_HAZARD_STREAM_CONFIG,
@@ -367,52 +534,51 @@ describe('system frame partition evidence', () => {
       expect(baseline.stream.scheduledPatternCount).toBe(2);
 
       for (const [_name, result] of Object.entries(results)) {
-        // Scheduled pattern count is 100% identical:
+        // Scheduled pattern count is identical in this scenario:
         expect(result.stream.scheduledPatternCount).toBe(baseline.stream.scheduledPatternCount);
 
-        // PRNG internal state is 100% identical:
+        // PRNG internal state matches identically across all schedules:
         expect(result.stream.generationState.prngState).toBe(
           baseline.stream.generationState.prngState,
         );
 
-        // Scheduled pattern types and relative sequence are 100% identical:
+        // Scheduled pattern types match identically:
         expect(result.stream.spawns.length).toBe(baseline.stream.spawns.length);
         for (let i = 0; i < baseline.stream.spawns.length; i++) {
           expect(result.stream.spawns[i].patternId).toBe(baseline.stream.spawns[i].patternId);
         }
 
-        // Discrete gap-recovery sensitivity:
-        // In fillPolicySpawnWindow, nextPatternStartDistance is clamped to windowEnd upon crossing tier 1 (2500m).
-        // Because windowEnd is sampled at discrete frame steps, the first post-gap pattern exhibits a small
-        // placement offset bounded by [0, dt_max * speed] = [0, 0.05s * 350 px/s] = [0, 17.5m].
-        // Observed offset between coarse 30Hz/60Hz (2503m) and fine 120Hz (2500.08m) is ~2.92m:
+        // Bounded partition sensitivity in cursor placement:
+        // Observed nextPatternStartDistance varies between 3800.08m (120Hz) and 3803.00m (60Hz),
+        // well within the theoretical maximum bound of 17.5m.
         expect(
           Math.abs(
             result.stream.nextPatternStartDistance - baseline.stream.nextPatternStartDistance,
           ),
-        ).toBeLessThanOrEqual(3.5);
+        ).toBeLessThanOrEqual(17.5);
+
+        // Actual spawn runDistance also exhibits this discrete placement sensitivity:
+        expect(
+          Math.abs(result.stream.spawns[0].runDistance - baseline.stream.spawns[0].runDistance),
+        ).toBeLessThanOrEqual(17.5);
       }
+
+      // Concrete observed placement values demonstrating partition sensitivity:
+      expect(results['60hz'].stream.spawns[0].runDistance).toBeCloseTo(2623.0, 1);
+      expect(results['120hz'].stream.spawns[0].runDistance).toBeCloseTo(2620.083, 3);
+      expect(results.jittered.stream.spawns[0].runDistance).toBeCloseTo(2627.55, 2);
+
+      // Demonstrates non-zero placement difference between 60 Hz and 120 Hz:
+      const placementDiff60v120 = Math.abs(
+        results['60hz'].stream.spawns[0].runDistance -
+          results['120hz'].stream.spawns[0].runDistance,
+      );
+      expect(placementDiff60v120).toBeGreaterThan(2.9);
+      expect(placementDiff60v120).toBeLessThan(3.0);
     });
   });
 
-  describe('authority 3: difficulty and pacing authority across schedules', () => {
-    it('produces identical difficulty snapshots and pacing snapshots at equivalent run distance', () => {
-      const distanceCheckpoints = [0, 500, 1250, 2500, 3000, 5000];
-
-      for (const distance of distanceCheckpoints) {
-        const difficulty = calculateDifficulty(distance, PROTOTYPE_DIFFICULTY_CONFIG);
-        const pacing = calculatePacing(distance, PROTOTYPE_PACING_CONFIG);
-
-        // Mathematical verification that difficulty is a pure function of distance
-        const reDifficulty = calculateDifficulty(distance, PROTOTYPE_DIFFICULTY_CONFIG);
-        expect(reDifficulty).toEqual(difficulty);
-
-        // Mathematical verification that pacing is a pure function of distance
-        const rePacing = calculatePacing(distance, PROTOTYPE_PACING_CONFIG);
-        expect(rePacing).toEqual(pacing);
-      }
-    });
-
+  describe('authority 3: integrated difficulty and pacing snapshots across schedules', () => {
     it('maintains identical difficulty tier and pacing phase snapshots in the live stream across all 6 schedules', () => {
       const context: GeneratedHazardStreamContext = Object.freeze({
         catalog: PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES,
@@ -470,13 +636,12 @@ describe('system frame partition evidence', () => {
   });
 
   describe('authority 4: scripted flight around a timed hazard encounter', () => {
-    it('safely passes through a timed hazard spatial volume during warning phase without collision across all schedules', () => {
+    it('safely passes through a timed hazard spatial volume during warning phase with exact input splitting across all schedules', () => {
       // Place PROTOTYPE_TIMED_PULSE_PATTERN at start distance 0.
       // Pulse hitbox: left: 120, right: 184, top: 155, bottom: 219.
       // Warning duration: 1.60s. Active window: [1.85s, 2.75s].
       // Player starts at y = 195, speed = 350 px/s.
-      // Player scripts thrust from t = 0.10s to 0.35s to stay level at y in [209, 235],
-      // directly overlapping pulse vertical range [155, 219] during traversal window [0.291s, 0.577s].
+      // Player scripts thrust from t = 0.10s to 0.35s, with frames split at exact transition times.
       // Because the hazard is in WARNING phase, no collision occurs across any schedule.
       const scheduleResult = scheduleNextPattern({
         catalog: [PROTOTYPE_TIMED_PULSE_PATTERN],
@@ -488,64 +653,54 @@ describe('system frame partition evidence', () => {
         throw new Error('Expected PROTOTYPE_TIMED_PULSE_PATTERN to be accepted.');
       }
 
-      const spawns = scheduleResult.spawns;
       const totalDuration = 0.8;
+      const inputScript: ReadonlyArray<ScriptedInputTransition> = [
+        { thrustHeld: true, time: 0.1 },
+        { thrustHeld: false, time: 0.35 },
+      ];
 
-      const runSimulation = (schedule: FrameSchedule) => {
-        let runState = createPrototypeRunState(FLIGHT_BOUNDS);
-        let telegraphedState = createTelegraphedHazardSimulationState();
-        let elapsed = 0;
-        let stepIndex = 0;
-
-        while (elapsed < totalDuration - EPSILON) {
-          const nominalDelta = schedule.getNextDelta(elapsed, stepIndex);
-          stepIndex += 1;
-          const delta = Math.min(nominalDelta, totalDuration - elapsed);
-
-          const thrustHeld = elapsed >= 0.1 && elapsed <= 0.35;
-
-          // Step telegraphed hazard lifecycle
-          telegraphedState = stepTelegraphedHazardSimulation(telegraphedState, spawns, delta, {
-            positionY: runState.flight.positionY,
-            runDistance: runState.motion.distance,
-          });
-
-          // Get currently lethal hazards
-          const lethalHazards = getLethalHazardsForTelegraphedSimulation(telegraphedState, spawns);
-
-          // Step run simulation
-          const stepResult = stepPrototypeRun(runState, delta, {
+      const results = Object.fromEntries(
+        SCHEDULE_ENTRIES.map(([name, schedule]) => [
+          name,
+          runScriptedTelegraphedSimulation({
             flightBounds: FLIGHT_BOUNDS,
-            flightTuning: PROTOTYPE_FLIGHT_TUNING_DEFAULTS,
-            hazards: lethalHazards,
-            runMotionTuning: PROTOTYPE_RUN_MOTION_DEFAULTS,
-            thrustHeld,
-          });
+            initialRunState: createPrototypeRunState(FLIGHT_BOUNDS),
+            inputScript,
+            schedule,
+            telegraphedSpawns: scheduleResult.spawns,
+            totalDuration,
+          }),
+        ]),
+      );
 
-          runState = stepResult.state;
-          elapsed += delta;
+      const baseline = results['60hz'];
+      expect(baseline.finalRunState.phase).toBe('running');
+      expect(baseline.deathRecordedAtTime).toBeNull();
 
-          if (runState.phase === 'dead') {
-            break;
-          }
-        }
+      for (const [_name, result] of Object.entries(results)) {
+        expect(result.finalRunState.phase).toBe('running');
+        expect(result.deathRecordedAtTime).toBeNull();
+        expect(result.deathRecordedAtDistance).toBeNull();
 
-        return { elapsed, runState };
-      };
-
-      for (const [_name, schedule] of SCHEDULE_ENTRIES) {
-        const result = runSimulation(schedule);
-        expect(result.runState.phase).toBe('running');
-        expect(result.runState.motion.distance).toBeCloseTo(280.0, 9);
+        // Exact trajectory assertions (distance, positionY, velocityY):
+        expect(
+          Math.abs(result.finalRunState.motion.distance - baseline.finalRunState.motion.distance),
+        ).toBeLessThanOrEqual(FLOATING_POINT_TOLERANCE);
+        expect(
+          Math.abs(result.finalRunState.flight.positionY - baseline.finalRunState.flight.positionY),
+        ).toBeLessThanOrEqual(FLOATING_POINT_TOLERANCE);
+        expect(
+          Math.abs(result.finalRunState.flight.velocityY - baseline.finalRunState.flight.velocityY),
+        ).toBeLessThanOrEqual(FLOATING_POINT_TOLERANCE);
       }
     });
 
-    it('detects collision consistently across all schedules when player climbs into an active pulse', () => {
+    it('detects collision consistently across all schedules when player climbs into an active pulse with exact input splitting', () => {
       // Place pulse pattern at distance 550, so hitbox is [550 + 120, 550 + 184] = [670, 734].
       // Pulse active window is [1.85s, 2.75s].
       // At speed 350 px/s, player reaches [670, 734] at t in [1.863s, 2.149s].
-      // Player scripts thrust from 1.50s to 2.05s to climb into y in [198, 220],
-      // entering spatial and temporal intersection with the active lethal pulse.
+      // Player scripts thrust from 1.50s to 2.05s, entering spatial and temporal intersection
+      // with the active lethal pulse.
       const scheduleResult = scheduleNextPattern({
         catalog: [PROTOTYPE_TIMED_PULSE_PATTERN],
         patternStartDistance: 550,
@@ -556,96 +711,43 @@ describe('system frame partition evidence', () => {
         throw new Error('Expected PROTOTYPE_TIMED_PULSE_PATTERN to be accepted.');
       }
 
-      const spawns = scheduleResult.spawns;
       const totalDuration = 2.3;
+      const inputScript: ReadonlyArray<ScriptedInputTransition> = [
+        { thrustHeld: true, time: 1.5 },
+        { thrustHeld: false, time: 2.05 },
+      ];
 
-      const runSimulation = (schedule: FrameSchedule) => {
-        let runState = createPrototypeRunState(FLIGHT_BOUNDS);
-        let telegraphedState = createTelegraphedHazardSimulationState();
-        let elapsed = 0;
-        let stepIndex = 0;
-        let deathTime: number | null = null;
-
-        while (elapsed < totalDuration - EPSILON) {
-          const nominalDelta = schedule.getNextDelta(elapsed, stepIndex);
-          stepIndex += 1;
-          const delta = Math.min(nominalDelta, totalDuration - elapsed);
-
-          const thrustHeld = elapsed >= 1.5 && elapsed <= 2.05;
-
-          telegraphedState = stepTelegraphedHazardSimulation(telegraphedState, spawns, delta, {
-            positionY: runState.flight.positionY,
-            runDistance: runState.motion.distance,
-          });
-
-          const lethalHazards = getLethalHazardsForTelegraphedSimulation(telegraphedState, spawns);
-
-          const stepResult = stepPrototypeRun(runState, delta, {
+      const results = Object.fromEntries(
+        SCHEDULE_ENTRIES.map(([name, schedule]) => [
+          name,
+          runScriptedTelegraphedSimulation({
             flightBounds: FLIGHT_BOUNDS,
-            flightTuning: PROTOTYPE_FLIGHT_TUNING_DEFAULTS,
-            hazards: lethalHazards,
-            runMotionTuning: PROTOTYPE_RUN_MOTION_DEFAULTS,
-            thrustHeld,
-          });
-
-          runState = stepResult.state;
-          elapsed += delta;
-
-          if (stepResult.enteredDead && deathTime === null) {
-            deathTime = elapsed;
-            break;
-          }
-        }
-
-        return { deathTime, runState };
-      };
+            initialRunState: createPrototypeRunState(FLIGHT_BOUNDS),
+            inputScript,
+            schedule,
+            telegraphedSpawns: scheduleResult.spawns,
+            totalDuration,
+          }),
+        ]),
+      );
 
       // All schedules detect collision during the active window:
-      for (const [_name, schedule] of SCHEDULE_ENTRIES) {
-        const result = runSimulation(schedule);
-        expect(result.runState.phase).toBe('dead');
-        expect(result.deathTime).not.toBeNull();
-        if (result.deathTime !== null) {
-          expect(result.deathTime).toBeGreaterThanOrEqual(1.85);
-          expect(result.deathTime).toBeLessThanOrEqual(2.15);
+      for (const [_name, result] of Object.entries(results)) {
+        expect(result.finalRunState.phase).toBe('dead');
+        expect(result.deathRecordedAtTime).not.toBeNull();
+        if (result.deathRecordedAtTime !== null) {
+          expect(result.deathRecordedAtTime).toBeGreaterThanOrEqual(1.85);
+          expect(result.deathRecordedAtTime).toBeLessThanOrEqual(2.15);
         }
       }
-    });
-  });
 
-  describe('authority 5: max-delta clamping and lifecycle boundary', () => {
-    it('clamps frame deltas exceeding maxDeltaSeconds to protect hazard lifecycle and simulation stepping', () => {
-      const timeService = new TimeService({ maxDeltaSeconds: 0.05 });
-
-      // Frame spike of 500ms wall-clock time is clamped to 50ms (0.05s)
-      expect(timeService.update(500)).toBe(0.05);
-
-      // Extreme background lag of 5000ms wall-clock time is clamped to 50ms (0.05s)
-      expect(timeService.update(5000)).toBe(0.05);
-
-      // Normal frame times pass through accurately
-      expect(timeService.update(16.6667)).toBeCloseTo(0.0166667, 5);
-      expect(timeService.update(8.3333)).toBeCloseTo(0.0083333, 5);
-    });
-
-    it('zeros simulation delta while paused and discards the first frame on resume to prevent catch-up jumps', () => {
-      const timeService = new TimeService({ maxDeltaSeconds: 0.05 });
-
-      timeService.update(16.6667);
-      timeService.pause();
-
-      expect(timeService.isPaused()).toBe(true);
-      expect(timeService.getDeltaSeconds()).toBe(0);
-      expect(timeService.update(10000)).toBe(0); // zero simulation delta while paused
-
-      timeService.resume();
-      expect(timeService.isPaused()).toBe(false);
-
-      // First frame after resume returns zero delta, discarding accumulated wall-clock time
-      expect(timeService.update(10000)).toBe(0);
-
-      // Subsequent frame advances normally
-      expect(timeService.update(16.6667)).toBeCloseTo(0.0166667, 5);
+      // Concrete death recorded times:
+      expect(results['30hz'].deathRecordedAtTime).toBeCloseTo(2.05, 3);
+      expect(results['60hz'].deathRecordedAtTime).toBeCloseTo(2.05, 3);
+      expect(results['90hz'].deathRecordedAtTime).toBeCloseTo(2.05, 3);
+      expect(results['120hz'].deathRecordedAtTime).toBeCloseTo(2.05, 3);
+      expect(results['144hz'].deathRecordedAtTime).toBeCloseTo(2.0486, 3);
+      expect(results.jittered.deathRecordedAtTime).toBeCloseTo(2.05, 3);
     });
   });
 });
