@@ -219,6 +219,7 @@ describe('Foundation Director mode boundary', () => {
       foundation,
       services.input,
       expect.any(Function),
+      expect.any(Function),
     );
     expect(directorPerformanceHudLayout).toHaveBeenCalledOnce();
 
@@ -226,31 +227,73 @@ describe('Foundation Director mode boundary', () => {
     expect(directorPerformanceHudUpdate).toHaveBeenCalledWith(17, 60, false, false);
   });
 
-  it('routes the Director action through the same deterministic run reset', () => {
+  it('starts explicit new seeds and makes each one the same-seed restart authority', () => {
+    const entropySeeds: number[] = [];
+    const getRandomValues = vi.fn((values: Uint32Array) => {
+      const seed = entropySeeds.shift();
+      if (seed === undefined) throw new Error('Expected a test seed.');
+      values[0] = seed;
+      return values;
+    });
+    vi.stubGlobal('crypto', { getRandomValues });
     const services = createAppServices();
     const foundation = new Foundation(services, true);
     foundation.create();
-    const initialRunState = structuredClone(Reflect.get(foundation, 'runState'));
-    const initialHazardStream = Reflect.get(foundation, 'hazardStream');
+    const initialHazardStream = Reflect.get(foundation, 'hazardStream') as {
+      generationState: { seed: number };
+    };
+    const firstNewSeed = (initialHazardStream.generationState.seed + 1) >>> 0;
+    const secondNewSeed = (firstNewSeed + 1) >>> 0;
+    entropySeeds.push(firstNewSeed, firstNewSeed);
     const restartSameSeed = directorRunControlsConstructed.mock.calls[0]?.[2];
+    const startNewSeed = directorRunControlsConstructed.mock.calls[0]?.[3];
 
     expect(restartSameSeed).toBeTypeOf('function');
-    if (typeof restartSameSeed !== 'function') {
-      throw new TypeError('Director restart callback is unavailable.');
+    expect(startNewSeed).toBeTypeOf('function');
+    if (typeof restartSameSeed !== 'function' || typeof startNewSeed !== 'function') {
+      throw new TypeError('Director run callbacks are unavailable.');
     }
 
     foundation.update(0, 50);
-    restartSameSeed();
+    services.input.pressPointer(7, 'touch');
+    startNewSeed();
 
-    expect(Reflect.get(foundation, 'runState')).toEqual(initialRunState);
-    expect(Reflect.get(foundation, 'hazardStream')).toEqual(initialHazardStream);
+    const firstNewRunState = structuredClone(Reflect.get(foundation, 'runState'));
+    const firstNewHazardStream = Reflect.get(foundation, 'hazardStream');
+    const firstNewTelegraphState = Reflect.get(foundation, 'telegraphedHazardState');
+    expect(firstNewHazardStream).toMatchObject({ generationState: { seed: firstNewSeed } });
+    expect(Reflect.get(foundation, 'runState')).toMatchObject({ motion: { distance: 0 } });
+    expect(services.input.getSnapshot()).toMatchObject({
+      activePointerId: null,
+      gameplayBlocked: false,
+      pointerHeld: false,
+      thrustHeld: false,
+    });
+    expect(services.input.consumePrimaryActionPress()).toBe(false);
 
     foundation.update(0, 50);
     restartSameSeed();
 
-    expect(Reflect.get(foundation, 'runState')).toEqual(initialRunState);
-    expect(Reflect.get(foundation, 'hazardStream')).toEqual(initialHazardStream);
+    expect(Reflect.get(foundation, 'runState')).toEqual(firstNewRunState);
+    expect(Reflect.get(foundation, 'hazardStream')).toEqual(firstNewHazardStream);
+    expect(Reflect.get(foundation, 'telegraphedHazardState')).toEqual(firstNewTelegraphState);
+
+    foundation.update(0, 50);
+    restartSameSeed();
+
+    expect(Reflect.get(foundation, 'runState')).toEqual(firstNewRunState);
+    expect(Reflect.get(foundation, 'hazardStream')).toEqual(firstNewHazardStream);
+    expect(Reflect.get(foundation, 'telegraphedHazardState')).toEqual(firstNewTelegraphState);
+
+    startNewSeed();
+    expect(Reflect.get(foundation, 'hazardStream')).toMatchObject({
+      generationState: { seed: secondNewSeed },
+    });
+    expect(Reflect.get(foundation, 'runState')).toEqual(firstNewRunState);
+    expect(getRandomValues).toHaveBeenCalledTimes(2);
     expect(services.input.getSnapshot().gameplayBlocked).toBe(false);
+    expect(services.input.isThrustHeld()).toBe(false);
+    expect(services.input.consumePrimaryActionPress()).toBe(false);
   });
 
   it('gates raw samples during pause and on the first resume frame', () => {

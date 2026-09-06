@@ -38,6 +38,17 @@ import { createPrototypeFlightBounds, getPrototypePlayerX } from '../PrototypeFl
 const RUNNING_INSTRUCTIONS =
   'M4 moving, timed + target-lock hazards\nHold touch, mouse, or Space to thrust.';
 const DEAD_INSTRUCTIONS = 'Delivery interrupted\nTap, click, or press Space to restart.';
+const selectNewDirectorRunSeed = (currentSeed: number | undefined): number => {
+  const entropy = new Uint32Array(1);
+  globalThis.crypto.getRandomValues(entropy);
+  const selectedSeed = entropy[0];
+
+  if (selectedSeed === undefined) {
+    throw new Error('Director seed selection did not produce a seed.');
+  }
+
+  return selectedSeed === currentSeed ? (selectedSeed + 1) >>> 0 : selectedSeed;
+};
 const createLiveHazardStreamContext = (
   flightTuning: ReturnType<AppServices['flightTuning']['getSnapshot']>,
   observeEncounter?: (observation: Readonly<EncounterStreamObservation>) => void,
@@ -109,6 +120,7 @@ export class Foundation extends Scene {
         this,
         this.services.input,
         this.handleRestartSameSeed,
+        this.handleStartNewSeed,
       );
     }
 
@@ -340,11 +352,23 @@ export class Foundation extends Scene {
     this.restartRun(this.viewportService.getSnapshot());
   };
 
-  private restartRun(viewport: ReturnType<ViewportService['getSnapshot']>): void {
+  private readonly handleStartNewSeed = (): void => {
+    if (!this.viewportService) {
+      return;
+    }
+
+    const seed = selectNewDirectorRunSeed(this.hazardStream?.generationState.seed);
+    this.restartRun(this.viewportService.getSnapshot(), seed);
+  };
+
+  private restartRun(
+    viewport: ReturnType<ViewportService['getSnapshot']>,
+    seed = this.hazardStream?.generationState.seed ?? PROTOTYPE_LIVE_RUN_SEED,
+  ): void {
     this.directorPanel?.reset();
     this.runState = createPrototypeRunState(createPrototypeFlightBounds(viewport));
     this.hazardStream = createGeneratedHazardStream(
-      PROTOTYPE_LIVE_RUN_SEED,
+      seed,
       createLiveHazardStreamContext(
         this.services.flightTuning.getSnapshot(),
         this.directorPanel?.observeEncounter,

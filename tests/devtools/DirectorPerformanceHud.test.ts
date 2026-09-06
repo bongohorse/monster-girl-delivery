@@ -172,6 +172,7 @@ describe('DirectorPerformanceHud', () => {
     }
 
     expect(values.hidden).toBe(true);
+    expect(values.style.display).toBe('none');
     expect(resetButton.hidden).toBe(true);
     expect(sampler.createSnapshot().sampleCount).toBe(8);
     expect(values.children.reduce((total, child) => total + child.textWriteCount, 0)).toBe(
@@ -180,6 +181,7 @@ describe('DirectorPerformanceHud', () => {
 
     visibilityButton.dispatch('click');
     expect(values.hidden).toBe(false);
+    expect(values.style.display).toBe('');
     expect(resetButton.hidden).toBe(false);
     expect(values.children[1]?.textContent).toBe(' | 30.0 ms');
     expect(values.children[2]?.textContent).toContain('S 20');

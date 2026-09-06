@@ -177,6 +177,7 @@ export class DirectorPerformanceHud {
     this.stopControlEvent(event);
     this.hidden = !this.hidden;
     this.values.hidden = this.hidden;
+    this.values.style.display = this.hidden ? 'none' : '';
     this.resetButton.hidden = this.hidden;
     this.visibilityButton.title = this.hidden
       ? 'Show performance values'

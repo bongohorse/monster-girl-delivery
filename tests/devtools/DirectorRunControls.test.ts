@@ -7,102 +7,172 @@ import { InputService } from '../../src/input/InputService';
 type EventHandler = (...args: unknown[]) => void;
 
 const createSceneFake = () => {
-  const handlers = new Map<string, EventHandler>();
-  const button = {
-    destroy: vi.fn(),
-    on: vi.fn((event: string, handler: EventHandler) => {
-      handlers.set(event, handler);
-      return button;
-    }),
-    setDepth: vi.fn(),
-    setFixedSize: vi.fn(),
-    setInteractive: vi.fn(),
-    setPosition: vi.fn(),
-    setScrollFactor: vi.fn(),
-  };
+  const canvasListeners = new Map<string, EventListener>();
+  const addEventListener = vi.fn((event: string, handler: EventListener) => {
+    canvasListeners.set(event, handler);
+  });
+  const removeEventListener = vi.fn((event: string, handler: EventListener) => {
+    if (canvasListeners.get(event) === handler) canvasListeners.delete(event);
+  });
+  const controls: Array<{
+    button: {
+      destroy: ReturnType<typeof vi.fn>;
+      on: ReturnType<typeof vi.fn>;
+      setDepth: ReturnType<typeof vi.fn>;
+      setFixedSize: ReturnType<typeof vi.fn>;
+      setInteractive: ReturnType<typeof vi.fn>;
+      setPosition: ReturnType<typeof vi.fn>;
+      setScrollFactor: ReturnType<typeof vi.fn>;
+    };
+    handlers: Map<string, EventHandler>;
+  }> = [];
+  const text = vi.fn(() => {
+    const handlers = new Map<string, EventHandler>();
+    const button = {
+      destroy: vi.fn(),
+      on: vi.fn((event: string, handler: EventHandler) => {
+        handlers.set(event, handler);
+        return button;
+      }),
+      setDepth: vi.fn(),
+      setFixedSize: vi.fn(),
+      setInteractive: vi.fn(),
+      setPosition: vi.fn(),
+      setScrollFactor: vi.fn(),
+    };
 
-  for (const method of [
-    button.setDepth,
-    button.setFixedSize,
-    button.setInteractive,
-    button.setPosition,
-    button.setScrollFactor,
-  ]) {
-    method.mockReturnValue(button);
-  }
+    for (const method of [
+      button.setDepth,
+      button.setFixedSize,
+      button.setInteractive,
+      button.setPosition,
+      button.setScrollFactor,
+    ]) {
+      method.mockReturnValue(button);
+    }
 
-  const text = vi.fn(() => button);
-  const scene = { add: { text } } as unknown as Scene;
+    controls.push({ button, handlers });
+    return button;
+  });
+  const scene = {
+    add: { text },
+    game: { canvas: { addEventListener, removeEventListener } },
+  } as unknown as Scene;
 
-  return { button, handlers, scene, text };
+  return { addEventListener, canvasListeners, controls, removeEventListener, scene, text };
+};
+
+const getControl = (controls: ReturnType<typeof createSceneFake>['controls'], index: number) => {
+  const control = controls[index];
+  if (!control) throw new Error(`Expected Director run control ${index}.`);
+  return control;
 };
 
 describe('DirectorRunControls', () => {
-  it('creates one explicit restart-same-seed action and lays it out responsively', () => {
-    const { button, scene, text } = createSceneFake();
-    const controls = new DirectorRunControls(scene, new InputService(), vi.fn());
+  it('creates compact same-seed and new-seed actions and lays them out responsively', () => {
+    const { controls: createdControls, scene, text } = createSceneFake();
+    const controls = new DirectorRunControls(scene, new InputService(), vi.fn(), vi.fn());
 
     controls.layout(new ViewportService(844, 390).getSnapshot());
 
-    expect(text).toHaveBeenCalledWith(
+    expect(text).toHaveBeenNthCalledWith(
+      1,
       0,
       0,
       'Restart same seed',
-      expect.objectContaining({ fixedWidth: 336 }),
+      expect.objectContaining({ fixedWidth: 164, fontSize: '12px' }),
     );
-    expect(button.setInteractive).toHaveBeenCalledOnce();
-    expect(button.setPosition).toHaveBeenLastCalledWith(24, 208);
-    expect(button.setFixedSize).toHaveBeenLastCalledWith(336, 32);
+    expect(text).toHaveBeenNthCalledWith(
+      2,
+      0,
+      0,
+      'New random seed',
+      expect.objectContaining({ fixedWidth: 164, fontSize: '12px' }),
+    );
+    const restartControl = getControl(createdControls, 0).button;
+    const newSeedControl = getControl(createdControls, 1).button;
+    expect(restartControl.setInteractive).toHaveBeenCalledOnce();
+    expect(newSeedControl.setInteractive).toHaveBeenCalledOnce();
+    expect(restartControl.setPosition).toHaveBeenLastCalledWith(24, 208);
+    expect(restartControl.setFixedSize).toHaveBeenLastCalledWith(164, 32);
+    expect(newSeedControl.setPosition).toHaveBeenLastCalledWith(196, 208);
+    expect(newSeedControl.setFixedSize).toHaveBeenLastCalledWith(164, 32);
   });
 
-  it('restarts exactly once on a completed pointer interaction without gameplay leakage', () => {
-    const { handlers, scene } = createSceneFake();
+  it('runs each action exactly once on a completed pointer interaction without gameplay leakage', () => {
+    const { controls, scene } = createSceneFake();
     const input = new InputService();
     const restartSameSeed = vi.fn();
-    new DirectorRunControls(scene, input, restartSameSeed);
+    const startNewSeed = vi.fn();
+    new DirectorRunControls(scene, input, restartSameSeed, startNewSeed);
     const stopPropagation = vi.fn();
 
-    input.pressPointer(7, 'touch');
-    handlers.get('pointerover')?.();
-    handlers.get('pointerdown')?.(undefined, undefined, undefined, { stopPropagation });
+    for (const [index, pointerId] of [
+      [0, 7],
+      [1, 8],
+    ] as const) {
+      const { handlers } = getControl(controls, index);
+      input.pressPointer(pointerId, 'touch');
+      handlers.get('pointerover')?.();
+      handlers.get('pointerdown')?.({ id: pointerId }, 0, 0, { stopPropagation });
 
-    expect(input.getSnapshot()).toMatchObject({
-      activePointerId: null,
-      gameplayBlocked: true,
-      pointerHeld: false,
-      thrustHeld: false,
-    });
-    expect(restartSameSeed).not.toHaveBeenCalled();
+      expect(input.getSnapshot()).toMatchObject({
+        activePointerId: null,
+        gameplayBlocked: true,
+        pointerHeld: false,
+        thrustHeld: false,
+      });
 
-    handlers.get('pointerup')?.(undefined, undefined, undefined, { stopPropagation });
-    handlers.get('pointerup')?.(undefined, undefined, undefined, { stopPropagation });
+      handlers.get('pointerup')?.({ id: pointerId }, 0, 0, { stopPropagation });
+      handlers.get('pointerup')?.({ id: pointerId }, 0, 0, { stopPropagation });
+      expect(input.getSnapshot().gameplayBlocked).toBe(false);
+      expect(input.isThrustHeld()).toBe(false);
+      expect(input.consumePrimaryActionPress()).toBe(false);
+    }
 
-    expect(stopPropagation).toHaveBeenCalledTimes(3);
+    expect(stopPropagation).toHaveBeenCalledTimes(6);
     expect(restartSameSeed).toHaveBeenCalledOnce();
-    expect(input.getSnapshot().gameplayBlocked).toBe(false);
-    expect(input.isThrustHeld()).toBe(false);
-    expect(input.consumePrimaryActionPress()).toBe(false);
+    expect(startNewSeed).toHaveBeenCalledOnce();
   });
 
   it('cancels incomplete interactions and always releases blocking on cleanup', () => {
-    const { button, handlers, scene } = createSceneFake();
+    const {
+      canvasListeners,
+      controls: createdControls,
+      removeEventListener,
+      scene,
+    } = createSceneFake();
     const input = new InputService();
     const restartSameSeed = vi.fn();
-    const controls = new DirectorRunControls(scene, input, restartSameSeed);
+    const startNewSeed = vi.fn();
+    const controls = new DirectorRunControls(scene, input, restartSameSeed, startNewSeed);
+    const restartControl = getControl(createdControls, 0);
+    const newSeedControl = getControl(createdControls, 1);
 
-    handlers.get('pointerover')?.();
-    handlers.get('pointerdown')?.();
-    handlers.get('pointerout')?.();
-    handlers.get('pointerup')?.();
+    restartControl.handlers.get('pointerover')?.();
+    restartControl.handlers.get('pointerdown')?.({ id: 4 }, 0, 0);
+    canvasListeners.get('pointercancel')?.(new Event('pointercancel'));
+    restartControl.handlers.get('pointerup')?.({ id: 4 }, 0, 0);
 
     expect(restartSameSeed).not.toHaveBeenCalled();
+    expect(startNewSeed).not.toHaveBeenCalled();
     expect(input.getSnapshot().gameplayBlocked).toBe(false);
 
-    handlers.get('pointerover')?.();
+    newSeedControl.handlers.get('pointerover')?.();
+    newSeedControl.handlers.get('pointerdown')?.({ id: 9 }, 0, 0);
+    newSeedControl.handlers.get('pointerupoutside')?.();
+    newSeedControl.handlers.get('pointerup')?.({ id: 9 }, 0, 0);
+    expect(startNewSeed).not.toHaveBeenCalled();
+    expect(input.getSnapshot().gameplayBlocked).toBe(false);
+
+    newSeedControl.handlers.get('pointerover')?.();
     controls.destroy();
     controls.destroy();
 
     expect(input.getSnapshot().gameplayBlocked).toBe(false);
-    expect(button.destroy).toHaveBeenCalledOnce();
+    expect(restartControl.button.destroy).toHaveBeenCalledOnce();
+    expect(newSeedControl.button.destroy).toHaveBeenCalledOnce();
+    expect(removeEventListener).toHaveBeenCalledOnce();
+    expect(canvasListeners.has('pointercancel')).toBe(false);
   });
 });
