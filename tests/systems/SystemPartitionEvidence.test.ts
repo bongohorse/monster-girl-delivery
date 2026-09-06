@@ -376,7 +376,7 @@ describe('system frame partition evidence', () => {
     });
   });
 
-  describe('authority 2: generated hazard stream & PRNG draws across schedules', () => {
+  describe('authority 2: generated hazard stream & PRNG state across schedules', () => {
     it('produces identical PRNG state, pattern sequence, and spawn geometry in contiguous stream across all 6 schedules in sampled scenario', () => {
       const legacyContext: GeneratedHazardStreamContext = Object.freeze({
         catalog: PROTOTYPE_HAZARD_PATTERN_FIXTURES,
@@ -384,7 +384,7 @@ describe('system frame partition evidence', () => {
       });
 
       const seed = 'm3-contiguous-stream-seed';
-      const totalDuration = 8.5; // reaches distance 2975m at 350 px/s
+      const totalDuration = 8.5; // reaches distance 2975 logical distance units at 350 px/s
       const runMotion = PROTOTYPE_RUN_MOTION_DEFAULTS;
 
       const runLegacyStream = (schedule: FrameSchedule) => {
@@ -477,7 +477,7 @@ describe('system frame partition evidence', () => {
       // In policy mode, when crossing a tier boundary after a no-content gap, GeneratedHazardStream
       // line 356 clamps nextPatternStartDistance = Math.max(state.nextPatternStartDistance, windowEnd).
       // Because windowEnd is sampled at discrete frame steps, the first post-gap pattern exhibits
-      // a placement offset bounded by [0, dt_max * scrollSpeed] = [0, 0.050s * 350 px/s] = [0, 17.5m].
+      // a placement offset bounded by [0, dt_max * scrollSpeed] = [0, 0.050s * 350 px/s] = [0, 17.5 px].
       const policyContext: GeneratedHazardStreamContext = Object.freeze({
         catalog: PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES,
         config: PROTOTYPE_GENERATED_HAZARD_STREAM_CONFIG,
@@ -487,7 +487,7 @@ describe('system frame partition evidence', () => {
       });
 
       const seed = 'm4-cross-partition-generation-seed';
-      const totalDuration = 8.5; // reaches distance 2975m
+      const totalDuration = 8.5; // reaches distance 2975 logical distance units
       const runMotion = PROTOTYPE_RUN_MOTION_DEFAULTS;
 
       const runPolicyStream = (schedule: FrameSchedule) => {
@@ -549,8 +549,8 @@ describe('system frame partition evidence', () => {
         }
 
         // Bounded partition sensitivity in cursor placement:
-        // Observed nextPatternStartDistance varies between 3800.08m (120Hz) and 3803.00m (60Hz),
-        // well within the theoretical maximum bound of 17.5m.
+        // Observed nextPatternStartDistance varies between 3800.08 (120Hz) and 3803.00 (60Hz) logical distance units,
+        // well within the theoretical maximum bound of 17.5 px.
         expect(
           Math.abs(
             result.stream.nextPatternStartDistance - baseline.stream.nextPatternStartDistance,
@@ -588,7 +588,7 @@ describe('system frame partition evidence', () => {
         constraints: PROTOTYPE_PATTERN_VALIDATION_CONSTRAINTS,
       });
 
-      const totalDuration = 7.5; // reaches distance 2625m, crossing into difficulty tier 1 at 2500m
+      const totalDuration = 7.5; // reaches distance 2625 logical distance units, crossing into difficulty tier 1 at 2500 logical distance units
       const runMotion = PROTOTYPE_RUN_MOTION_DEFAULTS;
 
       const runToFinish = (schedule: FrameSchedule) => {
