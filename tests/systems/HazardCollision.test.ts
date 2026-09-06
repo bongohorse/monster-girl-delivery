@@ -12,9 +12,40 @@ import {
   createPrototypePlayerHitbox,
   doLogicalHitboxesOverlap,
   isPlayerCollidingWithHazard,
+  isPlayerCollidingWithHazardDuringStep,
 } from '../../src/systems/HazardCollision';
+import { createVerticalFlightTrajectory } from '../../src/systems/VerticalFlightSimulation';
 
 const CENTERED_FLIGHT_STATE = Object.freeze({ positionY: 195, velocityY: 0 });
+const LINEAR_FLIGHT_TUNING = Object.freeze({
+  gravity: 0,
+  thrust: 0,
+  maxFallVelocity: 1_000,
+  maxRiseVelocity: 1_000,
+});
+const UNRESTRICTED_BOUNDS = Object.freeze({ ceilingY: -10_000, floorY: 10_000 });
+const SMALL_PLAYER_EXTENTS = Object.freeze({ left: 1, right: 1, top: 1, bottom: 1 });
+
+const testContinuousCollision = (
+  initialFlight: Readonly<{ positionY: number; velocityY: number }>,
+  elapsedSeconds: number,
+  hazard: Readonly<Parameters<typeof isPlayerCollidingWithHazardDuringStep>[4]>,
+  scrollSpeed = 350,
+) =>
+  isPlayerCollidingWithHazardDuringStep(
+    { distance: 0 },
+    createVerticalFlightTrajectory(
+      initialFlight,
+      elapsedSeconds,
+      false,
+      LINEAR_FLIGHT_TUNING,
+      UNRESTRICTED_BOUNDS,
+    ),
+    elapsedSeconds,
+    { baseScrollSpeed: scrollSpeed },
+    hazard,
+    SMALL_PLAYER_EXTENTS,
+  );
 
 describe('hazard collision', () => {
   it('reports a clear miss when logical bounds do not overlap', () => {
@@ -127,5 +158,108 @@ describe('hazard collision', () => {
         bottom: 1,
       }),
     ).toThrow(RangeError);
+  });
+
+  it('detects a coarse start-clear/end-clear crossing without inflating either hitbox', () => {
+    const hazard = { hitbox: { left: 40, right: 50, top: -5, bottom: 5 } };
+
+    expect(
+      isPlayerCollidingWithHazard({ distance: 0 }, { positionY: 0, velocityY: 0 }, hazard),
+    ).toBe(false);
+    expect(
+      isPlayerCollidingWithHazard({ distance: 70 }, { positionY: 0, velocityY: 0 }, hazard),
+    ).toBe(false);
+    expect(testContinuousCollision({ positionY: 0, velocityY: 0 }, 0.2, hazard)).toBe(true);
+  });
+
+  it('keeps a diagonal near-corner pass and edge-only contact non-lethal', () => {
+    const nearCorner = { hitbox: { left: 40, right: 50, top: 40, bottom: 50 } };
+    const verticalEdgeOnly = { hitbox: { left: 40, right: 50, top: 1, bottom: 10 } };
+    const horizontalEdgeOnly = { hitbox: { left: 22, right: 30, top: -5, bottom: 5 } };
+
+    expect(testContinuousCollision({ positionY: 12, velocityY: 350 }, 0.2, nearCorner)).toBe(false);
+    expect(testContinuousCollision({ positionY: 0, velocityY: 0 }, 0.2, verticalEdgeOnly)).toBe(
+      false,
+    );
+    expect(
+      testContinuousCollision({ positionY: 0, velocityY: 0 }, 0.1, horizontalEdgeOnly, 210),
+    ).toBe(false);
+  });
+
+  it('accounts for vertical-patrol relative motion between clear endpoints', () => {
+    const movingHazard = {
+      behavior: {
+        amplitudeY: 20,
+        archetype: 'geometric' as const,
+        cycleDistance: 140,
+        kind: 'vertical-patrol' as const,
+        phaseOffset: 0.25,
+      },
+      hitbox: { left: -100, right: 1_000, top: 19, bottom: 21 },
+      runDistance: 0,
+    };
+
+    expect(testContinuousCollision({ positionY: 0, velocityY: 0 }, 0.4, movingHazard)).toBe(true);
+  });
+
+  it('uses the authoritative velocity-cap and bounds-constrained flight path', () => {
+    const cappedTrajectory = createVerticalFlightTrajectory(
+      { positionY: 0, velocityY: 0 },
+      0.2,
+      false,
+      { gravity: 100, thrust: 0, maxFallVelocity: 10, maxRiseVelocity: 100 },
+      UNRESTRICTED_BOUNDS,
+    );
+    expect(
+      isPlayerCollidingWithHazardDuringStep(
+        { distance: 0 },
+        cappedTrajectory,
+        0.2,
+        { baseScrollSpeed: 100 },
+        { hitbox: { left: 14.9, right: 15.1, top: 0.95, bottom: 1.05 } },
+        { left: 0.1, right: 0.1, top: 0.05, bottom: 0.05 },
+      ),
+    ).toBe(true);
+
+    const boundedTrajectory = createVerticalFlightTrajectory(
+      { positionY: 0, velocityY: 100 },
+      0.1,
+      false,
+      LINEAR_FLIGHT_TUNING,
+      { ceilingY: -10, floorY: 2 },
+    );
+    expect(
+      isPlayerCollidingWithHazardDuringStep(
+        { distance: 0 },
+        boundedTrajectory,
+        0.1,
+        { baseScrollSpeed: 100 },
+        { hitbox: { left: 7.9, right: 8.1, top: 1.95, bottom: 2.05 } },
+        { left: 0.1, right: 0.1, top: 0.01, bottom: 0.01 },
+      ),
+    ).toBe(true);
+  });
+
+  it('does not create a swept collision at zero delta', () => {
+    const hazard = { hitbox: { left: 40, right: 50, top: -5, bottom: 5 } };
+    expect(testContinuousCollision({ positionY: 0, velocityY: 0 }, 0, hazard)).toBe(false);
+  });
+
+  it('restricts collision to the hazard active sub-interval', () => {
+    const activeAfterPass = {
+      collisionInterval: { startSeconds: 0.15, endSeconds: 0.2 },
+      hitbox: { left: 40, right: 50, top: -5, bottom: 5 },
+    };
+    const activeDuringPass = {
+      ...activeAfterPass,
+      collisionInterval: { startSeconds: 0, endSeconds: 0.15 },
+    };
+
+    expect(testContinuousCollision({ positionY: 0, velocityY: 0 }, 0.2, activeAfterPass)).toBe(
+      false,
+    );
+    expect(testContinuousCollision({ positionY: 0, velocityY: 0 }, 0.2, activeDuringPass)).toBe(
+      true,
+    );
   });
 });

@@ -15,12 +15,14 @@ import type { HazardPattern } from '../../../src/generation/HazardPattern';
 import { PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG } from '../../../src/generation/LiveEncounterPolicy';
 import { scheduleNextPattern } from '../../../src/generation/PatternSpawnScheduler';
 import {
+  PROTOTYPE_LINE_PATTERN,
   PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES,
   PROTOTYPE_OFFSET_PAIR_PATTERN,
   PROTOTYPE_TARGET_LOCK_STRIKE_PATTERN,
 } from '../../../src/generation/PrototypeHazardPatternFixtures';
 import { createRunGenerationState } from '../../../src/generation/RunGenerationState';
 import { resolveHazardHitboxAtRunDistance } from '../../../src/hazards/HazardArchetype';
+import * as TelegraphedHazardSimulation from '../../../src/hazards/TelegraphedHazardSimulation';
 import {
   createTelegraphedHazardSimulationState,
   getTelegraphedHazardLifecycle,
@@ -154,10 +156,36 @@ const createFoundationHarness = () => {
 };
 
 afterEach(() => {
+  vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
 
 describe('Foundation scene gameplay orchestration', () => {
+  it('passes the lifecycle-resolved collision intervals into the authoritative run step', () => {
+    const { foundation } = createFoundationHarness();
+    const schedule = scheduleNextPattern({
+      catalog: [PROTOTYPE_LINE_PATTERN],
+      patternStartDistance: 1_080,
+      state: createRunGenerationState('foundation-collision-wiring'),
+    });
+    if (schedule.status !== 'accepted' || !schedule.spawns[0]) {
+      throw new Error('Expected a scheduled collision hazard.');
+    }
+    Reflect.set(foundation, 'runState', {
+      phase: 'running',
+      motion: { distance: 1_180 },
+      flight: { positionY: 195, velocityY: 0 },
+    });
+    const collisionHazards = vi
+      .spyOn(TelegraphedHazardSimulation, 'getCollisionHazardsForTelegraphedSimulation')
+      .mockReturnValue([schedule.spawns[0]]);
+
+    foundation.update(0, 16);
+
+    expect(collisionHazards).toHaveBeenCalledOnce();
+    expect(getRunState(foundation).phase).toBe('dead');
+  });
+
   it('commits new telegraphs after the frame step and keeps reservation and lifecycle clocks aligned', () => {
     const { foundation, services } = createFoundationHarness();
     const initial = createGeneratedHazardStream(

@@ -16,6 +16,21 @@ export interface VerticalFlightBounds {
   floorY: number;
 }
 
+/** One exact polynomial segment of the position path produced by a flight step. */
+export interface VerticalFlightTrajectorySegment {
+  readonly accelerationY: number;
+  readonly endSeconds: number;
+  readonly positionY: number;
+  readonly startSeconds: number;
+  readonly velocityY: number;
+}
+
+/** Bounded trajectory representation shared by flight advancement and continuous collision. */
+export interface VerticalFlightTrajectory {
+  readonly finalState: Readonly<VerticalFlightState>;
+  readonly segments: ReadonlyArray<Readonly<VerticalFlightTrajectorySegment>>;
+}
+
 const clamp = (value: number, minimum: number, maximum: number): number =>
   Math.min(maximum, Math.max(minimum, value));
 
@@ -342,4 +357,190 @@ export const stepVerticalFlight = (
     },
     bounds,
   );
+};
+
+const appendFreeFlightSegments = (
+  segments: VerticalFlightTrajectorySegment[],
+  state: Readonly<VerticalFlightState>,
+  startSeconds: number,
+  endSeconds: number,
+  acceleration: number,
+  minimumVelocity: number,
+  maximumVelocity: number,
+): void => {
+  const duration = endSeconds - startSeconds;
+  if (duration <= 0) {
+    return;
+  }
+
+  const finalVelocity = clamp(
+    state.velocityY + acceleration * duration,
+    minimumVelocity,
+    maximumVelocity,
+  );
+  const acceleratedVelocity = state.velocityY + acceleration * duration;
+  const reachesVelocityLimit = acceleration !== 0 && acceleratedVelocity !== finalVelocity;
+  const secondsUntilLimit = reachesVelocityLimit
+    ? clamp((finalVelocity - state.velocityY) / acceleration, 0, duration)
+    : duration;
+
+  if (secondsUntilLimit > 0) {
+    segments.push(
+      Object.freeze({
+        accelerationY: acceleration,
+        endSeconds: startSeconds + secondsUntilLimit,
+        positionY: state.positionY,
+        startSeconds,
+        velocityY: state.velocityY,
+      }),
+    );
+  }
+  if (secondsUntilLimit < duration) {
+    segments.push(
+      Object.freeze({
+        accelerationY: 0,
+        endSeconds,
+        positionY:
+          state.positionY +
+          calculateDisplacement(state.velocityY, acceleration, finalVelocity, secondsUntilLimit),
+        startSeconds: startSeconds + secondsUntilLimit,
+        velocityY: finalVelocity,
+      }),
+    );
+  }
+};
+
+const appendPinnedFlightSegment = (
+  segments: VerticalFlightTrajectorySegment[],
+  positionY: number,
+  startSeconds: number,
+  endSeconds: number,
+): void => {
+  if (endSeconds <= startSeconds) {
+    return;
+  }
+  segments.push(
+    Object.freeze({ accelerationY: 0, endSeconds, positionY, startSeconds, velocityY: 0 }),
+  );
+};
+
+/**
+ * Resolves the exact bounded path used by one held-input flight step. Acceleration/cap regimes and
+ * at most two boundary contacts produce no more than five polynomial segments.
+ */
+export const createVerticalFlightTrajectory = (
+  state: Readonly<VerticalFlightState>,
+  elapsedSeconds: number,
+  thrustHeld: boolean,
+  tuning: Readonly<FlightTuningValues>,
+  bounds: Readonly<VerticalFlightBounds>,
+): Readonly<VerticalFlightTrajectory> => {
+  const finalState = Object.freeze(
+    stepVerticalFlight(state, elapsedSeconds, thrustHeld, tuning, bounds),
+  );
+  if (elapsedSeconds === 0) {
+    return Object.freeze({ finalState, segments: Object.freeze([]) });
+  }
+
+  const constrainedState = constrainVerticalFlightState(state, bounds);
+  const minimumVelocity = -tuning.maxRiseVelocity;
+  const maximumVelocity = tuning.maxFallVelocity;
+  const initialVelocity = clamp(constrainedState.velocityY, minimumVelocity, maximumVelocity);
+  const acceleration = tuning.gravity - (thrustHeld ? tuning.thrust : 0);
+  const initialState = { positionY: constrainedState.positionY, velocityY: initialVelocity };
+  const segments: VerticalFlightTrajectorySegment[] = [];
+
+  if (bounds.ceilingY === bounds.floorY) {
+    appendPinnedFlightSegment(segments, bounds.ceilingY, 0, elapsedSeconds);
+    return Object.freeze({ finalState, segments: Object.freeze(segments) });
+  }
+
+  const pinnedAtCeiling =
+    initialState.positionY === bounds.ceilingY && initialVelocity === 0 && acceleration <= 0;
+  const pinnedAtFloor =
+    initialState.positionY === bounds.floorY && initialVelocity === 0 && acceleration >= 0;
+  if (pinnedAtCeiling || pinnedAtFloor) {
+    appendPinnedFlightSegment(segments, initialState.positionY, 0, elapsedSeconds);
+    return Object.freeze({ finalState, segments: Object.freeze(segments) });
+  }
+
+  const finalVelocity = clamp(
+    initialVelocity + acceleration * elapsedSeconds,
+    minimumVelocity,
+    maximumVelocity,
+  );
+  const firstContact = findFirstBoundaryContact(
+    initialState.positionY,
+    initialVelocity,
+    elapsedSeconds,
+    acceleration,
+    finalVelocity,
+    bounds,
+  );
+
+  if (firstContact === null) {
+    appendFreeFlightSegments(
+      segments,
+      initialState,
+      0,
+      elapsedSeconds,
+      acceleration,
+      minimumVelocity,
+      maximumVelocity,
+    );
+    return Object.freeze({ finalState, segments: Object.freeze(segments) });
+  }
+
+  appendFreeFlightSegments(
+    segments,
+    initialState,
+    0,
+    firstContact.seconds,
+    acceleration,
+    minimumVelocity,
+    maximumVelocity,
+  );
+  const accelerationPointsOutward =
+    firstContact.positionY === bounds.ceilingY ? acceleration <= 0 : acceleration >= 0;
+  if (accelerationPointsOutward) {
+    appendPinnedFlightSegment(
+      segments,
+      firstContact.positionY,
+      firstContact.seconds,
+      elapsedSeconds,
+    );
+    return Object.freeze({ finalState, segments: Object.freeze(segments) });
+  }
+
+  const remainingSeconds = elapsedSeconds - firstContact.seconds;
+  const remainingFinalVelocity = clamp(
+    acceleration * remainingSeconds,
+    minimumVelocity,
+    maximumVelocity,
+  );
+  const secondContact = findFirstBoundaryContact(
+    firstContact.positionY,
+    0,
+    remainingSeconds,
+    acceleration,
+    remainingFinalVelocity,
+    bounds,
+  );
+  const constrainedStart = { positionY: firstContact.positionY, velocityY: 0 };
+  const freeEndSeconds =
+    secondContact === null ? elapsedSeconds : firstContact.seconds + secondContact.seconds;
+  appendFreeFlightSegments(
+    segments,
+    constrainedStart,
+    firstContact.seconds,
+    freeEndSeconds,
+    acceleration,
+    minimumVelocity,
+    maximumVelocity,
+  );
+  if (secondContact !== null) {
+    appendPinnedFlightSegment(segments, secondContact.positionY, freeEndSeconds, elapsedSeconds);
+  }
+
+  return Object.freeze({ finalState, segments: Object.freeze(segments) });
 };

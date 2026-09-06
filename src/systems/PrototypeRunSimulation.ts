@@ -1,12 +1,11 @@
 import type { FlightTuningValues } from '../config/FlightTuningConfig';
 import type { RunMotionValues } from '../config/RunMotionConfig';
-import { resolveHazardHitboxAtRunDistance } from '../hazards/HazardArchetype';
 import type { LogicalHazard } from './HazardCollision';
-import { isPlayerCollidingWithHazard } from './HazardCollision';
+import { isPlayerCollidingWithHazardDuringStep } from './HazardCollision';
 import { type RunMotionState, stepRunMotion } from './RunMotionSimulation';
 import {
   constrainVerticalFlightState,
-  stepVerticalFlight,
+  createVerticalFlightTrajectory,
   type VerticalFlightBounds,
   type VerticalFlightState,
 } from './VerticalFlightSimulation';
@@ -52,7 +51,10 @@ export const createPrototypeRunState = (
 };
 
 /**
- * Advances one authoritative run step, then evaluates collision from the resulting logical state.
+ * Advances one authoritative run step and evaluates continuous collision along the same trajectory.
+ * A collision keeps the completed step state and exposes no time of impact, preserving the existing
+ * run contract. Death is a terminal discrete outcome and no generation, pacing, scoring, or other
+ * gameplay authority consumes or advances beyond that terminal endpoint.
  * A dead run is held exactly as-is until the caller explicitly replaces it with a fresh state.
  */
 export const stepPrototypeRun = (
@@ -65,17 +67,22 @@ export const stepPrototypeRun = (
   }
 
   const motion = stepRunMotion(state.motion, elapsedSeconds, context.runMotionTuning);
-  const flight = stepVerticalFlight(
+  const flightTrajectory = createVerticalFlightTrajectory(
     state.flight,
     elapsedSeconds,
     context.thrustHeld,
     context.flightTuning,
     context.flightBounds,
   );
+  const flight = { ...flightTrajectory.finalState };
   const enteredDead = context.hazards.some((hazard) =>
-    isPlayerCollidingWithHazard(motion, flight, {
-      hitbox: resolveHazardHitboxAtRunDistance(hazard, motion.distance),
-    }),
+    isPlayerCollidingWithHazardDuringStep(
+      state.motion,
+      flightTrajectory,
+      elapsedSeconds,
+      context.runMotionTuning,
+      hazard,
+    ),
   );
 
   return {

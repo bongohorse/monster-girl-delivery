@@ -160,6 +160,30 @@ export const isBehavioralLogicalHazard = (
 const positiveModulo = (value: number, modulus: number): number =>
   ((value % modulus) + modulus) % modulus;
 
+/** Resolves the vertical-patrol offset without allocating a hitbox. */
+export const resolveVerticalPatrolOffsetAtRunDistance = (
+  hazard: Readonly<BehavioralLogicalHazard>,
+  currentRunDistance: number,
+): number => {
+  if (hazard.behavior.kind !== 'vertical-patrol') {
+    return 0;
+  }
+  if (!Number.isFinite(currentRunDistance) || currentRunDistance < 0) {
+    throw new RangeError('Hazard behavior currentRunDistance must be non-negative and finite.');
+  }
+  if (!Number.isFinite(hazard.runDistance) || hazard.runDistance < 0) {
+    throw new RangeError('Hazard behavior runDistance anchor must be non-negative and finite.');
+  }
+  assertValidHazardBehavior(hazard.behavior);
+
+  const cycleProgress = positiveModulo(
+    (currentRunDistance - hazard.runDistance) / hazard.behavior.cycleDistance +
+      hazard.behavior.phaseOffset,
+    1,
+  );
+  return (1 - 4 * Math.abs(cycleProgress - 0.5)) * hazard.behavior.amplitudeY;
+};
+
 /**
  * Returns the current logical hitbox from authoritative run progress. The triangle wave is stable
  * across frame partitions and relative to the spawn's immutable impact anchor. Static hazards keep
@@ -181,14 +205,7 @@ export const resolveHazardHitboxAtRunDistance = (
     throw new RangeError('Hazard behavior runDistance anchor must be non-negative and finite.');
   }
   assertValidHazardBehavior(hazard.behavior);
-  const behavior = hazard.behavior;
-
-  const cycleProgress = positiveModulo(
-    (currentRunDistance - hazard.runDistance) / behavior.cycleDistance + behavior.phaseOffset,
-    1,
-  );
-  const normalizedOffset = 1 - 4 * Math.abs(cycleProgress - 0.5);
-  const offsetY = normalizedOffset * behavior.amplitudeY;
+  const offsetY = resolveVerticalPatrolOffsetAtRunDistance(hazard, currentRunDistance);
   const top = hazard.hitbox.top + offsetY;
   const bottom = hazard.hitbox.bottom + offsetY;
 

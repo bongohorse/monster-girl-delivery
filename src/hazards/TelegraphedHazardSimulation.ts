@@ -12,12 +12,14 @@ import {
   createTelegraphedHazardLifecycle,
   isTelegraphedHazardLethal,
   stepTelegraphedHazardLifecycle,
+  type TelegraphedHazardActiveInterval,
   type TelegraphedHazardLifecycleState,
   type TelegraphedHazardTarget,
   type TelegraphedHazardTargetResolver,
 } from './TelegraphedHazardLifecycle';
 
 export interface TelegraphedHazardLifecycleInstance {
+  readonly activeInterval: Readonly<TelegraphedHazardActiveInterval> | null;
   readonly lifecycle: Readonly<TelegraphedHazardLifecycleState>;
   readonly spawnIdentity: string;
 }
@@ -62,7 +64,9 @@ const getObservedTarget = (
 const freezeInstance = (
   spawnIdentity: string,
   lifecycle: Readonly<TelegraphedHazardLifecycleState>,
-): Readonly<TelegraphedHazardLifecycleInstance> => Object.freeze({ lifecycle, spawnIdentity });
+  activeInterval: Readonly<TelegraphedHazardActiveInterval> | null,
+): Readonly<TelegraphedHazardLifecycleInstance> =>
+  Object.freeze({ activeInterval, lifecycle, spawnIdentity });
 
 /**
  * Synchronizes all telegraphed lifecycles to the generated spawn window. Timed pulses observe their
@@ -103,16 +107,19 @@ export const stepTelegraphedHazardSimulation = (
           getObservedTarget(spawn, resolvePlayerTargetAtDelta(delta))
       : undefined;
     const existing = existingByIdentity.get(spawnIdentity);
-    const lifecycle = stepTelegraphedHazardLifecycle(
+    const lifecycleStep = stepTelegraphedHazardLifecycle(
       existing?.lifecycle ?? createTelegraphedHazardLifecycle(observedTarget),
       elapsedSeconds,
       observedTarget,
       spawn.behavior.lifecycle,
       resolveTargetAtDelta,
-    ).state;
+    );
+    const lifecycle = lifecycleStep.state;
 
     instances.push(
-      existing?.lifecycle === lifecycle ? existing : freezeInstance(spawnIdentity, lifecycle),
+      existing?.lifecycle === lifecycle && existing.activeInterval === lifecycleStep.activeInterval
+        ? existing
+        : freezeInstance(spawnIdentity, lifecycle, lifecycleStep.activeInterval),
     );
   }
 
@@ -128,6 +135,46 @@ export const stepTelegraphedHazardSimulation = (
   }
 
   return Object.freeze({ instances: Object.freeze(instances) });
+};
+
+/**
+ * Supplies collision with each persistent hazard and only the true Active slice of telegraphed
+ * hazards from the most recent lifecycle step. The interval is relative to that run step.
+ */
+export const getCollisionHazardsForTelegraphedSimulation = (
+  state: Readonly<TelegraphedHazardSimulationState>,
+  spawns: ReadonlyArray<Readonly<LogicalHazardSpawnInstance>>,
+): ReadonlyArray<Readonly<LogicalHazardSpawnInstance>> => {
+  const collisionHazards: Array<Readonly<LogicalHazardSpawnInstance>> = [];
+
+  for (const spawn of spawns) {
+    if (!isTelegraphedHazardBehavior(spawn.behavior)) {
+      collisionHazards.push(spawn);
+      continue;
+    }
+
+    const identity = getLogicalHazardSpawnIdentity(spawn);
+    const instance = state.instances.find((candidate) => candidate.spawnIdentity === identity);
+    if (!instance?.activeInterval) {
+      continue;
+    }
+
+    const hitbox = isTargetLockStrikeHazardBehavior(spawn.behavior)
+      ? resolveTargetLockStrikeHitbox(
+          spawn,
+          (instance.lifecycle.lockedTarget ?? instance.lifecycle.latestObservedTarget).positionY,
+        )
+      : spawn.hitbox;
+    collisionHazards.push(
+      Object.freeze({
+        ...spawn,
+        collisionInterval: instance.activeInterval,
+        hitbox,
+      }),
+    );
+  }
+
+  return Object.freeze(collisionHazards);
 };
 
 export const getTelegraphedHazardLifecycle = (

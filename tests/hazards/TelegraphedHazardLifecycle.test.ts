@@ -100,9 +100,26 @@ describe('telegraphed hazard lifecycle', () => {
     const initial = createTelegraphedHazardLifecycle(INITIAL_TARGET);
     const result = step(initial, 0, { runDistance: 200, positionY: 300 });
 
-    expect(result).toEqual({ state: initial, transition: null });
+    expect(result).toEqual({ activeInterval: null, state: initial, transition: null });
     expect(result.state).toBe(initial);
     expect(result.state.latestObservedTarget).toEqual(INITIAL_TARGET);
+  });
+
+  it('reports only the true active suffix or prefix of a boundary-crossing step', () => {
+    let state = createTelegraphedHazardLifecycle(INITIAL_TARGET);
+    state = step(state, 0.5).state;
+    state = step(state, 0.2).state;
+
+    const activation = step(state, 0.1);
+    expect(activation.transition).toEqual({ from: 'lock', to: 'active' });
+    expect(activation.activeInterval?.startSeconds).toBeCloseTo(0.05, 12);
+    expect(activation.activeInterval?.endSeconds).toBe(0.1);
+
+    state = step(activation.state, 0.65).state;
+    const expiry = step(state, 0.1);
+    expect(expiry.transition).toEqual({ from: 'active', to: 'expired' });
+    expect(expiry.activeInterval?.startSeconds).toBe(0);
+    expect(expiry.activeInterval?.endSeconds).toBeCloseTo(0.05, 12);
   });
 
   it('uses TimeService pause/resume handling without consuming hazard phases', () => {
