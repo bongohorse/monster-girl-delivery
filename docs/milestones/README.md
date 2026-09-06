@@ -25,6 +25,8 @@ A new report is added here only when the milestone has factual implementation an
 
 M4 — Run Pacing & Hazard Language is current. Its planning and implementation scope is owned by GitHub Issue #116 and its deliberately promoted child Issues.
 
+Current supporting evidence: [`M4-run-pacing-validation.md`](M4-run-pacing-validation.md). Issue #121 validation is accepted by the Game Director; the report remains supporting evidence rather than the M4 closeout report. Formal M4 closeout is owned by #122.
+
 ## Closeout rule for M2+
 
 Every milestone must receive a closeout report before, or as part of, formally moving the project to the next milestone.

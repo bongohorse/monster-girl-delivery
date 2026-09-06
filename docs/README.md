@@ -12,6 +12,7 @@ The hub is intentionally a navigation/ownership document, not another specificat
 - **Project phase:** Pre-Production
 - **Current milestone:** M4 — Run Pacing & Hazard Language
 - **Current milestone parent:** [GitHub Issue #116](https://github.com/bongohorse/monster-girl-delivery/issues/116)
+- **Current validation evidence:** [`milestones/M4-run-pacing-validation.md`](milestones/M4-run-pacing-validation.md)
 - **Latest completed milestone:** M3 — [`milestones/M3-seeded-generation-fairness.md`](milestones/M3-seeded-generation-fairness.md)
 - **Roadmap:** [`ROADMAP.md`](ROADMAP.md)
 - **Product/game specification:** [`../MASTER_SPEC.md`](../MASTER_SPEC.md)
@@ -222,6 +223,8 @@ Current completed reports:
 
 Current M4 planning and implementation scope is owned by GitHub Issue #116 and its deliberately promoted child Issues.
 
+Current M4 supporting evidence: [`milestones/M4-run-pacing-validation.md`](milestones/M4-run-pacing-validation.md). Issue #121 validation is accepted by the Game Director; formal M4 closeout remains the separate #122 task.
+
 Historical reports should be corrected only when factual evidence is wrong, not rewritten to match later plans.
 
 ---
@@ -276,6 +279,8 @@ docs/
     │                             Supporting M3 validation evidence
     ├── M3-seeded-generation-fairness.md
     │                             Completed M3 history
+    ├── M4-run-pacing-validation.md
+    │                             Current M4 supporting validation evidence
     └── M1-device-report.md       Supporting M1 device evidence
 ```
 
