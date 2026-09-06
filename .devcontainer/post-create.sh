@@ -37,4 +37,12 @@ else
   printf '[Codespaces] Warning: Codex CLI installation failed; project dependencies are ready.\n' >&2
 fi
 
+printf '\n[Codespaces] Installing Google Antigravity CLI (optional)...\n'
+if curl --fail --silent --show-error --location --retry 5 --connect-timeout 10 \
+    https://antigravity.google/cli/install.sh | bash; then
+  printf '[Codespaces] Google Antigravity CLI installed.\n'
+else
+  printf '[Codespaces] Warning: Google Antigravity CLI installation failed; project dependencies are ready.\n' >&2
+fi
+
 printf '\n[Codespaces] Setup complete.\n'
