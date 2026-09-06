@@ -473,11 +473,13 @@ describe('system frame partition evidence', () => {
       }
     });
 
-    it('demonstrates partition-consistent PRNG state and pattern sequence but partition-sensitive spawn and cursor placement under policy mode', () => {
-      // In policy mode, when crossing a tier boundary after a no-content gap, GeneratedHazardStream
-      // line 356 clamps nextPatternStartDistance = Math.max(state.nextPatternStartDistance, windowEnd).
-      // Because windowEnd is sampled at discrete frame steps, the first post-gap pattern exhibits
-      // a placement offset bounded by [0, dt_max * scrollSpeed] = [0, 0.050s * 350 px/s] = [0, 17.5 px].
+    it('produces identical PRNG state, pattern sequence, and exact spawn/cursor placement across all 6 schedules under policy mode', () => {
+      // When recovering from a no-content gap across a policy boundary, selectLiveEncounterCandidates
+      // determines the exact deterministic policy boundary selection.nextPolicyBoundaryDistance (here: 2500).
+      // The cursor remains anchored to this deterministic policy boundary rather than absorbing incidental
+      // frame-sampling overshoot from the crossing frame's windowEnd. When the scheduling window reaches
+      // the boundary, the first post-gap pattern is scheduled at exactly distance 2500 (first spawn at 2620)
+      // across all 6 schedules.
       const policyContext: GeneratedHazardStreamContext = Object.freeze({
         catalog: PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES,
         config: PROTOTYPE_GENERATED_HAZARD_STREAM_CONFIG,
@@ -532,6 +534,7 @@ describe('system frame partition evidence', () => {
 
       const baseline = results['60hz'];
       expect(baseline.stream.scheduledPatternCount).toBe(2);
+      expect(baseline.stream.spawns.length).toBe(4);
 
       for (const [_name, result] of Object.entries(results)) {
         // Scheduled pattern count is identical in this scenario:
@@ -542,39 +545,49 @@ describe('system frame partition evidence', () => {
           baseline.stream.generationState.prngState,
         );
 
-        // Scheduled pattern types match identically:
+        // Scheduled pattern types and exact spawn geometry match across all schedules:
         expect(result.stream.spawns.length).toBe(baseline.stream.spawns.length);
         for (let i = 0; i < baseline.stream.spawns.length; i++) {
-          expect(result.stream.spawns[i].patternId).toBe(baseline.stream.spawns[i].patternId);
+          const actualSpawn = result.stream.spawns[i];
+          const expectedSpawn = baseline.stream.spawns[i];
+          expect(actualSpawn.patternId).toBe(expectedSpawn.patternId);
+          expect(Math.abs(actualSpawn.runDistance - expectedSpawn.runDistance)).toBeLessThanOrEqual(
+            FLOATING_POINT_TOLERANCE,
+          );
+          expect(Math.abs(actualSpawn.hitbox.left - expectedSpawn.hitbox.left)).toBeLessThanOrEqual(
+            FLOATING_POINT_TOLERANCE,
+          );
+          expect(
+            Math.abs(actualSpawn.hitbox.right - expectedSpawn.hitbox.right),
+          ).toBeLessThanOrEqual(FLOATING_POINT_TOLERANCE);
+          expect(actualSpawn.hitbox.top).toBe(expectedSpawn.hitbox.top);
+          expect(actualSpawn.hitbox.bottom).toBe(expectedSpawn.hitbox.bottom);
         }
 
-        // Bounded partition sensitivity in cursor placement:
-        // Observed nextPatternStartDistance varies between 3800.08 (120Hz) and 3803.00 (60Hz) logical distance units,
-        // well within the theoretical maximum bound of 17.5 px.
+        // nextPatternStartDistance matches identically within floating-point tolerance:
         expect(
           Math.abs(
             result.stream.nextPatternStartDistance - baseline.stream.nextPatternStartDistance,
           ),
-        ).toBeLessThanOrEqual(17.5);
-
-        // Actual spawn runDistance also exhibits this discrete placement sensitivity:
-        expect(
-          Math.abs(result.stream.spawns[0].runDistance - baseline.stream.spawns[0].runDistance),
-        ).toBeLessThanOrEqual(17.5);
+        ).toBeLessThanOrEqual(FLOATING_POINT_TOLERANCE);
       }
 
-      // Concrete observed placement values demonstrating partition sensitivity:
-      expect(results['60hz'].stream.spawns[0].runDistance).toBeCloseTo(2623.0, 1);
-      expect(results['120hz'].stream.spawns[0].runDistance).toBeCloseTo(2620.083, 3);
-      expect(results.jittered.stream.spawns[0].runDistance).toBeCloseTo(2627.55, 2);
+      // Concrete observed placement values demonstrating exact deterministic anchoring:
+      // Pattern 1 (prototype-timed-pulse) start distance = 2500, hitbox left = 120 -> runDistance = 2620.0
+      expect(results['30hz'].stream.spawns[0].runDistance).toBeCloseTo(2620.0, 9);
+      expect(results['60hz'].stream.spawns[0].runDistance).toBeCloseTo(2620.0, 9);
+      expect(results['90hz'].stream.spawns[0].runDistance).toBeCloseTo(2620.0, 9);
+      expect(results['120hz'].stream.spawns[0].runDistance).toBeCloseTo(2620.0, 9);
+      expect(results['144hz'].stream.spawns[0].runDistance).toBeCloseTo(2620.0, 9);
+      expect(results.jittered.stream.spawns[0].runDistance).toBeCloseTo(2620.0, 9);
 
-      // Demonstrates non-zero placement difference between 60 Hz and 120 Hz:
-      const placementDiff60v120 = Math.abs(
-        results['60hz'].stream.spawns[0].runDistance -
-          results['120hz'].stream.spawns[0].runDistance,
-      );
-      expect(placementDiff60v120).toBeGreaterThan(2.9);
-      expect(placementDiff60v120).toBeLessThan(3.0);
+      // nextPatternStartDistance is exactly 3800.0 across all schedules:
+      expect(results['30hz'].stream.nextPatternStartDistance).toBeCloseTo(3800.0, 9);
+      expect(results['60hz'].stream.nextPatternStartDistance).toBeCloseTo(3800.0, 9);
+      expect(results['90hz'].stream.nextPatternStartDistance).toBeCloseTo(3800.0, 9);
+      expect(results['120hz'].stream.nextPatternStartDistance).toBeCloseTo(3800.0, 9);
+      expect(results['144hz'].stream.nextPatternStartDistance).toBeCloseTo(3800.0, 9);
+      expect(results.jittered.stream.nextPatternStartDistance).toBeCloseTo(3800.0, 9);
     });
   });
 

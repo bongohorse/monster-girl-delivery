@@ -353,7 +353,7 @@ const fillPolicySpawnWindow = (
   );
   const windowEnd = getPatternSchedulingBoundary(runDistance, schedulingWindow);
   let generationState = state.generationState;
-  let nextPatternStartDistance = Math.max(state.nextPatternStartDistance, windowEnd);
+  let nextPatternStartDistance = state.nextPatternStartDistance;
   let policyState = initialPolicyState;
   let scheduledPatternCount = state.scheduledPatternCount;
   const status = state.status;
