@@ -31,7 +31,7 @@ const createScene = () => {
   const keyboard = new FakeKeyboard();
   const input = new FakeInputPlugin(keyboard);
   const events = new FakeEventEmitter();
-  const scene = { input, events } as unknown as Scene;
+  const scene = { events, input } as unknown as Scene;
 
   return { events, input, keyboard, scene };
 };
@@ -44,6 +44,14 @@ const pointer = (id: number, options: { wasCanceled?: boolean; wasTouch?: boolea
 });
 
 describe('PhaserInputAdapter', () => {
+  it('captures only SPACE and avoids capturing arrow keys or broad keyboard input', () => {
+    const { keyboard, scene } = createScene();
+    const inputService = new InputService();
+    new PhaserInputAdapter(scene, inputService);
+
+    expect(keyboard.addCapture).toHaveBeenCalledExactlyOnceWith(32);
+  });
+
   it('routes touch cancellation through the active pointer identity', () => {
     const { input, scene } = createScene();
     const inputService = new InputService();
@@ -89,7 +97,7 @@ describe('PhaserInputAdapter', () => {
     });
   });
 
-  it('removes every listener and releases held input when the scene shuts down', () => {
+  it('removes every listener, uncaptures SPACE, and releases held input when the scene shuts down', () => {
     const { events, input, keyboard, scene } = createScene();
     const inputService = new InputService();
     new PhaserInputAdapter(scene, inputService);
@@ -99,6 +107,13 @@ describe('PhaserInputAdapter', () => {
     events.emit('shutdown');
 
     expect(inputService.isThrustHeld()).toBe(false);
+    expect(inputService.getSnapshot()).toMatchObject({
+      activePointerId: null,
+      pointerHeld: false,
+      pointerSource: null,
+      spaceHeld: false,
+      thrustHeld: false,
+    });
     expect(input.listenerCount('pointerdown')).toBe(0);
     expect(input.listenerCount('pointerup')).toBe(0);
     expect(input.listenerCount('pointerupoutside')).toBe(0);

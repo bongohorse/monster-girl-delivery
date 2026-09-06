@@ -17,8 +17,12 @@ const StartGame = (parent: string, options: StartGameOptions) => {
     input: {
       activePointers: 2,
       keyboard: true,
-      mouse: true,
-      touch: true,
+      mouse: {
+        preventDefaultWheel: true,
+      },
+      touch: {
+        capture: true,
+      },
       windowEvents: true,
     },
     scale: {
