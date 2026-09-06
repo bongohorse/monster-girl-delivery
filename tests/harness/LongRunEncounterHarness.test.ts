@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { PROTOTYPE_ENCOUNTER_READABILITY_BUDGET_CONFIG } from '../../src/generation/EncounterReadabilityBudget';
 import { PROTOTYPE_ENCOUNTER_VARIETY_POLICY } from '../../src/generation/EncounterVarietyPolicy';
 import { createHazardPattern } from '../../src/generation/HazardPattern';
+import { PROTOTYPE_PACING_CONFIG } from '../../src/pacing/PacingSystem';
 import {
   type EncounterTraceEntry,
   LongRunEncounterHarness,
@@ -88,6 +89,7 @@ describe('LongRunEncounterHarness', () => {
 
   it('completes bounded long run successfully', () => {
     const harness = new LongRunEncounterHarness();
+    const maxDistance = 50000;
     const {
       trace,
       finalState,
@@ -98,13 +100,27 @@ describe('LongRunEncounterHarness', () => {
       maxConcurrentLethalWindows,
       maxActivePressureCost,
       maxActiveReadabilityCost,
-    } = harness.run(300, 50000); // long run
+    } = harness.run(300, maxDistance); // long run
 
     expect(trace.length).toBeGreaterThan(10);
 
-    // The scheduler must never exhaust the prototype catalog mid-run; exhaustion would break
-    // the loop early and hide a generation deadlock behind a short trace.
-    expect(finalState.status).toBe('active');
+    // In policy mode the stream status stays 'active' even when scheduling repeatedly fails
+    // (only the legacy non-policy path reports 'exhausted'), so a status check cannot prove
+    // liveness. Instead: the run must actually reach its requested logical distance (the
+    // fixed-timestep advance overshoots fractionally, hence greater-than-or-equal) ...
+    expect(finalState.runDistance).toBeGreaterThanOrEqual(maxDistance);
+
+    // ... and scheduling must still admit content at the end of the run rather than silently
+    // starve: the final full pacing cycle necessarily contains non-breather phases, so it
+    // must contain at least one accepted encounter.
+    const pacingCycleLength = PROTOTYPE_PACING_CONFIG.phases.reduce(
+      (total, phase) => total + phase.distanceLength,
+      0,
+    );
+    const lateReserved = trace.filter(
+      (t) => t.type === 'reserved' && t.runDistance > maxDistance - pacingCycleLength,
+    );
+    expect(lateReserved.length).toBeGreaterThan(0);
 
     // Bounded growth is asserted against the configured policy authorities, using maxima
     // tracked throughout the run rather than only the drained final state.
