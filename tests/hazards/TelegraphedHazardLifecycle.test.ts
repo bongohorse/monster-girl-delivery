@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { TimeService } from '../../src/core/TimeService';
 import {
   createTelegraphedHazardLifecycle,
@@ -9,6 +9,7 @@ import {
   type TelegraphedHazardLifecycleConfig,
   type TelegraphedHazardLifecycleState,
   type TelegraphedHazardTarget,
+  type TelegraphedHazardTargetResolver,
 } from '../../src/hazards/TelegraphedHazardLifecycle';
 
 const CONFIG = createTelegraphedHazardLifecycleConfig({
@@ -30,7 +31,15 @@ const step = (
   state: Readonly<TelegraphedHazardLifecycleState>,
   elapsedSeconds: number,
   observedTarget: Readonly<TelegraphedHazardTarget> = INITIAL_TARGET,
-) => stepTelegraphedHazardLifecycle(state, elapsedSeconds, observedTarget, CONFIG);
+  resolveTargetAtDelta?: TelegraphedHazardTargetResolver,
+) =>
+  stepTelegraphedHazardLifecycle(
+    state,
+    elapsedSeconds,
+    observedTarget,
+    CONFIG,
+    resolveTargetAtDelta,
+  );
 
 describe('telegraphed hazard lifecycle', () => {
   it('requires warning and lock before the exact lethal activation boundary', () => {
@@ -257,5 +266,66 @@ describe('telegraphed hazard lifecycle', () => {
         invalid,
       ),
     ).toThrow(RangeError);
+  });
+
+  it('samples target at exact boundary delta when transitioning warning -> lock', () => {
+    // CONFIG warning duration is 0.5s.
+    // Advance to 0.3s first.
+    let state = createTelegraphedHazardLifecycle(INITIAL_TARGET);
+    state = step(state, 0.3).state;
+    expect(state.phase).toBe('warning');
+    expect(state.elapsedPhaseSeconds).toBeCloseTo(0.3);
+
+    // Step by 0.4s. The boundary is at 0.5 - 0.3 = 0.2s into the step.
+    const resolvedDeltas: number[] = [];
+    const resolver: TelegraphedHazardTargetResolver = (delta) => {
+      resolvedDeltas.push(delta);
+      return { positionY: 250 + delta * 100, runDistance: 300 + delta * 350 };
+    };
+
+    const fallbackTarget = { positionY: 999, runDistance: 999 };
+    const result = step(state, 0.4, fallbackTarget, resolver);
+
+    expect(result.transition).toEqual({ from: 'warning', to: 'lock' });
+    expect(result.state.phase).toBe('lock');
+    expect(resolvedDeltas).toEqual([0.2]);
+
+    // Locked target must reflect resolver evaluated at the exact boundary delta 0.2s:
+    // positionY = 250 + 0.2 * 100 = 270
+    // runDistance = 300 + 0.2 * 350 = 370
+    expect(result.state.lockedTarget).toEqual({ positionY: 270, runDistance: 370 });
+    expect(result.state.latestObservedTarget).toBe(result.state.lockedTarget);
+  });
+
+  it('samples target at step delta while in warning phase without transition', () => {
+    const state = createTelegraphedHazardLifecycle(INITIAL_TARGET);
+    const resolvedDeltas: number[] = [];
+    const resolver: TelegraphedHazardTargetResolver = (delta) => {
+      resolvedDeltas.push(delta);
+      return { positionY: 180 + delta * 50, runDistance: 100 + delta * 350 };
+    };
+
+    // Step by 0.25s (< 0.5s warning duration)
+    const fallbackTarget = { positionY: 999, runDistance: 999 };
+    const result = step(state, 0.25, fallbackTarget, resolver);
+
+    expect(result.transition).toBeNull();
+    expect(result.state.phase).toBe('warning');
+    expect(resolvedDeltas).toEqual([0.25]);
+    expect(result.state.latestObservedTarget).toEqual({ positionY: 192.5, runDistance: 187.5 });
+    expect(result.state.lockedTarget).toBeNull();
+  });
+
+  it('does not invoke target resolver when already in lock phase', () => {
+    let state = createTelegraphedHazardLifecycle(INITIAL_TARGET);
+    state = step(state, 0.5, { positionY: 220, runDistance: 200 }).state;
+    expect(state.phase).toBe('lock');
+    const lockedTarget = state.lockedTarget;
+
+    const resolver = vi.fn();
+    const result = step(state, 0.1, { positionY: 300, runDistance: 400 }, resolver);
+
+    expect(resolver).not.toHaveBeenCalled();
+    expect(result.state.lockedTarget).toBe(lockedTarget);
   });
 });

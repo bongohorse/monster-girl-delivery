@@ -25,6 +25,11 @@ export interface TelegraphedHazardTarget {
   readonly runDistance: number;
 }
 
+/** Resolves the logical target at an exact delta offset from the start of the current step. */
+export type TelegraphedHazardTargetResolver = (
+  deltaTimeSeconds: number,
+) => Readonly<TelegraphedHazardTarget>;
+
 export interface TelegraphedHazardLifecycleState {
   readonly elapsedPhaseSeconds: number;
   /** Latest observation while warning; remains unchanged after lock. */
@@ -175,6 +180,7 @@ export const stepTelegraphedHazardLifecycle = (
   elapsedSeconds: number,
   observedTarget: Readonly<TelegraphedHazardTarget>,
   config: Readonly<TelegraphedHazardLifecycleConfig> = PROTOTYPE_TELEGRAPHED_HAZARD_LIFECYCLE_CONFIG,
+  resolveTargetAtDelta?: TelegraphedHazardTargetResolver,
 ): Readonly<TelegraphedHazardLifecycleStep> => {
   if (!Number.isFinite(elapsedSeconds) || elapsedSeconds < 0) {
     throw new RangeError('Telegraphed hazard elapsedSeconds must be non-negative and finite.');
@@ -190,8 +196,6 @@ export const stepTelegraphedHazardLifecycle = (
     return Object.freeze({ state, transition: null });
   }
 
-  const latestObservedTarget =
-    state.phase === 'warning' ? snapshotTarget(observedTarget) : state.latestObservedTarget;
   const duration = getPhaseDuration(state.phase, config.durations);
   const elapsedPhaseSeconds = state.elapsedPhaseSeconds + elapsedSeconds;
 
@@ -200,6 +204,13 @@ export const stepTelegraphedHazardLifecycle = (
   }
 
   if (elapsedPhaseSeconds < duration) {
+    const latestObservedTarget =
+      state.phase === 'warning'
+        ? snapshotTarget(
+            resolveTargetAtDelta ? resolveTargetAtDelta(elapsedSeconds) : observedTarget,
+          )
+        : state.latestObservedTarget;
+
     return Object.freeze({
       state: freezeState({
         ...state,
@@ -211,7 +222,21 @@ export const stepTelegraphedHazardLifecycle = (
   }
 
   const nextPhase = PHASE_AFTER[state.phase];
-  const lockedTarget = state.phase === 'warning' ? latestObservedTarget : state.lockedTarget;
+  let lockedTarget = state.lockedTarget;
+  let latestObservedTarget = state.latestObservedTarget;
+
+  if (state.phase === 'warning') {
+    const timeToBoundary = Math.max(
+      0,
+      Math.min(elapsedSeconds, duration - state.elapsedPhaseSeconds),
+    );
+    const boundaryTarget = resolveTargetAtDelta
+      ? resolveTargetAtDelta(timeToBoundary)
+      : observedTarget;
+    lockedTarget = snapshotTarget(boundaryTarget);
+    latestObservedTarget = lockedTarget;
+  }
+
   const nextState = freezeState({
     elapsedPhaseSeconds: nextPhase === 'expired' ? 0 : elapsedPhaseSeconds - duration,
     latestObservedTarget,

@@ -33,7 +33,11 @@ import {
   type PrototypeRunState,
   stepPrototypeRun,
 } from '../../src/systems/PrototypeRunSimulation';
-import type { VerticalFlightBounds } from '../../src/systems/VerticalFlightSimulation';
+import { stepRunMotion } from '../../src/systems/RunMotionSimulation';
+import {
+  stepVerticalFlight,
+  type VerticalFlightBounds,
+} from '../../src/systems/VerticalFlightSimulation';
 import { type FrameSchedule, STANDARD_FRAME_SCHEDULES } from '../support/FramePartitionHarness';
 
 const SCHEDULE_ENTRIES = Object.entries(STANDARD_FRAME_SCHEDULES);
@@ -68,7 +72,13 @@ const runTelegraphedPartitionToTime = (
     // Pre-step target observation matching live Foundation ordering
     const preStepTarget = getTarget(elapsed);
 
-    simState = stepTelegraphedHazardSimulation(simState, spawns, stepDelta, preStepTarget);
+    simState = stepTelegraphedHazardSimulation(
+      simState,
+      spawns,
+      stepDelta,
+      preStepTarget,
+      (delta) => getTarget(elapsed + delta),
+    );
     elapsed += stepDelta;
   }
 
@@ -153,11 +163,29 @@ const runScriptedTelegraphedSimulation = (
           runDistance: runState.motion.distance,
         };
 
+        const initialFlight = runState.flight;
+        const initialMotion = runState.motion;
+        const resolvePlayerTargetAtDelta = (delta: number) => {
+          const subMotion = stepRunMotion(initialMotion, delta, PROTOTYPE_RUN_MOTION_DEFAULTS);
+          const subFlight = stepVerticalFlight(
+            initialFlight,
+            delta,
+            currentThrustHeld,
+            PROTOTYPE_FLIGHT_TUNING_DEFAULTS,
+            flightBounds,
+          );
+          return {
+            positionY: subFlight.positionY,
+            runDistance: subMotion.distance,
+          };
+        };
+
         telegraphedState = stepTelegraphedHazardSimulation(
           telegraphedState,
           telegraphedSpawns,
           stepDelta,
           preStepTarget,
+          resolvePlayerTargetAtDelta,
         );
 
         const lethalHazards = getLethalHazardsForTelegraphedSimulation(
@@ -309,12 +337,12 @@ describe('system frame partition evidence', () => {
       }
     });
 
-    it('demonstrates partition-sensitive discrete target-lock sampling under live pre-step observation', () => {
+    it('produces identical locked target and lethal strike hitbox across all 6 schedules with boundary-sampled target lock', () => {
       // Authored PROTOTYPE_TARGET_LOCK_STRIKE_PATTERN has warning duration = 1.40s.
-      // In live Foundation ordering, target is observed pre-step before stepTelegraphedHazardSimulation.
-      // With player moving at vy = 50 px/s (y(t) = 100 + 50 * t), the frame that crosses t = 1.40s
-      // freezes lockedTarget from the pre-step observation sampled at t_start in [1.40 - dt, 1.40].
-      // Theoretical lag bound: deltaY <= vy * dt_max = 50 px/s * 0.050s = 2.50 px (y in [167.5, 170.0]).
+      // Under boundary sampling, the warning -> lock transition samples the player target at the
+      // exact boundary time t = 1.40s instead of freezing the pre-step observation.
+      // With player moving at vy = 50 px/s (y(t) = 100 + 50 * t) and vx = 350 px/s (x(t) = 350 * t),
+      // the frozen target at t = 1.40s is exactly y = 170.000 px, distance = 490.000 across all schedules.
       const strikeSchedule = scheduleNextPattern({
         catalog: [PROTOTYPE_TARGET_LOCK_STRIKE_PATTERN],
         patternStartDistance: 0,
@@ -340,39 +368,84 @@ describe('system frame partition evidence', () => {
         }),
       );
 
-      // All schedules reach active phase:
+      // All schedules reach active phase with identical locked targets and hitboxes:
       for (const [_name, result] of Object.entries(results)) {
         expect(result.lifecycle?.phase).toBe('active');
         expect(result.lethalHitbox).toBeDefined();
+
+        expect(
+          Math.abs((result.lifecycle?.lockedTarget?.positionY ?? 0) - 170.0),
+        ).toBeLessThanOrEqual(FLOATING_POINT_TOLERANCE);
+        expect(
+          Math.abs((result.lifecycle?.lockedTarget?.runDistance ?? 0) - 490.0),
+        ).toBeLessThanOrEqual(FLOATING_POINT_TOLERANCE);
+        expect(Math.abs((result.lethalHitbox?.top ?? 0) - 146.0)).toBeLessThanOrEqual(
+          FLOATING_POINT_TOLERANCE,
+        );
+        expect(Math.abs((result.lethalHitbox?.bottom ?? 0) - 194.0)).toBeLessThanOrEqual(
+          FLOATING_POINT_TOLERANCE,
+        );
+        expect(result.lethalHitbox?.left).toBe(120);
+        expect(result.lethalHitbox?.right).toBe(184);
       }
 
-      // Exact locked target values reflect discrete pre-step observation lag:
-      // 30 Hz (frame at t=1.3667s): 100 + 50 * 1.3667 = 168.333
-      // 60 Hz (frame at t=1.3833s): 100 + 50 * 1.3833 = 169.167
-      // 90 Hz (frame at t=1.4000s): 100 + 50 * 1.4000 = 170.000
-      // 120 Hz (frame at t=1.4000s): 170.000
-      // 144 Hz (frame 201 at t=1.3958s): 100 + 50 * 1.3958 = 169.792
-      // jittered (frame at t=1.4000s): 170.000
-      expect(results['30hz'].lifecycle?.lockedTarget?.positionY).toBeCloseTo(168.333, 3);
-      expect(results['60hz'].lifecycle?.lockedTarget?.positionY).toBeCloseTo(169.167, 3);
-      expect(results['90hz'].lifecycle?.lockedTarget?.positionY).toBeCloseTo(170.0, 3);
-      expect(results['120hz'].lifecycle?.lockedTarget?.positionY).toBeCloseTo(170.0, 3);
-      expect(results['144hz'].lifecycle?.lockedTarget?.positionY).toBeCloseTo(169.792, 3);
-      expect(results.jittered.lifecycle?.lockedTarget?.positionY).toBeCloseTo(170.0, 3);
+      // Concrete assertions across individual schedules confirm exact values:
+      expect(results['30hz'].lifecycle?.lockedTarget?.positionY).toBeCloseTo(170.0, 9);
+      expect(results['60hz'].lifecycle?.lockedTarget?.positionY).toBeCloseTo(170.0, 9);
+      expect(results['90hz'].lifecycle?.lockedTarget?.positionY).toBeCloseTo(170.0, 9);
+      expect(results['120hz'].lifecycle?.lockedTarget?.positionY).toBeCloseTo(170.0, 9);
+      expect(results['144hz'].lifecycle?.lockedTarget?.positionY).toBeCloseTo(170.0, 9);
+      expect(results.jittered.lifecycle?.lockedTarget?.positionY).toBeCloseTo(170.0, 9);
 
-      // All schedules fall within the theoretical frame-lag bound [167.5, 170.0]:
-      for (const [_name, result] of Object.entries(results)) {
-        const lockedY = result.lifecycle?.lockedTarget?.positionY;
-        expect(lockedY).toBeDefined();
-        if (lockedY !== undefined) {
-          expect(lockedY).toBeGreaterThanOrEqual(167.5);
-          expect(lockedY).toBeLessThanOrEqual(170.0);
+      expect(results['30hz'].lethalHitbox?.top).toBeCloseTo(146.0, 9);
+      expect(results['120hz'].lethalHitbox?.top).toBeCloseTo(146.0, 9);
+    });
+
+    it('falls back to pre-step observation when no target resolver is provided', () => {
+      const strikeSchedule = scheduleNextPattern({
+        catalog: [PROTOTYPE_TARGET_LOCK_STRIKE_PATTERN],
+        patternStartDistance: 0,
+        state: createRunGenerationState('target-lock-strike-seed-fallback'),
+      });
+
+      if (strikeSchedule.status !== 'accepted') {
+        throw new Error('Expected PROTOTYPE_TARGET_LOCK_STRIKE_PATTERN to be accepted.');
+      }
+
+      const strikeSpawn = strikeSchedule.spawns[0];
+      const targetTime = 2.0;
+
+      const runWithoutResolver = (schedule: FrameSchedule) => {
+        let simState = createTelegraphedHazardSimulationState();
+        let elapsed = 0;
+        let stepIndex = 0;
+        while (elapsed < targetTime - EPSILON) {
+          const nominalDelta = schedule.getNextDelta(elapsed, stepIndex);
+          stepIndex += 1;
+          const stepDelta = Math.min(nominalDelta, targetTime - elapsed);
+          const preStepTarget = {
+            positionY: 100 + 50 * elapsed,
+            runDistance: 350 * elapsed,
+          };
+          simState = stepTelegraphedHazardSimulation(
+            simState,
+            [strikeSpawn],
+            stepDelta,
+            preStepTarget,
+          );
+          elapsed += stepDelta;
         }
-      }
+        return simState;
+      };
 
-      // Lethal strike hitbox differs between coarse and fine schedules (1.667 px spread):
-      expect(results['30hz'].lethalHitbox?.top).toBeCloseTo(144.333, 3);
-      expect(results['120hz'].lethalHitbox?.top).toBeCloseTo(146.0, 3);
+      const state30 = runWithoutResolver(STANDARD_FRAME_SCHEDULES['30hz']);
+      const state120 = runWithoutResolver(STANDARD_FRAME_SCHEDULES['120hz']);
+      const lifecycle30 = getTelegraphedHazardLifecycle(state30, strikeSpawn);
+      const lifecycle120 = getTelegraphedHazardLifecycle(state120, strikeSpawn);
+
+      // Unadjusted discrete pre-step sampling exhibits frame-rate lag:
+      expect(lifecycle30?.lockedTarget?.positionY).toBeCloseTo(168.333, 3);
+      expect(lifecycle120?.lockedTarget?.positionY).toBeCloseTo(170.0, 3);
     });
   });
 

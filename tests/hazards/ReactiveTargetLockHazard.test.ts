@@ -93,6 +93,36 @@ describe('reactive target-lock hazard', () => {
     });
   });
 
+  it('samples player target at the exact warning-to-lock boundary when a resolver is provided', () => {
+    const spawn = createReactiveSpawn();
+    // Authored warning duration is 1.4s.
+    let state = stepTelegraphedHazardSimulation(
+      createTelegraphedHazardSimulationState(),
+      [spawn],
+      1.0,
+      { positionY: 100, runDistance: 0 },
+    );
+    expect(getLifecycle(state, spawn)).toMatchObject({
+      phase: 'warning',
+      elapsedPhaseSeconds: 1.0,
+    });
+
+    // Step 0.8s. Boundary transition occurs at 1.4 - 1.0 = 0.4s into this step.
+    const preStepTarget = { positionY: 100, runDistance: 350 };
+    const resolver = (delta: number) => ({
+      positionY: 100 + delta * 150, // at delta 0.4: 100 + 60 = 160
+      runDistance: 350 + delta * 350, // at delta 0.4: 350 + 140 = 490
+    });
+
+    state = stepTelegraphedHazardSimulation(state, [spawn], 0.8, preStepTarget, resolver);
+
+    const lifecycle = getLifecycle(state, spawn);
+    expect(lifecycle.phase).toBe('lock');
+    expect(lifecycle.elapsedPhaseSeconds).toBeCloseTo(0.4, 9);
+    expect(lifecycle.lockedTarget).toEqual({ positionY: 160, runDistance: 490 });
+    expect(lifecycle.latestObservedTarget).toBe(lifecycle.lockedTarget);
+  });
+
   it('executes a deterministic fixed strike at the locked height through shared collision', () => {
     const spawn = createReactiveSpawn();
     let state = stepTelegraphedHazardSimulation(

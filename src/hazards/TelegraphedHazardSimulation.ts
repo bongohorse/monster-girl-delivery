@@ -14,6 +14,7 @@ import {
   stepTelegraphedHazardLifecycle,
   type TelegraphedHazardLifecycleState,
   type TelegraphedHazardTarget,
+  type TelegraphedHazardTargetResolver,
 } from './TelegraphedHazardLifecycle';
 
 export interface TelegraphedHazardLifecycleInstance {
@@ -73,6 +74,7 @@ export const stepTelegraphedHazardSimulation = (
   spawns: ReadonlyArray<Readonly<LogicalHazardSpawnInstance>>,
   elapsedSeconds: number,
   playerTarget: Readonly<TelegraphedHazardTarget>,
+  resolvePlayerTargetAtDelta?: TelegraphedHazardTargetResolver,
 ): Readonly<TelegraphedHazardSimulationState> => {
   if (!Number.isFinite(elapsedSeconds) || elapsedSeconds < 0) {
     throw new RangeError('Telegraphed hazard elapsedSeconds must be non-negative and finite.');
@@ -96,12 +98,17 @@ export const stepTelegraphedHazardSimulation = (
     seenIdentities.add(spawnIdentity);
 
     const observedTarget = getObservedTarget(spawn, playerTarget);
+    const resolveTargetAtDelta = resolvePlayerTargetAtDelta
+      ? (delta: number): Readonly<TelegraphedHazardTarget> =>
+          getObservedTarget(spawn, resolvePlayerTargetAtDelta(delta))
+      : undefined;
     const existing = existingByIdentity.get(spawnIdentity);
     const lifecycle = stepTelegraphedHazardLifecycle(
       existing?.lifecycle ?? createTelegraphedHazardLifecycle(observedTarget),
       elapsedSeconds,
       observedTarget,
       spawn.behavior.lifecycle,
+      resolveTargetAtDelta,
     ).state;
 
     instances.push(
