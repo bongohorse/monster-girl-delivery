@@ -40,17 +40,25 @@ describe('Prototype scrolling-world layout', () => {
     expect(wide.buildings.length).toBeGreaterThan(narrow.buildings.length);
   });
 
-  it('keeps ground geometry inside the safe vertical viewport', () => {
-    const viewport = new ViewportService(844, 390, {
+  it('positions ground geometry relative to logical playable height and vertical projection', () => {
+    const baselineViewport = new ViewportService(844, 390).getSnapshot();
+    const baselineLayout = createPrototypeScrollingWorldLayout(baselineViewport, 0);
+    expect(baselineLayout.groundTopY).toBe(378);
+
+    const safeAreaViewport = new ViewportService(844, 390, {
       top: 10,
       right: 44,
       bottom: 21,
       left: 44,
     }).getSnapshot();
-    const layout = createPrototypeScrollingWorldLayout(viewport, 0);
+    const safeAreaLayout = createPrototypeScrollingWorldLayout(safeAreaViewport, 0);
 
-    expect(layout.groundTopY).toBe(357);
-    expect(layout.buildings.every((building) => building.y >= 10)).toBe(true);
+    expect(safeAreaLayout.groundTopY).toBe(373);
+    expect(safeAreaLayout.buildings.every((building) => building.y >= 10)).toBe(true);
+
+    const tallViewport = new ViewportService(1_280, 720).getSnapshot();
+    const tallLayout = createPrototypeScrollingWorldLayout(tallViewport, 0);
+    expect(tallLayout.groundTopY).toBe(543);
   });
 
   it('rejects invalid wrapping inputs', () => {

@@ -1,4 +1,8 @@
 import type { ViewportSnapshot } from '../core/ViewportService';
+import {
+  getPrototypeVerticalOffset,
+  PROTOTYPE_LOGICAL_PLAYABLE_HEIGHT,
+} from './PrototypeFlightLayout';
 
 const BUILDING_SPACING = 128;
 const BUILDING_WIDTH = 104;
@@ -51,9 +55,9 @@ export const createPrototypeScrollingWorldLayout = (
   const width = sanitizeExtent(viewport.width);
   const height = sanitizeExtent(viewport.height);
   const safeTop = Math.min(height, sanitizeExtent(viewport.safeArea.top));
-  const safeBottomInset = Math.min(height - safeTop, sanitizeExtent(viewport.safeArea.bottom));
-  const safeBottom = height - safeBottomInset;
-  const groundTopY = Math.max(safeTop, safeBottom - GROUND_HEIGHT);
+  const verticalOffset = getPrototypeVerticalOffset(viewport);
+  const logicalGroundTopY = PROTOTYPE_LOGICAL_PLAYABLE_HEIGHT - GROUND_HEIGHT;
+  const groundTopY = Math.max(safeTop, Math.min(height, verticalOffset + logicalGroundTopY));
   const availableBuildingHeight = Math.max(0, groundTopY - safeTop);
   const buildings: PrototypeWorldBuilding[] = [];
   const groundMarkers: PrototypeWorldGroundMarker[] = [];

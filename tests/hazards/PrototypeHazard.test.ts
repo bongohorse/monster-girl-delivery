@@ -20,7 +20,7 @@ describe('prototype placeholder hazard', () => {
     expect(Object.isFrozen(PROTOTYPE_PLACEHOLDER_HAZARD.hitbox)).toBe(true);
   });
 
-  it('derives deterministic screen movement from run distance', () => {
+  it('derives deterministic screen movement from run distance and vertical offset', () => {
     const initial = projectHazardHitboxToScreen(
       PROTOTYPE_PLACEHOLDER_HAZARD,
       { distance: 400 },
@@ -36,11 +36,18 @@ describe('prototype placeholder hazard', () => {
       { distance: 500 },
       200,
     );
+    const offset = projectHazardHitboxToScreen(
+      PROTOTYPE_PLACEHOLDER_HAZARD,
+      { distance: 400 },
+      200,
+      165,
+    );
 
     expect(initial).toEqual({ left: 1_000, right: 1_048, top: 147, bottom: 243 });
     expect(repeated).toEqual(initial);
     expect(advanced.left).toBe(initial.left - 100);
     expect(advanced.right).toBe(initial.right - 100);
+    expect(offset).toEqual({ left: 1_000, right: 1_048, top: 147 + 165, bottom: 243 + 165 });
   });
 
   it('rejects non-finite presentation inputs', () => {
@@ -53,6 +60,9 @@ describe('prototype placeholder hazard', () => {
         { distance: 400 },
         Number.POSITIVE_INFINITY,
       ),
+    ).toThrow(RangeError);
+    expect(() =>
+      projectHazardHitboxToScreen(PROTOTYPE_PLACEHOLDER_HAZARD, { distance: 400 }, 200, Number.NaN),
     ).toThrow(RangeError);
   });
 });

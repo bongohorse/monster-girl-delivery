@@ -1,7 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createAppServices } from '../../../src/core/AppServices';
 import { ViewportService } from '../../../src/core/ViewportService';
-import { createPrototypeFlightBounds } from '../../../src/game/PrototypeFlightLayout';
+import {
+  createPrototypeFlightBounds,
+  getPrototypeVerticalOffset,
+} from '../../../src/game/PrototypeFlightLayout';
 import { Foundation } from '../../../src/game/scenes/Foundation';
 import { PROTOTYPE_PATTERN_REACHABILITY_CONTEXT } from '../../../src/generation/FlightReachability';
 import {
@@ -124,7 +127,7 @@ const createFoundationHarness = () => {
       createTelegraphedHazardSimulationState(),
       hazardStream.spawns,
       0,
-      { positionY: 400, runDistance: 0 },
+      { positionY: 195, runDistance: 0 },
     ),
   );
   Reflect.set(foundation, 'instructions', instructions);
@@ -133,7 +136,7 @@ const createFoundationHarness = () => {
   Reflect.set(foundation, 'runState', {
     phase: 'running',
     motion: { distance: 0 },
-    flight: { positionY: 400, velocityY: 0 },
+    flight: { positionY: 195, velocityY: 0 },
   });
   Reflect.set(foundation, 'game', { loop: { actualFps: 60, rawDelta: 16 } });
   Reflect.set(foundation, 'scale', { off: scaleOff });
@@ -250,7 +253,7 @@ describe('Foundation scene gameplay orchestration', () => {
       services,
       viewportService,
     } = createFoundationHarness();
-    const initialState: VerticalFlightState = { positionY: 400, velocityY: 0 };
+    const initialState: VerticalFlightState = { positionY: 195, velocityY: 0 };
     services.input.setSpaceHeld(true);
 
     foundation.update(0, 1_000);
@@ -271,7 +274,10 @@ describe('Foundation scene gameplay orchestration', () => {
     );
     expect(actual.positionY).toBeCloseTo(expected.positionY);
     expect(actual.velocityY).toBeCloseTo(expected.velocityY);
-    expect(playerPresentation.setPosition).toHaveBeenLastCalledWith(100, expected.positionY);
+    expect(playerPresentation.setPosition).toHaveBeenLastCalledWith(
+      100,
+      expected.positionY + getPrototypeVerticalOffset(viewportService.getSnapshot()),
+    );
     expect(getRunMotionState(foundation)).toEqual(expectedRunMotion);
     expect(scrollingWorldPresentation.render).toHaveBeenLastCalledWith(
       expectedRunMotion.distance,
@@ -282,6 +288,7 @@ describe('Foundation scene gameplay orchestration', () => {
       expectedRunMotion,
       100,
       getTelegraphedHazardState(foundation),
+      getPrototypeVerticalOffset(viewportService.getSnapshot()),
     );
     expect(directorPanel.update).toHaveBeenLastCalledWith(
       1_000,
@@ -453,7 +460,7 @@ describe('Foundation scene gameplay orchestration', () => {
     expect(getRunState(foundation)).toEqual({
       phase: 'running',
       motion: { distance: 0 },
-      flight: { positionY: 400, velocityY: 0 },
+      flight: { positionY: 195, velocityY: 0 },
     });
     expect(getHazardStream(foundation)).toEqual(initialHazardStream);
     expect(services.input.isThrustHeld()).toBe(false);
@@ -467,6 +474,7 @@ describe('Foundation scene gameplay orchestration', () => {
       { distance: 0 },
       100,
       getTelegraphedHazardState(foundation),
+      expect.any(Number),
     );
   });
 
@@ -483,7 +491,7 @@ describe('Foundation scene gameplay orchestration', () => {
     Reflect.set(foundation, 'runState', {
       phase: 'running',
       motion: { distance: 123 },
-      flight: { positionY: 500, velocityY: 120 },
+      flight: { positionY: 250, velocityY: 120 },
     });
     services.time.update(16);
     const hazardStreamBeforeResize = getHazardStream(foundation);
@@ -500,8 +508,8 @@ describe('Foundation scene gameplay orchestration', () => {
 
     expect(cameraResize).toHaveBeenLastCalledWith(800, 600);
     expect(viewportService.getSnapshot().orientation).toBe('landscape');
-    expect(getFlightState(foundation)).toEqual({ positionY: 500, velocityY: 120 });
-    expect(playerPresentation.setPosition).toHaveBeenLastCalledWith(200, 500);
+    expect(getFlightState(foundation)).toEqual({ positionY: 250, velocityY: 120 });
+    expect(playerPresentation.setPosition).toHaveBeenLastCalledWith(200, 355);
     expect(services.time.getDeltaSeconds()).toBeCloseTo(0.016);
     expect(services.flightTuning.getSnapshot()).toEqual(tuningBefore);
     expect(services.runMotion.getSnapshot()).toEqual(runTuningBefore);
@@ -514,12 +522,12 @@ describe('Foundation scene gameplay orchestration', () => {
 
     handleResize({ width: 800, height: 300 });
 
-    expect(getFlightState(foundation)).toEqual({ positionY: 272, velocityY: 0 });
-    expect(playerPresentation.setPosition).toHaveBeenLastCalledWith(200, 272);
+    expect(getFlightState(foundation)).toEqual({ positionY: 250, velocityY: 120 });
+    expect(playerPresentation.setPosition).toHaveBeenLastCalledWith(200, 205);
     expect(services.time.getDeltaSeconds()).toBeCloseTo(0.016);
 
     foundation.update(0, 0);
-    expect(getFlightState(foundation)).toEqual({ positionY: 272, velocityY: 0 });
+    expect(getFlightState(foundation)).toEqual({ positionY: 250, velocityY: 120 });
     expect(getRunMotionState(foundation)).toEqual({ distance: 123 });
   });
 

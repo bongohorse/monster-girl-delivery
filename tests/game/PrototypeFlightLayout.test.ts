@@ -2,56 +2,99 @@ import { describe, expect, it } from 'vitest';
 import {
   createPrototypeFlightBounds,
   getPrototypePlayerX,
-  PROTOTYPE_PLAYER_LOGICAL_VERTICAL_EXTENTS,
+  getPrototypeVerticalOffset,
+  PROTOTYPE_LOGICAL_FLIGHT_BOUNDS,
+  PROTOTYPE_LOGICAL_PLAYABLE_HEIGHT,
 } from '../../src/game/PrototypeFlightLayout';
 
 const ZERO_SAFE_AREA = { top: 0, right: 0, bottom: 0, left: 0 };
 
 describe('prototype flight layout', () => {
-  it('derives portrait bounds and player position from the safe viewport', () => {
-    const viewport = {
+  it('returns fixed logical flight bounds invariant to viewport height and orientation', () => {
+    const portraitViewport = {
       width: 400,
       height: 800,
       safeArea: { top: 24, right: 0, bottom: 34, left: 0 },
     };
+    const landscapeViewport = {
+      width: 844,
+      height: 390,
+      safeArea: { top: 0, right: 44, bottom: 21, left: 44 },
+    };
+    const desktopViewport = {
+      width: 1_280,
+      height: 720,
+      safeArea: ZERO_SAFE_AREA,
+    };
+    const tabletViewport = {
+      width: 1_024,
+      height: 768,
+      safeArea: ZERO_SAFE_AREA,
+    };
 
-    expect(createPrototypeFlightBounds(viewport)).toEqual({
-      ceilingY: 24 + PROTOTYPE_PLAYER_LOGICAL_VERTICAL_EXTENTS.top,
-      floorY: 800 - 34 - PROTOTYPE_PLAYER_LOGICAL_VERTICAL_EXTENTS.bottom,
-    });
-    expect(getPrototypePlayerX(viewport)).toBe(100);
+    expect(createPrototypeFlightBounds(portraitViewport)).toEqual(PROTOTYPE_LOGICAL_FLIGHT_BOUNDS);
+    expect(createPrototypeFlightBounds(landscapeViewport)).toEqual(PROTOTYPE_LOGICAL_FLIGHT_BOUNDS);
+    expect(createPrototypeFlightBounds(desktopViewport)).toEqual(PROTOTYPE_LOGICAL_FLIGHT_BOUNDS);
+    expect(createPrototypeFlightBounds(tabletViewport)).toEqual(PROTOTYPE_LOGICAL_FLIGHT_BOUNDS);
+    expect(createPrototypeFlightBounds()).toEqual({ ceilingY: 28, floorY: 362 });
   });
 
-  it('keeps landscape placement inside asymmetric horizontal safe areas', () => {
+  it('keeps horizontal player placement inside asymmetric horizontal safe areas', () => {
     const viewport = {
       width: 844,
       height: 390,
       safeArea: { top: 0, right: 44, bottom: 21, left: 44 },
     };
 
-    expect(createPrototypeFlightBounds(viewport)).toEqual({
-      ceilingY: 28,
-      floorY: 341,
-    });
     expect(getPrototypePlayerX(viewport)).toBe(233);
   });
 
-  it('retains the same viewport-relative placement with no safe-area insets', () => {
-    const viewport = { width: 400, height: 800, safeArea: ZERO_SAFE_AREA };
+  it('calculates vertical presentation offset to center the logical arena in the safe area', () => {
+    expect(
+      getPrototypeVerticalOffset({
+        height: PROTOTYPE_LOGICAL_PLAYABLE_HEIGHT,
+        safeArea: ZERO_SAFE_AREA,
+      }),
+    ).toBe(0);
 
-    expect(createPrototypeFlightBounds(viewport)).toEqual({ ceilingY: 28, floorY: 772 });
-    expect(getPrototypePlayerX(viewport)).toBe(100);
+    expect(
+      getPrototypeVerticalOffset({
+        height: 720,
+        safeArea: ZERO_SAFE_AREA,
+      }),
+    ).toBe(165);
+
+    expect(
+      getPrototypeVerticalOffset({
+        height: 768,
+        safeArea: ZERO_SAFE_AREA,
+      }),
+    ).toBe(189);
+
+    expect(
+      getPrototypeVerticalOffset({
+        height: 800,
+        safeArea: { top: 24, right: 0, bottom: 34, left: 0 },
+      }),
+    ).toBe(200);
+
+    expect(
+      getPrototypeVerticalOffset({
+        height: 390,
+        safeArea: { top: 0, right: 44, bottom: 21, left: 44 },
+      }),
+    ).toBe(-10);
   });
 
-  it('pins safely when the safe vertical span is shorter than the logical footprint', () => {
+  it('pins safely when logical extents exceed the logical playable height', () => {
     expect(
-      createPrototypeFlightBounds({
-        height: 60,
-        safeArea: { top: 10, right: 0, bottom: 10, left: 0 },
+      createPrototypeFlightBounds(undefined, {
+        top: 250,
+        bottom: 250,
       }),
     ).toEqual({
-      ceilingY: 30,
-      floorY: 30,
+      ceilingY: 195,
+      floorY: 195,
     });
   });
 });

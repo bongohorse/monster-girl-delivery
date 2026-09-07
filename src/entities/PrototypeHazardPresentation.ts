@@ -54,6 +54,7 @@ export class PrototypeHazardPresentation {
     runState: Readonly<RunMotionState>,
     playerScreenX: number,
     lifecycle: Readonly<TelegraphedHazardLifecycleState> | null = null,
+    verticalOffset = 0,
   ): void {
     const graphics = this.graphics;
 
@@ -65,6 +66,7 @@ export class PrototypeHazardPresentation {
       { hitbox: resolveHazardHitboxAtRunDistance(this.hazard, runState.distance) },
       runState,
       playerScreenX,
+      verticalOffset,
     );
 
     if (
@@ -89,6 +91,7 @@ export class PrototypeHazardPresentation {
           { hitbox: resolveTargetLockStrikeHitbox(this.hazard, target.positionY) },
           runState,
           playerScreenX,
+          verticalOffset,
         );
       }
 

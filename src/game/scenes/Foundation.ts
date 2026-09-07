@@ -38,7 +38,11 @@ import {
   constrainVerticalFlightState,
   stepVerticalFlight,
 } from '../../systems/VerticalFlightSimulation';
-import { createPrototypeFlightBounds, getPrototypePlayerX } from '../PrototypeFlightLayout';
+import {
+  createPrototypeFlightBounds,
+  getPrototypePlayerX,
+  getPrototypeVerticalOffset,
+} from '../PrototypeFlightLayout';
 
 const RUNNING_INSTRUCTIONS =
   'M4 moving, timed + target-lock hazards\nHold touch, mouse, or Space to thrust.';
@@ -155,7 +159,7 @@ export class Foundation extends Scene {
     this.playerPresentation = new PrototypePlayerPresentation(
       this,
       getPrototypePlayerX(viewport),
-      this.runState.flight.positionY,
+      this.runState.flight.positionY + getPrototypeVerticalOffset(viewport),
     );
 
     this.cameras.main.setBackgroundColor(0x121426);
@@ -415,6 +419,7 @@ export class Foundation extends Scene {
 
   private renderRun(viewport: ReturnType<ViewportService['getSnapshot']>): void {
     const playerScreenX = getPrototypePlayerX(viewport);
+    const verticalOffset = getPrototypeVerticalOffset(viewport);
 
     this.scrollingWorldPresentation?.render(this.runState.motion.distance, viewport);
     this.generatedHazardPresentation?.sync(
@@ -422,8 +427,12 @@ export class Foundation extends Scene {
       this.runState.motion,
       playerScreenX,
       this.telegraphedHazardState,
+      verticalOffset,
     );
-    this.playerPresentation?.setPosition(playerScreenX, this.runState.flight.positionY);
+    this.playerPresentation?.setPosition(
+      playerScreenX,
+      this.runState.flight.positionY + verticalOffset,
+    );
   }
 
   private readonly handleShutdown = (): void => {
