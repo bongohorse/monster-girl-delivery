@@ -55,7 +55,7 @@ describe('Issue #177: viewport-height-dependent permanent floor safe lane regres
     throw new Error('Expected corridor-bottom fixture in PROTOTYPE_CORRIDOR_PATTERN.');
   }
 
-  it('keeps logical flight bounds invariant to physical viewport height and safe areas', () => {
+  it('preserves the authored floor while allowing a higher ceiling on taller viewports', () => {
     const viewports = [
       VIEWPORT_BASELINE_PHONE,
       VIEWPORT_TALL_DESKTOP,
@@ -66,8 +66,7 @@ describe('Issue #177: viewport-height-dependent permanent floor safe lane regres
 
     for (const vp of viewports) {
       const bounds = createPrototypeFlightBounds(vp);
-      expect(bounds).toEqual(PROTOTYPE_LOGICAL_FLIGHT_BOUNDS);
-      expect(bounds.ceilingY).toBe(28);
+      expect(bounds.ceilingY).toBeLessThanOrEqual(28);
       expect(bounds.floorY).toBe(362);
     }
   });
@@ -161,9 +160,9 @@ describe('Issue #177: viewport-height-dependent permanent floor safe lane regres
   it('preserves exact presentation-simulation collision alignment via unified vertical projection', () => {
     const viewports = [
       { vp: VIEWPORT_BASELINE_PHONE, expectedScale: 1, expectedOffset: 0 },
-      { vp: VIEWPORT_TALL_DESKTOP, expectedScale: 1, expectedOffset: 165 },
-      { vp: VIEWPORT_TABLET, expectedScale: 1, expectedOffset: 189 },
-      { vp: VIEWPORT_ULTRAWIDE_1080P, expectedScale: 1, expectedOffset: 345 },
+      { vp: VIEWPORT_TALL_DESKTOP, expectedScale: 1, expectedOffset: 330 },
+      { vp: VIEWPORT_TABLET, expectedScale: 1, expectedOffset: 378 },
+      { vp: VIEWPORT_ULTRAWIDE_1080P, expectedScale: 1, expectedOffset: 690 },
       {
         vp: new ViewportService(800, 300).getSnapshot(),
         expectedScale: 300 / 390,
@@ -228,10 +227,10 @@ describe('Issue #177: viewport-height-dependent permanent floor safe lane regres
 
     // Logical ground is at 390 - 12 = 378
     expect(baselineLayout.groundTopY).toBe(378);
-    // On 720p: verticalOffset 165 + 378 = 543
-    expect(tallLayout.groundTopY).toBe(543);
-    // On 768p: verticalOffset 189 + 378 = 567
-    expect(tabletLayout.groundTopY).toBe(567);
+    // On 720p: bottom anchor 330 + 378 = 708
+    expect(tallLayout.groundTopY).toBe(708);
+    // On 768p: bottom anchor 378 + 378 = 756
+    expect(tabletLayout.groundTopY).toBe(756);
     // On 300p: 378 * (300 / 390) = 290.769...
     expect(shortLayout.groundTopY).toBeCloseTo(378 * (300 / 390), 2);
 
@@ -256,8 +255,8 @@ describe('Issue #177: viewport-height-dependent permanent floor safe lane regres
     expect(shortLayout.groundTopY - playerScreenY).toBeCloseTo(16 * shortProjection.scaleY, 2);
   });
 
-  it('verifies coordinate domain parity between pattern validation, reachability, hazard templates, and flight bounds', () => {
-    // 1. Fixed domain size
+  it('retains the authored baseline for pattern validation, reachability and hazard templates', () => {
+    // 1. Authored baseline size (live tall viewports additionally expose negative Y)
     expect(PROTOTYPE_LOGICAL_PLAYABLE_HEIGHT).toBe(390);
 
     // 2. Flight bounds and vertical extents
@@ -381,9 +380,9 @@ describe('Issue #177: viewport-height-dependent permanent floor safe lane regres
     ];
 
     for (const { name, vp } of testViewports) {
-      // 1. Simulation invariant: bounds never change
+      // 1. Floor remains fixed; taller viewports extend the ceiling
       const bounds = createPrototypeFlightBounds(vp);
-      expect(bounds, `${name}: flight bounds`).toEqual(PROTOTYPE_LOGICAL_FLIGHT_BOUNDS);
+      expect(bounds.floorY, `${name}: floor`).toBe(PROTOTYPE_LOGICAL_FLIGHT_BOUNDS.floorY);
 
       const projection = getPrototypeVerticalProjection(vp);
       expect(projection.scaleY, `${name}: scaleY must be positive`).toBeGreaterThan(0);
@@ -392,10 +391,10 @@ describe('Issue #177: viewport-height-dependent permanent floor safe lane regres
       const safeTop = Math.min(vp.height, vp.safeArea.top);
       const safeBottom = vp.height - Math.min(vp.height - safeTop, vp.safeArea.bottom);
 
-      // 2. Player presentation bounds at ceiling (positionY = 28)
-      const playerCeilingY = projectLogicalYToScreen(28, projection);
-      const playerCeilingCollisionTop = projectLogicalYToScreen(28 - 24, projection);
-      const playerCeilingVisualTop = projectLogicalYToScreen(0, projection);
+      // 2. Player body and collision bounds at the actual dynamic ceiling
+      const playerCeilingY = projectLogicalYToScreen(bounds.ceilingY, projection);
+      const playerCeilingCollisionTop = projectLogicalYToScreen(bounds.ceilingY - 24, projection);
+      const playerCeilingVisualTop = projectLogicalYToScreen(bounds.ceilingY - 28, projection);
 
       expect(playerCeilingY, `${name}: player ceiling Y >= safeTop`).toBeGreaterThanOrEqual(
         safeTop - 1e-6,

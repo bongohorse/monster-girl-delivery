@@ -16,10 +16,10 @@ export const PROTOTYPE_PLAYER_LOGICAL_VERTICAL_EXTENTS: Readonly<PrototypePlayer
     bottom: 28,
   });
 
-/** Fixed logical height of the gameplay world and simulation domain. */
+/** Authored hazard baseline and minimum logical height fitted into short viewports. */
 export const PROTOTYPE_LOGICAL_PLAYABLE_HEIGHT = 390;
 
-/** Authoritative flight bounds in fixed logical space; invariant to physical viewport height. */
+/** Baseline bounds for authored content; live viewports may extend the ceiling upward. */
 export const PROTOTYPE_LOGICAL_FLIGHT_BOUNDS: Readonly<VerticalFlightBounds> = Object.freeze({
   ceilingY: PROTOTYPE_PLAYER_LOGICAL_VERTICAL_EXTENTS.top,
   floorY: PROTOTYPE_LOGICAL_PLAYABLE_HEIGHT - PROTOTYPE_PLAYER_LOGICAL_VERTICAL_EXTENTS.bottom,
@@ -30,23 +30,27 @@ const PLAYER_X_FRACTION = 0.25;
 const sanitizeExtent = (value: number): number => (Number.isFinite(value) ? Math.max(0, value) : 0);
 
 /**
- * Returns non-lethal flight limits in the authoritative logical gameplay domain.
- * Viewport height does not alter logical flight limits, preserving hazard fairness across devices.
+ * Adds actual flight room above the authored baseline on taller viewports.
+ * The floor and existing hazard coordinates stay fixed together, preserving floor collisions.
+ * Negative logical Y is valid in the extra space; physics still uses ordinary logical units.
  */
 export const createPrototypeFlightBounds = (
-  _viewport?: Pick<ViewportSnapshot, 'height' | 'safeArea'>,
+  viewport?: Pick<ViewportSnapshot, 'height' | 'safeArea'>,
   extents: Readonly<PrototypePlayerLogicalVerticalExtents> = PROTOTYPE_PLAYER_LOGICAL_VERTICAL_EXTENTS,
 ): VerticalFlightBounds => {
   const top = sanitizeExtent(extents.top);
   const bottom = sanitizeExtent(extents.bottom);
-  const ceilingY = top;
+  const extraHeight = viewport
+    ? Math.max(0, getSafeVerticalArea(viewport).height - PROTOTYPE_LOGICAL_PLAYABLE_HEIGHT)
+    : 0;
+  const ceilingY = top - extraHeight;
   const floorY = PROTOTYPE_LOGICAL_PLAYABLE_HEIGHT - bottom;
 
   if (ceilingY <= floorY) {
     return { ceilingY, floorY };
   }
 
-  const pinnedY = PROTOTYPE_LOGICAL_PLAYABLE_HEIGHT / 2;
+  const pinnedY = (PROTOTYPE_LOGICAL_PLAYABLE_HEIGHT - extraHeight) / 2;
   return { ceilingY: pinnedY, floorY: pinnedY };
 };
 
@@ -76,19 +80,25 @@ export const resolveVerticalProjection = (
   return projectionOrOffset;
 };
 
-/**
- * Projects the fixed 390px logical gameplay arena into the presentation safe viewport.
- * When safeHeight >= 390, centers the arena at 1:1 scale (scaleY = 1).
- * When safeHeight < 390, scales the arena down so the entire flight corridor fits on-screen.
- */
-export const getPrototypeVerticalProjection = (
+const getSafeVerticalArea = (
   viewport: Pick<ViewportSnapshot, 'height' | 'safeArea'>,
-): PrototypeVerticalProjection => {
+) => {
   const height = sanitizeExtent(viewport.height);
   const safeTop = Math.min(height, sanitizeExtent(viewport.safeArea.top));
   const safeBottomInset = Math.min(height - safeTop, sanitizeExtent(viewport.safeArea.bottom));
   const safeBottom = height - safeBottomInset;
-  const safeHeight = Math.max(0, safeBottom - safeTop);
+  return { top: safeTop, height: Math.max(0, safeBottom - safeTop) };
+};
+
+/**
+ * Anchors the authored floor at the safe bottom edge. Taller viewports expose more world above
+ * it at 1:1 scale; short viewports retain the existing fit-down of the minimum authored corridor.
+ * Player, hazards and ground share this projection, including during live resize.
+ */
+export const getPrototypeVerticalProjection = (
+  viewport: Pick<ViewportSnapshot, 'height' | 'safeArea'>,
+): PrototypeVerticalProjection => {
+  const { top: safeTop, height: safeHeight } = getSafeVerticalArea(viewport);
 
   if (safeHeight <= 0) {
     return { offsetY: 0, scaleY: 1 };
@@ -102,7 +112,7 @@ export const getPrototypeVerticalProjection = (
   }
 
   return {
-    offsetY: Math.round(safeTop + (safeHeight - PROTOTYPE_LOGICAL_PLAYABLE_HEIGHT) / 2),
+    offsetY: safeTop + safeHeight - PROTOTYPE_LOGICAL_PLAYABLE_HEIGHT,
     scaleY: 1,
   };
 };
