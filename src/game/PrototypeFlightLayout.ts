@@ -50,21 +50,83 @@ export const createPrototypeFlightBounds = (
   return { ceilingY: pinnedY, floorY: pinnedY };
 };
 
+export interface PrototypeVerticalProjection {
+  readonly offsetY: number;
+  readonly scaleY: number;
+}
+
+export type PrototypeVerticalOffsetOrProjection = number | Readonly<PrototypeVerticalProjection>;
+
+export const resolveVerticalProjection = (
+  projectionOrOffset: PrototypeVerticalOffsetOrProjection = 0,
+): PrototypeVerticalProjection => {
+  if (typeof projectionOrOffset === 'number') {
+    if (!Number.isFinite(projectionOrOffset)) {
+      throw new RangeError('Vertical offset must be a finite number.');
+    }
+    return { offsetY: projectionOrOffset, scaleY: 1 };
+  }
+  if (
+    !Number.isFinite(projectionOrOffset.offsetY) ||
+    !Number.isFinite(projectionOrOffset.scaleY) ||
+    projectionOrOffset.scaleY <= 0
+  ) {
+    throw new RangeError('Vertical projection must have finite values and positive scaleY.');
+  }
+  return projectionOrOffset;
+};
+
 /**
  * Projects the fixed 390px logical gameplay arena into the presentation safe viewport.
- * Vertically centers the arena within the safe area.
+ * When safeHeight >= 390, centers the arena at 1:1 scale (scaleY = 1).
+ * When safeHeight < 390, scales the arena down so the entire flight corridor fits on-screen.
  */
-export const getPrototypeVerticalOffset = (
+export const getPrototypeVerticalProjection = (
   viewport: Pick<ViewportSnapshot, 'height' | 'safeArea'>,
-): number => {
+): PrototypeVerticalProjection => {
   const height = sanitizeExtent(viewport.height);
   const safeTop = Math.min(height, sanitizeExtent(viewport.safeArea.top));
   const safeBottomInset = Math.min(height - safeTop, sanitizeExtent(viewport.safeArea.bottom));
   const safeBottom = height - safeBottomInset;
   const safeHeight = Math.max(0, safeBottom - safeTop);
 
-  return Math.round(safeTop + (safeHeight - PROTOTYPE_LOGICAL_PLAYABLE_HEIGHT) / 2);
+  if (safeHeight <= 0) {
+    return { offsetY: 0, scaleY: 1 };
+  }
+
+  if (safeHeight < PROTOTYPE_LOGICAL_PLAYABLE_HEIGHT) {
+    return {
+      offsetY: safeTop,
+      scaleY: safeHeight / PROTOTYPE_LOGICAL_PLAYABLE_HEIGHT,
+    };
+  }
+
+  return {
+    offsetY: Math.round(safeTop + (safeHeight - PROTOTYPE_LOGICAL_PLAYABLE_HEIGHT) / 2),
+    scaleY: 1,
+  };
 };
+
+/**
+ * Projects a logical vertical coordinate to presentation screen space.
+ */
+export const projectLogicalYToScreen = (
+  logicalY: number,
+  projectionOrOffset: PrototypeVerticalOffsetOrProjection = 0,
+): number => {
+  if (!Number.isFinite(logicalY)) {
+    throw new RangeError('logicalY must be a finite number.');
+  }
+  const projection = resolveVerticalProjection(projectionOrOffset);
+  return projection.offsetY + logicalY * projection.scaleY;
+};
+
+/**
+ * Returns the vertical presentation offset (screen top anchor) for the logical arena.
+ */
+export const getPrototypeVerticalOffset = (
+  viewport: Pick<ViewportSnapshot, 'height' | 'safeArea'>,
+): number => getPrototypeVerticalProjection(viewport).offsetY;
 
 /** Keeps the prototype anchor inside the horizontal safe area in either orientation. */
 export const getPrototypePlayerX = (

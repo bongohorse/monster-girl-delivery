@@ -53,12 +53,17 @@ describe('Prototype scrolling-world layout', () => {
     }).getSnapshot();
     const safeAreaLayout = createPrototypeScrollingWorldLayout(safeAreaViewport, 0);
 
-    expect(safeAreaLayout.groundTopY).toBe(373);
+    expect(safeAreaLayout.groundTopY).toBeCloseTo(357.92, 1);
     expect(safeAreaLayout.buildings.every((building) => building.y >= 10)).toBe(true);
 
     const tallViewport = new ViewportService(1_280, 720).getSnapshot();
     const tallLayout = createPrototypeScrollingWorldLayout(tallViewport, 0);
     expect(tallLayout.groundTopY).toBe(543);
+
+    const shortViewport = new ViewportService(800, 300).getSnapshot();
+    const shortLayout = createPrototypeScrollingWorldLayout(shortViewport, 0);
+    expect(shortLayout.groundTopY).toBeCloseTo(378 * (300 / 390), 2);
+    expect(shortLayout.buildings.every((building) => building.y >= 0)).toBe(true);
   });
 
   it('rejects invalid wrapping inputs', () => {

@@ -1,3 +1,7 @@
+import {
+  type PrototypeVerticalOffsetOrProjection,
+  projectLogicalYToScreen,
+} from '../game/PrototypeFlightLayout';
 import type { LogicalHitbox } from '../systems/HazardCollision';
 import type { RunMotionState } from '../systems/RunMotionSimulation';
 
@@ -24,22 +28,16 @@ export const PROTOTYPE_PLACEHOLDER_HAZARD: Readonly<PrototypePlaceholderHazard> 
 
 /**
  * Projects a world-space hazard hitbox into presentation space. Horizontal motion comes only from
- * run progress; playerScreenX and verticalOffset are presentation anchors and do not participate in collision.
+ * run progress; playerScreenX and vertical projection are presentation anchors and do not participate in collision.
  */
 export const projectHazardHitboxToScreen = (
   hazard: Pick<PrototypePlaceholderHazard, 'hitbox'>,
   runState: Readonly<RunMotionState>,
   playerScreenX: number,
-  verticalOffset = 0,
+  verticalProjection: PrototypeVerticalOffsetOrProjection = 0,
 ): LogicalHitbox => {
-  if (
-    !Number.isFinite(runState.distance) ||
-    !Number.isFinite(playerScreenX) ||
-    !Number.isFinite(verticalOffset)
-  ) {
-    throw new RangeError(
-      'Run distance, player screen position, and vertical offset must be finite.',
-    );
+  if (!Number.isFinite(runState.distance) || !Number.isFinite(playerScreenX)) {
+    throw new RangeError('Run distance and player screen position must be finite.');
   }
 
   const horizontalOffset = playerScreenX - runState.distance;
@@ -47,7 +45,7 @@ export const projectHazardHitboxToScreen = (
   return {
     left: hazard.hitbox.left + horizontalOffset,
     right: hazard.hitbox.right + horizontalOffset,
-    top: hazard.hitbox.top + verticalOffset,
-    bottom: hazard.hitbox.bottom + verticalOffset,
+    top: projectLogicalYToScreen(hazard.hitbox.top, verticalProjection),
+    bottom: projectLogicalYToScreen(hazard.hitbox.bottom, verticalProjection),
   };
 };

@@ -1,4 +1,5 @@
 import type { Scene } from 'phaser';
+import type { PrototypeVerticalOffsetOrProjection } from '../game/PrototypeFlightLayout';
 import {
   getLogicalHazardSpawnIdentity,
   type LogicalHazardSpawnInstance,
@@ -26,7 +27,7 @@ export class GeneratedHazardPresentation {
     runState: Readonly<RunMotionState>,
     playerScreenX: number,
     telegraphedHazards: Readonly<TelegraphedHazardSimulationState>,
-    verticalOffset = 0,
+    verticalProjection: PrototypeVerticalOffsetOrProjection = 0,
   ): void {
     if (this.destroyed) {
       return;
@@ -48,7 +49,7 @@ export class GeneratedHazardPresentation {
         runState,
         playerScreenX,
         getTelegraphedHazardLifecycle(telegraphedHazards, spawn),
-        verticalOffset,
+        verticalProjection,
       );
     }
 

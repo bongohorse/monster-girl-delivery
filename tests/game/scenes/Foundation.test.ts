@@ -3,7 +3,8 @@ import { createAppServices } from '../../../src/core/AppServices';
 import { ViewportService } from '../../../src/core/ViewportService';
 import {
   createPrototypeFlightBounds,
-  getPrototypeVerticalOffset,
+  getPrototypeVerticalProjection,
+  projectLogicalYToScreen,
 } from '../../../src/game/PrototypeFlightLayout';
 import { Foundation } from '../../../src/game/scenes/Foundation';
 import { PROTOTYPE_PATTERN_REACHABILITY_CONTEXT } from '../../../src/generation/FlightReachability';
@@ -104,7 +105,7 @@ const createFoundationHarness = () => {
   instructions.setPosition.mockReturnValue(instructions);
   instructions.setText.mockReturnValue(instructions);
   instructions.setWordWrapWidth.mockReturnValue(instructions);
-  const playerPresentation = { destroy: vi.fn(), setPosition: vi.fn() };
+  const playerPresentation = { destroy: vi.fn(), setPosition: vi.fn(), setScale: vi.fn() };
   const scrollingWorldPresentation = { destroy: vi.fn(), render: vi.fn() };
   const scaleOff = vi.fn();
   const cameraResize = vi.fn();
@@ -276,7 +277,14 @@ describe('Foundation scene gameplay orchestration', () => {
     expect(actual.velocityY).toBeCloseTo(expected.velocityY);
     expect(playerPresentation.setPosition).toHaveBeenLastCalledWith(
       100,
-      expected.positionY + getPrototypeVerticalOffset(viewportService.getSnapshot()),
+      projectLogicalYToScreen(
+        expected.positionY,
+        getPrototypeVerticalProjection(viewportService.getSnapshot()),
+      ),
+    );
+    expect(playerPresentation.setScale).toHaveBeenLastCalledWith(
+      1,
+      getPrototypeVerticalProjection(viewportService.getSnapshot()).scaleY,
     );
     expect(getRunMotionState(foundation)).toEqual(expectedRunMotion);
     expect(scrollingWorldPresentation.render).toHaveBeenLastCalledWith(
@@ -288,7 +296,7 @@ describe('Foundation scene gameplay orchestration', () => {
       expectedRunMotion,
       100,
       getTelegraphedHazardState(foundation),
-      getPrototypeVerticalOffset(viewportService.getSnapshot()),
+      getPrototypeVerticalProjection(viewportService.getSnapshot()),
     );
     expect(directorPanel.update).toHaveBeenLastCalledWith(
       1_000,
@@ -474,7 +482,7 @@ describe('Foundation scene gameplay orchestration', () => {
       { distance: 0 },
       100,
       getTelegraphedHazardState(foundation),
-      expect.any(Number),
+      { offsetY: expect.any(Number), scaleY: expect.any(Number) },
     );
   });
 
@@ -523,7 +531,11 @@ describe('Foundation scene gameplay orchestration', () => {
     handleResize({ width: 800, height: 300 });
 
     expect(getFlightState(foundation)).toEqual({ positionY: 250, velocityY: 120 });
-    expect(playerPresentation.setPosition).toHaveBeenLastCalledWith(200, 205);
+    expect(playerPresentation.setPosition).toHaveBeenLastCalledWith(
+      200,
+      projectLogicalYToScreen(250, getPrototypeVerticalProjection(viewportService.getSnapshot())),
+    );
+    expect(playerPresentation.setScale).toHaveBeenLastCalledWith(1, 300 / 390);
     expect(services.time.getDeltaSeconds()).toBeCloseTo(0.016);
 
     foundation.update(0, 0);

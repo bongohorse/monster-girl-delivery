@@ -46,6 +46,10 @@ export class PrototypePlayerPresentation {
     this.graphics?.setPosition(x, y);
   }
 
+  setScale(x: number, y: number): void {
+    this.graphics?.setScale(x, y);
+  }
+
   destroy(): void {
     const graphics = this.graphics;
 
