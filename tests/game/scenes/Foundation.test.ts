@@ -546,9 +546,10 @@ describe('Foundation scene gameplay orchestration', () => {
   it('flies into the added upper room and clamps on shrink without resetting the run', () => {
     const { foundation, services, playerPresentation } = createFoundationHarness();
     vi.stubGlobal('document', { getElementById: vi.fn(() => null) });
-    const handleResize = Reflect.get(foundation, 'handleResize') as (
-      size: { width: number; height: number },
-    ) => void;
+    const handleResize = Reflect.get(foundation, 'handleResize') as (size: {
+      width: number;
+      height: number;
+    }) => void;
     handleResize({ width: 1280, height: 720 });
     services.input.setSpaceHeld(true);
 

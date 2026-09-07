@@ -80,9 +80,7 @@ export const resolveVerticalProjection = (
   return projectionOrOffset;
 };
 
-const getSafeVerticalArea = (
-  viewport: Pick<ViewportSnapshot, 'height' | 'safeArea'>,
-) => {
+const getSafeVerticalArea = (viewport: Pick<ViewportSnapshot, 'height' | 'safeArea'>) => {
   const height = sanitizeExtent(viewport.height);
   const safeTop = Math.min(height, sanitizeExtent(viewport.safeArea.top));
   const safeBottomInset = Math.min(height - safeTop, sanitizeExtent(viewport.safeArea.bottom));
