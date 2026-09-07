@@ -11,6 +11,7 @@ const createSceneFake = () => {
     lineStyle: vi.fn(),
     setDepth: vi.fn(),
     setPosition: vi.fn(),
+    setScale: vi.fn(),
     strokeRoundedRect: vi.fn(),
   };
 
@@ -21,6 +22,7 @@ const createSceneFake = () => {
     graphics.lineStyle,
     graphics.setDepth,
     graphics.setPosition,
+    graphics.setScale,
     graphics.strokeRoundedRect,
   ]) {
     method.mockReturnValue(graphics);

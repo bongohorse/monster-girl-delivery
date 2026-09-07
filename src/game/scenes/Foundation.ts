@@ -38,7 +38,12 @@ import {
   constrainVerticalFlightState,
   stepVerticalFlight,
 } from '../../systems/VerticalFlightSimulation';
-import { createPrototypeFlightBounds, getPrototypePlayerX } from '../PrototypeFlightLayout';
+import {
+  createPrototypeFlightBounds,
+  getPrototypePlayerX,
+  getPrototypeVerticalProjection,
+  projectLogicalYToScreen,
+} from '../PrototypeFlightLayout';
 
 const RUNNING_INSTRUCTIONS =
   'M4 moving, timed + target-lock hazards\nHold touch, mouse, or Space to thrust.';
@@ -152,11 +157,13 @@ export class Foundation extends Scene {
     this.services.input.releaseAll();
     this.scrollingWorldPresentation = new PrototypeScrollingWorldPresentation(this);
     this.generatedHazardPresentation = new GeneratedHazardPresentation(this);
+    const initialProjection = getPrototypeVerticalProjection(viewport);
     this.playerPresentation = new PrototypePlayerPresentation(
       this,
       getPrototypePlayerX(viewport),
-      this.runState.flight.positionY,
+      projectLogicalYToScreen(this.runState.flight.positionY, initialProjection),
     );
+    this.playerPresentation?.setScale?.(1, initialProjection.scaleY);
 
     this.cameras.main.setBackgroundColor(0x121426);
     this.title = this.add
@@ -415,6 +422,7 @@ export class Foundation extends Scene {
 
   private renderRun(viewport: ReturnType<ViewportService['getSnapshot']>): void {
     const playerScreenX = getPrototypePlayerX(viewport);
+    const projection = getPrototypeVerticalProjection(viewport);
 
     this.scrollingWorldPresentation?.render(this.runState.motion.distance, viewport);
     this.generatedHazardPresentation?.sync(
@@ -422,8 +430,13 @@ export class Foundation extends Scene {
       this.runState.motion,
       playerScreenX,
       this.telegraphedHazardState,
+      projection,
     );
-    this.playerPresentation?.setPosition(playerScreenX, this.runState.flight.positionY);
+    this.playerPresentation?.setPosition(
+      playerScreenX,
+      projectLogicalYToScreen(this.runState.flight.positionY, projection),
+    );
+    this.playerPresentation?.setScale?.(1, projection.scaleY);
   }
 
   private readonly handleShutdown = (): void => {

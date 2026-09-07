@@ -1,5 +1,9 @@
 import type { GameObjects, Scene } from 'phaser';
 import {
+  type PrototypeVerticalOffsetOrProjection,
+  resolveVerticalProjection,
+} from '../game/PrototypeFlightLayout';
+import {
   isBehavioralLogicalHazard,
   isTargetLockStrikeHazardBehavior,
   isTelegraphedHazardBehavior,
@@ -54,6 +58,7 @@ export class PrototypeHazardPresentation {
     runState: Readonly<RunMotionState>,
     playerScreenX: number,
     lifecycle: Readonly<TelegraphedHazardLifecycleState> | null = null,
+    verticalProjection: PrototypeVerticalOffsetOrProjection = 0,
   ): void {
     const graphics = this.graphics;
 
@@ -61,10 +66,13 @@ export class PrototypeHazardPresentation {
       return;
     }
 
+    const projection = resolveVerticalProjection(verticalProjection);
+
     let screenHitbox = projectHazardHitboxToScreen(
       { hitbox: resolveHazardHitboxAtRunDistance(this.hazard, runState.distance) },
       runState,
       playerScreenX,
+      projection,
     );
 
     if (
@@ -89,6 +97,7 @@ export class PrototypeHazardPresentation {
           { hitbox: resolveTargetLockStrikeHitbox(this.hazard, target.positionY) },
           runState,
           playerScreenX,
+          projection,
         );
       }
 
@@ -99,13 +108,14 @@ export class PrototypeHazardPresentation {
         screenHitbox = {
           left: centerX + geometry.leftOffset,
           right: centerX + geometry.rightOffset,
-          top: centerY + geometry.topOffset,
-          bottom: centerY + geometry.bottomOffset,
+          top: centerY + geometry.topOffset * projection.scaleY,
+          bottom: centerY + geometry.bottomOffset * projection.scaleY,
         };
       }
     }
 
     graphics.setPosition(screenHitbox.left, screenHitbox.top);
+    graphics.setScale?.(1, projection.scaleY);
   }
 
   private drawTelegraphedPhase(phase: TelegraphedHazardPhase): void {

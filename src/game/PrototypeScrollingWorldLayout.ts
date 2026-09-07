@@ -1,4 +1,9 @@
 import type { ViewportSnapshot } from '../core/ViewportService';
+import {
+  getPrototypeVerticalProjection,
+  PROTOTYPE_LOGICAL_PLAYABLE_HEIGHT,
+  projectLogicalYToScreen,
+} from './PrototypeFlightLayout';
 
 const BUILDING_SPACING = 128;
 const BUILDING_WIDTH = 104;
@@ -51,9 +56,12 @@ export const createPrototypeScrollingWorldLayout = (
   const width = sanitizeExtent(viewport.width);
   const height = sanitizeExtent(viewport.height);
   const safeTop = Math.min(height, sanitizeExtent(viewport.safeArea.top));
-  const safeBottomInset = Math.min(height - safeTop, sanitizeExtent(viewport.safeArea.bottom));
-  const safeBottom = height - safeBottomInset;
-  const groundTopY = Math.max(safeTop, safeBottom - GROUND_HEIGHT);
+  const projection = getPrototypeVerticalProjection(viewport);
+  const logicalGroundTopY = PROTOTYPE_LOGICAL_PLAYABLE_HEIGHT - GROUND_HEIGHT;
+  const groundTopY = Math.max(
+    safeTop,
+    Math.min(height, projectLogicalYToScreen(logicalGroundTopY, projection)),
+  );
   const availableBuildingHeight = Math.max(0, groundTopY - safeTop);
   const buildings: PrototypeWorldBuilding[] = [];
   const groundMarkers: PrototypeWorldGroundMarker[] = [];
@@ -63,8 +71,9 @@ export const createPrototypeScrollingWorldLayout = (
     const buildingCount = Math.ceil((width + BUILDING_REPEAT_WIDTH) / BUILDING_SPACING) + 1;
 
     for (let index = 0; index < buildingCount; index += 1) {
+      const rawHeight = BUILDING_HEIGHT_PATTERN[index % BUILDING_HEIGHT_PATTERN.length] ?? 0;
       const buildingHeight = Math.min(
-        BUILDING_HEIGHT_PATTERN[index % BUILDING_HEIGHT_PATTERN.length] ?? 0,
+        Math.round(rawHeight * projection.scaleY),
         availableBuildingHeight,
       );
 
