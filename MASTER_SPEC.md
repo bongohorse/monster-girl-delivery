@@ -160,6 +160,19 @@ Physical screen size must not directly determine gameplay fairness.
 
 Landscape is the core target orientation, but viewport systems must still handle resize and different Landscape aspect ratios. Selecting Landscape as a product target does not itself require a runtime orientation lock.
 
+### PROTOTYPE — dynamic vertical flight room
+
+The Director selected actual additional flight room on taller windows, keeping the player roughly
+the same size rather than enlarging the whole scene. Above the 390-unit authored baseline, every
+additional safe CSS pixel extends the flight ceiling upward at 1:1 scale. The floor stays at the
+safe bottom edge. Short windows retain the existing fit-down of the baseline corridor. Canvas
+backing-store pixel density does not add flight room.
+
+This is a staged layout change: flight tuning and hazard distribution will be adjusted separately.
+Existing hazards remain anchored to the authored lower band, so the extra upper space can currently
+be used to avoid them, including the target-lock strike's limited target band. Cross-device gameplay
+equivalence is not claimed for this prototype. Horizontal reaction-time scheduling remains unchanged.
+
 ### Fairness principle
 
 Additional visible area must not accidentally grant a large reaction-time advantage.

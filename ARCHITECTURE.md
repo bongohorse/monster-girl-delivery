@@ -175,6 +175,19 @@ Requirements:
 
 Gameplay geometry and UI safe areas are related but distinct concerns.
 
+`PrototypeFlightLayout` owns the current dynamic vertical prototype. The authored baseline is 390
+logical units with a fixed floor anchor at 362. For safe viewport heights above 390, it extends the
+ceiling from 28 upward by the extra height and translates presentation by that same amount. Negative
+logical Y is valid. This keeps player/hazard sizes, floor collisions and ground alignment intact
+while using the full safe height. Short viewports retain the existing baseline fit-down. Foundation
+uses these bounds for stepping and resize clamping without resetting run distance, PRNG or lifecycle
+state; a restart initializes the player at the current corridor's center.
+
+This implements the Director's staged viewport decision, not a hazard rebalance. Generation and
+reachability still validate the authored baseline, and hazards remain in its lower band. Their
+existing validation evidence does not certify the expanded flight domain or cross-device gameplay
+equivalence; covering that space belongs to the subsequent hazard/flight work.
+
 A larger physical viewport must not accidentally grant a large gameplay reaction-time advantage.
 
 M4 hazard-approach scheduling converts a typed **PROTOTYPE** minimum reaction time and the authoritative run-speed snapshot into a logical distance horizon. Viewport width is not an input. Accepted hazards keep immutable positions and scheduling-time timing snapshots when speed changes. A deterministic transition boundary rejects a requested speed increase unless every scheduled future hazard still meets the minimum reaction time; the current applied speed remains authoritative when rejected. An accepted larger horizon pushes only the unscheduled cursor far enough to preserve the new minimum, while decreases apply immediately and retain extra lead. The structured decision exposes the limiting target and maximum safe speed for later diagnostics without teleporting existing hazards.

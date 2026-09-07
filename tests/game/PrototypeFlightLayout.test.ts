@@ -13,7 +13,7 @@ import {
 const ZERO_SAFE_AREA = { top: 0, right: 0, bottom: 0, left: 0 };
 
 describe('prototype flight layout', () => {
-  it('returns fixed logical flight bounds invariant to viewport height and orientation', () => {
+  it('extends the ceiling with safe height while keeping the authored floor fixed', () => {
     const portraitViewport = {
       width: 400,
       height: 800,
@@ -35,10 +35,10 @@ describe('prototype flight layout', () => {
       safeArea: ZERO_SAFE_AREA,
     };
 
-    expect(createPrototypeFlightBounds(portraitViewport)).toEqual(PROTOTYPE_LOGICAL_FLIGHT_BOUNDS);
+    expect(createPrototypeFlightBounds(portraitViewport)).toEqual({ ceilingY: -324, floorY: 362 });
     expect(createPrototypeFlightBounds(landscapeViewport)).toEqual(PROTOTYPE_LOGICAL_FLIGHT_BOUNDS);
-    expect(createPrototypeFlightBounds(desktopViewport)).toEqual(PROTOTYPE_LOGICAL_FLIGHT_BOUNDS);
-    expect(createPrototypeFlightBounds(tabletViewport)).toEqual(PROTOTYPE_LOGICAL_FLIGHT_BOUNDS);
+    expect(createPrototypeFlightBounds(desktopViewport)).toEqual({ ceilingY: -302, floorY: 362 });
+    expect(createPrototypeFlightBounds(tabletViewport)).toEqual({ ceilingY: -350, floorY: 362 });
     expect(createPrototypeFlightBounds()).toEqual({ ceilingY: 28, floorY: 362 });
   });
 
@@ -52,7 +52,7 @@ describe('prototype flight layout', () => {
     expect(getPrototypePlayerX(viewport)).toBe(233);
   });
 
-  it('calculates vertical presentation offset to center the logical arena in the safe area', () => {
+  it('anchors the authored floor to the safe bottom without enlarging the player', () => {
     expect(
       getPrototypeVerticalOffset({
         height: PROTOTYPE_LOGICAL_PLAYABLE_HEIGHT,
@@ -65,21 +65,21 @@ describe('prototype flight layout', () => {
         height: 720,
         safeArea: ZERO_SAFE_AREA,
       }),
-    ).toBe(165);
+    ).toBe(330);
 
     expect(
       getPrototypeVerticalOffset({
         height: 768,
         safeArea: ZERO_SAFE_AREA,
       }),
-    ).toBe(189);
+    ).toBe(378);
 
     expect(
       getPrototypeVerticalOffset({
         height: 800,
         safeArea: { top: 24, right: 0, bottom: 34, left: 0 },
       }),
-    ).toBe(200);
+    ).toBe(376);
 
     expect(
       getPrototypeVerticalOffset({
@@ -90,12 +90,12 @@ describe('prototype flight layout', () => {
   });
 
   it('calculates unified vertical presentation projection for tall and short viewports', () => {
-    // Tall viewport: scale 1, centered
+    // Tall viewport: scale 1, extra logical room above the baseline
     const tall = getPrototypeVerticalProjection({
       height: 720,
       safeArea: ZERO_SAFE_AREA,
     });
-    expect(tall).toEqual({ offsetY: 165, scaleY: 1 });
+    expect(tall).toEqual({ offsetY: 330, scaleY: 1 });
 
     // Baseline viewport (844x390, no insets): scale 1, offset 0
     const baseline = getPrototypeVerticalProjection({
@@ -138,6 +138,26 @@ describe('prototype flight layout', () => {
     expect(() => projectLogicalYToScreen(100, Number.NaN)).toThrow(RangeError);
     expect(() => resolveVerticalProjection({ offsetY: 0, scaleY: 0 })).toThrow(RangeError);
     expect(() => resolveVerticalProjection({ offsetY: 0, scaleY: -1 })).toThrow(RangeError);
+  });
+
+  it('uses every extra safe pixel for flight while preserving the player body size', () => {
+    for (const height of [390, 600, 720, 768, 1080, 720.5]) {
+      const viewport = {
+        height,
+        safeArea: { top: 24, right: 0, bottom: 34, left: 0 },
+      };
+      const bounds = createPrototypeFlightBounds(viewport);
+      const projection = getPrototypeVerticalProjection(viewport);
+      const bodyTop = projectLogicalYToScreen(bounds.ceilingY - 28, projection);
+      const bodyBottom = projectLogicalYToScreen(bounds.floorY + 28, projection);
+
+      expect(bodyTop).toBeCloseTo(24);
+      expect(bodyBottom).toBeCloseTo(height - 34);
+      if (height >= 448) {
+        expect(bounds.floorY - bounds.ceilingY).toBeCloseTo(height - 58 - 56);
+        expect(projection.scaleY).toBe(1);
+      }
+    }
   });
 
   it('pins safely when logical extents exceed the logical playable height', () => {

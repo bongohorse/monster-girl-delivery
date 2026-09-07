@@ -58,7 +58,7 @@ describe('Prototype scrolling-world layout', () => {
 
     const tallViewport = new ViewportService(1_280, 720).getSnapshot();
     const tallLayout = createPrototypeScrollingWorldLayout(tallViewport, 0);
-    expect(tallLayout.groundTopY).toBe(543);
+    expect(tallLayout.groundTopY).toBe(708);
 
     const shortViewport = new ViewportService(800, 300).getSnapshot();
     const shortLayout = createPrototypeScrollingWorldLayout(shortViewport, 0);

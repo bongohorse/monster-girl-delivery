@@ -468,7 +468,7 @@ describe('Foundation scene gameplay orchestration', () => {
     expect(getRunState(foundation)).toEqual({
       phase: 'running',
       motion: { distance: 0 },
-      flight: { positionY: 195, velocityY: 0 },
+      flight: { positionY: -10, velocityY: 0 },
     });
     expect(getHazardStream(foundation)).toEqual(initialHazardStream);
     expect(services.input.isThrustHeld()).toBe(false);
@@ -517,7 +517,7 @@ describe('Foundation scene gameplay orchestration', () => {
     expect(cameraResize).toHaveBeenLastCalledWith(800, 600);
     expect(viewportService.getSnapshot().orientation).toBe('landscape');
     expect(getFlightState(foundation)).toEqual({ positionY: 250, velocityY: 120 });
-    expect(playerPresentation.setPosition).toHaveBeenLastCalledWith(200, 355);
+    expect(playerPresentation.setPosition).toHaveBeenLastCalledWith(200, 460);
     expect(services.time.getDeltaSeconds()).toBeCloseTo(0.016);
     expect(services.flightTuning.getSnapshot()).toEqual(tuningBefore);
     expect(services.runMotion.getSnapshot()).toEqual(runTuningBefore);
@@ -541,6 +541,37 @@ describe('Foundation scene gameplay orchestration', () => {
     foundation.update(0, 0);
     expect(getFlightState(foundation)).toEqual({ positionY: 250, velocityY: 120 });
     expect(getRunMotionState(foundation)).toEqual({ distance: 123 });
+  });
+
+  it('flies into the added upper room and clamps on shrink without resetting the run', () => {
+    const { foundation, services, playerPresentation } = createFoundationHarness();
+    vi.stubGlobal('document', { getElementById: vi.fn(() => null) });
+    const handleResize = Reflect.get(foundation, 'handleResize') as (size: {
+      width: number;
+      height: number;
+    }) => void;
+    handleResize({ width: 1280, height: 720 });
+    services.input.setSpaceHeld(true);
+
+    for (let frame = 0; frame < 40; frame += 1) {
+      foundation.update(0, 50);
+    }
+
+    expect(getRunState(foundation).phase).toBe('running');
+    expect(getFlightState(foundation)).toEqual({ positionY: -302, velocityY: 0 });
+    expect(playerPresentation.setPosition).toHaveBeenLastCalledWith(320, 28);
+    expect(playerPresentation.setScale).toHaveBeenLastCalledWith(1, 1);
+    const motion = getRunMotionState(foundation);
+    const stream = getHazardStream(foundation);
+    const telegraphs = getTelegraphedHazardState(foundation);
+
+    handleResize({ width: 844, height: 390 });
+
+    expect(getFlightState(foundation)).toEqual({ positionY: 28, velocityY: 0 });
+    expect(getRunMotionState(foundation)).toBe(motion);
+    expect(getHazardStream(foundation)).toBe(stream);
+    expect(getTelegraphedHazardState(foundation)).toBe(telegraphs);
+    expect(services.time.getDeltaSeconds()).toBe(0.05);
   });
 
   it('cleans scene-owned integration once while keeping application time reusable', () => {
