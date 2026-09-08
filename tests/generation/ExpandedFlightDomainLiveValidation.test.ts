@@ -161,7 +161,11 @@ describe('expanded flight-domain live validation evidence', () => {
     expect(atResizeBoundary.spawns).toEqual(beforeResize.spawns);
 
     let afterResize = atResizeBoundary;
-    for (let step = 0; step < 24 && afterResize.scheduledPatternCount === beforeResize.scheduledPatternCount; step += 1) {
+    for (
+      let step = 0;
+      step < 24 && afterResize.scheduledPatternCount === beforeResize.scheduledPatternCount;
+      step += 1
+    ) {
       const schedulingBoundary =
         afterResize.nextPatternStartDistance -
         afterResize.schedulingWindow.minimumReactionDistance -
@@ -186,9 +190,10 @@ describe('expanded flight-domain live validation evidence', () => {
   });
 
   it('does not retroactively retarget an already locked reactive strike when the domain changes', () => {
-    const tallDomain = createPrototypeHazardVerticalDomain(createPrototypeFlightBounds(TALL_VIEWPORT), [
-      PROTOTYPE_TARGET_LOCK_STRIKE_PATTERN,
-    ]);
+    const tallDomain = createPrototypeHazardVerticalDomain(
+      createPrototypeFlightBounds(TALL_VIEWPORT),
+      [PROTOTYPE_TARGET_LOCK_STRIKE_PATTERN],
+    );
     const schedule = scheduleNextPattern({
       catalog: tallDomain.catalog,
       constraints: tallDomain.constraints,
@@ -212,12 +217,10 @@ describe('expanded flight-domain live validation evidence', () => {
 
     // A viewport/domain change only affects future generated geometry. The lifecycle receives a
     // very different player target here to prove that the accepted strike remains frozen after Lock.
-    const afterDomainChange = stepTelegraphedHazardSimulation(
-      locked,
-      [spawn],
-      0.1,
-      { positionY: 340, runDistance: 500 },
-    );
+    const afterDomainChange = stepTelegraphedHazardSimulation(locked, [spawn], 0.1, {
+      positionY: 340,
+      runDistance: 500,
+    });
     const after = getTelegraphedHazardLifecycle(afterDomainChange, spawn);
 
     expect(after?.phase).toBe('lock');
