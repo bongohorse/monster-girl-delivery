@@ -19,7 +19,10 @@ import {
   PROTOTYPE_LIVE_RUN_SEED,
 } from '../../generation/GeneratedHazardStream';
 import { PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG } from '../../generation/LiveEncounterPolicy';
-import { PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES } from '../../generation/PrototypeHazardPatternFixtures';
+import {
+  createPrototypeHazardVerticalDomain,
+  type PrototypeHazardVerticalDomain,
+} from '../../generation/PrototypeHazardVerticalDomain';
 import type { TelegraphedHazardTarget } from '../../hazards/TelegraphedHazardLifecycle';
 import {
   createTelegraphedHazardSimulationState,
@@ -61,14 +64,21 @@ const selectNewDirectorRunSeed = (currentSeed: number | undefined): number => {
 };
 const createLiveHazardStreamContext = (
   flightTuning: ReturnType<AppServices['flightTuning']['getSnapshot']>,
+  verticalDomain: Readonly<PrototypeHazardVerticalDomain>,
   observeEncounter?: (observation: Readonly<EncounterStreamObservation>) => void,
 ) =>
   Object.freeze({
-    catalog: PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES,
+    catalog: verticalDomain.catalog,
+    constraints: verticalDomain.constraints,
     observeEncounter,
     policy: PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG,
     reachability: Object.freeze({
-      flightState: PROTOTYPE_PATTERN_REACHABILITY_CONTEXT.flightState,
+      flightState: Object.freeze({
+        ...PROTOTYPE_PATTERN_REACHABILITY_CONTEXT.flightState,
+        positionY: verticalDomain.mapAuthoredCenterY(
+          PROTOTYPE_PATTERN_REACHABILITY_CONTEXT.flightState.positionY,
+        ),
+      }),
       flightTuning,
       playerExtents: PROTOTYPE_PATTERN_REACHABILITY_CONTEXT.playerExtents,
     }),
@@ -86,6 +96,7 @@ export class Foundation extends Scene {
   private lifecycleAdapter?: PhaserLifecycleAdapter;
   private generatedHazardPresentation?: GeneratedHazardPresentation;
   private hazardStream?: Readonly<GeneratedHazardStreamState>;
+  private hazardVerticalDomain = createPrototypeHazardVerticalDomain(createPrototypeFlightBounds());
   private playerPresentation?: PrototypePlayerPresentation;
   private scrollingWorldPresentation?: PrototypeScrollingWorldPresentation;
   private telegraphedHazardState: Readonly<TelegraphedHazardSimulationState> =
@@ -136,11 +147,13 @@ export class Foundation extends Scene {
 
     const viewport = this.viewportService.getSnapshot();
     const bounds = createPrototypeFlightBounds(viewport);
+    this.hazardVerticalDomain = createPrototypeHazardVerticalDomain(bounds);
     this.runState = createPrototypeRunState(bounds);
     this.hazardStream = createGeneratedHazardStream(
       PROTOTYPE_LIVE_RUN_SEED,
       createLiveHazardStreamContext(
         this.services.flightTuning.getSnapshot(),
+        this.hazardVerticalDomain,
         this.directorPanel?.observeEncounter,
       ),
       this.services.runMotion.getSnapshot(),
@@ -221,8 +234,10 @@ export class Foundation extends Scene {
       this.services.input.consumePrimaryActionPress();
       const requestedRunMotion = this.services.runMotion.getSnapshot();
       const flightTuning = this.services.flightTuning.getSnapshot();
+      const flightBounds = createPrototypeFlightBounds(viewport);
       const hazardStreamContext = createLiveHazardStreamContext(
         flightTuning,
+        this.hazardVerticalDomain,
         this.directorPanel?.observeEncounter,
       );
       // Resolve parameters before movement, without aging or admitting new content.
@@ -236,7 +251,6 @@ export class Foundation extends Scene {
       );
       const appliedScrollSpeed = this.hazardStream.schedulingWindow.scrollSpeed;
       const runMotionTuning = Object.freeze({ baseScrollSpeed: appliedScrollSpeed });
-      const flightBounds = createPrototypeFlightBounds(viewport);
       const activeFlightTuning = this.hazardStream.policy?.flightTuning ?? flightTuning;
       const thrustHeld = this.services.input.isThrustHeld();
       const initialFlight = this.runState.flight;
@@ -324,12 +338,11 @@ export class Foundation extends Scene {
       readSafeAreaInsets(document.getElementById('safe-area-probe')),
     );
     const viewport = this.viewportService.getSnapshot();
+    const flightBounds = createPrototypeFlightBounds(viewport);
+    this.hazardVerticalDomain = createPrototypeHazardVerticalDomain(flightBounds);
     this.runState = {
       ...this.runState,
-      flight: constrainVerticalFlightState(
-        this.runState.flight,
-        createPrototypeFlightBounds(viewport),
-      ),
+      flight: constrainVerticalFlightState(this.runState.flight, flightBounds),
     };
     this.layout(viewport);
   };
@@ -398,11 +411,14 @@ export class Foundation extends Scene {
     seed = this.hazardStream?.generationState.seed ?? PROTOTYPE_LIVE_RUN_SEED,
   ): void {
     this.directorPanel?.reset();
-    this.runState = createPrototypeRunState(createPrototypeFlightBounds(viewport));
+    const flightBounds = createPrototypeFlightBounds(viewport);
+    this.hazardVerticalDomain = createPrototypeHazardVerticalDomain(flightBounds);
+    this.runState = createPrototypeRunState(flightBounds);
     this.hazardStream = createGeneratedHazardStream(
       seed,
       createLiveHazardStreamContext(
         this.services.flightTuning.getSnapshot(),
+        this.hazardVerticalDomain,
         this.directorPanel?.observeEncounter,
       ),
       this.services.runMotion.getSnapshot(),
