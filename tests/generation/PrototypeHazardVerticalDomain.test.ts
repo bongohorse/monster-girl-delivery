@@ -1,13 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import {
-  PROTOTYPE_LOGICAL_FLIGHT_BOUNDS,
-} from '../../src/game/PrototypeFlightLayout';
+import { PROTOTYPE_LOGICAL_FLIGHT_BOUNDS } from '../../src/game/PrototypeFlightLayout';
+import { PROTOTYPE_PATTERN_VALIDATION_CONSTRAINTS } from '../../src/generation/PatternValidator';
 import {
   PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES,
   PROTOTYPE_TARGET_LOCK_STRIKE_PATTERN,
 } from '../../src/generation/PrototypeHazardPatternFixtures';
 import { createPrototypeHazardVerticalDomain } from '../../src/generation/PrototypeHazardVerticalDomain';
-import { PROTOTYPE_PATTERN_VALIDATION_CONSTRAINTS } from '../../src/generation/PatternValidator';
 
 const getPattern = (
   catalog: ReturnType<typeof createPrototypeHazardVerticalDomain>['catalog'],
@@ -25,7 +23,9 @@ const getEntry = (
   patternId: string,
   entryId: string,
 ) => {
-  const entry = getPattern(catalog, patternId).entries.find((candidate) => candidate.id === entryId);
+  const entry = getPattern(catalog, patternId).entries.find(
+    (candidate) => candidate.id === entryId,
+  );
   if (!entry) {
     throw new Error(`Missing test entry: ${patternId}/${entryId}`);
   }
@@ -67,7 +67,11 @@ describe('prototype hazard vertical domain', () => {
   it('expands target-lock coverage with the flight-bound edges while preserving strike size', () => {
     const bounds = { ceilingY: -272, floorY: 362 };
     const domain = createPrototypeHazardVerticalDomain(bounds);
-    const adapted = getEntry(domain.catalog, 'prototype-target-lock-strike', 'target-lock-strike-1');
+    const adapted = getEntry(
+      domain.catalog,
+      'prototype-target-lock-strike',
+      'target-lock-strike-1',
+    );
 
     expect(PROTOTYPE_TARGET_LOCK_STRIKE_PATTERN.entries[0]?.behavior.kind).toBe(
       'target-lock-strike',
