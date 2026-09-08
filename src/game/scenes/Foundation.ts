@@ -412,7 +412,6 @@ export class Foundation extends Scene {
   ): void {
     this.directorPanel?.reset();
     const flightBounds = createPrototypeFlightBounds(viewport);
-    this.hazardVerticalDomain = createPrototypeHazardVerticalDomain(flightBounds);
     this.runState = createPrototypeRunState(flightBounds);
     this.hazardStream = createGeneratedHazardStream(
       seed,
