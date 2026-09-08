@@ -49,6 +49,15 @@ Representative snapshots:
 | 10,000 | tier-3 | 434 | 1.7 s | 737.8 | low | 2 / 4 | offset pair, vertical patrol, timed pulse, target-lock strike; line/corridor exceed low density ceiling |
 | 13,500 | tier-3 | 434 | 1.7 s | 737.8 | peak | 6 / 8 | same six-pattern live catalog, subject to policy/fairness |
 
+Representative telegraphed lifecycle fixtures are constant across these snapshots; current difficulty and pacing authorities do not scale their lifecycle duration fields:
+
+| Hazard | First eligible difficulty | Eligible pacing | Warning | Lock | Active |
+|---|---|---|---:|---:|---:|
+| Timed pulse | tier-1 | low / medium / high / peak | 1.6 s | 0.25 s | 0.9 s |
+| Target-lock strike | tier-1 | low / medium / high / peak | 1.4 s | 0.4 s | 1.0 s |
+
+These values are prototype fixture evidence, not recommended production tuning. At representative distances where either hazard survives the normal policy filters, its lifecycle uses the same normalized simulation-second durations shown above; the run-distance difficulty tiers and pacing phases alter eligibility/pressure constraints, not these per-hazard lifecycle durations.
+
 `Reaction horizon` above is speed × minimum reaction time and is included to show that the shorter time window is not accompanied by a shorter scheduling distance. The player receives progressively less time, while the generator schedules farther ahead because speed rises.
 
 The difficulty tier constraints progress as follows:
