@@ -34,6 +34,42 @@ Load additional references or skills only when they are relevant to the task. Do
 
 Do **not** implement a milestone, backlog idea, reference lesson, old discussion, skill suggestion, or nearby improvement merely because it exists in the repository.
 
+### Reusable agent skills
+
+Reusable procedures live in [`.agents/skills/`](.agents/skills/). Agents that natively discover this universal skill directory should invoke the matching skill normally. Any other repository-aware agent must read the named `SKILL.md` when the trigger below applies rather than ignoring the procedure because its client lacks native skill discovery.
+
+Skills are **procedural guidance, not authorization or a new source of truth**. This `AGENTS.md`, the current Game Director instruction, assigned Issue/PR, and owning MGD docs always win. Load only the skills relevant to the current work and compose them when their concerns overlap.
+
+| Skill | Read/use when |
+|---|---|
+| [`diagnosing-bugs`](.agents/skills/diagnosing-bugs/SKILL.md) | A bug/regression is non-obvious, flaky, timing/physics/collision related, performance-sensitive, or otherwise needs evidence before a fix. Build a realistic red-capable reproduction loop before committing to a theory. |
+| [`tdd`](.agents/skills/tdd/SKILL.md) | Implementing deterministic gameplay/application behavior or a reproducible bug fix where a meaningful regression test can protect the behavior. Choose routine test seams autonomously; do not ask the Director to choose them. |
+| [`codebase-design`](.agents/skills/codebase-design/SKILL.md) | Adding/reshaping an abstraction, module/interface, architecture seam, shared ownership boundary, or testability structure. Do not invoke it for routine local changes that do not present a design decision. |
+| [`code-review`](.agents/skills/code-review/SKILL.md) | Reviewing a PR/branch, or before declaring a non-trivial code/config implementation complete. Review engineering standards separately from spec/runtime/evidence correctness; use independent/parallel reviewers when supported and useful. |
+| [`resolving-merge-conflicts`](.agents/skills/resolving-merge-conflicts/SKILL.md) | Any in-progress merge/rebase conflict. Resolve by tracing both sides to their intent and authoritative sources, then validate and finish the operation. |
+| [`research`](.agents/skills/research/SKILL.md) | The task depends on external/current technical facts, Phaser/platform/API behavior, source investigation, or reference-game evidence. Prefer primary sources and distinguish facts from inference. |
+| [`writing-for-agents`](.agents/skills/writing-for-agents/SKILL.md) | Creating/editing `AGENTS.md`, skills, worker prompts, automation prompts, reviewer instructions, or other documents primarily consumed by agents. Keep triggers sharp and canonical rules singular. |
+
+Common compositions:
+
+```text
+hard bug/regression
+→ diagnosing-bugs
+→ tdd when an honest deterministic regression seam exists
+→ code-review before completion
+
+new or changed architecture seam
+→ codebase-design
+→ tdd for deterministic behavior where appropriate
+→ code-review before completion
+
+agent workflow/instruction change
+→ writing-for-agents
+→ review the resulting instruction diff for conflicts/duplication
+```
+
+Do not assume Matt Pocock's full upstream workflow is installed. In particular, do not require `setup-matt-pocock-skills`, its tracker setup, or upstream orchestration skills. The selected skills in this repository are MGD-adapted copies whose provenance is recorded in [`.agents/skills/THIRD_PARTY_NOTICES.md`](.agents/skills/THIRD_PARTY_NOTICES.md).
+
 ## 3. Instruction and source precedence
 
 Use the narrowest authoritative source for the decision being made.
