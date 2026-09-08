@@ -1,13 +1,11 @@
-import {
-  PROTOTYPE_LOGICAL_FLIGHT_BOUNDS,
-} from '../game/PrototypeFlightLayout';
+import { PROTOTYPE_LOGICAL_FLIGHT_BOUNDS } from '../game/PrototypeFlightLayout';
 import type { VerticalFlightBounds } from '../systems/VerticalFlightSimulation';
 import { createHazardPattern, type HazardPattern } from './HazardPattern';
-import { PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES } from './PrototypeHazardPatternFixtures';
 import {
   type PatternValidationConstraints,
   PROTOTYPE_PATTERN_VALIDATION_CONSTRAINTS,
 } from './PatternValidator';
+import { PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES } from './PrototypeHazardPatternFixtures';
 
 export interface PrototypeHazardVerticalDomain {
   readonly catalog: ReadonlyArray<Readonly<HazardPattern>>;
@@ -122,9 +120,7 @@ export const createPrototypeHazardVerticalDomain = (
   return Object.freeze({
     catalog: baselineDomain
       ? catalog
-      : Object.freeze(
-          catalog.map((pattern) => adaptPattern(pattern, bounds, mapAuthoredCenterY)),
-        ),
+      : Object.freeze(catalog.map((pattern) => adaptPattern(pattern, bounds, mapAuthoredCenterY))),
     constraints: baselineDomain ? PROTOTYPE_PATTERN_VALIDATION_CONSTRAINTS : constraints,
     mapAuthoredCenterY,
   });
