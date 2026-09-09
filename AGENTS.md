@@ -45,6 +45,7 @@ Skills are **procedural guidance, not authorization or a new source of truth**. 
 | [`diagnosing-bugs`](.agents/skills/diagnosing-bugs/SKILL.md) | A bug/regression is non-obvious, flaky, timing/physics/collision related, performance-sensitive, or otherwise needs evidence before a fix. Build a realistic red-capable reproduction loop before committing to a theory. |
 | [`tdd`](.agents/skills/tdd/SKILL.md) | Implementing deterministic gameplay/application behavior or a reproducible bug fix where a meaningful regression test can protect the behavior. Choose routine test seams autonomously; do not ask the Director to choose them. |
 | [`codebase-design`](.agents/skills/codebase-design/SKILL.md) | Adding/reshaping an abstraction, module/interface, architecture seam, shared ownership boundary, or testability structure. Do not invoke it for routine local changes that do not present a design decision. |
+| [`graphify`](.agents/skills/graphify/SKILL.md) | A task depends on relationships across multiple modules, call/import paths, subsystem ownership, or change blast radius. Use the graph to narrow investigation, then verify material conclusions in current source/tests. Do not invoke it for small local edits or treat graph output as authoritative. |
 | [`code-review`](.agents/skills/code-review/SKILL.md) | Reviewing a PR/branch, or before declaring a non-trivial code/config implementation complete. Review engineering standards separately from spec/runtime/evidence correctness; use independent/parallel reviewers when supported and useful. |
 | [`resolving-merge-conflicts`](.agents/skills/resolving-merge-conflicts/SKILL.md) | Any in-progress merge/rebase conflict. Resolve by tracing both sides to their intent and authoritative sources, then validate and finish the operation. |
 | [`research`](.agents/skills/research/SKILL.md) | The task depends on external/current technical facts, Phaser/platform/API behavior, source investigation, or reference-game evidence. Prefer primary sources and distinguish facts from inference. |
@@ -63,12 +64,19 @@ new or changed architecture seam
 → tdd for deterministic behavior where appropriate
 → code-review before completion
 
+cross-module dependency / impact investigation
+→ graphify to identify likely paths and blast radius
+→ verify material conclusions in source/tests
+→ continue with the task-specific skill
+
 agent workflow/instruction change
 → writing-for-agents
 → review the resulting instruction diff for conflicts/duplication
 ```
 
 Do not assume Matt Pocock's full upstream workflow is installed. In particular, do not require `setup-matt-pocock-skills`, its tracker setup, or upstream orchestration skills. The selected skills in this repository are MGD-adapted copies whose provenance is recorded in [`.agents/skills/THIRD_PARTY_NOTICES.md`](.agents/skills/THIRD_PARTY_NOTICES.md).
+
+The MGD Graphify integration is also recorded in [`THIRD_PARTY_NOTICES.md`](.agents/skills/THIRD_PARTY_NOTICES.md). It is intentionally an on-demand analysis aid: do not install Graphify Git hooks, strict/always-on behavior, or commit generated `graphify-out/` data unless an assigned task explicitly requires that scope.
 
 ## 3. Instruction and source precedence
 
