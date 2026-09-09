@@ -58,6 +58,11 @@ else
   else
     export PATH="$HOME/.local/bin:$PATH"
 
+    GRAPHIFY_PATH_EXPORT='export PATH="$HOME/.local/bin:$PATH"'
+    if ! grep -qxF "$GRAPHIFY_PATH_EXPORT" "$HOME/.bashrc" 2>/dev/null; then
+      printf '\n%s\n' "$GRAPHIFY_PATH_EXPORT" >> "$HOME/.bashrc"
+    fi
+
     if ! command -v uv >/dev/null 2>&1; then
       if curl --fail --silent --show-error --location --retry 5 --connect-timeout 10 \
           https://astral.sh/uv/install.sh | sh; then
