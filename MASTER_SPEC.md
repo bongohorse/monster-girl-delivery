@@ -2,7 +2,7 @@
 
 **Document status:** Living product/game specification  
 **Project status:** Pre-Production  
-**Current milestone:** Pre-M5 transition (M4 complete; M5 pending approved parent plan)
+**Current milestone:** Pre-M5 transition (M4 complete; M5 parent #197 approved; implementation blocked by Pre-M5 exit gate)
 
 **Human role:** Game Director / Product Owner  
 **Coding-agent role:** Implementation / Engineering
@@ -39,10 +39,13 @@ Never turn `PROTOTYPE`, `EXPERIMENT`, `TBD`, or `FUTURE` into a permanent rule w
 2. Responsive, satisfying one-touch movement.
 3. Fair but demanding hazards.
 4. Short, repeatable runs.
-5. Risk/reward through Graze when that later system is introduced.
-6. Strong anime/chibi monster-girl identity.
-7. Fast iteration for the Game Director.
-8. Maintainable, deterministic implementation where practical.
+5. Risk/reward through Graze when the approved M5 system is implemented.
+6. Failure presentation should be entertaining/readable and lead quickly into another run rather than feeling like a hard interruption.
+7. Collectible placement should help teach/guide movement and communicate optional risk where appropriate, not merely scatter rewards randomly.
+8. Preserve the small permanent input vocabulary; future temporary modes may reinterpret the same controls rather than accumulating permanent buttons/mechanics.
+9. Strong anime/chibi monster-girl identity.
+10. Fast iteration for the Game Director.
+11. Maintainable, deterministic implementation where practical.
 
 Future delivery-specific modes, finishable deliveries, cargo rules, Companions, HQ systems, and other extensions remain ideas until explicitly promoted from [`docs/BACKLOG.md`](docs/BACKLOG.md).
 
@@ -100,18 +103,27 @@ The same action must flow through the platform-independent input abstraction.
 ```text
 Start Run
   ↓
-Fly / Dodge / Collect
+Fly / Dodge / Collect / Graze (when M5 systems are implemented)
   ↓
 Survive
   ↓
-Crash / End Run
+Crash / Authoritative Run End
   ↓
-Results / Rewards (later complete loop)
+Short readable/entertaining fail-state presentation
   ↓
-Restart
+Results / Basic Run Rewards / Records
+  ↓
+One-action Restart
 ```
 
-Graze, scoring, rewards, collection, and Gallery enter only when explicitly scheduled and implemented.
+M5 parent Issue #197 approves completing this arcade loop once its Pre-M5 entry gate is satisfied. Focused implementation work is tracked by #198 (score/result snapshot/basic rewards), #90 (Graze), #84 (collectible paths), and #85 (fail-state/retry).
+
+### DECIDED M5 replay principles
+
+- **Death is entertainment:** failure is part of the arcade experience, not an abrupt static stop.
+- **One-action retry:** ordinary death must not require a main-menu round trip before the next run.
+- **Failure still feels productive:** the results flow should expose meaningful authoritative run feedback even before the later meta economy exists.
+- Presentation-only post-death motion must not silently extend authoritative distance, score, rewards, RNG state, or other gameplay state.
 
 ### Run length
 
@@ -267,13 +279,15 @@ Generated hazard content must eventually respect explicit constraints such as:
 
 The game must not rely on unconstrained random placement.
 
+MGD does not deliberately weaken these guarantees to create a feeling of manufactured unfairness. Procedural play may be unpredictable, demanding, and occasionally brutal, but accepted content must remain consistent with the approved logical fairness/reachability/readability model.
+
 ---
 
 ## 9. Graze
 
-### FUTURE
+### DECIDED M5 direction — implementation pending
 
-Graze is the intended risk/reward near-miss mechanic.
+Graze is the approved M5 risk/reward near-miss mechanic, tracked by Issue #90 and blocked by the relevant Pre-M5 run-event/consequence boundaries.
 
 Concept:
 
@@ -282,11 +296,13 @@ Core hitbox       → collision / death
 Outer Graze zone  → near miss / reward
 ```
 
-A hazard/projectile should normally reward a Graze only once per pass.
+A hazard/projectile should normally reward a Graze only once per approved logical pass/contact contract. Exact event semantics must consume the authoritative M5 run-event decision rather than being reconstructed from presentation.
 
-Exact hitbox dimensions, reward values, and presentation remain non-final until the focused system is implemented and tested.
+Graze is optional skill/risk. A pattern must not require Graze merely to satisfy survival fairness.
 
-Scheduling belongs in [`docs/ROADMAP.md`](docs/ROADMAP.md).
+Exact hitbox dimensions, score/reward values, and presentation remain non-final until the focused system is implemented and tested.
+
+Scheduling belongs in [`docs/ROADMAP.md`](docs/ROADMAP.md) and parent Issue #197.
 
 ---
 
@@ -349,20 +365,31 @@ Scheduling belongs in [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## 11. Score, results, and run rewards
 
-### FUTURE
+### DECIDED M5 direction — implementation pending
 
-Score may eventually reflect:
+M5 will provide the smallest score/result/basic-reward model needed for the complete arcade loop. Focused ownership is Issue #198, with #85 consuming its result data for fail/results/retry presentation.
+
+Score may reflect approved authoritative skill signals such as:
 
 - distance;
-- survival;
 - Graze;
-- combos/multipliers or other approved skill signals.
+- collectibles;
+- other explicitly approved run-local skill signals.
 
-Exact formulas and reward values are **TBD**.
+Exact formulas and reward values remain **TBD / PROTOTYPE** until implemented and playtested.
 
-The result/restart flow should remain low-friction and support fast replay.
+M5 requirements:
 
-Scheduling belongs in [`docs/ROADMAP.md`](docs/ROADMAP.md).
+- create one immutable authoritative final result snapshot at run end;
+- post-death presentation cannot change final distance, score, collected totals, Graze totals, rewards, or RNG state;
+- results should make a failed run visibly consequential using available authoritative feedback such as distance, score, PB/record deltas, collections, and skill totals;
+- ordinary retry remains one clear action with no required main-menu round trip;
+- a small local-first best-distance/best-score record is allowed if justified for replay feedback, but M5 must not prebuild the M7 persistence/meta architecture;
+- presentation is never the authority for gameplay counting.
+
+Final economy, progression, shop, gacha, battle-pass, daily-mission, cloud-profile, and monetization behavior are outside M5.
+
+Scheduling belongs in [`docs/ROADMAP.md`](docs/ROADMAP.md) and parent Issue #197.
 
 ---
 
@@ -574,7 +601,8 @@ This specification intentionally does not duplicate the complete M0–M9 roadmap
 
 Current milestone:
 
-- **Pre-M5 transition (M4 complete; M5 pending approved parent plan)**
+- **Pre-M5 transition (M4 complete; M5 parent #197 approved; implementation blocked by Pre-M5 exit gate)**
+- Approved M5 parent Issue: [#197](https://github.com/bongohorse/monster-girl-delivery/issues/197)
 - Previous parent Issue: [#116](https://github.com/bongohorse/monster-girl-delivery/issues/116) (closed on M4 closeout merge)
 - Milestone completion report: [`docs/milestones/M4-run-pacing-hazard-language.md`](docs/milestones/M4-run-pacing-hazard-language.md)
 
@@ -612,3 +640,11 @@ Backlog / reference idea
 - No real-money mechanics in the initial approved direction.
 - M1 smartphone/tablet evidence in [`docs/milestones/M1-device-report.md`](docs/milestones/M1-device-report.md) accepted as sufficient to continue the mobile-first project.
 - Landscape selected as **DECIDED** for the current core game; Portrait retained only as a **FUTURE** separate mode/variant possibility.
+
+### 2026-09-10
+
+- M5 focused parent plan approved as Issue #197, while implementation remains blocked until the Pre-M5 exit gate is sufficiently resolved.
+- M5 adopts five design rules: death is entertainment; one-action retry; collectible paths teach/guide movement; failure still provides meaningful run feedback; permanent controls remain simple while future temporary modes may reinterpret them.
+- M5 focused work promotes #198 (score/result snapshot/basic rewards), #90 (Graze), #84 (collectible paths), and #85 (fail-state/retry) subject to dependency ordering.
+- Deliberately manufactured procedural unfairness is rejected as a retention strategy; MGD's logical fairness/reachability/readability authorities remain binding.
+- Vehicles, mounts, transformations, Delivery Contracts/missions, prestige, and deep meta systems remain outside M5 implementation scope unless separately promoted later.
