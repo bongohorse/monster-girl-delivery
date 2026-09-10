@@ -32,7 +32,9 @@ The current collision API deliberately exposes **no time-of-impact value** to `P
 
 > final authoritative run distance is the `motion.distance` stored in the first returned `dead` state, not an inferred presentation impact position and not a reconstructed time-of-impact distance.
 
-This is a description of current MGD behavior, not a claim that endpoint distance is the eventual production scoring rule.
+That value is authoritative for the current run contract, but it is **not frame-partition invariant**. Because run motion advances to the end of the enclosing simulation delta before the swept collision result marks the state dead, two different valid delta partitions may detect the same collision while retaining different final endpoint distances. The current contract is deterministic only for the same explicit simulation-delta/input schedule.
+
+This is a description of current MGD behavior, not a claim that endpoint distance is the eventual production scoring rule. If M5 results or scoring require partition-invariant final distance or exact impact distance, that must be decided and implemented by a focused run/collision-contract change rather than reconstructed downstream.
 
 ## Metric / event matrix
 
@@ -41,7 +43,7 @@ This is a description of current MGD behavior, not a claim that endpoint distanc
 | logical run distance | each authoritative `stepRunMotion(...)` inside a `running` `stepPrototypeRun(...)` step | `PrototypeRunState.motion` / `RunMotionSimulation` | per-run | starts at `0`; freezes with the first `dead` state; fresh run recreates `0` | existing gameplay, generation/difficulty consumers; **KEEP** |
 | run start | creation/replacement with `createPrototypeRunState(...)` | run orchestration + `PrototypeRunSimulation` factory | per-run event boundary | exactly once per explicitly created run state | restart flow, future contracts/results; **KEEP boundary** |
 | authoritative run end / death | first `running -> dead` transition returned by `stepPrototypeRun(...)`; observable as `enteredDead === true` | `PrototypeRunSimulation` | per-run event boundary | one-shot; dead state cannot re-enter death or advance | #184 consequence audit, future #85 results flow; **KEEP boundary** |
-| final distance at death | `motion.distance` in the first returned `dead` state | `PrototypeRunState.motion` | per-run final value | immutable while dead; reset by fresh run | future results/diagnostics; **KEEP current contract** |
+| final distance at death | `motion.distance` in the first returned `dead` state | `PrototypeRunState.motion` | per-run final value | immutable while dead; reset by fresh run; current endpoint value may differ across valid frame partitions because TOI is not retained | future results/diagnostics; **KEEP current contract, DEFER partition-invariant impact distance** |
 | death cause / hazard identity | no authoritative payload exists today | not yet owned | deferred | must be produced at the same one-shot run-end boundary if later required; never derive from sprite/UI state | #184 owns the smallest consequence/cause contract; **DEFER to #184** |
 | final result snapshot | no dedicated snapshot exists today | not yet owned | deferred | future snapshot must be captured once from authoritative run state at run end and remain immutable after death | future #85 results flow; **DEFER implementation** |
 | hazard passed | no current gameplay counter/event | not yet owned | deferred | must not use Phaser despawn as authority; future feature must define one stable logical crossing/encounter boundary and dedupe by logical occurrence | contracts/achievements if approved; **DEFER human/feature decision** |
@@ -83,7 +85,9 @@ These rules are architecture constraints for future implementation, not new game
 
 Current MGD behavior is explicit: collision may be detected continuously within a step, but `PrototypeRunSimulation` preserves the completed enclosing step and does not expose TOI. The first dead state's distance is therefore the current final run distance. Dead-state steps are no-ops, preventing post-death simulation from changing it.
 
-No presentation-side code is permitted to append distance/score after that transition. If a future approved scoring design needs exact impact distance, that requires a focused change to the run/collision contract rather than a results-layer reconstruction.
+This endpoint-retention behavior does **not** make death distance equivalent across frame partitions. A coarse and a fine delta schedule can both detect the same swept collision but retain different end-of-step distances. Current final distance is therefore deterministic for an identical simulation-delta schedule, not a partition-invariant impact metric.
+
+No presentation-side code is permitted to append distance/score after that transition. If future M5 results or an approved scoring design require exact impact distance or partition-invariant final distance, that requires a focused change to the run/collision contract and dedicated frame-partition validation rather than a results-layer reconstruction.
 
 ### Death cause / hazard identity
 
@@ -131,15 +135,17 @@ This issue therefore rejects adding persistence, analytics, telemetry, a generic
 
 ## Determinism and replay implications
 
-The current run-start/run-end contract is deterministic for the same explicit initial state, simulation delta/input schedule, tuning, hazards, and seeded generation state. This audit adds no PRNG consumption and no timing path.
+The current run-start/run-end contract is deterministic for the same explicit initial state, **simulation delta/input schedule**, tuning, hazards, and seeded generation state. That qualifier is material: the existing endpoint-retention death-distance value is not guaranteed equivalent across different 30/60/90/120/144 Hz or jitter partitions because collision TOI is not retained in `PrototypeRunState`. This audit adds no PRNG consumption and no timing path.
 
-Future event/counter producers must preserve that property:
+Future event/counter producers must preserve schedule-relative determinism and, when their acceptance criteria require cross-partition equivalence, prove that property explicitly:
 
 - do not depend on render FPS, wall clock, animation frames, or Phaser lifetime;
 - do not consume extra gameplay PRNG merely to identify an event;
-- define once-only state transitions so 30/60/90/120/144 Hz or jitter partitions cannot multiply counts;
+- define once-only state transitions so different valid frame partitions cannot multiply semantic counts;
 - zero-delta and paused simulation must not create progress events;
 - post-death simulation must not mutate frozen per-run metrics.
+
+For final distance specifically, existing collision detection can be partition-safe while the retained endpoint distance still differs between partitions. If M5 results/scoring require a partition-invariant final-distance value, that is a deferred focused run/collision-contract decision requiring appropriate 30/60/90/120/144 Hz and jitter evidence. It must not be synthesized by presentation or results code.
 
 A future implementation that changes any timing/movement/collision/event-producing authority must add the applicable frame-partition evidence; this documentation-only audit does not alter those authorities.
 
@@ -165,6 +171,6 @@ This change is documentation-only. It was derived from current `main` at `acfeae
 - `ARCHITECTURE.md`;
 - the accepted `bongohorse/apk#3` evidence and `docs/run-stats-and-events.md`.
 
-The existing tests already verify the material current contract used by this audit: one running-to-dead transition, no repeated death transition or dead-state advancement, continuous collision detection, and deterministic clean restart. No production code or tests were changed.
+The existing tests already verify the material current contract used by this audit: one running-to-dead transition, no repeated death transition or dead-state advancement, continuous collision detection, and deterministic clean restart. Existing partition tests establish collision detection across partitions; they do not establish equal final death distance, which is now documented explicitly. No production code or tests were changed.
 
 GitHub Actions CI on this PR is the execution authority for repository documentation checks.
