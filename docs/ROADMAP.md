@@ -4,7 +4,7 @@
 **Approved by:** Game Director / Product Owner  
 **Originally approved:** 2026-09-03  
 **Roadmap 2.0 revision:** 2026-09-04  
-**Current milestone:** Pre-M5 transition (M4 complete; M5 pending approved parent plan)
+**Current milestone:** Pre-M5 transition (M4 complete; M5 parent #197 approved; implementation blocked by Pre-M5 exit gate)
 
 > [!IMPORTANT]
 > This file is the **single source of truth for milestone sequencing and milestone-level future scope**. `MASTER_SPEC.md` owns durable product/game decisions; focused GitHub Issues own live implementation scope.
@@ -295,7 +295,18 @@ Supporting validation: [`milestones/M4-run-pacing-validation.md`](milestones/M4-
 
 - M4 run pacing/hazard language is accepted;
 - the core run can sustain representative generated play;
-- M5 has a focused parent plan before implementation begins.
+- focused parent plan [Issue #197](https://github.com/bongohorse/monster-girl-delivery/issues/197) is approved;
+- implementation remains blocked until the Pre-M5 correctness/reference exit gate in #197/#179 is resolved sufficiently.
+
+### Approved M5 design rules
+
+- **Death is entertainment** — failure is part of the arcade loop, not an abrupt static stop.
+- **One-action retry** — ordinary death to the next run must have minimal friction and no required menu round-trip.
+- **Collectibles teach movement** — collectible paths should teach/guide movement and communicate safe versus optional-risk routes without tutorial text.
+- **Failure still feels productive** — results should show meaningful authoritative run feedback without requiring the later meta economy.
+- **Simple controls, temporary complexity** — preserve the one-button core; future vehicles/mounts/transformations should reinterpret the small input set rather than add permanent control clutter. Those temporary modes remain outside M5 implementation scope.
+
+MGD does **not** adopt manufactured procedural unfairness as a retention tactic. Existing fairness, reachability, transition, pacing, and readability guarantees remain authoritative.
 
 ### Core scope
 
@@ -309,6 +320,8 @@ Supporting validation: [`milestones/M4-run-pacing-validation.md`](milestones/M4-
 - clear result presentation and meaningful run statistics;
 - deterministic integration tests for the complete run lifecycle.
 
+Promoted focused work is tracked by #198 (score/result snapshot/basic rewards), #90 (Graze), #84 (collectible paths), and #85 (fail-state/retry), subject to #197's entry gate and dependency ordering.
+
 ### Exit gate
 
 M5 may close only when:
@@ -320,7 +333,7 @@ M5 may close only when:
 - unresolved product questions that affect M6 are routed through the Product and Art Gates below;
 - a factual M5 closeout is merged.
 
-**Explicitly not part of M5:** final economy values, deep long-term progression, production-scale cosmetics/content, Companions/HQ systems, or unapproved alternate game modes.
+**Explicitly not part of M5:** final economy values, deep long-term progression, production-scale cosmetics/content, Companions/HQ systems, vehicles/mounts/transformations, Delivery Contracts, or unapproved alternate game modes.
 
 ---
 
@@ -637,7 +650,7 @@ M3  Seeded Generation & Fairness       COMPLETE
  ↓
 M4  Run Pacing & Hazard Language       COMPLETE
  ↓
-M5  Complete Arcade Loop & Skill Layer (PENDING PARENT PLAN)
+M5  Complete Arcade Loop & Skill Layer (PARENT #197 APPROVED; PRE-M5 GATE)
  ↓
 PRODUCT GATE A — define release core game
 ART GATE       — lock minimum production visual direction
