@@ -50,7 +50,7 @@ When subagents are available, run the two axes independently/parallel so one con
 Check every changed area for material issues involving:
 
 - architecture ownership and seams;
-- unnecessary abstraction, duplication or scope creep;
+- unnecessary abstraction, duplication or scope creep, including custom code where an existing capability meets the reuse criteria in `AGENTS.md` §7;
 - deterministic time/randomness requirements;
 - hot-path allocations or per-frame work;
 - input/lifecycle handling;
