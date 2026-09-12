@@ -53,8 +53,8 @@ describe('frame partition simulation harness', () => {
       expect(baseline.finalState.phase).toBe('running');
       expect(baseline.totalSimulatedTime).toBe(totalDuration);
       expect(baseline.finalState.motion.distance).toBeCloseTo(122.5, 9);
-      expect(baseline.finalState.flight.positionY).toBeCloseTo(280.75, 9);
-      expect(baseline.finalState.flight.velocityY).toBeCloseTo(490, 9);
+      expect(baseline.finalState.flight.positionY).toBeCloseTo(293, 9);
+      expect(baseline.finalState.flight.velocityY).toBeCloseTo(560, 9);
 
       for (const result of others) {
         expect(result.finalState.phase).toBe('running');
@@ -99,8 +99,8 @@ describe('frame partition simulation harness', () => {
       expect(baseline.finalState.phase).toBe('running');
       expect(baseline.totalSimulatedTime).toBe(totalDuration);
       expect(baseline.finalState.motion.distance).toBeCloseTo(245.0, 9);
-      expect(baseline.finalState.flight.positionY).toBeCloseTo(263.6875, 9);
-      expect(baseline.finalState.flight.velocityY).toBeCloseTo(45.0, 9);
+      expect(baseline.finalState.flight.positionY).toBeCloseTo(262.8125, 9);
+      expect(baseline.finalState.flight.velocityY).toBeCloseTo(15, 9);
 
       for (const result of others) {
         expect(result.finalState.phase).toBe('running');
@@ -125,7 +125,7 @@ describe('frame partition simulation harness', () => {
         motion: { distance: 0 },
         flight: { positionY: 0, velocityY: 0 },
       };
-      // Gravity 1400 px/s^2 crosses maxFallVelocity 650 at t = 650/1400 ≈ 0.4643s
+      // Gravity 1600 px/s^2 crosses maxFallVelocity 700 at t = 700/1600 = 0.4375s.
       const totalDuration = 0.8;
 
       const results = SCHEDULE_ENTRIES.map(([_name, schedule]) =>
@@ -146,7 +146,7 @@ describe('frame partition simulation harness', () => {
         PROTOTYPE_FLIGHT_TUNING_DEFAULTS.maxFallVelocity,
       );
       expect(baseline.finalState.motion.distance).toBeCloseTo(280.0, 9);
-      expect(baseline.finalState.flight.positionY).toBeCloseTo(369.1071428571, 9);
+      expect(baseline.finalState.flight.positionY).toBeCloseTo(406.875, 9);
 
       for (const result of others) {
         expect(result.finalState.flight.velocityY).toBe(
@@ -167,7 +167,7 @@ describe('frame partition simulation harness', () => {
         motion: { distance: 0 },
         flight: { positionY: 500, velocityY: 0 },
       };
-      // Upward accel = 2200 - 1400 = 800 px/s^2. Crosses maxRiseVelocity 550 at t = 550/800 = 0.6875s.
+      // Upward accel = 2600 - 1600 = 1000 px/s^2. Crosses maxRiseVelocity 550 at t = 0.55s.
       // Run for 0.8s with thrust held to verify holding at the cap.
       const totalDuration = 0.8;
 
@@ -213,7 +213,7 @@ describe('frame partition simulation harness', () => {
         motion: { distance: 0 },
         flight: { positionY: 500, velocityY: 0 },
       };
-      // Thrust held past rise cap (0.6875s) until 0.80s, then released until 1.10s.
+      // Thrust held past rise cap (0.55s) until 0.80s, then released until 1.10s.
       const totalDuration = 1.1;
       const inputScript = [
         { time: 0, thrustHeld: true },
@@ -279,10 +279,7 @@ describe('frame partition simulation harness', () => {
 
       expect(baseline.finalState.phase).toBe('running');
       expect(baseline.totalSimulatedTime).toBe(totalDuration);
-      expect(baseline.finalState.flight.positionY).toBeCloseTo(239.721_669_612_155, 9);
-      expect(baseline.finalState.flight.velocityY).toBe(
-        PROTOTYPE_FLIGHT_TUNING_DEFAULTS.maxFallVelocity,
-      );
+      expect(baseline.finalState.flight).toEqual({ positionY: FLIGHT_BOUNDS.floorY, velocityY: 0 });
 
       for (const result of others) {
         expect(result.finalState.phase).toBe('running');

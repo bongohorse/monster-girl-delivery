@@ -12,9 +12,9 @@ describe('FlightTuningConfig', () => {
     const config = new FlightTuningConfig();
 
     expect(PROTOTYPE_FLIGHT_TUNING_DEFAULTS).toEqual({
-      gravity: 1_400,
-      thrust: 2_200,
-      maxFallVelocity: 650,
+      gravity: 1_600,
+      thrust: 2_600,
+      maxFallVelocity: 700,
       maxRiseVelocity: 550,
     });
     expect(config.getSnapshot()).toEqual(PROTOTYPE_FLIGHT_TUNING_DEFAULTS);
@@ -80,7 +80,7 @@ describe('FlightTuningConfig', () => {
     config.update({ gravity: 1_500 });
     const updated = config.getSnapshot();
 
-    expect(original.gravity).toBe(1_400);
+    expect(original.gravity).toBe(1_600);
     expect(updated.gravity).toBe(1_500);
     expect(updated).not.toBe(original);
   });

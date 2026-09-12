@@ -61,7 +61,7 @@ describe('stepVerticalFlight', () => {
       UNRESTRICTIVE_BOUNDS,
     );
 
-    expect(result).toEqual({ positionY: -4, velocityY: -80 });
+    expect(result).toEqual({ positionY: -5, velocityY: -100 });
   });
 
   it('removes thrust acceleration while released but keeps downward gravity', () => {
@@ -73,7 +73,27 @@ describe('stepVerticalFlight', () => {
       UNRESTRICTIVE_BOUNDS,
     );
 
-    expect(result).toEqual({ positionY: 7, velocityY: 140 });
+    expect(result).toEqual({ positionY: 8, velocityY: 160 });
+  });
+
+  it('reverses vertical direction promptly after changing thrust intent', () => {
+    const risingAfterThrust = stepVerticalFlight(
+      { positionY: 0, velocityY: PROTOTYPE_FLIGHT_TUNING_DEFAULTS.maxFallVelocity },
+      0.75,
+      true,
+      PROTOTYPE_FLIGHT_TUNING_DEFAULTS,
+      UNRESTRICTIVE_BOUNDS,
+    );
+    const fallingAfterRelease = stepVerticalFlight(
+      { positionY: 0, velocityY: -PROTOTYPE_FLIGHT_TUNING_DEFAULTS.maxRiseVelocity },
+      0.36,
+      false,
+      PROTOTYPE_FLIGHT_TUNING_DEFAULTS,
+      UNRESTRICTIVE_BOUNDS,
+    );
+
+    expect(risingAfterThrust.velocityY).toBeLessThan(0);
+    expect(fallingAfterRelease.velocityY).toBeGreaterThan(0);
   });
 
   it('caps upward velocity and integrates the time spent at the rise limit', () => {
@@ -86,7 +106,7 @@ describe('stepVerticalFlight', () => {
     );
 
     expect(result.velocityY).toBe(-550);
-    expect(result.positionY).toBeCloseTo(-360.9375, 10);
+    expect(result.positionY).toBeCloseTo(-398.75, 10);
   });
 
   it('caps downward velocity and integrates the time spent at the fall limit', () => {
@@ -98,8 +118,8 @@ describe('stepVerticalFlight', () => {
       UNRESTRICTIVE_BOUNDS,
     );
 
-    expect(result.velocityY).toBe(650);
-    expect(result.positionY).toBeCloseTo(499.107_142_857_1, 10);
+    expect(result.velocityY).toBe(700);
+    expect(result.positionY).toBeCloseTo(546.875, 10);
   });
 
   it('does not change position or velocity when elapsed time is zero', () => {
@@ -123,8 +143,8 @@ describe('stepVerticalFlight', () => {
     tuning.update({ gravity: 1_000, thrust: 1_000 });
     const second = stepVerticalFlight(first, 0.1, true, tuning.getSnapshot(), UNRESTRICTIVE_BOUNDS);
 
-    expect(first).toEqual({ positionY: -4, velocityY: -80 });
-    expect(second).toEqual({ positionY: -12, velocityY: -80 });
+    expect(first).toEqual({ positionY: -5, velocityY: -100 });
+    expect(second).toEqual({ positionY: -15, velocityY: -100 });
   });
 
   it('preserves the no-boundary analytical trajectory across practical subdivisions', () => {
@@ -165,7 +185,7 @@ describe('stepVerticalFlight', () => {
       UNRESTRICTIVE_BOUNDS,
     );
 
-    expect(result).toEqual({ positionY: 28, velocityY: 280 });
+    expect(result).toEqual({ positionY: 32, velocityY: 320 });
   });
 
   it('rejects elapsed values outside the TimeService boundary contract', () => {
@@ -267,13 +287,13 @@ describe('stepVerticalFlight', () => {
         name: 'ceiling',
         initial: { positionY: bounds.ceilingY, velocityY: -300 },
         thrustHeld: false,
-        expected: { positionY: 107, velocityY: 140 },
+        expected: { positionY: 108, velocityY: 160 },
       },
       {
         name: 'floor',
         initial: { positionY: bounds.floorY, velocityY: 300 },
         thrustHeld: true,
-        expected: { positionY: 496, velocityY: -80 },
+        expected: { positionY: 495, velocityY: -100 },
       },
     ])('allows immediate movement away from the $name', ({ initial, thrustHeld, expected }) => {
       const result = stepVerticalFlight(
@@ -298,8 +318,8 @@ describe('stepVerticalFlight', () => {
       );
       const fine = stepInEqualPartitions(initial, 0.05, 1_000, false, bounds);
 
-      expect(coarse.positionY).toBeCloseTo(101.714_546_482_928, 10);
-      expect(coarse.velocityY).toBeCloseTo(69.287_301_521_986, 10);
+      expect(coarse.positionY).toBeCloseTo(101.959_374_728_497, 10);
+      expect(coarse.velocityY).toBeCloseTo(79.183_326_093_25, 10);
       expectFlightStateClose(coarse, fine);
     });
 
@@ -314,8 +334,8 @@ describe('stepVerticalFlight', () => {
       );
       const fine = stepInEqualPartitions(initial, 0.1, 100, true, bounds);
 
-      expect(coarse.positionY).toBeCloseTo(499.108_350_559_987, 10);
-      expect(coarse.velocityY).toBeCloseTo(-37.770_876_399_966, 10);
+      expect(coarse.positionY).toBeCloseTo(498.923_048_454_133, 10);
+      expect(coarse.velocityY).toBeCloseTo(-46.410_161_513_775, 10);
       expectFlightStateClose(coarse, fine);
     });
 
@@ -340,7 +360,7 @@ describe('stepVerticalFlight', () => {
 
       expect(coarseAtCeiling).toEqual({ positionY: bounds.ceilingY, velocityY: 0 });
       expectFlightStateClose(coarseAtCeiling, fineAtCeiling);
-      expect(coarseReleased).toEqual({ positionY: 128, velocityY: 280 });
+      expect(coarseReleased).toEqual({ positionY: 132, velocityY: 320 });
       expectFlightStateClose(coarseReleased, fineReleased);
     });
 
@@ -365,7 +385,7 @@ describe('stepVerticalFlight', () => {
 
       expect(coarseAtFloor).toEqual({ positionY: bounds.floorY, velocityY: 0 });
       expectFlightStateClose(coarseAtFloor, fineAtFloor);
-      expect(coarseThrust).toEqual({ positionY: 484, velocityY: -160 });
+      expect(coarseThrust).toEqual({ positionY: 480, velocityY: -200 });
       expectFlightStateClose(coarseThrust, fineThrust);
     });
 
@@ -452,8 +472,8 @@ describe('stepVerticalFlight', () => {
         changedBounds,
       );
 
-      expect(first).toEqual({ positionY: 257, velocityY: 140 });
-      expect(second).toEqual({ positionY: 321, velocityY: 280 });
+      expect(first).toEqual({ positionY: 258, velocityY: 160 });
+      expect(second).toEqual({ positionY: 324, velocityY: 320 });
     });
 
     it('rejects non-finite or inverted bounds and accepts a zero-height safe range', () => {

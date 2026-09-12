@@ -136,9 +136,9 @@ M5 parent Issue #197 approves completing this arcade loop once its Pre-M5 entry 
 ### PROTOTYPE tuning
 
 ```text
-gravity          = 1400 px/s²
-thrust           = 2200 px/s² upward
-maxFallVelocity  = 650 px/s
+gravity          = 1600 px/s²
+thrust           = 2600 px/s² upward
+maxFallVelocity  = 700 px/s
 maxRiseVelocity  = 550 px/s upward
 baseScrollSpeed  = 350 px/s
 ```

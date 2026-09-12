@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { PROTOTYPE_FLIGHT_TUNING_DEFAULTS } from '../../src/config/FlightTuningConfig';
 import { PROTOTYPE_PATTERN_REACHABILITY_CONTEXT } from '../../src/generation/FlightReachability';
 import { createHazardPattern, type HazardPatternEntry } from '../../src/generation/HazardPattern';
 import {
@@ -168,7 +169,10 @@ describe('validatePattern', () => {
     });
     const unreachable = validatePattern(upwardCorridor, PROTOTYPE_PATTERN_VALIDATION_CONSTRAINTS, {
       ...baseReachability,
-      flightState: { positionY: 200, velocityY: 650 },
+      flightState: {
+        positionY: 200,
+        velocityY: PROTOTYPE_FLIGHT_TUNING_DEFAULTS.maxFallVelocity,
+      },
     });
 
     expect(reachable).toEqual({ valid: true, issues: [] });
@@ -181,7 +185,7 @@ describe('validatePattern', () => {
         availableReactionTimeSeconds: 0.1,
         failureReason: 'safe-corridor-above-reachable-envelope',
         reachable: false,
-        reachableCenterRange: { top: 261, bottom: 265 },
+        reachableCenterRange: { top: 265, bottom: 270 },
         targetCenterRanges: [{ top: 72, bottom: 156 }],
       },
       runStart: 100,
