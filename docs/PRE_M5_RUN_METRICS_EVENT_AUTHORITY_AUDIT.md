@@ -45,12 +45,12 @@ This is a description of current MGD behavior, not a claim that endpoint distanc
 | authoritative run end / death | first `running -> dead` transition returned by `stepPrototypeRun(...)`; observable as `enteredDead === true` | `PrototypeRunSimulation` | per-run event boundary | one-shot; dead state cannot re-enter death or advance | #184 consequence audit, future #85 results flow; **KEEP boundary** |
 | final distance at death | `motion.distance` in the first returned `dead` state | `PrototypeRunState.motion` | per-run final value | immutable while dead; reset by fresh run; current endpoint value may differ across valid frame partitions because TOI is not retained | future results/diagnostics; **KEEP current contract, DEFER partition-invariant impact distance** |
 | death cause / hazard identity | no authoritative payload exists today | not yet owned | deferred | must be produced at the same one-shot run-end boundary if later required; never derive from sprite/UI state | #184 owns the smallest consequence/cause contract; **DEFER to #184** |
-| final result snapshot | no dedicated snapshot exists today | not yet owned | deferred | future snapshot must be captured once from authoritative run state at run end and remain immutable after death | future #85 results flow; **DEFER implementation** |
+| final result snapshot | no dedicated snapshot exists today | approved M5 #198 | deferred implementation | future snapshot must be captured once from authoritative run state at run end and remain immutable after death | #198 produces the snapshot; #85 consumes it for results/retry; **DEFER implementation to M5** |
 | hazard passed | no current gameplay counter/event | not yet owned | deferred | must not use Phaser despawn as authority; future feature must define one stable logical crossing/encounter boundary and dedupe by logical occurrence | contracts/achievements if approved; **DEFER human/feature decision** |
 | close call / Graze | not implemented | future #90 | deferred | future rule must be idempotent per explicitly defined logical occurrence and separate from lethal collision | #90 and later consumers; **DEFER** |
 | collectible collected | collectibles are not yet an MGD gameplay authority | future collectible system | deferred | collection must occur on successful logical collection resolution, never spawn or pickup animation; one logical collectible occurrence may count at most once | future #84/contracts/achievements; **DEFER implementation, KEEP boundary principle** |
 | collectible route completed | route system not implemented | future #84 | deferred | route completion must derive from authoritative route state after qualifying collection events, never HUD/presentation state | #84 and consumers; **DEFER** |
-| score distinct from distance | no approved distinct score authority exists | not yet owned | deferred human/product decision | do not create or persist a second score value until its formula/meaning is approved | #85/results and later progression; **DEFER human decision** |
+| score distinct from distance | no distinct score implementation exists | approved M5 #198 | per-run, implementation pending | #198 defines the minimal score model within approved M5 scope; final release formula remains undecided | #85/results and later progression; **DEFER implementation to M5** |
 | persistent/lifetime statistics | no persistence/statistics authority is part of this issue | future persistence/progression boundary | persistent, future | may consume authoritative semantic events but must not own run gameplay truth | achievements/profile systems; **reject in this issue** |
 | restart / new-run boundary | explicit replacement with `createPrototypeRunState(...)` | scene/run orchestration | per-run reset | creates a new state instead of mutating/reviving the dead one | existing restart behavior; **KEEP** |
 | temporary mode / Gear qualification | no current mode/Gear contract | future #87/#156 | deferred | a mode/Gear must explicitly map its consequence into ordinary semantic events or keep mode-local state; UI cannot silently redefine qualification | future #87/#156; **DEFER** |
@@ -95,11 +95,11 @@ No presentation-side code is permitted to append distance/score after that trans
 
 ### Final result snapshot
 
-No snapshot object is needed before #85 has actual result fields to consume. When introduced, it should be an immutable value captured exactly once from authoritative run state at the run-end transition. It should not become a second live accumulator.
+The approved M5 parent #197 assigns the score/result foundation to #198 before #85 integrates results/retry presentation. #198 should capture an immutable value exactly once from authoritative run state at run end; #85 consumes that snapshot rather than creating a second accumulator. This audit defines the boundary and adds no implementation.
 
 ### Score distinct from distance
 
-**Deferred human/product decision.** No approved formula or distinct current authority exists. Distance remains distance; this audit does not invent a score alias, multiplier, reward formula, or economy coupling.
+**Implementation deferred to approved M5 owner #198.** No distinct score implementation or final release formula exists yet. #198 owns the minimal M5 score/result model under #197; this audit does not invent a score alias, multiplier, reward formula, or economy coupling.
 
 ## Per-run versus persistent separation
 
