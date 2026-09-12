@@ -550,10 +550,12 @@ describe('Foundation scene gameplay orchestration', () => {
       width: number;
       height: number;
     }) => void;
+    const initialStream = getHazardStream(foundation);
     handleResize({ width: 1280, height: 720 });
+    expect(getHazardStream(foundation)).toBe(initialStream);
     services.input.setSpaceHeld(true);
 
-    for (let frame = 0; frame < 40; frame += 1) {
+    for (let frame = 0; frame < 110; frame += 1) {
       foundation.update(0, 50);
     }
 
@@ -564,14 +566,41 @@ describe('Foundation scene gameplay orchestration', () => {
     const motion = getRunMotionState(foundation);
     const stream = getHazardStream(foundation);
     const telegraphs = getTelegraphedHazardState(foundation);
+    expect(stream.policy?.exitEnvelope.states.some((state) => state.positionY < 28)).toBe(true);
 
     handleResize({ width: 844, height: 390 });
 
     expect(getFlightState(foundation)).toEqual({ positionY: 28, velocityY: 0 });
     expect(getRunMotionState(foundation)).toBe(motion);
-    expect(getHazardStream(foundation)).toBe(stream);
+    const resizedStream = getHazardStream(foundation);
+    expect(resizedStream).toEqual({
+      ...stream,
+      policy: { ...stream.policy, exitEnvelope: resizedStream.policy?.exitEnvelope },
+    });
+    expect(resizedStream.generationState).toBe(stream.generationState);
+    expect(resizedStream.spawns).toBe(stream.spawns);
+    expect(resizedStream.policy?.readability).toBe(stream.policy?.readability);
+    expect(resizedStream.policy?.pacing).toBe(stream.policy?.pacing);
+    expect(resizedStream.policy?.exitEnvelope.runDistance).toBe(
+      stream.policy?.exitEnvelope.runDistance,
+    );
+    expect(
+      resizedStream.policy?.exitEnvelope.states.every(
+        (state) => state.positionY >= 72 && state.positionY <= 318,
+      ),
+    ).toBe(true);
+    expect(Object.isFrozen(resizedStream)).toBe(true);
+    expect(stream.policy?.exitEnvelope.states.some((state) => state.positionY < 28)).toBe(true);
     expect(getTelegraphedHazardState(foundation)).toBe(telegraphs);
     expect(services.time.getDeltaSeconds()).toBe(0.05);
+
+    expect(() => foundation.update(0, 50)).not.toThrow();
+    expect(() => {
+      for (let frame = 0; frame < 100; frame += 1) foundation.update(0, 50);
+    }).not.toThrow();
+    expect(getHazardStream(foundation).scheduledPatternCount).toBeGreaterThan(
+      stream.scheduledPatternCount,
+    );
   });
 
   it('cleans scene-owned integration once while keeping application time reusable', () => {
@@ -625,7 +654,7 @@ describe('Foundation scene gameplay orchestration', () => {
     expect(services.time.update(16)).toBeCloseTo(0.016);
   });
 
-  it('samples the moving player target at the exact warning-to-lock boundary during update', () => {
+  it('samples the exact warning-to-lock target and preserves locked/active hazards across resize', () => {
     const { foundation, services, viewportService } = createFoundationHarness();
 
     // 1. Establish a real target-lock spawn through the scheduler authority
@@ -744,5 +773,32 @@ describe('Foundation scene gameplay orchestration', () => {
     expect(
       Math.abs((afterLifecycle.lockedTarget?.runDistance ?? 0) - initialMotion.distance),
     ).toBeGreaterThan(5.0);
+
+    vi.stubGlobal('document', { getElementById: vi.fn(() => null) });
+    const handleResize = Reflect.get(foundation, 'handleResize') as (size: {
+      width: number;
+      height: number;
+    }) => void;
+    for (const phase of ['lock', 'active']) {
+      if (phase === 'active') {
+        for (let frame = 0; frame < 8; frame += 1) foundation.update(0, 50);
+      }
+      const telegraphs = getTelegraphedHazardState(foundation);
+      expect(getTelegraphedHazardLifecycle(telegraphs, targetLockSpawn)?.phase).toBe(phase);
+      expect(getTelegraphedHazardLifecycle(telegraphs, targetLockSpawn)?.lockedTarget).toEqual(
+        afterLifecycle.lockedTarget,
+      );
+      const beforeResize = getHazardStream(foundation);
+      const distance = getRunMotionState(foundation);
+      const delta = services.time.getDeltaSeconds();
+      for (const height of [390, 720]) {
+        handleResize({ width: 844, height });
+        expect(getTelegraphedHazardState(foundation)).toBe(telegraphs);
+        expect(getHazardStream(foundation).spawns).toBe(beforeResize.spawns);
+        expect(getHazardStream(foundation).generationState).toBe(beforeResize.generationState);
+        expect(getRunMotionState(foundation)).toBe(distance);
+        expect(services.time.getDeltaSeconds()).toBe(delta);
+      }
+    }
   });
 });

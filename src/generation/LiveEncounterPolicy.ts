@@ -22,7 +22,11 @@ import {
   PROTOTYPE_PACING_CONFIG,
 } from '../pacing/PacingSystem';
 import type { PrototypePlayerCollisionExtents } from '../systems/HazardCollision';
-import { stepVerticalFlight, type VerticalFlightBounds } from '../systems/VerticalFlightSimulation';
+import {
+  constrainVerticalFlightState,
+  stepVerticalFlight,
+  type VerticalFlightBounds,
+} from '../systems/VerticalFlightSimulation';
 import {
   createEncounterReadabilityBudgetState,
   createEncounterReadabilityCandidate,
@@ -80,6 +84,32 @@ export interface LiveEncounterPolicyState {
   readonly readability: Readonly<EncounterReadabilityBudgetState>;
   readonly variety: Readonly<EncounterVarietyHistoryState>;
 }
+
+/** Reconciles retained history at resize without advancing time or sampling new trajectories. */
+export const constrainLiveEncounterPolicy = (
+  state: Readonly<LiveEncounterPolicyState>,
+  bounds: Readonly<VerticalFlightBounds>,
+): Readonly<LiveEncounterPolicyState> => {
+  const states = state.exitEnvelope.states.map((flight) =>
+    constrainVerticalFlightState(flight, bounds),
+  );
+  if (
+    states.every(
+      (flight, index) =>
+        flight.positionY === state.exitEnvelope.states[index]?.positionY &&
+        flight.velocityY === state.exitEnvelope.states[index]?.velocityY,
+    )
+  ) {
+    return state;
+  }
+  return Object.freeze({
+    ...state,
+    exitEnvelope: createEncounterExitStateEnvelope({
+      runDistance: state.exitEnvelope.runDistance,
+      states,
+    }),
+  });
+};
 
 export interface LiveEncounterCandidateSelection {
   readonly variety: Readonly<EncounterVarietySelection>;

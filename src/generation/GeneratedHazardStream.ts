@@ -3,7 +3,10 @@ import {
   calculateDifficulty,
   createDifficultyReactionTimeConstraint,
 } from '../difficulty/DifficultySystem';
-import { PROTOTYPE_PLAYER_COLLISION_EXTENTS } from '../systems/HazardCollision';
+import {
+  PROTOTYPE_PLAYER_COLLISION_EXTENTS,
+  type PrototypePlayerCollisionExtents,
+} from '../systems/HazardCollision';
 import type { EncounterStreamObservation } from './EncounterStreamObservation';
 import {
   type PatternReachabilityContext,
@@ -19,6 +22,7 @@ import {
 } from './HazardApproachTiming';
 import type { HazardPattern } from './HazardPattern';
 import {
+  constrainLiveEncounterPolicy,
   createLiveEncounterPolicyState,
   createLiveEncounterTransitionContext,
   deriveLiveEncounterExitEnvelope,
@@ -79,6 +83,21 @@ export interface GeneratedHazardStreamState {
   readonly spawns: ReadonlyArray<Readonly<GeneratedHazardSpawnInstance>>;
   readonly status: GeneratedHazardStreamStatus;
 }
+
+/** Zero-time domain reconciliation; accepted content and generator state retain their identity. */
+export const constrainGeneratedHazardStream = (
+  state: Readonly<GeneratedHazardStreamState>,
+  constraints: Readonly<PatternValidationConstraints>,
+  playerExtents: Readonly<PrototypePlayerCollisionExtents>,
+): Readonly<GeneratedHazardStreamState> => {
+  if (state.policy === null) return state;
+  // Match the center bounds used by transition validation, including encounter safety margins.
+  const policy = constrainLiveEncounterPolicy(state.policy, {
+    ceilingY: constraints.playableTop + playerExtents.top,
+    floorY: constraints.playableBottom - playerExtents.bottom,
+  });
+  return policy === state.policy ? state : Object.freeze({ ...state, policy });
+};
 
 export interface GeneratedHazardStreamContext {
   /** Development observers receive existing decision evidence; absent in production. */
