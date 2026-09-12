@@ -17,9 +17,9 @@ export type FlightTuningUpdate = Partial<FlightTuningValues>;
 
 /** Prototype starting values only; they must remain adjustable through playtesting. */
 export const PROTOTYPE_FLIGHT_TUNING_DEFAULTS: Readonly<FlightTuningValues> = Object.freeze({
-  gravity: 1_400,
-  thrust: 2_200,
-  maxFallVelocity: 650,
+  gravity: 1_600,
+  thrust: 2_600,
+  maxFallVelocity: 700,
   maxRiseVelocity: 550,
 });
 

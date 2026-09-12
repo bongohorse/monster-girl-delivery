@@ -29,10 +29,10 @@ describe('flight reachability', () => {
     expect(result).toMatchObject({
       failureReason: null,
       reachable: true,
-      reachableCenterRange: { top: 150, bottom: 366 },
-      reachableTargetCenterRange: { top: 150, bottom: 156 },
+      reachableCenterRange: { top: 125, bottom: 366 },
+      reachableTargetCenterRange: { top: 125, bottom: 156 },
       targetCenterRanges: [{ top: 72, bottom: 156 }],
-      upwardExtreme: { positionY: 150, velocityY: -400 },
+      upwardExtreme: { positionY: 125, velocityY: -500 },
     });
   });
 
@@ -46,7 +46,7 @@ describe('flight reachability', () => {
     expect(result).toMatchObject({
       failureReason: 'safe-corridor-above-reachable-envelope',
       reachable: false,
-      reachableCenterRange: { top: 364, bottom: 366 },
+      reachableCenterRange: { top: 360, bottom: 366 },
       reachableTargetCenterRange: null,
     });
   });
@@ -78,13 +78,13 @@ describe('flight reachability', () => {
     );
 
     expect(result).toMatchObject({
-      downwardExtreme: { velocityY: 650 },
+      downwardExtreme: { velocityY: 700 },
       failureReason: null,
       reachable: true,
       reachableTargetCenterRange: { top: 224 },
     });
-    expect(result.downwardExtreme.positionY).toBeCloseTo(274.107_142_857_1, 10);
-    expect(result.reachableTargetCenterRange?.bottom).toBeCloseTo(274.107_142_857_1, 10);
+    expect(result.downwardExtreme.positionY).toBeCloseTo(296.875, 10);
+    expect(result.reachableTargetCenterRange?.bottom).toBeCloseTo(296.875, 10);
   });
 
   it('treats exact edge contact as reachable and a separated target as unreachable', () => {
@@ -130,16 +130,22 @@ describe('flight reachability', () => {
     const maxFall = evaluateFlightReachability(
       [{ top: 0, bottom: 400 }],
       { ceilingY: 0, floorY: 400 },
-      { ...extentlessContext, flightState: { positionY: 200, velocityY: 650 } },
+      {
+        ...extentlessContext,
+        flightState: {
+          positionY: 200,
+          velocityY: PROTOTYPE_FLIGHT_TUNING_DEFAULTS.maxFallVelocity,
+        },
+      },
     );
 
     expect(maxRise).toMatchObject({
-      reachableCenterRange: { top: 145, bottom: 152 },
+      reachableCenterRange: { top: 145, bottom: 153 },
       upwardExtreme: { positionY: 145, velocityY: -550 },
     });
     expect(maxFall).toMatchObject({
-      downwardExtreme: { positionY: 265, velocityY: 650 },
-      reachableCenterRange: { top: 261, bottom: 265 },
+      downwardExtreme: { positionY: 270, velocityY: 700 },
+      reachableCenterRange: { top: 265, bottom: 270 },
     });
   });
 
