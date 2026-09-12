@@ -17,6 +17,8 @@ The hub is intentionally a navigation/ownership document, not another specificat
 - **Roadmap:** [`ROADMAP.md`](ROADMAP.md)
 - **Product/game specification:** [`../MASTER_SPEC.md`](../MASTER_SPEC.md)
 
+Pre-M5 authority decisions: [run metrics / events (#182)](PRE_M5_RUN_METRICS_EVENT_AUTHORITY_AUDIT.md) and [player consequences (#184)](PRE_M5_CONSEQUENCE_OWNERSHIP_AUDIT.md).
+
 GitHub Issues/PRs are the live execution trail. Completed milestone reports are historical evidence, not current planning.
 
 ---
