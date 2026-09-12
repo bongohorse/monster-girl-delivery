@@ -9,6 +9,7 @@ import {
 } from '../../src/generation/GeneratedHazardStream';
 import { createHazardPattern } from '../../src/generation/HazardPattern';
 import {
+  constrainLiveEncounterPolicy,
   createLiveEncounterPolicyState,
   createLiveEncounterTransitionContext,
   evaluateLiveEncounterReadability,
@@ -38,6 +39,49 @@ const POLICY_CONTEXT = Object.freeze({
   catalog: PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES,
   policy: PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG,
   reachability: REACHABILITY,
+});
+
+describe('retained encounter history on resize', () => {
+  it('constrains correlated samples without resampling or changing other policy state', () => {
+    const original = Object.freeze({
+      ...createLiveEncounterPolicyState(0, REACHABILITY),
+      exitEnvelope: createEncounterExitStateEnvelope({
+        runDistance: 1_000,
+        states: [
+          { positionY: -100, velocityY: -100 },
+          { positionY: -100, velocityY: 100 },
+          { positionY: 400, velocityY: 100 },
+          { positionY: 400, velocityY: -100 },
+          { positionY: 200, velocityY: -50 },
+          { positionY: 200, velocityY: 50 },
+        ],
+      }),
+    });
+    const snapshot = JSON.stringify(original);
+    const result = constrainLiveEncounterPolicy(original, { ceilingY: 72, floorY: 318 });
+
+    expect(result).toEqual({
+      ...original,
+      exitEnvelope: {
+        runDistance: 1_000,
+        states: [
+          { positionY: 72, velocityY: 0 },
+          { positionY: 72, velocityY: 100 },
+          { positionY: 318, velocityY: 0 },
+          { positionY: 318, velocityY: -100 },
+          { positionY: 200, velocityY: -50 },
+          { positionY: 200, velocityY: 50 },
+        ],
+      },
+    });
+    expect(JSON.stringify(original)).toBe(snapshot);
+    expect(Object.isFrozen(result)).toBe(true);
+    expect(Object.isFrozen(result.exitEnvelope)).toBe(true);
+    expect(Object.isFrozen(result.exitEnvelope.states)).toBe(true);
+    expect(result.exitEnvelope.states.every(Object.isFrozen)).toBe(true);
+    expect(constrainLiveEncounterPolicy(result, { ceilingY: 72, floorY: 318 })).toBe(result);
+    expect(constrainLiveEncounterPolicy(result, { ceilingY: -258, floorY: 500 })).toBe(result);
+  });
 });
 
 const createVarietyPattern = (id: string, varietyFamilyId: string) =>

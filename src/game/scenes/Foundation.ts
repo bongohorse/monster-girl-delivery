@@ -14,6 +14,7 @@ import type { EncounterStreamObservation } from '../../generation/EncounterStrea
 import { PROTOTYPE_PATTERN_REACHABILITY_CONTEXT } from '../../generation/FlightReachability';
 import {
   advanceGeneratedHazardStream,
+  constrainGeneratedHazardStream,
   createGeneratedHazardStream,
   type GeneratedHazardStreamState,
   PROTOTYPE_LIVE_RUN_SEED,
@@ -340,6 +341,13 @@ export class Foundation extends Scene {
     const viewport = this.viewportService.getSnapshot();
     const flightBounds = createPrototypeFlightBounds(viewport);
     this.hazardVerticalDomain = createPrototypeHazardVerticalDomain(flightBounds);
+    if (this.hazardStream) {
+      this.hazardStream = constrainGeneratedHazardStream(
+        this.hazardStream,
+        this.hazardVerticalDomain.constraints,
+        PROTOTYPE_PATTERN_REACHABILITY_CONTEXT.playerExtents,
+      );
+    }
     this.runState = {
       ...this.runState,
       flight: constrainVerticalFlightState(this.runState.flight, flightBounds),
