@@ -3,7 +3,7 @@
 **Status:** APPROVED  
 **Approved by:** Game Director / Product Owner  
 **Originally approved:** 2026-09-03  
-**Roadmap 2.0 revision:** 2026-09-04  
+**Roadmap 3.0 revision:** 2026-09-12  
 **Current milestone:** Pre-M5 transition (M4 complete; M5 parent #197 approved; implementation blocked by Pre-M5 exit gate)
 
 > [!IMPORTANT]
@@ -95,193 +95,47 @@ Director tooling uses authoritative runtime state and must not become a second i
 
 ---
 
-# Completed foundation
+# Completed milestones
 
-## M0 — Foundation
+M0–M4 are complete. Reports own delivered scope, acceptance, and limitations; later correctness work does not rewrite history.
 
-**Status: COMPLETE**
-
-**Purpose:** establish the technical and workflow foundation before gameplay implementation.
-
-Core scope delivered:
-
-- project scaffold;
-- Bun / Vite / TypeScript / Phaser setup;
-- code quality, tests, CI and Codespaces foundation;
-- core timing, input, lifecycle and viewport services;
-- minimal Director diagnostics.
-
-Historical report: [`milestones/M0-foundation.md`](milestones/M0-foundation.md)
+| Milestone | Closeout | Supporting evidence |
+|---|---|---|
+| M0 — Foundation | [Report](milestones/M0-foundation.md) | — |
+| M1 — Flight Prototype | [Report](milestones/M1-flight-prototype.md) | [Device validation](milestones/M1-device-report.md) |
+| M2 — Horizontal Run & First Hazard | [Report](milestones/M2-horizontal-run-first-hazard.md) | Parent #49 |
+| M3 — Seeded Generation & Fairness | [Report](milestones/M3-seeded-generation-fairness.md) | [Validation](milestones/M3-seeded-run-validation.md), parent #57 |
+| M4 — Run Pacing & Hazard Language | [Report](milestones/M4-run-pacing-hazard-language.md) | [Validation](milestones/M4-run-pacing-validation.md), parent #116 |
 
 ---
 
-## M1 — Flight Prototype
+# Current — Pre-M5 Gameplay Authority Gate
 
-**Status: COMPLETE**
+**Status: CURRENT. M5 implementation is blocked; its parent plan is approved.**
 
-**Purpose:** prove the mobile-first one-button flight model and choose the core orientation.
+[Issue #179](https://github.com/bongohorse/monster-girl-delivery/issues/179) owns the authority audit; [M5 parent #197](https://github.com/bongohorse/monster-girl-delivery/issues/197) owns the entry dependencies.
 
-Core scope delivered:
+| Domain | Focused owner |
+|---|---|
+| Expanded flight-domain encounters / viewport-independent dominant-route pressure | #178 / #191 |
+| Base flight model | #180 |
+| Run speed / logical distance | #181 |
+| Run metrics / event semantics | #182 |
+| Hit / death / consequence ownership | #184 |
+| Pacing / timing units | #183 — comparison completed in #179 |
 
-- placeholder player;
-- thrust / gravity flight;
-- touch, mouse and keyboard input;
-- live prototype physics tuning;
-- real-device tests;
-- Landscape selected for the current core game.
+### Exit evidence
 
-Historical report: [`milestones/M1-flight-prototype.md`](milestones/M1-flight-prototype.md)  
-Supporting device evidence: [`milestones/M1-device-report.md`](milestones/M1-device-report.md)
+- Each audit records **KEEP / ADJUST / REWORK / DEFER**, evidence, and its effect on M5 consumers.
+- Blocking corrections are merged and validated; accepted deferrals name the limitation and why M5 can safely proceed.
+- Collision/run-state stabilization is resolved or explicitly bounded as required by #197.
+- #179/#197 record the explicit gate outcome before M5 is marked current.
+
+KEEP and justified DEFER are valid outcomes. No rewrite, reference-game parity, or exhaustive APK research is required. Creating a follow-up alone does not resolve an M5-blocking dependency.
 
 ---
 
 # Core-game proof phase
-
-## M2 — Horizontal Run & First Hazard
-
-**Status: COMPLETE**
-
-**Purpose:** turn the vertical flight prototype into the first real left-to-right endless-run foundation.
-
-### Proof question
-
-> Does the proven one-button flight model still work when placed inside a real left-to-right runner with world motion, lethal danger, death, and restart?
-
-### Entry gate
-
-Satisfied by M1 completion, accepted real-device evidence, and the Game Director's Landscape decision.
-
-### Core scope
-
-- deterministic horizontal run progress;
-- configurable prototype scroll speed;
-- placeholder scrolling-world presentation;
-- one deterministic lethal hazard;
-- collision, run death and restart;
-- focused deterministic tests;
-- Landscape device validation.
-
-### Exit gate
-
-M2 may close only when:
-
-- the horizontal run, first hazard, death, and restart form a coherent testable runner foundation;
-- required automated validation passes;
-- the completed M2 build receives the required Landscape device validation;
-- blocking defects are fixed/retested;
-- a factual M2 closeout report is merged;
-- the M2 parent is closed and M3 is explicitly unblocked.
-
-**Explicitly not part of M2:** production art, Graze, scoring, procedural generation, final difficulty/pacing, or meta systems.
-
-Completed parent: [Issue #49](https://github.com/bongohorse/monster-girl-delivery/issues/49)
-
-Historical report: [`milestones/M2-horizontal-run-first-hazard.md`](milestones/M2-horizontal-run-first-hazard.md)
-
----
-
-## M3 — Seeded Generation & Fairness
-
-**Status: COMPLETE**
-
-**Purpose:** establish deterministic procedural encounter generation that can be reproduced, inspected, tested, and rejected when unsafe.
-
-### Proof question
-
-> Can MGD generate varied hazard sequences reproducibly while ensuring that only patterns passing explicit prototype fairness constraints reach the live run?
-
-### Entry gate
-
-Satisfied by the completed M2 implementation, accepted Landscape validation, factual closeout, and closure of M2 parent Issue #49.
-
-The M3 parent Issue #57 records the detailed focused scope, dependencies, and ordered child work.
-
-### Core scope
-
-- dedicated seeded gameplay PRNG;
-- explicit run-generation state;
-- data-driven hazard pattern model;
-- deterministic pattern generator;
-- pure fairness validator;
-- deterministic run-distance spawn scheduling;
-- live generated-pattern integration;
-- seed visibility and restart-same-seed tooling;
-- reproducibility/fairness validation.
-
-### Exit gate
-
-M3 may close only when evidence shows that:
-
-- the same representative seed reproduces the same logical generated sequence;
-- representative different seeds can diverge where the catalog permits;
-- invalid/rejected patterns do not reach the accepted live spawn stream;
-- pause/resume and resize do not corrupt generation order/state;
-- finite seed sampling is documented honestly as evidence rather than proof of every possible future seed;
-- blocking generation/fairness defects are resolved and retested;
-- a factual M3 closeout is merged.
-
-**Explicitly not part of M3:** final difficulty curve, pacing system, production art, Graze, score/economy, large content catalogs, or final balancing.
-
-Completed parent: [Issue #57](https://github.com/bongohorse/monster-girl-delivery/issues/57)
-
-Historical report: [`milestones/M3-seeded-generation-fairness.md`](milestones/M3-seeded-generation-fairness.md)
-
-Supporting validation: [`milestones/M3-seeded-run-validation.md`](milestones/M3-seeded-run-validation.md)
-
----
-
-## M4 — Run Pacing & Hazard Language
-
-**Status: COMPLETE**
-
-**Purpose:** turn technically valid generated encounters into runs that remain readable, varied, fair, and interesting over time.
-
-### Proof question
-
-> Can MGD produce sustained runs that create deliberate pressure and recovery, teach hazards clearly, and increase challenge without becoming monotonous or unfair?
-
-### Entry gate
-
-Satisfied by the completed, validated M3 generation pipeline, the factual M3 closeout, closure of M3 parent Issue #57, and the focused M4 parent plan in Issue #116.
-
-### Core scope
-
-Promote the relevant future run-design work in a focused order, including:
-
-- time-to-impact-based fairness rather than raw viewport-edge distance;
-- physics-aware reachability where it materially improves validation;
-- deterministic run difficulty progression;
-- deterministic pacing/intensity state;
-- deliberate breather/recovery sections;
-- telegraphed hazard lifecycle where appropriate;
-- multiple mechanically distinct hazard archetypes;
-- encounter/fairness diagnostics sufficient for Director testing.
-
-Difficulty and pacing are separate responsibilities:
-
-- **difficulty** controls what challenge is allowed;
-- **pacing** controls how much pressure is applied at a given moment.
-
-### Exit gate
-
-M4 may close only when:
-
-- a generated run can demonstrate intentional difficulty progression without relying only on raw speed;
-- pressure and breather phases are observable/reproducible;
-- major hazard archetypes communicate their behavior clearly enough for fair reaction;
-- representative runs are validated on real gameplay, not only unit tests;
-- the Game Director accepts the run structure as sufficiently readable and varied to build the full arcade loop on top of it;
-- a factual M4 closeout is merged.
-
-**Explicitly not part of M4:** final production content volume, final balance values, full economy/meta, production art scaling, or release-level content variety.
-
-Completed parent: [Issue #116](https://github.com/bongohorse/monster-girl-delivery/issues/116)
-
-Historical report: [`milestones/M4-run-pacing-hazard-language.md`](milestones/M4-run-pacing-hazard-language.md)
-
-Supporting validation: [`milestones/M4-run-pacing-validation.md`](milestones/M4-run-pacing-validation.md)
-
----
 
 ## M5 — Complete Arcade Loop & Skill Layer
 
@@ -322,6 +176,25 @@ MGD does **not** adopt manufactured procedural unfairness as a retention tactic.
 
 Promoted focused work is tracked by #198 (score/result snapshot/basic rewards), #90 (Graze), #84 (collectible paths), and #85 (fail-state/retry), subject to #197's entry gate and dependency ordering.
 
+### Execution order within M5
+
+These are execution steps, not new milestones or parallel ownership of run state.
+
+| Step | Outcome | Owner / dependency |
+|---|---|---|
+| 1. Run outcome foundation | Authoritative score, immutable final result, basic feedback | #198 consumes Pre-M5 #182/#184 boundaries |
+| 2. Skill / route layer | Graze, then teaching and optional-risk collectible paths | #90 → #84, consuming step 1 contracts |
+| 3. Arcade loop integration | Death → results → one-action retry; lifecycle integration tests | #85 consumes steps 1–2 |
+| Acceptance | Director replayability, pacing, MGD identity; factual closeout | #197 after integration |
+
+#197 owns detailed ordering and evidence-backed dependency adjustments. Consumers reuse the same run-end/event/result authority; post-death presentation cannot alter score, distance, rewards, or the final snapshot.
+
+### MGD identity acceptance
+
+Placeholder assets are sufficient. In representative play, the Director should recognize the Monster Girl courier/delivery premise through existing character, pickup, failure, and result feedback while understanding the actual measured outcomes. Record the build, observations, and acceptance in the M5 closeout.
+
+Delivery wording and inexpensive presentation cues are examples, not fixed copy or permission for Delivery Mode, contracts, parcel inventory, or production art. Do not imply a successful delivery, reward, or record that the build does not implement.
+
 ### Exit gate
 
 M5 may close only when:
@@ -329,6 +202,8 @@ M5 may close only when:
 - the entire arcade loop works without requiring developer intervention between runs;
 - Graze/score/collectibles produce a visible skill/risk layer rather than arbitrary numbers;
 - death → results → retry friction is low enough for repeated playtesting;
+- MGD identity acceptance above is recorded without introducing new delivery systems;
+- bounded late-run speed and unintended dead zones are reviewed as required by #197; intentional breathers remain valid;
 - the Game Director accepts the core game as sufficiently replayable/fun to justify production-quality presentation work;
 - unresolved product questions that affect M6 are routed through the Product and Art Gates below;
 - a factual M5 closeout is merged.
@@ -413,6 +288,7 @@ Before M6 production scaling:
 - M5 arcade-loop exit gate passed;
 - Product Gate A resolved strongly enough to define the slice;
 - Art Gate resolved strongly enough to produce representative assets;
+- a provisional initial distribution target and representative device envelope are recorded for slice testing; this does not select a wrapper or change platform strategy by default;
 - unresolved rendering/performance blockers that would invalidate visual evaluation are addressed or explicitly bounded.
 
 ### Target slice
@@ -444,9 +320,31 @@ M6 proves a **quality bar and production approach**, not the final quantity of r
 
 ---
 
+## Platform / Distribution Gate — Prove the initial shipping path
+
+**Timing:** establish a provisional target before M6; resolve this gate using the M6 slice before persistence/content scaling depends on platform assumptions.
+
+### Decision question
+
+> Where will release 1 ship, and can the representative game operate through that distribution path?
+
+Compare only plausible targets: mobile web, PWA if justified, Android and/or iOS packaging, or a suitable web portal. Preserve the mobile-first priority in `MASTER_SPEC.md`; evaluation does not approve all platforms or a new dependency.
+
+### Gate output
+
+- Director-selected initial target(s), deferred targets, and representative device/browser envelope;
+- a small working build through the selected path on representative hardware, with reproduction steps and observed limitations;
+- evidence for required capabilities: save/reload, audio/input user gestures, suspend/resume, safe areas, Landscape orientation, fullscreen where needed/supported, and cache/update behavior;
+- identified distribution/store constraints and costs where applicable, with a feasible resolution for blockers;
+- durable platform decision in `MASTER_SPEC.md`; technical ownership and build instructions in their canonical documents when implemented.
+
+Use a bounded feasibility check, not full store-release preparation or speculative wrappers. If the path fails, revise the target or resolve the blocker before dependent work proceeds. M9 hardens this proven path rather than discovering packaging for the first time.
+
+---
+
 ## Meta Gate — Define the minimum long-term progression target
 
-**Timing:** after M6 and before M7 builds durable persistence/meta foundations.
+**Timing:** after M6, informed by the Platform Gate, before committing to optional M7 work.
 
 ### Decision question
 
@@ -463,25 +361,38 @@ Resolve enough of the following to design M7 safely:
 
 ### Gate output
 
-Record durable product decisions in `MASTER_SPEC.md`. M7 should implement the smallest complete meta loop justified by those decisions rather than prebuilding Dailies, Battle Pass, Companions, Gacha, HQ, and other long-term systems speculatively.
+Record one Director decision and its rationale in `MASTER_SPEC.md`:
+
+| Outcome | Route |
+|---|---|
+| Meta justified | M7 proves one bounded progression/collection loop |
+| Minimal | Reduce M7 to approved records/settings/small-unlock needs |
+| No additional meta | Skip M7; proceed to Content Budget Gate once baseline persistence needs are satisfied |
+
+Skipping meta does not waive required saving. Reuse existing records/settings storage; implement only missing approved needs through the centralized, versioned `SaveManager` boundary and recovery/migration requirements in `MASTER_SPEC.md`. Name the focused owner and validation before M8 if work remains. No currency, Gallery, or unlock framework without an approved consumer.
+
+Record skipped M7 as **SKIPPED by decision**, never COMPLETE. No dummy implementation or milestone closeout is needed for work that did not happen.
 
 ---
 
-## M7 — Meta Foundation & Persistence
+## M7 — Optional / Minimal Meta & Persistence
 
-**Purpose:** prove one complete durable progression/collection loop after the arcade game and vertical slice have already proven themselves.
+**Purpose:** prove only the durable progression or minimal persistence scope selected by the Meta Gate after the arcade game and vertical slice.
 
 ### Proof question
 
-> Can a player earn something through play, persist it safely, unlock/own/view or use it, and return to another run with meaningful long-term progress?
+> Does the selected persistent scope improve return play and survive reload safely? For full M7, prove earn → save → own/use → replay; for reduced M7, prove only the approved records/settings/unlocks.
 
 ### Entry gate
 
 - M6 quality/production proof accepted;
-- Meta Gate resolved sufficiently to define a minimal loop;
+- Meta Gate selects full or reduced M7 and defines exact scope;
+- Platform Gate passes for the persistence/distribution assumptions used;
 - M7 has a focused parent plan before implementation begins.
 
-### Core scope
+### Core scope — only as selected by the Meta Gate
+
+Reduced M7 retains only the approved subset below; an economy/collection loop is not mandatory. Reuse existing records/settings foundations.
 
 - centralized `SaveManager` boundary;
 - versioned local persistence;
@@ -507,12 +418,12 @@ Run
 
 M7 may close only when:
 
-- the complete approved meta loop works end-to-end;
-- persisted ownership/progression survives reload/restart as intended;
+- the approved full or reduced scope works end-to-end;
+- approved persisted data survives reload/restart as intended;
 - versioning/migration behavior has deterministic coverage appropriate to the implementation;
 - development recovery/export/import/reset paths exist;
 - the meta layer does not require online accounts/backend infrastructure;
-- the Game Director accepts the loop as worth scaling rather than merely technically functional;
+- the Game Director accepts the selected scope as useful rather than merely technically functional;
 - a factual M7 closeout is merged.
 
 **Explicitly not automatically part of M7:** paid/random monetization, Battle Pass, Dailies, Companions, fusion, HQ management, relationship systems, or every idea in `BACKLOG.md`.
@@ -525,13 +436,13 @@ The project remains local-first and offline-first for the initial scope. Real-mo
 
 ## Content Budget Gate — Set an evidence-based release content target
 
-**Timing:** after M6 has produced real production assets and M7 has proven the minimum meta loop, before M8 scales content broadly.
+**Timing:** after M6 and the Platform/Meta Gates, with selected M7 work accepted or M7 explicitly skipped and required baseline persistence validated; before M8 scales content.
 
 ### Decision question
 
 > How much release content can be produced, validated, and polished at the proven quality level without destabilizing the project?
 
-Use real observations from M6/M7 to estimate relative production cost/complexity for items such as:
+Use real observations from M6 and any implemented M7 scope to estimate relative production cost/complexity for items such as:
 
 - one Monster Girl and animation set;
 - one environment/district kit;
@@ -561,7 +472,8 @@ The Game Director approves an evidence-based M8 release-content target. The targ
 ### Entry gate
 
 - M6 vertical-slice quality bar accepted;
-- M7 minimum meta loop accepted;
+- Platform Gate passed; Meta Gate decision recorded;
+- selected M7 scope accepted, or M7 explicitly skipped with required baseline persistence validated;
 - Content Budget Gate produces a bounded release-content target;
 - M8 has a focused production plan before broad implementation begins.
 
@@ -570,11 +482,11 @@ The Game Director approves an evidence-based M8 release-content target. The targ
 - additional Monster Girls/skins;
 - additional themed districts;
 - larger validated pattern catalog;
-- expanded hazard archetypes;
+- variations using proven hazard behavior contracts;
 - additional animation, VFX, audio and UI content;
 - boss/set-piece encounters only where previously proven/promoted;
 - temporary gameplay events only where previously validated/promoted;
-- Delivery Contracts or comparable long-term objectives only if reward/meta foundations and product decisions justify them;
+- Delivery Contracts or comparable objectives only if their systems were explicitly approved, prototyped, and accepted before M8;
 - modular production-art scaling;
 - content-performance optimization;
 - content regression/readability validation.
@@ -590,11 +502,11 @@ M8 may close only when:
 - remaining work is primarily release polish, compatibility, packaging, compliance, or blocker fixes rather than missing core game systems;
 - a factual M8 closeout is merged.
 
-**Rule:** M8 scales a proven game. It should not quietly invent a second core game, deep new meta architecture, or another production pipeline.
+**Rule:** No new foundation systems in M8 by default. New quest/combat/vehicle/progression frameworks or physics architectures require explicit roadmap re-planning and a bounded accepted prototype before content depends on them. Bosses, temporary modes, and new hazard behaviors follow the same rule; backlog promotion alone is insufficient. Cut/defer an idea needing unproven foundations or revisit the plan rather than hiding foundation work in M8.
 
 ---
 
-## M9 — Mobile Release & Polish
+## M9 — Release Hardening & Launch
 
 **Purpose:** turn the validated release-content build into a mobile release candidate and prepare broader distribution without destabilizing the proven game.
 
@@ -606,6 +518,7 @@ M8 may close only when:
 
 - M8 content exit gate passed;
 - release-candidate content scope is bounded;
+- the Platform Gate shipping path is proven and still matches the selected release target;
 - no known missing foundation system is being deferred into “polish.”
 
 ### Core scope
@@ -616,7 +529,7 @@ M8 may close only when:
 - accessibility pass appropriate to the game;
 - mobile device matrix and regression testing;
 - lifecycle/suspend/resume validation;
-- production packaging path for Android/iOS where appropriate;
+- hardening the shipping path proven at the Platform Gate; Android/iOS packaging only if selected;
 - production build and packaging checks;
 - store preparation/compliance work required for the chosen targets;
 - release-blocker fixes;
@@ -639,58 +552,32 @@ M9 completes only when:
 
 # Development sequence
 
-```text
-M0  Foundation                         COMPLETE
- ↓
-M1  Flight Prototype                   COMPLETE
- ↓
-M2  Horizontal Run & First Hazard      COMPLETE
- ↓
-M3  Seeded Generation & Fairness       COMPLETE
- ↓
-M4  Run Pacing & Hazard Language       COMPLETE
- ↓
-M5  Complete Arcade Loop & Skill Layer (PARENT #197 APPROVED; PRE-M5 GATE)
- ↓
-PRODUCT GATE A — define release core game
-ART GATE       — lock minimum production visual direction
- ↓
-M6  Vertical Slice / Visual Identity
- ↓
-META GATE      — define minimum progression/collection target
- ↓
-M7  Meta Foundation & Persistence
- ↓
-CONTENT BUDGET GATE — bound release content from real production evidence
- ↓
-M8  Release Content Production
- ↓
-M9  Mobile Release & Polish
+M0–M4 are complete. The current and future route is:
+
+```mermaid
+flowchart TD
+  PRE["CURRENT: Pre-M5 authority gate"] --> M5["M5: outcome → skill → arcade integration"]
+  M5 --> PRODUCT["Product and Art Gates"]
+  PRODUCT --> M6["M6: vertical slice"]
+  M6 --> PLATFORM["Platform Gate"]
+  PLATFORM --> META{"Meta Gate"}
+  META -->|"Full / reduced"| M7["M7: approved scope only"]
+  META -->|"No additional meta; baseline saves validated"| BUDGET["Content Budget Gate"]
+  M7 --> BUDGET
+  BUDGET --> M8["M8: scale proven content"]
+  M8 --> M9["M9: harden and launch"]
 ```
 
-The logic is deliberate:
-
-1. prove movement;
-2. prove the endless-run foundation;
-3. prove reproducible/fair generation;
-4. prove long-run difficulty, pacing and hazard language;
-5. prove the core arcade game is worth replaying;
-6. decide what game is actually being produced and how it should look;
-7. prove one release-quality vertical slice;
-8. decide the smallest worthwhile long-term progression model;
-9. prove one complete persistent meta loop;
-10. set a realistic content budget using real production evidence;
-11. scale only proven systems/content;
-12. ship and polish on representative mobile targets.
+A provisional distribution target informs M6; the Platform Gate validates its shipping path afterward. Gates record decisions and evidence, not permission to build every option.
 
 ---
 
 # Roadmap rules
 
-- M0–M2 historical scope is not rewritten by later planning changes.
+- M0–M4 historical scope is not rewritten by later planning changes.
 - The current milestone remains the only default implementation focus unless the Game Director explicitly authorizes cross-cutting work.
 - A decision gate is not permission to prebuild every possible answer before the decision.
-- Every future milestone should have a parent Issue and focused child Issues before implementation begins.
+- Each selected future milestone needs a focused parent plan when its entry assumptions can be verified; optional milestones may be explicitly skipped.
 - Parent Issues/milestones are planning containers; focused implementation work should remain independently reviewable where practical.
 - Every milestone requires factual closeout evidence before advancing.
 - Automated tests, manual/device evidence, and Game Director acceptance serve different purposes; do not substitute one for another.
