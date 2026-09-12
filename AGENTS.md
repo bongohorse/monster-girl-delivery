@@ -196,7 +196,7 @@ A feature is not complete merely because a new class, helper, interface, or test
 For implementation work:
 
 1. inspect the current call path and ownership;
-2. reuse existing abstractions where they fit;
+2. reuse existing MGD abstractions where they fit; before adding custom code, check suitable JavaScript/Web/Phaser capabilities and already-approved dependencies against the task requirements, ownership boundaries, determinism, and runtime cost;
 3. implement the smallest coherent production change;
 4. wire it into the real runtime path when the Issue requires live behavior;
 5. remove obsolete paths created by the change when safe and in scope;
