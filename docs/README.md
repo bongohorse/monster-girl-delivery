@@ -10,8 +10,8 @@ The hub is intentionally a navigation/ownership document, not another specificat
 ## Current project pointer
 
 - **Project phase:** Pre-Production
-- **Current milestone:** Pre-M5 transition (M4 complete; M5 pending approved parent plan)
-- **Current milestone parent:** None (M4 parent [GitHub Issue #116](https://github.com/bongohorse/monster-girl-delivery/issues/116) closed on closeout merge; M5 parent pending)
+- **Current milestone:** Pre-M5 Gameplay Authority Gate (M4 complete; M5 parent #197 approved; implementation blocked)
+- **Current gate owner:** [Issue #179](https://github.com/bongohorse/monster-girl-delivery/issues/179); approved next milestone parent: [M5 #197](https://github.com/bongohorse/monster-girl-delivery/issues/197)
 - **Latest completed milestone:** M4 — [`milestones/M4-run-pacing-hazard-language.md`](milestones/M4-run-pacing-hazard-language.md)
 - **Current validation evidence:** [`milestones/M4-run-pacing-validation.md`](milestones/M4-run-pacing-validation.md)
 - **Roadmap:** [`ROADMAP.md`](ROADMAP.md)
@@ -223,7 +223,7 @@ Current completed reports:
 - supporting M3 evidence: [`milestones/M3-seeded-run-validation.md`](milestones/M3-seeded-run-validation.md)
 - supporting M4 evidence: [`milestones/M4-run-pacing-validation.md`](milestones/M4-run-pacing-validation.md)
 
-M4 closeout is recorded in [`milestones/M4-run-pacing-hazard-language.md`](milestones/M4-run-pacing-hazard-language.md) with supporting evidence in [`milestones/M4-run-pacing-validation.md`](milestones/M4-run-pacing-validation.md). M5 implementation remains unstarted until an approved focused M5 parent plan is established.
+M4 closeout is recorded in [`milestones/M4-run-pacing-hazard-language.md`](milestones/M4-run-pacing-hazard-language.md) with supporting evidence in [`milestones/M4-run-pacing-validation.md`](milestones/M4-run-pacing-validation.md). M5 parent #197 is approved; implementation remains blocked until its Pre-M5 entry gate passes.
 
 Historical reports should be corrected only when factual evidence is wrong, not rewritten to match later plans.
 
