@@ -99,6 +99,7 @@ const createFoundationHarness = () => {
   const generatedHazardPresentation = { destroy: vi.fn(), sync: vi.fn() };
   const instructions = {
     setPosition: vi.fn(),
+    setResolution: vi.fn(),
     setText: vi.fn(),
     setWordWrapWidth: vi.fn(),
   };
@@ -109,6 +110,7 @@ const createFoundationHarness = () => {
   const scrollingWorldPresentation = { destroy: vi.fn(), render: vi.fn() };
   const scaleOff = vi.fn();
   const cameraResize = vi.fn();
+  const cameraSetZoom = vi.fn();
 
   Reflect.set(foundation, 'viewportService', viewportService);
   Reflect.set(foundation, 'directorPanel', directorPanel);
@@ -140,11 +142,20 @@ const createFoundationHarness = () => {
     flight: { positionY: 195, velocityY: 0 },
   });
   Reflect.set(foundation, 'game', { loop: { actualFps: 60, rawDelta: 16 } });
-  Reflect.set(foundation, 'scale', { off: scaleOff });
-  Reflect.set(foundation, 'cameras', { resize: cameraResize });
+  Reflect.set(foundation, 'scale', {
+    height: 800,
+    off: scaleOff,
+    width: 400,
+    zoom: 1,
+  });
+  Reflect.set(foundation, 'cameras', {
+    main: { setZoom: cameraSetZoom },
+    resize: cameraResize,
+  });
 
   return {
     cameraResize,
+    cameraSetZoom,
     directorTuningControls,
     directorPanel,
     directorRunControls,
@@ -541,6 +552,36 @@ describe('Foundation scene gameplay orchestration', () => {
     foundation.update(0, 0);
     expect(getFlightState(foundation)).toEqual({ positionY: 250, velocityY: 120 });
     expect(getRunMotionState(foundation)).toEqual({ distance: 123 });
+  });
+
+  it('keeps gameplay in CSS-pixel coordinates while the backing buffer runs at 2x', () => {
+    const { cameraResize, cameraSetZoom, foundation, playerPresentation, viewportService } =
+      createFoundationHarness();
+    vi.stubGlobal('document', { getElementById: vi.fn(() => null) });
+    const scale = Reflect.get(foundation, 'scale') as { zoom: number };
+    scale.zoom = 0.5;
+    Reflect.set(foundation, 'runState', {
+      phase: 'running',
+      motion: { distance: 123 },
+      flight: { positionY: 250, velocityY: 120 },
+    });
+    const handleResize = Reflect.get(foundation, 'handleResize') as (size: {
+      width: number;
+      height: number;
+    }) => void;
+
+    handleResize({ width: 1600, height: 1200 });
+
+    expect(cameraResize).toHaveBeenLastCalledWith(1600, 1200);
+    expect(cameraSetZoom).toHaveBeenLastCalledWith(2);
+    expect(viewportService.getSnapshot()).toMatchObject({
+      width: 800,
+      height: 600,
+      orientation: 'landscape',
+    });
+    expect(getRunMotionState(foundation)).toEqual({ distance: 123 });
+    expect(getFlightState(foundation)).toEqual({ positionY: 250, velocityY: 120 });
+    expect(playerPresentation.setPosition).toHaveBeenLastCalledWith(200, 460);
   });
 
   it('flies into the added upper room and clamps on shrink without resetting the run', () => {

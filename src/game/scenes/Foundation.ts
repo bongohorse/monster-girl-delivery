@@ -48,6 +48,7 @@ import {
   getPrototypeVerticalProjection,
   projectLogicalYToScreen,
 } from '../PrototypeFlightLayout';
+import { getLogicalViewportFromBacking } from '../RenderResolution';
 
 const RUNNING_INSTRUCTIONS =
   'M4 moving, timed + target-lock hazards\nHold touch, mouse, or Space to thrust.';
@@ -119,8 +120,18 @@ export class Foundation extends Scene {
   create() {
     this.shutdownHandled = false;
     const safeArea = readSafeAreaInsets(document.getElementById('safe-area-probe'));
+    const renderViewport = getLogicalViewportFromBacking(
+      this.scale.width,
+      this.scale.height,
+      this.scale.zoom,
+    );
+    this.cameras.main.setZoom(renderViewport.renderScale);
 
-    this.viewportService = new ViewportService(this.scale.width, this.scale.height, safeArea);
+    this.viewportService = new ViewportService(
+      renderViewport.width,
+      renderViewport.height,
+      safeArea,
+    );
     this.inputAdapter = new PhaserInputAdapter(this, this.services.input);
     this.lifecycleAdapter = new PhaserLifecycleAdapter(this.game, this.services.lifecycle);
 
@@ -186,6 +197,7 @@ export class Foundation extends Scene {
         fontFamily: 'Arial, sans-serif',
         fontStyle: 'bold',
       })
+      .setResolution(renderViewport.renderScale)
       .setOrigin(0.5);
     this.instructions = this.add
       .text(0, 0, RUNNING_INSTRUCTIONS, {
@@ -195,6 +207,7 @@ export class Foundation extends Scene {
         fontSize: '18px',
         lineSpacing: 8,
       })
+      .setResolution(renderViewport.renderScale)
       .setOrigin(0.5);
 
     this.scale.on(Scale.Events.RESIZE, this.handleResize);
@@ -332,10 +345,18 @@ export class Foundation extends Scene {
       return;
     }
 
-    this.cameras.resize(gameSize.width, gameSize.height);
-    this.viewportService.resize(
+    const renderViewport = getLogicalViewportFromBacking(
       gameSize.width,
       gameSize.height,
+      this.scale.zoom,
+    );
+    this.cameras.resize(gameSize.width, gameSize.height);
+    this.cameras.main.setZoom(renderViewport.renderScale);
+    this.title?.setResolution(renderViewport.renderScale);
+    this.instructions?.setResolution(renderViewport.renderScale);
+    this.viewportService.resize(
+      renderViewport.width,
+      renderViewport.height,
       readSafeAreaInsets(document.getElementById('safe-area-probe')),
     );
     const viewport = this.viewportService.getSnapshot();

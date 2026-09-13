@@ -22,6 +22,9 @@ vi.mock('phaser', () => {
     setPosition() {
       return this;
     },
+    setResolution() {
+      return this;
+    },
     setText() {
       return this;
     },
@@ -33,7 +36,10 @@ vi.mock('phaser', () => {
   class Scene {
     readonly add = { text: () => createText() };
     readonly cameras = {
-      main: { setBackgroundColor: () => undefined },
+      main: {
+        setBackgroundColor: () => undefined,
+        setZoom: () => undefined,
+      },
       resize: () => undefined,
     };
     readonly events = { once: () => undefined };
@@ -43,6 +49,7 @@ vi.mock('phaser', () => {
       off: () => undefined,
       on: () => undefined,
       width: 800,
+      zoom: 1,
     };
   }
 
