@@ -37,3 +37,11 @@ jobs:
 
       - name: Build
         run: bun run build
+
+      - name: Upload browser-test build
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-test-dist
+          path: dist/
+          if-no-files-found: error
+          retention-days: 1
