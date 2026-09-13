@@ -192,13 +192,13 @@ export const installRenderResolutionController = (
     dprMediaQuery.addEventListener('change', handleDprChange);
   };
 
-  const resizeObserver =
-    parentElement && resolved.resizeObserver
-      ? new resolved.resizeObserver(() => {
-          sync();
-        })
-      : undefined;
-  resizeObserver?.observe(parentElement);
+  let resizeObserver: ResizeObserver | undefined;
+  if (parentElement && resolved.resizeObserver) {
+    resizeObserver = new resolved.resizeObserver(() => {
+      sync();
+    });
+    resizeObserver.observe(parentElement);
+  }
   resolved.window?.addEventListener('resize', sync);
   resolved.window?.visualViewport?.addEventListener('resize', sync);
   armDprWatcher();
