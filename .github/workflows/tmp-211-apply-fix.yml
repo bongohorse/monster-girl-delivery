@@ -17,6 +17,11 @@ jobs:
         with:
           ref: fix/211-high-dpi-camera-origin
           fetch-depth: 0
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .bun-version
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
       - name: Apply focused camera-origin fix and regression assertions
         run: |
           python - <<'PY'
