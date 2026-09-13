@@ -1,10 +1,10 @@
 import type { RunMotionValues } from '../config/RunMotionConfig';
-import type { RunMotionState } from './RunMotionSimulation';
 import {
+  isPlayerCollidingWithHazardDuringStep,
   type LogicalHazard,
   type PrototypePlayerCollisionExtents,
-  isPlayerCollidingWithHazardDuringStep,
 } from './HazardCollision';
+import type { RunMotionState } from './RunMotionSimulation';
 import type { VerticalFlightTrajectory } from './VerticalFlightSimulation';
 
 /**
