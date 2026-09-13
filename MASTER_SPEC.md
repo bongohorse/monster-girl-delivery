@@ -3,6 +3,7 @@
 **Document status:** Living product/game specification  
 **Project status:** Pre-Production  
 **Current milestone:** Pre-M5 transition (M4 complete; M5 parent #197 approved; implementation blocked by Pre-M5 exit gate)
+**Current version:** `0.4` (`package.json`: `0.4.0`), working toward M5 / `0.5`
 
 **Human role:** Game Director / Product Owner  
 **Coding-agent role:** Implementation / Engineering
@@ -48,6 +49,14 @@ Never turn `PROTOTYPE`, `EXPERIMENT`, `TBD`, or `FUTURE` into a permanent rule w
 11. Maintainable, deterministic implementation where practical.
 
 Future delivery-specific modes, finishable deliveries, cargo rules, Companions, HQ systems, and other extensions remain ideas until explicitly promoted from [`docs/BACKLOG.md`](docs/BACKLOG.md).
+
+### Release/version model — DECIDED
+
+MGD uses milestone-aligned pre-release versions: M0=`0.0`, M1=`0.1`, continuing in `0.1` steps through M9=`0.9`, with M10=`1.0`. Version `1.0` is the first release milestone.
+
+The visible product version tracks the latest **completed** milestone. Package metadata uses the SemVer-compatible three-component equivalent (`0.4.0`, `0.5.0`, …, `1.0.0`). Work toward a milestone does not claim that milestone's version before its exit gate passes.
+
+By M10 / `1.0`, the core game and core arcade loop must be clean, coherent, stable, and release-ready. M10 is a final release gate, not a new large feature-expansion milestone. Detailed sequencing and milestone scope remain owned by [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ---
 
@@ -597,11 +606,12 @@ Unless reopened by the Director:
 
 [`docs/ROADMAP.md`](docs/ROADMAP.md) is the **single source of truth for milestone sequencing and milestone-level future scope**.
 
-This specification intentionally does not duplicate the complete M0–M9 roadmap.
+This specification intentionally does not duplicate the complete M0–M10 roadmap.
 
 Current milestone:
 
 - **Pre-M5 transition (M4 complete; M5 parent #197 approved; implementation blocked by Pre-M5 exit gate)**
+- **Current version: `0.4`; target after M5 closeout: `0.5`**
 - Approved M5 parent Issue: [#197](https://github.com/bongohorse/monster-girl-delivery/issues/197)
 - Previous parent Issue: [#116](https://github.com/bongohorse/monster-girl-delivery/issues/116) (closed on M4 closeout merge)
 - Milestone completion report: [`docs/milestones/M4-run-pacing-hazard-language.md`](docs/milestones/M4-run-pacing-hazard-language.md)
@@ -648,3 +658,10 @@ Backlog / reference idea
 - M5 focused work promotes #198 (score/result snapshot/basic rewards), #90 (Graze), #84 (collectible paths), and #85 (fail-state/retry) subject to dependency ordering.
 - Deliberately manufactured procedural unfairness is rejected as a retention strategy; MGD's logical fairness/reachability/readability authorities remain binding.
 - Vehicles, mounts, transformations, Delivery Contracts/missions, prestige, and deep meta systems remain outside M5 implementation scope unless separately promoted later.
+
+### 2026-09-13
+
+- Milestone-aligned versioning approved: M1=`0.1`, each numbered milestone advances by `0.1`, M9=`0.9`, and M10=`1.0`.
+- Version `1.0` is the first release milestone; M9 is the release candidate.
+- The current version tracks the latest completed milestone, so M4 completion means `0.4` while Pre-M5 work targets `0.5`.
+- By M10 / `1.0`, the core game and core loop must be clean, coherent, stable, and release-ready; M10 is a final release gate rather than a new large feature milestone.
