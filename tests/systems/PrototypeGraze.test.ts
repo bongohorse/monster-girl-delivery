@@ -41,6 +41,17 @@ const START: PrototypeRunState = {
   flight: { positionY: 0, velocityY: 0 },
 };
 
+const runPartitioned = (
+  steps: ReadonlyArray<number>,
+  hazards: ReadonlyArray<Readonly<LogicalHazard>>,
+): Readonly<PrototypeRunState> => {
+  let state: Readonly<PrototypeRunState> = START;
+  for (const step of steps) {
+    state = stepPrototypeRun(state, step, context(hazards)).state;
+  }
+  return state;
+};
+
 describe('prototype Graze skill layer', () => {
   it('distinguishes clear miss, Graze-only crossing, and lethal core overlap', () => {
     expect(
@@ -57,6 +68,32 @@ describe('prototype Graze skill layer', () => {
     expect(lethal.state.finalResult?.grazeCount).toBe(0);
   });
 
+  it('keeps positive-area core and Graze boundaries explicit', () => {
+    const outerEdge = stepPrototypeRun(START, 1, context([hazard('outer-edge', 32, 40)]));
+    expect(outerEdge.enteredDead).toBe(false);
+    expect(outerEdge.state.graze).toBeUndefined();
+
+    const outerInside = stepPrototypeRun(
+      START,
+      1,
+      context([hazard('outer-inside', 31.999, 40)]),
+    );
+    expect(outerInside.enteredDead).toBe(false);
+    expect(outerInside.state.graze?.count).toBe(1);
+
+    const coreEdge = stepPrototypeRun(START, 1, context([hazard('core-edge', 24, 30)]));
+    expect(coreEdge.enteredDead).toBe(false);
+    expect(coreEdge.state.graze?.count).toBe(1);
+
+    const coreInside = stepPrototypeRun(
+      START,
+      1,
+      context([hazard('core-inside', 23.999, 30)]),
+    );
+    expect(coreInside.enteredDead).toBe(true);
+    expect(coreInside.state.graze).toBeUndefined();
+  });
+
   it('does not duplicate one occurrence and allows a second occurrence independently', () => {
     const firstHazard = hazard('first', 25, 30, 40, 200);
     const first = stepPrototypeRun(START, 0.5, context([firstHazard])).state;
@@ -71,11 +108,23 @@ describe('prototype Graze skill layer', () => {
     expect(second.graze?.count).toBe(2);
   });
 
-  it('keeps same-occurrence lethal authoritative but retains different-hazard Graze in terminal step', () => {
+  it('suppresses a later different-hazard Graze in a terminal enclosing step', () => {
     const result = stepPrototypeRun(
       START,
       1,
-      context([hazard('lethal', 20, 30), hazard('graze', -30, -25)]),
+      context([hazard('lethal', 20, 30, 20, 30), hazard('later-graze', -30, -25, 70, 80)]),
+    );
+
+    expect(result.enteredDead).toBe(true);
+    expect(result.state.graze).toBeUndefined();
+    expect(result.state.finalResult?.grazeCount).toBe(0);
+  });
+
+  it('retains an earlier completed different-hazard Graze before a later lethal opportunity', () => {
+    const result = stepPrototypeRun(
+      START,
+      1.5,
+      context([hazard('early-graze', -30, -25, 20, 30), hazard('lethal', 20, 30, 100, 110)]),
     );
 
     expect(result.enteredDead).toBe(true);
@@ -94,21 +143,62 @@ describe('prototype Graze skill layer', () => {
   });
 
   it.each([30, 60, 90, 120, 144])('keeps one Graze across %i Hz partitions', (hz) => {
-    let state: Readonly<PrototypeRunState> = START;
     const step = 1 / hz;
-    const grazeHazard = hazard('partitioned', 25, 30);
-    for (let index = 0; index < hz; index += 1) {
-      state = stepPrototypeRun(state, step, context([grazeHazard])).state;
-    }
+    const state = runPartitioned(
+      Array.from({ length: hz }, () => step),
+      [hazard('partitioned', 25, 30)],
+    );
     expect(state.graze?.count).toBe(1);
   });
 
+  it.each([30, 60, 90, 120, 144])(
+    'keeps later Graze suppressed when an earlier lethal contact ends the run at %i Hz',
+    (hz) => {
+      const step = 1 / hz;
+      const state = runPartitioned(
+        Array.from({ length: hz }, () => step),
+        [hazard('lethal', 20, 30, 20, 30), hazard('later-graze', -30, -25, 70, 80)],
+      );
+      expect(state.phase).toBe('dead');
+      expect(state.finalResult?.grazeCount).toBe(0);
+    },
+  );
+
+  it.each([30, 60, 90, 120, 144])(
+    'retains an earlier completed Graze before a later lethal contact at %i Hz',
+    (hz) => {
+      const step = 1 / hz;
+      const state = runPartitioned(
+        Array.from({ length: Math.ceil(1.5 * hz) }, () => step),
+        [hazard('early-graze', -30, -25, 20, 30), hazard('lethal', 20, 30, 100, 110)],
+      );
+      expect(state.phase).toBe('dead');
+      expect(state.finalResult?.grazeCount).toBe(1);
+    },
+  );
+
   it('keeps one Graze under deterministic jitter partitions', () => {
-    let state: Readonly<PrototypeRunState> = START;
-    const grazeHazard = hazard('jitter', 25, 30);
-    for (const step of [0.07, 0.11, 0.03, 0.19, 0.08, 0.17, 0.05, 0.13, 0.09, 0.08]) {
-      state = stepPrototypeRun(state, step, context([grazeHazard])).state;
-    }
+    const state = runPartitioned(
+      [0.07, 0.11, 0.03, 0.19, 0.08, 0.17, 0.05, 0.13, 0.09, 0.08],
+      [hazard('jitter', 25, 30)],
+    );
     expect(state.graze?.count).toBe(1);
+  });
+
+  it('keeps terminal ordering stable under deterministic jitter partitions', () => {
+    const steps = [0.07, 0.11, 0.03, 0.19, 0.08, 0.17, 0.05, 0.13, 0.09, 0.08];
+    const laterGraze = runPartitioned(steps, [
+      hazard('lethal', 20, 30, 20, 30),
+      hazard('later-graze', -30, -25, 70, 80),
+    ]);
+    expect(laterGraze.phase).toBe('dead');
+    expect(laterGraze.finalResult?.grazeCount).toBe(0);
+
+    const earlyGraze = runPartitioned(
+      [...steps, 0.2, 0.2, 0.1],
+      [hazard('early-graze', -30, -25, 20, 30), hazard('lethal', 20, 30, 100, 110)],
+    );
+    expect(earlyGraze.phase).toBe('dead');
+    expect(earlyGraze.finalResult?.grazeCount).toBe(1);
   });
 });
