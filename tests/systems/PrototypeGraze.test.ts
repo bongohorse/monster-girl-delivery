@@ -87,7 +87,7 @@ describe('prototype Graze skill layer', () => {
   });
 
   it('does not duplicate one occurrence and allows a second occurrence independently', () => {
-    const firstHazard = hazard('first', 25, 30, 40, 200);
+    const firstHazard = hazard('first', 25, 30, 40, 60);
     const first = stepPrototypeRun(START, 0.5, context([firstHazard])).state;
     const repeated = stepPrototypeRun(first, 0.5, context([firstHazard])).state;
     expect(repeated.graze?.count).toBe(1);
