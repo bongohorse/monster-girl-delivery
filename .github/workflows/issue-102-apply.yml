@@ -1,0 +1,59 @@
+name: Issue 102 integration patch
+
+on:
+  push:
+    branches:
+      - feature/102-high-dpi-rendering
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: ${{ !contains(github.event.head_commit.message, '[issue-102-applied]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v7
+        with:
+          ref: feature/102-high-dpi-rendering
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .bun-version
+
+      - name: Apply focused source patch
+        run: python scripts/issue-102-patch.py
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Format changed source
+        run: bun run check
+
+      - name: Verify formatting and lint
+        run: bun run ci:check
+
+      - name: Typecheck
+        run: bun run typecheck
+
+      - name: Test
+        run: bun run test
+
+      - name: Build
+        run: bun run build
+
+      - name: Check whitespace
+        run: git diff --check
+
+      - name: Commit implementation patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src tests
+          git diff --cached --quiet && exit 0
+          git commit -m "fix(rendering): integrate capped high-DPI canvas [issue-102-applied]"
+          git push origin HEAD:feature/102-high-dpi-rendering
