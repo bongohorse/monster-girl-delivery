@@ -1,9 +1,6 @@
 import { AUTO, Game, Scale } from 'phaser';
 import { createAppServices } from '../core/AppServices';
-import {
-  DEFAULT_RENDER_SCALE_CAP,
-  measureRenderResolution,
-} from './RenderResolution';
+import { DEFAULT_RENDER_SCALE_CAP, measureRenderResolution } from './RenderResolution';
 import { Boot } from './scenes/Boot';
 import { Foundation } from './scenes/Foundation';
 import { Preloader } from './scenes/Preloader';

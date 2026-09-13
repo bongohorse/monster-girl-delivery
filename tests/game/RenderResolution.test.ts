@@ -67,7 +67,8 @@ describe('render resolution policy', () => {
       innerWidth: width,
       innerHeight: height,
       addEventListener: (type: string, listener: EventListenerOrEventListenerObject) => {
-        const listeners = windowListeners.get(type) ?? new Set<EventListenerOrEventListenerObject>();
+        const listeners =
+          windowListeners.get(type) ?? new Set<EventListenerOrEventListenerObject>();
         listeners.add(listener);
         windowListeners.set(type, listeners);
       },

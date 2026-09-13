@@ -61,7 +61,10 @@ export const resolveRenderScale = (
   renderScaleCap = DEFAULT_RENDER_SCALE_CAP,
 ): number => {
   const safeDevicePixelRatio = finitePositive(devicePixelRatio, MIN_RENDER_SCALE);
-  const safeCap = Math.max(MIN_RENDER_SCALE, finitePositive(renderScaleCap, DEFAULT_RENDER_SCALE_CAP));
+  const safeCap = Math.max(
+    MIN_RENDER_SCALE,
+    finitePositive(renderScaleCap, DEFAULT_RENDER_SCALE_CAP),
+  );
   return Math.min(Math.max(MIN_RENDER_SCALE, safeDevicePixelRatio), safeCap);
 };
 
