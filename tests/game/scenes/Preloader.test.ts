@@ -44,6 +44,8 @@ const createPreloaderHarness = (
   const sceneOnce = vi.fn();
   const cameraResize = vi.fn();
   const cameraSetZoom = vi.fn();
+  const cameraMain = { setOrigin: vi.fn(), setZoom: cameraSetZoom };
+  cameraMain.setOrigin.mockReturnValue(cameraMain);
   const scale = {
     width: initialScale.width,
     height: initialScale.height,
@@ -57,7 +59,7 @@ const createPreloaderHarness = (
   Reflect.set(preloader, 'scale', scale);
   Reflect.set(preloader, 'events', { once: sceneOnce });
   Reflect.set(preloader, 'cameras', {
-    main: { setZoom: cameraSetZoom },
+    main: cameraMain,
     resize: cameraResize,
   });
   Reflect.set(preloader, 'scene', { start: vi.fn() });
@@ -69,6 +71,7 @@ const createPreloaderHarness = (
     addRectangle,
     background,
     cameraResize,
+    cameraSetOrigin: cameraMain.setOrigin,
     cameraSetZoom,
     fill,
     frame,
@@ -134,19 +137,22 @@ describe('Preloader scene responsive layout', () => {
   });
 
   it('keeps layout in CSS pixels while the backing buffer runs at 2x', () => {
-    const { background, cameraResize, cameraSetZoom, frame, preloader } = createPreloaderHarness({
-      width: 780,
-      height: 1688,
-      zoom: 0.5,
-    });
+    const { background, cameraResize, cameraSetOrigin, cameraSetZoom, frame, preloader } =
+      createPreloaderHarness({
+        width: 780,
+        height: 1688,
+        zoom: 0.5,
+      });
     const handleResize = getHandler(preloader, 'handleResize');
 
+    expect(cameraSetOrigin).toHaveBeenCalledExactlyOnceWith(0, 0);
     expect(cameraSetZoom).toHaveBeenCalledExactlyOnceWith(2);
     expect(background.setDisplaySize).toHaveBeenLastCalledWith(390, 844);
 
     handleResize({ width: 1688, height: 780 });
 
     expect(cameraResize).toHaveBeenLastCalledWith(1688, 780);
+    expect(cameraSetOrigin).toHaveBeenLastCalledWith(0, 0);
     expect(cameraSetZoom).toHaveBeenLastCalledWith(2);
     expect(background.setDisplaySize).toHaveBeenLastCalledWith(844, 390);
     expect(frame.setPosition).toHaveBeenLastCalledWith(422, 195);

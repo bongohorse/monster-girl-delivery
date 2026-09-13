@@ -111,6 +111,8 @@ const createFoundationHarness = () => {
   const scaleOff = vi.fn();
   const cameraResize = vi.fn();
   const cameraSetZoom = vi.fn();
+  const cameraMain = { setOrigin: vi.fn(), setZoom: cameraSetZoom };
+  cameraMain.setOrigin.mockReturnValue(cameraMain);
 
   Reflect.set(foundation, 'viewportService', viewportService);
   Reflect.set(foundation, 'directorPanel', directorPanel);
@@ -149,12 +151,13 @@ const createFoundationHarness = () => {
     zoom: 1,
   });
   Reflect.set(foundation, 'cameras', {
-    main: { setZoom: cameraSetZoom },
+    main: cameraMain,
     resize: cameraResize,
   });
 
   return {
     cameraResize,
+    cameraSetOrigin: cameraMain.setOrigin,
     cameraSetZoom,
     directorTuningControls,
     directorPanel,
@@ -555,8 +558,14 @@ describe('Foundation scene gameplay orchestration', () => {
   });
 
   it('keeps gameplay in CSS-pixel coordinates while the backing buffer runs at 2x', () => {
-    const { cameraResize, cameraSetZoom, foundation, playerPresentation, viewportService } =
-      createFoundationHarness();
+    const {
+      cameraResize,
+      cameraSetOrigin,
+      cameraSetZoom,
+      foundation,
+      playerPresentation,
+      viewportService,
+    } = createFoundationHarness();
     vi.stubGlobal('document', { getElementById: vi.fn(() => null) });
     const scale = Reflect.get(foundation, 'scale') as { zoom: number };
     scale.zoom = 0.5;
@@ -573,6 +582,7 @@ describe('Foundation scene gameplay orchestration', () => {
     handleResize({ width: 1600, height: 1200 });
 
     expect(cameraResize).toHaveBeenLastCalledWith(1600, 1200);
+    expect(cameraSetOrigin).toHaveBeenLastCalledWith(0, 0);
     expect(cameraSetZoom).toHaveBeenLastCalledWith(2);
     expect(viewportService.getSnapshot()).toMatchObject({
       width: 800,
