@@ -253,7 +253,9 @@ export const evaluatePrototypeGrazeStep = (
   }
 
   if (awardedOccurrenceIds.length === 0 && pending.size === state.pendingOccurrenceIds.length) {
-    const samePending = state.pendingOccurrenceIds.every((occurrenceId) => pending.has(occurrenceId));
+    const samePending = state.pendingOccurrenceIds.every((occurrenceId) =>
+      pending.has(occurrenceId),
+    );
     if (samePending) {
       return { grazeDelta: 0, lethalCollision, state };
     }
