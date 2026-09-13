@@ -24,6 +24,7 @@ export const PROTOTYPE_PLAYER_GRAZE_EXTENTS: Readonly<PrototypePlayerCollisionEx
 export interface PrototypeGrazeRunState {
   readonly consumedOccurrenceIds: ReadonlyArray<string>;
   readonly count: number;
+  readonly pendingOccurrenceIds: ReadonlyArray<string>;
 }
 
 export interface PrototypeGrazeStepResult {
@@ -35,6 +36,7 @@ export interface PrototypeGrazeStepResult {
 export const EMPTY_PROTOTYPE_GRAZE_RUN_STATE: Readonly<PrototypeGrazeRunState> = Object.freeze({
   consumedOccurrenceIds: Object.freeze([]),
   count: 0,
+  pendingOccurrenceIds: Object.freeze([]),
 });
 
 type IdentifiedLogicalHazard = LogicalHazard & {
@@ -71,14 +73,34 @@ const getGrazeOccurrenceId = (hazard: Readonly<LogicalHazard>): string | null =>
 const getHazardInterval = (
   hazard: Readonly<LogicalHazard>,
   elapsedSeconds: number,
+): Readonly<LogicalHazardCollisionInterval> =>
+  hazard.collisionInterval ?? { startSeconds: 0, endSeconds: elapsedSeconds };
+
+const getHorizontalOpportunityBounds = (
+  initialDistance: number,
+  scrollSpeed: number,
+  hazard: Readonly<LogicalHazard>,
+  extents: Readonly<PrototypePlayerCollisionExtents>,
 ): Readonly<LogicalHazardCollisionInterval> | null => {
-  const interval = hazard.collisionInterval ?? { startSeconds: 0, endSeconds: elapsedSeconds };
-  return interval.endSeconds > interval.startSeconds ? interval : null;
+  const minimumDistance = hazard.hitbox.left - extents.right;
+  const maximumDistance = hazard.hitbox.right + extents.left;
+  if (scrollSpeed === 0) {
+    return initialDistance > minimumDistance && initialDistance < maximumDistance
+      ? { startSeconds: Number.NEGATIVE_INFINITY, endSeconds: Number.POSITIVE_INFINITY }
+      : null;
+  }
+
+  const firstSeconds = (minimumDistance - initialDistance) / scrollSpeed;
+  const secondSeconds = (maximumDistance - initialDistance) / scrollSpeed;
+  return {
+    startSeconds: Math.min(firstSeconds, secondSeconds),
+    endSeconds: Math.max(firstSeconds, secondSeconds),
+  };
 };
 
 /**
- * Returns only the deterministic horizontal opportunity window. This is deliberately not a physical
- * TOI: vertical qualification remains owned by the existing continuous collision authority.
+ * Returns only the deterministic horizontal opportunity window inside this simulation step. This is
+ * deliberately not a physical TOI: vertical qualification remains owned by continuous collision.
  */
 const getHorizontalOpportunityWindow = (
   initialDistance: number,
@@ -88,29 +110,54 @@ const getHorizontalOpportunityWindow = (
   elapsedSeconds: number,
 ): Readonly<LogicalHazardCollisionInterval> | null => {
   const interval = getHazardInterval(hazard, elapsedSeconds);
-  if (!interval) {
+  if (interval.endSeconds <= interval.startSeconds) {
     return null;
   }
 
-  const minimumDistance = hazard.hitbox.left - extents.right;
-  const maximumDistance = hazard.hitbox.right + extents.left;
-  if (scrollSpeed === 0) {
-    return initialDistance > minimumDistance && initialDistance < maximumDistance ? interval : null;
+  const bounds = getHorizontalOpportunityBounds(initialDistance, scrollSpeed, hazard, extents);
+  if (!bounds) {
+    return null;
   }
 
-  const firstSeconds = (minimumDistance - initialDistance) / scrollSpeed;
-  const secondSeconds = (maximumDistance - initialDistance) / scrollSpeed;
-  const startSeconds = Math.max(interval.startSeconds, Math.min(firstSeconds, secondSeconds));
-  const endSeconds = Math.min(interval.endSeconds, Math.max(firstSeconds, secondSeconds));
+  const startSeconds = Math.max(interval.startSeconds, bounds.startSeconds);
+  const endSeconds = Math.min(interval.endSeconds, bounds.endSeconds);
   return endSeconds > startSeconds ? { startSeconds, endSeconds } : null;
 };
 
 /**
+ * Returns the earliest point in this step after which this occurrence can no longer become a lethal
+ * core hit. Horizontal passage is deterministic; an explicitly ending lifecycle interval can also
+ * resolve the candidate. The value is a conservative qualification boundary, not a physical TOI.
+ */
+const getCoreResolutionSeconds = (
+  initialDistance: number,
+  scrollSpeed: number,
+  hazard: Readonly<LogicalHazard>,
+  elapsedSeconds: number,
+): number | null => {
+  const bounds = getHorizontalOpportunityBounds(
+    initialDistance,
+    scrollSpeed,
+    hazard,
+    PROTOTYPE_PLAYER_COLLISION_EXTENTS,
+  );
+  let resolutionSeconds = bounds?.endSeconds ?? Number.POSITIVE_INFINITY;
+
+  if (hazard.collisionInterval && hazard.collisionInterval.endSeconds < elapsedSeconds) {
+    resolutionSeconds = Math.min(resolutionSeconds, hazard.collisionInterval.endSeconds);
+  }
+
+  return resolutionSeconds <= elapsedSeconds ? Math.max(0, resolutionSeconds) : null;
+};
+
+/**
  * Evaluates lethal core collision and optional Graze from the same continuous trajectory/lifecycle
- * interval. Same-occurrence lethal overlap always wins. When a terminal step contains different
- * hazards, a Graze is retained only when its complete horizontal opportunity window ends no later
- * than the earliest horizontal core-opportunity window of any lethal hazard. This conservative rule
- * is partition-stable without claiming unsupported physical TOI ordering.
+ * interval. Entering the outer zone only marks an occurrence pending. It is awarded after its lethal
+ * core opportunity has safely resolved without a core hit, preventing a fine partition from counting
+ * a pre-lethal outer-zone touch that a coarse terminal step would suppress. In a terminal step,
+ * resolved different-hazard candidates are retained only when their resolution boundary is no later
+ * than the earliest horizontal core-opportunity window of any lethal hazard. These are conservative
+ * deterministic bounds, not unsupported physical TOI ordering.
  */
 export const evaluatePrototypeGrazeStep = (
   state: Readonly<PrototypeGrazeRunState>,
@@ -121,8 +168,9 @@ export const evaluatePrototypeGrazeStep = (
   hazards: ReadonlyArray<Readonly<LogicalHazard>>,
 ): PrototypeGrazeStepResult => {
   const consumed = new Set(state.consumedOccurrenceIds);
+  const pending = new Set(state.pendingOccurrenceIds);
   const lethalOccurrenceIds = new Set<string>();
-  const grazeCandidates = new Map<string, Readonly<LogicalHazardCollisionInterval>>();
+  const resolvedCandidates = new Map<string, number>();
   let lethalCollision = false;
   let earliestLethalOpportunityStart = Number.POSITIVE_INFINITY;
 
@@ -140,6 +188,7 @@ export const evaluatePrototypeGrazeStep = (
       lethalCollision = true;
       if (occurrenceId) {
         lethalOccurrenceIds.add(occurrenceId);
+        pending.delete(occurrenceId);
       }
       const coreWindow = getHorizontalOpportunityWindow(
         initialRunState.distance,
@@ -161,41 +210,53 @@ export const evaluatePrototypeGrazeStep = (
       continue;
     }
 
-    const grazes = isPlayerCollidingWithHazardDuringStep(
-      initialRunState,
-      trajectory,
-      elapsedSeconds,
-      runMotionTuning,
-      hazard,
-      PROTOTYPE_PLAYER_GRAZE_EXTENTS,
-    );
-    if (!grazes) {
-      continue;
+    if (
+      isPlayerCollidingWithHazardDuringStep(
+        initialRunState,
+        trajectory,
+        elapsedSeconds,
+        runMotionTuning,
+        hazard,
+        PROTOTYPE_PLAYER_GRAZE_EXTENTS,
+      )
+    ) {
+      pending.add(occurrenceId);
     }
 
-    const grazeWindow = getHorizontalOpportunityWindow(
-      initialRunState.distance,
-      runMotionTuning.baseScrollSpeed,
-      hazard,
-      PROTOTYPE_PLAYER_GRAZE_EXTENTS,
-      elapsedSeconds,
-    );
-    if (grazeWindow) {
-      grazeCandidates.set(occurrenceId, grazeWindow);
+    if (pending.has(occurrenceId)) {
+      const resolutionSeconds = getCoreResolutionSeconds(
+        initialRunState.distance,
+        runMotionTuning.baseScrollSpeed,
+        hazard,
+        elapsedSeconds,
+      );
+      if (resolutionSeconds !== null) {
+        resolvedCandidates.set(occurrenceId, resolutionSeconds);
+      }
     }
   }
 
-  const awardedOccurrenceIds = [...grazeCandidates]
+  const awardedOccurrenceIds = [...resolvedCandidates]
     .filter(
-      ([occurrenceId, grazeWindow]) =>
+      ([occurrenceId, resolutionSeconds]) =>
         !lethalOccurrenceIds.has(occurrenceId) &&
-        (!lethalCollision || grazeWindow.endSeconds <= earliestLethalOpportunityStart),
+        (!lethalCollision || resolutionSeconds <= earliestLethalOpportunityStart),
     )
     .map(([occurrenceId]) => occurrenceId)
     .sort();
 
-  if (awardedOccurrenceIds.length === 0) {
-    return { grazeDelta: 0, lethalCollision, state };
+  for (const occurrenceId of awardedOccurrenceIds) {
+    pending.delete(occurrenceId);
+  }
+  if (lethalCollision) {
+    pending.clear();
+  }
+
+  if (awardedOccurrenceIds.length === 0 && pending.size === state.pendingOccurrenceIds.length) {
+    const samePending = state.pendingOccurrenceIds.every((occurrenceId) => pending.has(occurrenceId));
+    if (samePending) {
+      return { grazeDelta: 0, lethalCollision, state };
+    }
   }
 
   return {
@@ -207,6 +268,7 @@ export const evaluatePrototypeGrazeStep = (
         ...awardedOccurrenceIds,
       ]),
       count: state.count + awardedOccurrenceIds.length,
+      pendingOccurrenceIds: Object.freeze([...pending].sort()),
     }),
   };
 };
