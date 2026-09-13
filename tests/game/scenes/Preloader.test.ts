@@ -24,7 +24,13 @@ const createResizableObject = () => {
   return gameObject;
 };
 
-const createPreloaderHarness = () => {
+const createPreloaderHarness = (
+  initialScale: Readonly<{ width: number; height: number; zoom: number }> = {
+    width: 390,
+    height: 844,
+    zoom: 1,
+  },
+) => {
   const preloader = new Preloader();
   const background = createResizableObject();
   const frame = createResizableObject();
@@ -37,17 +43,23 @@ const createPreloaderHarness = () => {
   const scaleOff = vi.fn();
   const sceneOnce = vi.fn();
   const cameraResize = vi.fn();
+  const cameraSetZoom = vi.fn();
+  const scale = {
+    width: initialScale.width,
+    height: initialScale.height,
+    zoom: initialScale.zoom,
+    on: scaleOn,
+    off: scaleOff,
+  };
 
   Reflect.set(preloader, 'add', { image: addImage, rectangle: addRectangle });
   Reflect.set(preloader, 'load', { on: loadOn, off: loadOff });
-  Reflect.set(preloader, 'scale', {
-    width: 390,
-    height: 844,
-    on: scaleOn,
-    off: scaleOff,
-  });
+  Reflect.set(preloader, 'scale', scale);
   Reflect.set(preloader, 'events', { once: sceneOnce });
-  Reflect.set(preloader, 'cameras', { resize: cameraResize });
+  Reflect.set(preloader, 'cameras', {
+    main: { setZoom: cameraSetZoom },
+    resize: cameraResize,
+  });
   Reflect.set(preloader, 'scene', { start: vi.fn() });
 
   preloader.init();
@@ -57,11 +69,13 @@ const createPreloaderHarness = () => {
     addRectangle,
     background,
     cameraResize,
+    cameraSetZoom,
     fill,
     frame,
     loadOff,
     loadOn,
     preloader,
+    scale,
     scaleOff,
     scaleOn,
     sceneOnce,
@@ -79,7 +93,7 @@ const getHandler = (preloader: Preloader, name: string): ((...args: unknown[]) =
 
 describe('Preloader scene responsive layout', () => {
   it('creates the loading presentation and registers one listener per event', () => {
-    const { addImage, addRectangle, loadOn, preloader, scaleOn, sceneOnce } =
+    const { addImage, addRectangle, cameraSetZoom, loadOn, preloader, scaleOn, sceneOnce } =
       createPreloaderHarness();
     const handleProgress = getHandler(preloader, 'handleProgress');
     const handleResize = getHandler(preloader, 'handleResize');
@@ -88,6 +102,7 @@ describe('Preloader scene responsive layout', () => {
     expect(addImage).toHaveBeenCalledWith(195, 422, 'background');
     expect(addRectangle).toHaveBeenNthCalledWith(1, 195, 422, 334, 32);
     expect(addRectangle).toHaveBeenNthCalledWith(2, 32, 422, 4, 28, 0xffffff);
+    expect(cameraSetZoom).toHaveBeenCalledExactlyOnceWith(1);
     expect(loadOn).toHaveBeenCalledOnce();
     expect(loadOn).toHaveBeenCalledWith('progress', handleProgress);
     expect(scaleOn).toHaveBeenCalledOnce();
@@ -116,6 +131,25 @@ describe('Preloader scene responsive layout', () => {
     expect(fill.setSize).toHaveBeenLastCalledWith(128, 28);
     expect(Reflect.get(preloader, 'loadProgress')).toBe(0.5);
     expect(scaleOn).toHaveBeenCalledOnce();
+  });
+
+  it('keeps layout in CSS pixels while the backing buffer runs at 2x', () => {
+    const { background, cameraResize, cameraSetZoom, frame, preloader } = createPreloaderHarness({
+      width: 780,
+      height: 1688,
+      zoom: 0.5,
+    });
+    const handleResize = getHandler(preloader, 'handleResize');
+
+    expect(cameraSetZoom).toHaveBeenCalledExactlyOnceWith(2);
+    expect(background.setDisplaySize).toHaveBeenLastCalledWith(390, 844);
+
+    handleResize({ width: 1688, height: 780 });
+
+    expect(cameraResize).toHaveBeenLastCalledWith(1688, 780);
+    expect(cameraSetZoom).toHaveBeenLastCalledWith(2);
+    expect(background.setDisplaySize).toHaveBeenLastCalledWith(844, 390);
+    expect(frame.setPosition).toHaveBeenLastCalledWith(422, 195);
   });
 
   it('removes external listeners exactly once on shutdown', () => {
