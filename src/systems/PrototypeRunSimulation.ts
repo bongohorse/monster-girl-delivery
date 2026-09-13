@@ -64,9 +64,9 @@ export const createPrototypeRunState = (
 
 /**
  * Advances one authoritative run step. Lethal core collision and Graze inspect the same continuous
- * trajectory and lifecycle interval. Same-occurrence lethal overlap suppresses Graze. Because the
- * collision authority exposes no TOI, Graze on a different hazard in the terminal enclosing step is
- * retained deterministically rather than treating hazard array order as chronology.
+ * trajectory and lifecycle interval. Graze candidates remain pending until their possible lethal
+ * core opportunity has resolved, so fine frame partitions cannot award a pre-lethal outer-zone touch
+ * that a coarser terminal step would suppress. No presentation or secondary clock owns qualification.
  */
 export const stepPrototypeRun = (
   state: Readonly<PrototypeRunState>,
@@ -94,7 +94,10 @@ export const stepPrototypeRun = (
     context.runMotionTuning,
     context.hazards,
   );
-  const graze = state.graze || grazeResult.state.count > 0 ? grazeResult.state : undefined;
+  const graze =
+    state.graze || grazeResult.state.count > 0 || grazeResult.state.pendingOccurrenceIds.length > 0
+      ? grazeResult.state
+      : undefined;
 
   if (!grazeResult.lethalCollision) {
     return {
