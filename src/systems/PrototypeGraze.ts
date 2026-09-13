@@ -1,7 +1,9 @@
 import type { RunMotionValues } from '../config/RunMotionConfig';
 import {
   isPlayerCollidingWithHazardDuringStep,
+  PROTOTYPE_PLAYER_COLLISION_EXTENTS,
   type LogicalHazard,
+  type LogicalHazardCollisionInterval,
   type PrototypePlayerCollisionExtents,
 } from './HazardCollision';
 import type { RunMotionState } from './RunMotionSimulation';
@@ -66,11 +68,49 @@ const getGrazeOccurrenceId = (hazard: Readonly<LogicalHazard>): string | null =>
   return null;
 };
 
+const getHazardInterval = (
+  hazard: Readonly<LogicalHazard>,
+  elapsedSeconds: number,
+): Readonly<LogicalHazardCollisionInterval> | null => {
+  const interval = hazard.collisionInterval ?? { startSeconds: 0, endSeconds: elapsedSeconds };
+  return interval.endSeconds > interval.startSeconds ? interval : null;
+};
+
+/**
+ * Returns only the deterministic horizontal opportunity window. This is deliberately not a physical
+ * TOI: vertical qualification remains owned by the existing continuous collision authority.
+ */
+const getHorizontalOpportunityWindow = (
+  initialDistance: number,
+  scrollSpeed: number,
+  hazard: Readonly<LogicalHazard>,
+  extents: Readonly<PrototypePlayerCollisionExtents>,
+  elapsedSeconds: number,
+): Readonly<LogicalHazardCollisionInterval> | null => {
+  const interval = getHazardInterval(hazard, elapsedSeconds);
+  if (!interval) {
+    return null;
+  }
+
+  const minimumDistance = hazard.hitbox.left - extents.right;
+  const maximumDistance = hazard.hitbox.right + extents.left;
+  if (scrollSpeed === 0) {
+    return initialDistance > minimumDistance && initialDistance < maximumDistance ? interval : null;
+  }
+
+  const firstSeconds = (minimumDistance - initialDistance) / scrollSpeed;
+  const secondSeconds = (maximumDistance - initialDistance) / scrollSpeed;
+  const startSeconds = Math.max(interval.startSeconds, Math.min(firstSeconds, secondSeconds));
+  const endSeconds = Math.min(interval.endSeconds, Math.max(firstSeconds, secondSeconds));
+  return endSeconds > startSeconds ? { startSeconds, endSeconds } : null;
+};
+
 /**
  * Evaluates lethal core collision and optional Graze from the same continuous trajectory/lifecycle
- * interval. Same-occurrence lethal overlap always wins. Different-hazard Graze candidates in a
- * terminal enclosing step are retained because collision exposes no chronological TOI; candidates
- * are sorted by stable occurrence identity so array order cannot become an event-order authority.
+ * interval. Same-occurrence lethal overlap always wins. When a terminal step contains different
+ * hazards, a Graze is retained only when its complete horizontal opportunity window ends no later
+ * than the earliest horizontal core-opportunity window of any lethal hazard. This conservative rule
+ * is partition-stable without claiming unsupported physical TOI ordering.
  */
 export const evaluatePrototypeGrazeStep = (
   state: Readonly<PrototypeGrazeRunState>,
@@ -82,8 +122,9 @@ export const evaluatePrototypeGrazeStep = (
 ): PrototypeGrazeStepResult => {
   const consumed = new Set(state.consumedOccurrenceIds);
   const lethalOccurrenceIds = new Set<string>();
-  const grazeCandidates = new Set<string>();
+  const grazeCandidates = new Map<string, Readonly<LogicalHazardCollisionInterval>>();
   let lethalCollision = false;
+  let earliestLethalOpportunityStart = Number.POSITIVE_INFINITY;
 
   for (const hazard of hazards) {
     const occurrenceId = getGrazeOccurrenceId(hazard);
@@ -100,27 +141,57 @@ export const evaluatePrototypeGrazeStep = (
       if (occurrenceId) {
         lethalOccurrenceIds.add(occurrenceId);
       }
+      const coreWindow = getHorizontalOpportunityWindow(
+        initialRunState.distance,
+        runMotionTuning.baseScrollSpeed,
+        hazard,
+        PROTOTYPE_PLAYER_COLLISION_EXTENTS,
+        elapsedSeconds,
+      );
+      if (coreWindow) {
+        earliestLethalOpportunityStart = Math.min(
+          earliestLethalOpportunityStart,
+          coreWindow.startSeconds,
+        );
+      }
       continue;
     }
 
-    if (
-      occurrenceId &&
-      !consumed.has(occurrenceId) &&
-      isPlayerCollidingWithHazardDuringStep(
-        initialRunState,
-        trajectory,
-        elapsedSeconds,
-        runMotionTuning,
-        hazard,
-        PROTOTYPE_PLAYER_GRAZE_EXTENTS,
-      )
-    ) {
-      grazeCandidates.add(occurrenceId);
+    if (!occurrenceId || consumed.has(occurrenceId)) {
+      continue;
+    }
+
+    const grazes = isPlayerCollidingWithHazardDuringStep(
+      initialRunState,
+      trajectory,
+      elapsedSeconds,
+      runMotionTuning,
+      hazard,
+      PROTOTYPE_PLAYER_GRAZE_EXTENTS,
+    );
+    if (!grazes) {
+      continue;
+    }
+
+    const grazeWindow = getHorizontalOpportunityWindow(
+      initialRunState.distance,
+      runMotionTuning.baseScrollSpeed,
+      hazard,
+      PROTOTYPE_PLAYER_GRAZE_EXTENTS,
+      elapsedSeconds,
+    );
+    if (grazeWindow) {
+      grazeCandidates.set(occurrenceId, grazeWindow);
     }
   }
 
   const awardedOccurrenceIds = [...grazeCandidates]
-    .filter((occurrenceId) => !lethalOccurrenceIds.has(occurrenceId))
+    .filter(
+      ([occurrenceId, grazeWindow]) =>
+        !lethalOccurrenceIds.has(occurrenceId) &&
+        (!lethalCollision || grazeWindow.endSeconds <= earliestLethalOpportunityStart),
+    )
+    .map(([occurrenceId]) => occurrenceId)
     .sort();
 
   if (awardedOccurrenceIds.length === 0) {
