@@ -1,5 +1,6 @@
 import { Loader, Scale, Scene, Scenes } from 'phaser';
 import { createPreloaderLayout, type PreloaderLayout } from '../PreloaderLayout';
+import { getLogicalViewportFromBacking } from '../RenderResolution';
 
 export class Preloader extends Scene {
   private background?: Phaser.GameObjects.Image;
@@ -16,7 +17,13 @@ export class Preloader extends Scene {
     this.loadProgress = 0;
     this.shutdownHandled = false;
 
-    const layout = createPreloaderLayout(this.scale.width, this.scale.height, this.loadProgress);
+    const viewport = getLogicalViewportFromBacking(
+      this.scale.width,
+      this.scale.height,
+      this.scale.zoom,
+    );
+    this.cameras.main.setZoom(viewport.renderScale);
+    const layout = createPreloaderLayout(viewport.width, viewport.height, this.loadProgress);
     this.background = this.add
       .image(layout.background.x, layout.background.y, 'background')
       .setDisplaySize(layout.background.width, layout.background.height);
@@ -41,14 +48,25 @@ export class Preloader extends Scene {
   }
 
   private readonly handleProgress = (progress: number): void => {
-    const layout = createPreloaderLayout(this.scale.width, this.scale.height, progress);
+    const viewport = getLogicalViewportFromBacking(
+      this.scale.width,
+      this.scale.height,
+      this.scale.zoom,
+    );
+    const layout = createPreloaderLayout(viewport.width, viewport.height, progress);
     this.loadProgress = layout.progress;
     this.applyLayout(layout);
   };
 
   private readonly handleResize = (gameSize: Phaser.Structs.Size): void => {
+    const viewport = getLogicalViewportFromBacking(
+      gameSize.width,
+      gameSize.height,
+      this.scale.zoom,
+    );
     this.cameras.resize(gameSize.width, gameSize.height);
-    this.applyLayout(createPreloaderLayout(gameSize.width, gameSize.height, this.loadProgress));
+    this.cameras.main.setZoom(viewport.renderScale);
+    this.applyLayout(createPreloaderLayout(viewport.width, viewport.height, this.loadProgress));
   };
 
   private applyLayout(layout: PreloaderLayout): void {
