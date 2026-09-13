@@ -2,6 +2,11 @@ import type { FlightTuningValues } from '../config/FlightTuningConfig';
 import type { RunMotionValues } from '../config/RunMotionConfig';
 import type { LogicalHazard } from './HazardCollision';
 import { isPlayerCollidingWithHazardDuringStep } from './HazardCollision';
+import {
+  createPrototypeRunResultSnapshot,
+  type PrototypeRunResultSnapshot,
+  type PrototypeRunResultTotals,
+} from './PrototypeRunResult';
 import { type RunMotionState, stepRunMotion } from './RunMotionSimulation';
 import {
   constrainVerticalFlightState,
@@ -16,12 +21,19 @@ export interface PrototypeRunState {
   flight: VerticalFlightState;
   motion: RunMotionState;
   phase: PrototypeRunPhase;
+  /** Present only after the authoritative running -> dead transition has finalized this run. */
+  finalResult?: Readonly<PrototypeRunResultSnapshot>;
 }
 
 export interface PrototypeRunStepContext {
   flightBounds: Readonly<VerticalFlightBounds>;
   flightTuning: Readonly<FlightTuningValues>;
   hazards: ReadonlyArray<Readonly<LogicalHazard>>;
+  /**
+   * Authoritative run-local totals supplied by their owning gameplay systems.
+   * Until #84/#90 land, callers omit this and the snapshot records zero skill/reward totals.
+   */
+  resultTotals?: Readonly<PrototypeRunResultTotals>;
   runMotionTuning: Readonly<RunMotionValues>;
   thrustHeld: boolean;
 }
@@ -53,8 +65,8 @@ export const createPrototypeRunState = (
 /**
  * Advances one authoritative run step and evaluates continuous collision along the same trajectory.
  * A collision keeps the completed step state and exposes no time of impact, preserving the existing
- * run contract. Death is a terminal discrete outcome and no generation, pacing, scoring, or other
- * gameplay authority consumes or advances beyond that terminal endpoint.
+ * run contract. The same one-shot transition captures the immutable M5 result snapshot from the
+ * completed authoritative state; later dead-state/presentation work cannot recalculate or extend it.
  * A dead run is held exactly as-is until the caller explicitly replaces it with a fresh state.
  */
 export const stepPrototypeRun = (
@@ -85,12 +97,24 @@ export const stepPrototypeRun = (
     ),
   );
 
+  if (!enteredDead) {
+    return {
+      enteredDead: false,
+      state: {
+        phase: 'running',
+        motion,
+        flight,
+      },
+    };
+  }
+
   return {
-    enteredDead,
+    enteredDead: true,
     state: {
-      phase: enteredDead ? 'dead' : 'running',
+      phase: 'dead',
       motion,
       flight,
+      finalResult: createPrototypeRunResultSnapshot(motion.distance, context.resultTotals),
     },
   };
 };
