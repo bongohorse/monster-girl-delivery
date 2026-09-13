@@ -58,7 +58,7 @@ Use the least repository/account scope that still supports the approved workflow
 
 Jules uses its own GitHub App integration and should remain separate from the Codespaces PAT model.
 
-Current preferred MGD flow:
+The implementation flow below is retained for future coding use. Coding is currently paused; enabled research/scoping/audit work and any coding re-evaluation follow the [Jules capability gate](JULES_WORKFLOW.md#1-current-operational-status).
 
 ```text
 ready focused GitHub Issue

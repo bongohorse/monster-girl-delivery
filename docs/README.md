@@ -172,11 +172,11 @@ Mandatory rules for implementation agents: task entry, scope discipline, evidenc
 
 ### `AI_WORKFLOW.md` — orchestration
 
-Describes how the Game Director, AI coordinator/reviewer, coding agents including Jules, GitHub Actions, and Renovate interact.
+Describes how the Game Director, AI coordinator/reviewer, coding agents, Jules research/review, GitHub Actions, and Renovate interact.
 
 ### `JULES_WORKFLOW.md` — Jules operating policy
 
-Defines how MGD uses Jules as a supporting implementation/review agent: native GitHub Issue dispatch through the `jules` label, PR feedback through `@Jules`, plan selection, evidence/realism checks, anti-churn rules, concurrency policy, scheduled tasks, and the reproducible Jules environment setup.
+Owns Jules research/scoping/review use, the paused coding status and capability gate, retained native `jules` dispatch and `@Jules` feedback, evidence checks, scheduled tasks, and environment setup.
 
 ### `GITHUB_AI_ACCESS.md` — permissions/authentication
 

@@ -3,7 +3,7 @@
 2D mobile-first sidescroller built with Phaser 4 and TypeScript.
 
 **Current project phase:** Pre-Production  
-**Current milestone:** Pre-M5 transition (M4 complete; M5 pending approved parent plan)
+**Current milestone:** Pre-M5 Gameplay Authority Gate (M4 complete; M5 parent #197 approved; implementation blocked)
 
 > Start with the [`Documentation Hub`](docs/README.md) for product decisions, roadmap ownership, architecture, future ideas, AI workflow, and milestone history.
 
