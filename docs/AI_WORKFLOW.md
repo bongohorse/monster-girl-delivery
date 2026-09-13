@@ -84,40 +84,17 @@ The coordinator should improve the **quality of decisions and work units**, not 
 
 ### Coding agent
 
-Examples include Codex, Claude Code, Gemini CLI, Jules, or another repository-aware implementation agent.
+Examples include Codex, Claude Code, Gemini CLI, or another repository-aware implementation agent.
 
 A coding agent implements **one approved focused task at a time** by default and follows [`../AGENTS.md`](../AGENTS.md).
 
 It should make routine implementation decisions autonomously inside existing product/architecture boundaries, complete the task rather than stop at partial scaffolding, and avoid silently continuing into the next independent Issue.
 
-### Jules — assisting implementation/review agent
+### Jules — supporting research/scoping/review agent
 
-Jules is a regular supporting worker in the MGD workflow, not a replacement for product review or a privileged source of truth.
+Jules currently supports bounded research, scoping, and read-only audits. Coding dispatch is paused under the [Jules operational policy and capability gate](JULES_WORKFLOW.md#1-current-operational-status); the retained coding integration is not current implementation authorization.
 
-Preferred uses:
-
-- focused implementation from an approved GitHub Issue;
-- independent review or investigation;
-- fixing verified findings on a Jules-authored PR;
-- narrow scheduled maintenance where "NO ACTION" is an acceptable successful result.
-
-Preferred GitHub-native dispatch for implementation:
-
-```text
-ready focused Issue
-→ label `jules`
-→ Jules task
-→ Jules PR
-→ review + CI
-→ focused `@Jules` PR feedback when needed
-→ re-review exact head
-```
-
-For MGD, Jules should normally operate in **Reactive Mode** for PR feedback so ordinary reviewer discussion does not trigger unsolicited agent changes; explicitly mention `@Jules` when a concrete finding should be fixed.
-
-Do not blindly trust Jules-generated findings, tests, plans, or code. Verify reachability, acceptance-criterion relevance, integration, and evidence. Reject invented APIs, impossible runtime scenarios, speculative hardening, and changes whose practical effect is negligible.
-
-See [`JULES_WORKFLOW.md`](JULES_WORKFLOW.md) for the full operational policy.
+Use the owning [Jules workflow](JULES_WORKFLOW.md) for native dispatch, `@Jules` feedback, and evidence verification.
 
 ### Specialist / subagent
 
@@ -237,7 +214,7 @@ Useful discoveries outside scope become follow-up Issues/backlog notes only when
 
 A coding-agent label or assignment is an execution mechanism, not a scope decision.
 
-Before dispatching a focused Issue to Jules/Codex/another agent:
+Before dispatching a focused Issue to an eligible agent:
 
 - verify the Issue is actually unblocked;
 - verify status labels and dependency text are current;
@@ -284,7 +261,7 @@ approved focused task
 
 “Completely” means the requested behavior is connected to the real system, not merely represented by an unused module, mock, TODO, or isolated unit test.
 
-An implementation agent merges only when its assigned task **explicitly includes merging** and required checks pass.
+Merge authorization, including execution under an already explicit “merge if clean” instruction, follows [`AGENTS.md` §17](../AGENTS.md#17-github--pr-discipline).
 
 ## Testing calibration
 
@@ -378,7 +355,7 @@ That document describes **technical permission capability**, not automatic autho
 
 For an explicitly requested repository implementation, routine branch/commit/push/PR operations are part of delivering the requested work. Merge/deploy/destructive or account-level operations remain explicit boundaries under [`../AGENTS.md`](../AGENTS.md).
 
-For Jules, prefer its native GitHub App / Issue-label / PR-feedback workflow instead of injecting the Codespaces PAT into the Jules environment. See [`JULES_WORKFLOW.md`](JULES_WORKFLOW.md).
+For Jules, prefer its native GitHub App over injecting the Codespaces PAT. Dispatch and feedback must follow the current capability gate in [`JULES_WORKFLOW.md`](JULES_WORKFLOW.md).
 
 Never expose tokens, weaken repository protections, or change account/repository administration merely to make automation easier.
 

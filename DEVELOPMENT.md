@@ -44,7 +44,7 @@ The project standard is **Vitest**; do not substitute `bun test` for the documen
 
 ## 3. Required verification
 
-Before reporting a repository task complete, run:
+Before reporting a code/configuration task complete, run:
 
 ```bash
 bun run ci:check
@@ -52,6 +52,8 @@ bun run typecheck
 bun run test
 bun run build
 ```
+
+For documentation-only changes that cannot affect runtime/build behavior, run applicable documentation checks and the assigned Issue's validation; compilation and game tests are not required.
 
 If a check cannot be run, report exactly which check and why.
 
@@ -178,7 +180,7 @@ merge when authorized
 
 Keep changes focused and reviewable. A passing CI run does not automatically authorize merge.
 
-Coding-agent scope/merge rules are defined in [`AGENTS.md`](AGENTS.md). Cross-agent coordination is documented in [`docs/AI_WORKFLOW.md`](docs/AI_WORKFLOW.md).
+Coding-agent scope/merge rules, including continued execution under an existing explicit merge authorization, are defined in [`AGENTS.md` §17](AGENTS.md#17-github--pr-discipline). Cross-agent coordination is documented in [`docs/AI_WORKFLOW.md`](docs/AI_WORKFLOW.md).
 
 ## 11. Asset commands
 
@@ -241,4 +243,4 @@ Accuracy rules:
 - keep `PROTOTYPE`, `EXPERIMENT`, `TBD`, `FUTURE`, and deferred states explicit;
 - historical reports must not be rewritten simply because later plans changed.
 
-Run the normal repository verification for a closeout/documentation transition as well.
+Apply [required verification](#3-required-verification) to closeout/documentation transitions as well.

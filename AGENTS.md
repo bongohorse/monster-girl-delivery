@@ -232,6 +232,7 @@ Prefer simple code with visible ownership over clever indirection. Optimize for 
 - Gameplay must be frame-rate independent.
 - Use `TimeService` as the authoritative simulation-time source.
 - Do not use arbitrary per-frame movement such as `position += speed`.
+- Delta scaling alone does not prove frame-partition independence; collision and discrete boundaries require partition-safe treatment and regression evidence under the [simulation-step policy](ARCHITECTURE.md#5-time-authority-and-simulation-step-policy).
 - Prevent inactive/background time from producing giant simulation steps.
 
 ## 11. Input
@@ -320,7 +321,7 @@ A green CI run is validation evidence, not automatic product approval.
 - Do not force-push or delete `main`.
 - Never expose secrets.
 - Open or update the PR needed to deliver an explicitly requested repository implementation; do not stop after only preparing local changes when repository access is available.
-- An implementation agent merges only when the assigned task explicitly includes merging and required checks pass.
+- An implementation agent merges only when the assigned task explicitly includes merging and required checks pass. Existing explicit “merge if clean” authorization covers review, in-scope corrections, CI on the exact final head, merge, and verification without a second confirmation, provided its conditions remain satisfied.
 
 A useful PR description should state:
 
