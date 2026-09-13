@@ -1,9 +1,9 @@
 import type { RunMotionValues } from '../config/RunMotionConfig';
 import {
   isPlayerCollidingWithHazardDuringStep,
-  PROTOTYPE_PLAYER_COLLISION_EXTENTS,
   type LogicalHazard,
   type LogicalHazardCollisionInterval,
+  PROTOTYPE_PLAYER_COLLISION_EXTENTS,
   type PrototypePlayerCollisionExtents,
 } from './HazardCollision';
 import type { RunMotionState } from './RunMotionSimulation';
