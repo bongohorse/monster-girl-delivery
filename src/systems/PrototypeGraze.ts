@@ -143,7 +143,7 @@ const getCoreResolutionSeconds = (
   );
   let resolutionSeconds = bounds?.endSeconds ?? Number.POSITIVE_INFINITY;
 
-  if (hazard.collisionInterval && hazard.collisionInterval.endSeconds < elapsedSeconds) {
+  if (hazard.collisionInterval && hazard.collisionInterval.endSeconds <= elapsedSeconds) {
     resolutionSeconds = Math.min(resolutionSeconds, hazard.collisionInterval.endSeconds);
   }
 
