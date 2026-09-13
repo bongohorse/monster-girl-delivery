@@ -7,7 +7,12 @@ import {
 } from '../../src/systems/PrototypeRunSimulation';
 
 const BOUNDS = Object.freeze({ ceilingY: -100, floorY: 100 });
-const FLIGHT = Object.freeze({ gravity: 0, thrust: 0, maxFallVelocity: 1000, maxRiseVelocity: 1000 });
+const FLIGHT = Object.freeze({
+  gravity: 0,
+  thrust: 0,
+  maxFallVelocity: 1000,
+  maxRiseVelocity: 1000,
+});
 const MOTION = Object.freeze({ baseScrollSpeed: 100 });
 
 const hazard = (
@@ -17,7 +22,10 @@ const hazard = (
   left = 50,
   right = 60,
 ): Readonly<LogicalHazard> =>
-  Object.freeze({ grazeOccurrenceId: id, hitbox: Object.freeze({ left, right, top, bottom }) }) as Readonly<LogicalHazard>;
+  Object.freeze({
+    grazeOccurrenceId: id,
+    hitbox: Object.freeze({ left, right, top, bottom }),
+  }) as Readonly<LogicalHazard>;
 
 const context = (hazards: ReadonlyArray<Readonly<LogicalHazard>>) => ({
   flightBounds: BOUNDS,
@@ -35,7 +43,9 @@ const START: PrototypeRunState = {
 
 describe('prototype Graze skill layer', () => {
   it('distinguishes clear miss, Graze-only crossing, and lethal core overlap', () => {
-    expect(stepPrototypeRun(START, 1, context([hazard('miss', 40, 45)])).state.graze).toBeUndefined();
+    expect(
+      stepPrototypeRun(START, 1, context([hazard('miss', 40, 45)])).state.graze,
+    ).toBeUndefined();
 
     const grazed = stepPrototypeRun(START, 1, context([hazard('graze', 25, 30)]));
     expect(grazed.enteredDead).toBe(false);
@@ -53,7 +63,11 @@ describe('prototype Graze skill layer', () => {
     const repeated = stepPrototypeRun(first, 0.5, context([firstHazard])).state;
     expect(repeated.graze?.count).toBe(1);
 
-    const second = stepPrototypeRun(repeated, 0.5, context([hazard('second', 25, 30, 100, 300)])).state;
+    const second = stepPrototypeRun(
+      repeated,
+      0.5,
+      context([hazard('second', 25, 30, 100, 300)]),
+    ).state;
     expect(second.graze?.count).toBe(2);
   });
 
