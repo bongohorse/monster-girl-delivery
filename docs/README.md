@@ -11,6 +11,7 @@ The hub is intentionally a navigation/ownership document, not another specificat
 
 - **Project phase:** Pre-Production
 - **Current milestone:** Pre-M5 Gameplay Authority Gate (M4 complete; M5 parent #197 approved; implementation blocked)
+- **Current version:** `0.4` (`package.json`: `0.4.0`), working toward M5 / `0.5`
 - **Current gate owner:** [Issue #179](https://github.com/bongohorse/monster-girl-delivery/issues/179); approved next milestone parent: [M5 #197](https://github.com/bongohorse/monster-girl-delivery/issues/197)
 - **Latest completed milestone:** M4 — [`milestones/M4-run-pacing-hazard-language.md`](milestones/M4-run-pacing-hazard-language.md)
 - **Current validation evidence:** [`milestones/M4-run-pacing-validation.md`](milestones/M4-run-pacing-validation.md)
@@ -92,7 +93,7 @@ A **current explicit Game Director decision** controls product intent. Living do
 | Source | Owns | Does not own |
 |---|---|---|
 | [`../MASTER_SPEC.md`](../MASTER_SPEC.md) | durable product/game decisions, decision states, platform/game constraints | milestone sequence, development commands, AI workflow |
-| [`ROADMAP.md`](ROADMAP.md) | M0–M9 order and milestone-level future scope | focused implementation details, product decisions outside sequencing |
+| [`ROADMAP.md`](ROADMAP.md) | M0–M10 order, milestone versions, and milestone-level future scope | focused implementation details, product decisions outside sequencing |
 | Current GitHub Issue / PR | focused live scope, acceptance criteria, dependencies, implementation/review trail | silent overrides of `DECIDED` product rules or architecture boundaries |
 | [`../ARCHITECTURE.md`](../ARCHITECTURE.md) | technical ownership, service/system boundaries, current vs. planned architecture | product scope, milestone scheduling |
 | [`../DEVELOPMENT.md`](../DEVELOPMENT.md) | commands, verification, Codespaces, CI, PR mechanics, milestone closeout process | product/game design |
@@ -137,7 +138,7 @@ It intentionally does **not** duplicate the full milestone roadmap anymore.
 
 Use for:
 
-- the approved M0–M9 sequence;
+- the approved M0–M10 sequence and milestone/version mapping;
 - the purpose of each milestone;
 - milestone-level boundaries;
 - deciding when a promoted idea is appropriate to schedule.
@@ -219,7 +220,9 @@ Current completed reports:
 - [`milestones/M0-foundation.md`](milestones/M0-foundation.md)
 - [`milestones/M1-flight-prototype.md`](milestones/M1-flight-prototype.md)
 - [`milestones/M2-horizontal-run-first-hazard.md`](milestones/M2-horizontal-run-first-hazard.md)
+- [`milestones/M3-seeded-run-validation.md`](milestones/M3-seeded-run-validation.md)
 - [`milestones/M3-seeded-generation-fairness.md`](milestones/M3-seeded-generation-fairness.md)
+- [`milestones/M4-run-pacing-validation.md`](milestones/M4-run-pacing-validation.md)
 - [`milestones/M4-run-pacing-hazard-language.md`](milestones/M4-run-pacing-hazard-language.md)
 - supporting M1 evidence: [`milestones/M1-device-report.md`](milestones/M1-device-report.md)
 - supporting M3 evidence: [`milestones/M3-seeded-run-validation.md`](milestones/M3-seeded-run-validation.md)
