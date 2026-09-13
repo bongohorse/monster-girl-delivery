@@ -38,7 +38,12 @@ vi.mock('phaser', () => {
     readonly cameras = {
       main: {
         setBackgroundColor: () => undefined,
-        setZoom: () => undefined,
+        setOrigin() {
+          return this;
+        },
+        setZoom() {
+          return this;
+        },
       },
       resize: () => undefined,
     };
