@@ -18,9 +18,6 @@ body {
   position: fixed;
   inset: 0;
   color: rgba(255, 255, 255, 0.87);
-  touch-action: none;
-  user-select: none;
-  -webkit-user-select: none;
 }
 
 #app {
@@ -36,6 +33,10 @@ body {
 
 #game-container canvas {
   display: block;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .director-performance-hud {
