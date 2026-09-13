@@ -1,0 +1,30 @@
+name: tmp-179
+on:
+  push:
+    branches: [docs/179-pass-pre-m5-gate]
+permissions:
+  contents: write
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: docs/179-pass-pre-m5-gate
+      - run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('docs/ROADMAP.md'); s=p.read_text()
+          s=s.replace('**Roadmap 3.1 revision:** 2026-09-13\n**Current milestone:** Pre-M5 transition (M4 complete; M5 parent #197 approved; implementation blocked by Pre-M5 exit gate)','**Roadmap 3.2 revision:** 2026-09-13\n**Current milestone:** M5 / v0.5 — Complete Arcade Loop & Skill Layer (entry gate passed; parent #197 current)',1)
+          s=s.replace('# Current — Pre-M5 Gameplay Authority Gate\n\n**Status: CURRENT. M5 implementation is blocked; its parent plan is approved.**','# Pre-M5 Gameplay Authority Gate — passed\n\n**Status: PASSED on 2026-09-13. M5 implementation is unblocked.**',1)
+          s=s.replace('# Core-game proof phase\n\n## M5 / v0.5 — Complete Arcade Loop & Skill Layer','# Current — Core-game proof phase\n\n## M5 / v0.5 — Complete Arcade Loop & Skill Layer',1)
+          s=s.replace('- implementation remains blocked until the Pre-M5 correctness/reference exit gate in #197/#179 is resolved sufficiently.','- the Pre-M5 correctness/reference exit gate in #179 passed on 2026-09-13 after #178/#191 Director acceptance.',1)
+          p.write_text(s)
+          PY
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add docs/ROADMAP.md
+          git diff --cached --check
+          git commit -m 'docs: mark M5 current'
+          git push
