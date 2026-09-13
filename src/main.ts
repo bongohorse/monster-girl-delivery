@@ -1,5 +1,7 @@
 import StartGame from './game/main';
+import { installRenderResolutionController } from './game/RenderResolution';
 
 document.addEventListener('DOMContentLoaded', () => {
-  StartGame('game-container', { directorMode: import.meta.env.DEV });
+  const game = StartGame('game-container', { directorMode: import.meta.env.DEV });
+  installRenderResolutionController(game, 'game-container');
 });
