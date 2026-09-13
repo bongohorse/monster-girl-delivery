@@ -60,6 +60,12 @@ replace_once(
 
 replace_once(
     "tests/game/scenes/Foundation.test.ts",
+    """  const instructions = {\n    setPosition: vi.fn(),\n    setText: vi.fn(),\n    setWordWrapWidth: vi.fn(),\n  };\n""",
+    """  const instructions = {\n    setPosition: vi.fn(),\n    setResolution: vi.fn(),\n    setText: vi.fn(),\n    setWordWrapWidth: vi.fn(),\n  };\n""",
+)
+
+replace_once(
+    "tests/game/scenes/Foundation.test.ts",
     """  const scaleOff = vi.fn();\n  const cameraResize = vi.fn();\n""",
     """  const scaleOff = vi.fn();\n  const cameraResize = vi.fn();\n  const cameraSetZoom = vi.fn();\n""",
 )
