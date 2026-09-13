@@ -95,7 +95,7 @@ describe('prototype Graze skill layer', () => {
     const second = stepPrototypeRun(
       repeated,
       0.5,
-      context([hazard('second', 25, 30, 100, 300)]),
+      context([hazard('second', 25, 30, 100, 120)]),
     ).state;
     expect(second.graze?.count).toBe(2);
   });
