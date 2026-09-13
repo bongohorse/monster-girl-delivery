@@ -1,10 +1,11 @@
 # Monster Girl Delivery — Roadmap
 
-**Status:** APPROVED  
-**Approved by:** Game Director / Product Owner  
-**Originally approved:** 2026-09-03  
-**Roadmap 3.0 revision:** 2026-09-12  
+**Status:** APPROVED
+**Approved by:** Game Director / Product Owner
+**Originally approved:** 2026-09-03
+**Roadmap 3.1 revision:** 2026-09-13
 **Current milestone:** Pre-M5 transition (M4 complete; M5 parent #197 approved; implementation blocked by Pre-M5 exit gate)
+**Current version:** `0.4` (`package.json`: `0.4.0`); working toward M5 / `0.5`
 
 > [!IMPORTANT]
 > This file is the **single source of truth for milestone sequencing and milestone-level future scope**. `MASTER_SPEC.md` owns durable product/game decisions; focused GitHub Issues own live implementation scope.
@@ -28,6 +29,28 @@ Future milestones use five concepts:
 - **Exit gate** — the evidence/decision required before advancing.
 
 Decision gates between milestones are intentionally not numbered as separate implementation milestones. They exist to prevent expensive production work from starting while a major product question is still unresolved.
+
+## Milestone versioning
+
+Each numbered milestone advances the project version by `0.1`. The version represents the **latest completed milestone**, not work merely in progress.
+
+| Milestone | Product version | Package version |
+|---|---:|---:|
+| M0 — Foundation | `0.0` | `0.0.0` |
+| M1 — Flight Prototype | `0.1` | `0.1.0` |
+| M2 — Horizontal Run & First Hazard | `0.2` | `0.2.0` |
+| M3 — Seeded Generation & Fairness | `0.3` | `0.3.0` |
+| M4 — Run Pacing & Hazard Language | `0.4` | `0.4.0` |
+| M5 — Complete Arcade Loop & Skill Layer | `0.5` | `0.5.0` |
+| M6 — Vertical Slice / Visual Identity | `0.6` | `0.6.0` |
+| M7 — Optional / Minimal Meta & Persistence | `0.7` | `0.7.0` |
+| M8 — Release Content Production | `0.8` | `0.8.0` |
+| M9 — Release Hardening & Release Candidate | `0.9` | `0.9.0` |
+| M10 — Release 1.0 | `1.0` | `1.0.0` |
+
+The roadmap uses the short product version (`0.4`, `0.5`, …, `1.0`). `package.json` uses the SemVer-compatible three-component form (`0.4.0`, `0.5.0`, …, `1.0.0`). Intermediate work does not claim the next milestone version before that milestone's exit gate passes.
+
+M10 / `1.0` is the first release milestone. By that point the proven core/game loop must be clean, coherent, stable, and release-ready; M10 is a final release gate rather than a new feature-expansion milestone.
 
 ---
 
@@ -99,13 +122,13 @@ Director tooling uses authoritative runtime state and must not become a second i
 
 M0–M4 are complete. Reports own delivered scope, acceptance, and limitations; later correctness work does not rewrite history.
 
-| Milestone | Closeout | Supporting evidence |
-|---|---|---|
-| M0 — Foundation | [Report](milestones/M0-foundation.md) | — |
-| M1 — Flight Prototype | [Report](milestones/M1-flight-prototype.md) | [Device validation](milestones/M1-device-report.md) |
-| M2 — Horizontal Run & First Hazard | [Report](milestones/M2-horizontal-run-first-hazard.md) | Parent #49 |
-| M3 — Seeded Generation & Fairness | [Report](milestones/M3-seeded-generation-fairness.md) | [Validation](milestones/M3-seeded-run-validation.md), parent #57 |
-| M4 — Run Pacing & Hazard Language | [Report](milestones/M4-run-pacing-hazard-language.md) | [Validation](milestones/M4-run-pacing-validation.md), parent #116 |
+| Milestone | Version | Closeout | Supporting evidence |
+|---|---:|---|---|
+| M0 — Foundation | `0.0` | [Report](milestones/M0-foundation.md) | — |
+| M1 — Flight Prototype | `0.1` | [Report](milestones/M1-flight-prototype.md) | [Device validation](milestones/M1-device-report.md) |
+| M2 — Horizontal Run & First Hazard | `0.2` | [Report](milestones/M2-horizontal-run-first-hazard.md) | Parent #49 |
+| M3 — Seeded Generation & Fairness | `0.3` | [Report](milestones/M3-seeded-generation-fairness.md) | [Validation](milestones/M3-seeded-run-validation.md), parent #57 |
+| M4 — Run Pacing & Hazard Language | `0.4` | [Report](milestones/M4-run-pacing-hazard-language.md) | [Validation](milestones/M4-run-pacing-validation.md), parent #116 |
 
 ---
 
@@ -137,7 +160,7 @@ KEEP and justified DEFER are valid outcomes. No rewrite, reference-game parity, 
 
 # Core-game proof phase
 
-## M5 — Complete Arcade Loop & Skill Layer
+## M5 / v0.5 — Complete Arcade Loop & Skill Layer
 
 **Purpose:** turn the procedural runner into a coherent arcade game that has a meaningful skill layer and encourages immediate replay before a large meta layer is built.
 
@@ -275,7 +298,7 @@ Before M6 production scaling:
 
 # Production proof phase
 
-## M6 — Vertical Slice / Visual Identity
+## M6 / v0.6 — Vertical Slice / Visual Identity
 
 **Purpose:** prove that a small, representative piece of Monster Girl Delivery can look, sound, feel, and perform like a near-finished game before content production scales.
 
@@ -375,7 +398,7 @@ Record skipped M7 as **SKIPPED by decision**, never COMPLETE. No dummy implement
 
 ---
 
-## M7 — Optional / Minimal Meta & Persistence
+## M7 / v0.7 — Optional / Minimal Meta & Persistence
 
 **Purpose:** prove only the durable progression or minimal persistence scope selected by the Meta Gate after the arcade game and vertical slice.
 
@@ -461,7 +484,7 @@ The Game Director approves an evidence-based M8 release-content target. The targ
 
 # Content and release phase
 
-## M8 — Release Content Production
+## M8 / v0.8 — Release Content Production
 
 **Purpose:** scale systems, visual language, and meta foundations that were already proven into a bounded release-candidate content set.
 
@@ -506,7 +529,7 @@ M8 may close only when:
 
 ---
 
-## M9 — Release Hardening & Launch
+## M9 / v0.9 — Release Hardening & Release Candidate
 
 **Purpose:** turn the validated release-content build into a mobile release candidate and prepare broader distribution without destabilizing the proven game.
 
@@ -545,8 +568,51 @@ M9 completes only when:
 - required packaging/store checks are satisfied for the chosen release targets;
 - no known release blocker remains open;
 - performance/lifecycle/safe-area behavior is validated on representative real devices;
-- the Game Director accepts the build as release-ready;
-- the final release closeout records any known non-blocking limitations or post-release backlog.
+- the Game Director accepts the build as the `1.0` release candidate;
+- the M9 closeout records any known non-blocking limitations and confirms that remaining work is final release-gate work rather than missing core systems.
+
+M9 produces the `0.9` release candidate. It does **not** publish or claim version `1.0`.
+
+---
+
+## M10 / v1.0 — Release 1.0
+
+**Purpose:** perform the final release gate and ship the first complete public release without introducing another large feature layer.
+
+### Proof question
+
+> Is the proven game — especially its core start → run → fail/result → retry loop — clean, coherent, stable, performant, and packaged well enough to call it version 1.0 and release it?
+
+### Entry gate
+
+- M9 / `0.9` release-candidate exit gate passed;
+- no known release blocker remains open;
+- the selected shipping path and release build are reproducible;
+- release content is frozen except for release-blocking fixes and explicitly approved final polish.
+
+### Core scope
+
+- final regression pass over the complete core/game loop;
+- final representative device/platform validation for the selected release path;
+- final release-blocker fixes only;
+- final production configuration, version metadata, and release notes;
+- reproducible `1.0.0` build/artifact;
+- final Game Director release acceptance;
+- publish the selected version 1.0 release path.
+
+### Exit gate
+
+M10 / `1.0` completes only when:
+
+- the core game loop works cleanly end-to-end without developer intervention or known release-blocking defects;
+- gameplay readability, fairness, input, lifecycle, results, retry, persistence where selected, and presentation are coherent at the agreed release quality bar;
+- the chosen release build passes the final regression/device matrix;
+- `package.json` and release metadata identify the release as `1.0.0`;
+- the selected release artifact is produced and published;
+- the Game Director accepts Monster Girl Delivery as version `1.0`;
+- non-blocking ideas and improvements are recorded as post-1.0 work rather than silently expanding the release gate.
+
+**Rule:** M10 is a release milestone, not permission to add major new gameplay, meta, art-pipeline, or platform systems. If 1.0 still needs a foundation system, the roadmap must be revisited instead of hiding that work inside release polish.
 
 ---
 
@@ -556,16 +622,17 @@ M0–M4 are complete. The current and future route is:
 
 ```mermaid
 flowchart TD
-  PRE["CURRENT: Pre-M5 authority gate"] --> M5["M5: outcome → skill → arcade integration"]
+  PRE["CURRENT: Pre-M5 authority gate"] --> M5["M5 / 0.5: outcome → skill → arcade integration"]
   M5 --> PRODUCT["Product and Art Gates"]
-  PRODUCT --> M6["M6: vertical slice"]
+  PRODUCT --> M6["M6 / 0.6: vertical slice"]
   M6 --> PLATFORM["Platform Gate"]
   PLATFORM --> META{"Meta Gate"}
-  META -->|"Full / reduced"| M7["M7: approved scope only"]
+  META -->|"Full / reduced"| M7["M7 / 0.7: approved scope only"]
   META -->|"No additional meta; baseline saves validated"| BUDGET["Content Budget Gate"]
   M7 --> BUDGET
-  BUDGET --> M8["M8: scale proven content"]
-  M8 --> M9["M9: harden and launch"]
+  BUDGET --> M8["M8 / 0.8: scale proven content"]
+  M8 --> M9["M9 / 0.9: release-candidate hardening"]
+  M9 --> M10["M10 / 1.0: release"]
 ```
 
 A provisional distribution target informs M6; the Platform Gate validates its shipping path afterward. Gates record decisions and evidence, not permission to build every option.
@@ -575,6 +642,8 @@ A provisional distribution target informs M6; the Platform Gate validates its sh
 # Roadmap rules
 
 - M0–M4 historical scope is not rewritten by later planning changes.
+- Milestone versions advance only when the corresponding milestone closes: M1=`0.1` through M10=`1.0`; in-progress work keeps the latest completed milestone version.
+- M10 / `1.0` is the first release milestone; M9 / `0.9` is the release candidate.
 - The current milestone remains the only default implementation focus unless the Game Director explicitly authorizes cross-cutting work.
 - A decision gate is not permission to prebuild every possible answer before the decision.
 - Each selected future milestone needs a focused parent plan when its entry assumptions can be verified; optional milestones may be explicitly skipped.
