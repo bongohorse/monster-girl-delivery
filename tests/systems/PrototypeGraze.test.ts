@@ -112,7 +112,10 @@ describe('prototype Graze skill layer', () => {
     const result = stepPrototypeRun(
       START,
       1,
-      context([hazard('lethal', 20, 30, 20, 30), hazard('later-graze', -30, -25, 70, 80)]),
+      context([
+        hazard('lethal', 20, 30, 20, 30),
+        hazard('later-graze', -30, -25, 70, 80),
+      ]),
     );
 
     expect(result.enteredDead).toBe(true);
@@ -124,7 +127,10 @@ describe('prototype Graze skill layer', () => {
     const result = stepPrototypeRun(
       START,
       1.5,
-      context([hazard('early-graze', -30, -25, 20, 30), hazard('lethal', 20, 30, 100, 110)]),
+      context([
+        hazard('early-graze', -30, -25, 20, 30),
+        hazard('lethal', 20, 30, 100, 110),
+      ]),
     );
 
     expect(result.enteredDead).toBe(true);
@@ -134,8 +140,16 @@ describe('prototype Graze skill layer', () => {
 
   it('freezes Graze after death and resets it with a fresh run', () => {
     const grazed = stepPrototypeRun(START, 1, context([hazard('graze', 25, 30)])).state;
-    const dead = stepPrototypeRun(grazed, 1, context([hazard('death', 20, 30, 100, 110)])).state;
-    const repeated = stepPrototypeRun(dead, 10, context([hazard('late', 25, 30, 0, 1000)])).state;
+    const dead = stepPrototypeRun(
+      grazed,
+      1,
+      context([hazard('death', 20, 30, 100, 110)]),
+    ).state;
+    const repeated = stepPrototypeRun(
+      dead,
+      10,
+      context([hazard('late', 25, 30, 0, 1000)]),
+    ).state;
 
     expect(repeated).toBe(dead);
     expect(repeated.finalResult?.grazeCount).toBe(1);
@@ -157,7 +171,10 @@ describe('prototype Graze skill layer', () => {
       const step = 1 / hz;
       const state = runPartitioned(
         Array.from({ length: hz }, () => step),
-        [hazard('lethal', 20, 30, 20, 30), hazard('later-graze', -30, -25, 70, 80)],
+        [
+          hazard('lethal', 20, 30, 20, 30),
+          hazard('later-graze', -30, -25, 70, 80),
+        ],
       );
       expect(state.phase).toBe('dead');
       expect(state.finalResult?.grazeCount).toBe(0);
@@ -170,7 +187,10 @@ describe('prototype Graze skill layer', () => {
       const step = 1 / hz;
       const state = runPartitioned(
         Array.from({ length: Math.ceil(1.5 * hz) }, () => step),
-        [hazard('early-graze', -30, -25, 20, 30), hazard('lethal', 20, 30, 100, 110)],
+        [
+          hazard('early-graze', -30, -25, 20, 30),
+          hazard('lethal', 20, 30, 100, 110),
+        ],
       );
       expect(state.phase).toBe('dead');
       expect(state.finalResult?.grazeCount).toBe(1);
@@ -196,7 +216,10 @@ describe('prototype Graze skill layer', () => {
 
     const earlyGraze = runPartitioned(
       [...steps, 0.2, 0.2, 0.1],
-      [hazard('early-graze', -30, -25, 20, 30), hazard('lethal', 20, 30, 100, 110)],
+      [
+        hazard('early-graze', -30, -25, 20, 30),
+        hazard('lethal', 20, 30, 100, 110),
+      ],
     );
     expect(earlyGraze.phase).toBe('dead');
     expect(earlyGraze.finalResult?.grazeCount).toBe(1);
