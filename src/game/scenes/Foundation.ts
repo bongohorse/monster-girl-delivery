@@ -125,7 +125,7 @@ export class Foundation extends Scene {
       this.scale.height,
       this.scale.zoom,
     );
-    this.cameras.main.setZoom(renderViewport.renderScale);
+    this.cameras.main.setOrigin(0, 0).setZoom(renderViewport.renderScale);
 
     this.viewportService = new ViewportService(
       renderViewport.width,
@@ -351,7 +351,7 @@ export class Foundation extends Scene {
       this.scale.zoom,
     );
     this.cameras.resize(gameSize.width, gameSize.height);
-    this.cameras.main.setZoom(renderViewport.renderScale);
+    this.cameras.main.setOrigin(0, 0).setZoom(renderViewport.renderScale);
     this.title?.setResolution(renderViewport.renderScale);
     this.instructions?.setResolution(renderViewport.renderScale);
     this.viewportService.resize(

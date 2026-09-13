@@ -22,7 +22,7 @@ export class Preloader extends Scene {
       this.scale.height,
       this.scale.zoom,
     );
-    this.cameras.main.setZoom(viewport.renderScale);
+    this.cameras.main.setOrigin(0, 0).setZoom(viewport.renderScale);
     const layout = createPreloaderLayout(viewport.width, viewport.height, this.loadProgress);
     this.background = this.add
       .image(layout.background.x, layout.background.y, 'background')
@@ -65,7 +65,7 @@ export class Preloader extends Scene {
       this.scale.zoom,
     );
     this.cameras.resize(gameSize.width, gameSize.height);
-    this.cameras.main.setZoom(viewport.renderScale);
+    this.cameras.main.setOrigin(0, 0).setZoom(viewport.renderScale);
     this.applyLayout(createPreloaderLayout(viewport.width, viewport.height, this.loadProgress));
   };
 
