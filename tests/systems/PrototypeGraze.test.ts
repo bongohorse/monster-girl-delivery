@@ -53,6 +53,28 @@ const runPartitioned = (
 };
 
 describe('prototype Graze skill layer', () => {
+  it('bounds occurrence history to the retained hazard window without losing run totals', () => {
+    let state = START;
+    for (let index = 0; index < 100; index += 1) {
+      const distance = state.motion.distance;
+      const current = hazard(`pass-${index}`, 25, 30, distance + 40, distance + 60);
+      state = stepPrototypeRun(state, 1, context([current])).state;
+      expect(state.graze?.count).toBe(index + 1);
+      expect(state.graze?.consumedOccurrenceIds).toHaveLength(1);
+    }
+
+    state = stepPrototypeRun(state, 0.1, context([])).state;
+    expect(state.graze?.consumedOccurrenceIds).toHaveLength(0);
+    expect(state.graze?.pendingOccurrenceIds).toHaveLength(0);
+    expect(state.graze?.count).toBe(100);
+    const dead = stepPrototypeRun(
+      state,
+      1,
+      context([hazard('death', 20, 30, state.motion.distance + 40, state.motion.distance + 60)]),
+    ).state;
+    expect(dead.finalResult?.grazeCount).toBe(100);
+  });
+
   it('distinguishes clear miss, Graze-only crossing, and lethal core overlap', () => {
     expect(
       stepPrototypeRun(START, 1, context([hazard('miss', 40, 45)])).state.graze,

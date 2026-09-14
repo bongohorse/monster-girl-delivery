@@ -21,6 +21,8 @@ export interface LogicalHitbox {
 export interface LogicalHazard {
   /** Lethal portion of the current simulation step; omitted means the whole step. */
   collisionInterval?: Readonly<LogicalHazardCollisionInterval>;
+  /** True only when this interval ends the occurrence's final Active phase, not just the frame. */
+  collisionEndsAtIntervalEnd?: boolean;
   hitbox: Readonly<LogicalHitbox>;
 }
 

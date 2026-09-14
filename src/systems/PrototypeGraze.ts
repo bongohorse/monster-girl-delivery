@@ -22,6 +22,7 @@ export const PROTOTYPE_PLAYER_GRAZE_EXTENTS: Readonly<PrototypePlayerCollisionEx
   });
 
 export interface PrototypeGrazeRunState {
+  /** Deduplication history for occurrences still in the collision stream, not the whole run. */
   readonly consumedOccurrenceIds: ReadonlyArray<string>;
   readonly count: number;
   readonly pendingOccurrenceIds: ReadonlyArray<string>;
@@ -143,7 +144,7 @@ const getCoreResolutionSeconds = (
   );
   let resolutionSeconds = bounds?.endSeconds ?? Number.POSITIVE_INFINITY;
 
-  if (hazard.collisionInterval && hazard.collisionInterval.endSeconds <= elapsedSeconds) {
+  if (hazard.collisionEndsAtIntervalEnd && hazard.collisionInterval) {
     resolutionSeconds = Math.min(resolutionSeconds, hazard.collisionInterval.endSeconds);
   }
 
@@ -167,8 +168,39 @@ export const evaluatePrototypeGrazeStep = (
   runMotionTuning: Readonly<RunMotionValues>,
   hazards: ReadonlyArray<Readonly<LogicalHazard>>,
 ): PrototypeGrazeStepResult => {
-  const consumed = new Set(state.consumedOccurrenceIds);
-  const pending = new Set(state.pendingOccurrenceIds);
+  // The lifecycle adapter omits Active intervals on zero-delta pause/resize updates. Preserve
+  // qualification history through that transient absence while retaining the core collision rule.
+  if (elapsedSeconds === 0) {
+    return {
+      grazeDelta: 0,
+      lethalCollision: hazards.some((hazard) =>
+        isPlayerCollidingWithHazardDuringStep(
+          initialRunState,
+          trajectory,
+          elapsedSeconds,
+          runMotionTuning,
+          hazard,
+        ),
+      ),
+      state,
+    };
+  }
+
+  // Persistent hazards remain until stream eviction; telegraphed occurrences have one contiguous
+  // Active phase and never reactivate. On positive steps absence therefore retires their history.
+  const retainedOccurrenceIds = new Set<string>();
+  for (const hazard of hazards) {
+    const occurrenceId = getGrazeOccurrenceId(hazard);
+    if (occurrenceId) {
+      retainedOccurrenceIds.add(occurrenceId);
+    }
+  }
+  const consumed = new Set(
+    state.consumedOccurrenceIds.filter((occurrenceId) => retainedOccurrenceIds.has(occurrenceId)),
+  );
+  const pending = new Set(
+    state.pendingOccurrenceIds.filter((occurrenceId) => retainedOccurrenceIds.has(occurrenceId)),
+  );
   const lethalOccurrenceIds = new Set<string>();
   const resolvedCandidates = new Map<string, number>();
   let lethalCollision = false;
@@ -252,7 +284,11 @@ export const evaluatePrototypeGrazeStep = (
     pending.clear();
   }
 
-  if (awardedOccurrenceIds.length === 0 && pending.size === state.pendingOccurrenceIds.length) {
+  if (
+    awardedOccurrenceIds.length === 0 &&
+    pending.size === state.pendingOccurrenceIds.length &&
+    consumed.size === state.consumedOccurrenceIds.length
+  ) {
     const samePending = state.pendingOccurrenceIds.every((occurrenceId) =>
       pending.has(occurrenceId),
     );
@@ -265,10 +301,7 @@ export const evaluatePrototypeGrazeStep = (
     grazeDelta: awardedOccurrenceIds.length,
     lethalCollision,
     state: Object.freeze({
-      consumedOccurrenceIds: Object.freeze([
-        ...state.consumedOccurrenceIds,
-        ...awardedOccurrenceIds,
-      ]),
+      consumedOccurrenceIds: Object.freeze([...consumed, ...awardedOccurrenceIds]),
       count: state.count + awardedOccurrenceIds.length,
       pendingOccurrenceIds: Object.freeze([...pending].sort()),
     }),
