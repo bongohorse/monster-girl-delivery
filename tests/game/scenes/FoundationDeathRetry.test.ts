@@ -307,10 +307,12 @@ describe('Foundation M5 death-to-retry flow', () => {
       services,
       viewportService,
     } = createHarness();
-    const restartRun = Reflect.get(foundation, 'restartRun') as (
-      viewport: ReturnType<ViewportService['getSnapshot']>,
-      seed: number,
-    ) => void;
+    const restartRun = (
+      Reflect.get(foundation, 'restartRun') as (
+        viewport: ReturnType<ViewportService['getSnapshot']>,
+        seed: number,
+      ) => void
+    ).bind(foundation);
     const result = createPrototypeRunResultSnapshot(600, {
       collectedCount: 0,
       collectedValue: 0,
