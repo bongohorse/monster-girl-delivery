@@ -84,12 +84,7 @@ describe('GeneratedCollectiblePresentation', () => {
     const spawn = createSpawn('safe', 500);
 
     presentation.sync([spawn], [], { distance: 100 }, 200);
-    presentation.sync(
-      [spawn],
-      [getLogicalCollectibleSpawnIdentity(spawn)],
-      { distance: 120 },
-      200,
-    );
+    presentation.sync([spawn], [getLogicalCollectibleSpawnIdentity(spawn)], { distance: 120 }, 200);
 
     expect(addGraphics).toHaveBeenCalledOnce();
     expect(graphicsObjects[0]?.destroy).toHaveBeenCalledOnce();
