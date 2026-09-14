@@ -136,7 +136,13 @@ const forceLethalCollision = (foundation: Foundation): void => {
     'getCollisionHazardsForTelegraphedSimulation',
   ).mockReturnValue([
     {
+      behavior: { archetype: 'geometric', kind: 'static' },
+      entryId: 'death-retry-lethal',
       hitbox: { left: 100, right: 130, top: 160, bottom: 230 },
+      patternEntryIndex: 0,
+      patternId: 'death-retry-test',
+      runDistance: 100,
+      type: 'placeholder-barrier',
     },
   ]);
   foundation.update(0, 16);
