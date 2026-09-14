@@ -10,7 +10,6 @@ import {
   PROTOTYPE_LIVE_RUN_SEED,
 } from '../../../src/generation/GeneratedHazardStream';
 import { PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG } from '../../../src/generation/LiveEncounterPolicy';
-import { PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES } from '../../../src/generation/PrototypeHazardPatternFixtures';
 import { createPrototypeHazardVerticalDomain } from '../../../src/generation/PrototypeHazardVerticalDomain';
 import * as TelegraphedHazardSimulation from '../../../src/hazards/TelegraphedHazardSimulation';
 import {
@@ -128,9 +127,7 @@ const getDeathRetryState = (foundation: Foundation): Readonly<PrototypeDeathRetr
   Reflect.get(foundation, 'deathRetryState') as Readonly<PrototypeDeathRetryState>;
 const getHazardStream = (foundation: Foundation): Readonly<GeneratedHazardStreamState> =>
   Reflect.get(foundation, 'hazardStream') as Readonly<GeneratedHazardStreamState>;
-const getTelegraphedState = (
-  foundation: Foundation,
-): Readonly<TelegraphedHazardSimulationState> =>
+const getTelegraphedState = (foundation: Foundation): Readonly<TelegraphedHazardSimulationState> =>
   Reflect.get(foundation, 'telegraphedHazardState') as Readonly<TelegraphedHazardSimulationState>;
 
 const forceLethalCollision = (foundation: Foundation): void => {
