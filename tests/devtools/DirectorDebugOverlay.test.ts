@@ -113,10 +113,10 @@ describe('DirectorDebugOverlay geometry', () => {
       setText: vi.fn(),
       setVisible: vi.fn(),
     };
+    for (const method of [graphics.setDepth, graphics.setScrollFactor, graphics.setVisible]) {
+      method.mockReturnValue(graphics);
+    }
     for (const method of [
-      graphics.setDepth,
-      graphics.setScrollFactor,
-      graphics.setVisible,
       label.setDepth,
       label.setPosition,
       label.setResolution,
@@ -124,21 +124,22 @@ describe('DirectorDebugOverlay geometry', () => {
       label.setText,
       label.setVisible,
     ]) {
-      method.mockReturnValue(method === graphics.setDepth || method === graphics.setScrollFactor || method === graphics.setVisible ? graphics : label);
+      method.mockReturnValue(label);
     }
+    const camera = { zoom: 2 };
     const scene = {
       add: {
         graphics: vi.fn(() => graphics),
         text: vi.fn(() => label),
       },
-      cameras: { main: { zoom: 2 } },
+      cameras: { main: camera },
     } as unknown as Scene;
     const overlay = new DirectorDebugOverlay(scene);
 
     overlay.setEnabled(true);
     expect(label.setResolution).toHaveBeenLastCalledWith(2);
 
-    scene.cameras.main.zoom = 1.5;
+    camera.zoom = 1.5;
     overlay.render(createFrame());
     expect(label.setResolution).toHaveBeenLastCalledWith(1.5);
 
