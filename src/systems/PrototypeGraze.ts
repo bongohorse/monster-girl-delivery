@@ -126,11 +126,13 @@ const getHorizontalOpportunityWindow = (
 };
 
 /**
- * Returns the earliest point in this step after which this occurrence can no longer become a lethal
- * core hit. Horizontal passage is deterministic; an explicitly ending lifecycle interval can also
- * resolve the candidate. The value is a conservative qualification boundary, not a physical TOI.
+ * Returns the earliest point in this step after which a previously observed outer-zone contact is
+ * fully qualified as a near miss. The complete outer horizontal opportunity must have passed, or an
+ * explicitly final lifecycle interval must have ended. This is a conservative ordering boundary, not
+ * a physical TOI, and deliberately cannot use the earlier end of the smaller lethal-core window as
+ * proof that a vertically later Graze happened before another hazard's lethal contact.
  */
-const getCoreResolutionSeconds = (
+const getGrazeResolutionSeconds = (
   initialDistance: number,
   scrollSpeed: number,
   hazard: Readonly<LogicalHazard>,
@@ -140,7 +142,7 @@ const getCoreResolutionSeconds = (
     initialDistance,
     scrollSpeed,
     hazard,
-    PROTOTYPE_PLAYER_COLLISION_EXTENTS,
+    PROTOTYPE_PLAYER_GRAZE_EXTENTS,
   );
   let resolutionSeconds = bounds?.endSeconds ?? Number.POSITIVE_INFINITY;
 
@@ -153,12 +155,12 @@ const getCoreResolutionSeconds = (
 
 /**
  * Evaluates lethal core collision and optional Graze from the same continuous trajectory/lifecycle
- * interval. Entering the outer zone only marks an occurrence pending. It is awarded after its lethal
- * core opportunity has safely resolved without a core hit, preventing a fine partition from counting
- * a pre-lethal outer-zone touch that a coarse terminal step would suppress. In a terminal step,
- * resolved different-hazard candidates are retained only when their resolution boundary is no later
- * than the earliest horizontal core-opportunity window of any lethal hazard. These are conservative
- * deterministic bounds, not unsupported physical TOI ordering.
+ * interval. Entering the outer zone only marks an occurrence pending. It is awarded after that outer
+ * opportunity has safely resolved without a core hit, preventing a fine partition from counting a
+ * pre-lethal outer-zone touch that a coarse terminal step would suppress. In a terminal step,
+ * resolved different-hazard candidates are retained only when their conservative outer-zone
+ * resolution boundary is no later than the earliest horizontal core-opportunity window of any lethal
+ * hazard. These are deterministic qualification bounds, not unsupported physical TOI ordering.
  */
 export const evaluatePrototypeGrazeStep = (
   state: Readonly<PrototypeGrazeRunState>,
@@ -256,7 +258,7 @@ export const evaluatePrototypeGrazeStep = (
     }
 
     if (pending.has(occurrenceId)) {
-      const resolutionSeconds = getCoreResolutionSeconds(
+      const resolutionSeconds = getGrazeResolutionSeconds(
         initialRunState.distance,
         runMotionTuning.baseScrollSpeed,
         hazard,
