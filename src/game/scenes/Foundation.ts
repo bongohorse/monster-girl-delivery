@@ -7,11 +7,16 @@ import { DirectorPerformanceHud } from '../../devtools/DirectorPerformanceHud';
 import { createDirectorResponsiveLayout } from '../../devtools/DirectorResponsiveLayout';
 import { DirectorRunControls } from '../../devtools/DirectorRunControls';
 import { DirectorTuningControls } from '../../devtools/DirectorTuningControls';
+import { GeneratedCollectiblePresentation } from '../../entities/GeneratedCollectiblePresentation';
 import { GeneratedHazardPresentation } from '../../entities/GeneratedHazardPresentation';
 import { PrototypePlayerPresentation } from '../../entities/PrototypePlayerPresentation';
 import { PrototypeScrollingWorldPresentation } from '../../entities/PrototypeScrollingWorldPresentation';
 import type { EncounterStreamObservation } from '../../generation/EncounterStreamObservation';
 import { PROTOTYPE_PATTERN_REACHABILITY_CONTEXT } from '../../generation/FlightReachability';
+import {
+  type LogicalCollectibleSpawnInstance,
+  reconcileGeneratedCollectibles,
+} from '../../generation/GeneratedCollectibles';
 import {
   advanceGeneratedHazardStream,
   constrainGeneratedHazardStream,
@@ -115,6 +120,10 @@ export class Foundation extends Scene {
   private directorTuningControls?: DirectorTuningControls;
   private inputAdapter?: PhaserInputAdapter;
   private lifecycleAdapter?: PhaserLifecycleAdapter;
+  private collectibleSpawns: ReadonlyArray<Readonly<LogicalCollectibleSpawnInstance>> = Object.freeze(
+    [],
+  );
+  private generatedCollectiblePresentation?: GeneratedCollectiblePresentation;
   private generatedHazardPresentation?: GeneratedHazardPresentation;
   private hazardStream?: Readonly<GeneratedHazardStreamState>;
   private hazardVerticalDomain = createPrototypeHazardVerticalDomain(createPrototypeFlightBounds());
@@ -191,6 +200,12 @@ export class Foundation extends Scene {
       ),
       this.services.runMotion.getSnapshot(),
     );
+    this.collectibleSpawns = reconcileGeneratedCollectibles(
+      [],
+      this.hazardStream.spawns,
+      this.hazardVerticalDomain.catalog,
+      this.runState.motion.distance,
+    );
     this.telegraphedHazardState = stepTelegraphedHazardSimulation(
       createTelegraphedHazardSimulationState(),
       this.hazardStream.spawns,
@@ -202,6 +217,7 @@ export class Foundation extends Scene {
     );
     this.services.input.releaseAll();
     this.scrollingWorldPresentation = new PrototypeScrollingWorldPresentation(this);
+    this.generatedCollectiblePresentation = new GeneratedCollectiblePresentation(this);
     this.generatedHazardPresentation = new GeneratedHazardPresentation(this);
     const initialProjection = getPrototypeVerticalProjection(viewport);
     this.playerPresentation = new PrototypePlayerPresentation(
@@ -332,6 +348,7 @@ export class Foundation extends Scene {
         resolvePlayerTargetAtDelta,
       );
       const result = stepPrototypeRun(this.runState, simulationDeltaSeconds, {
+        collectibles: this.collectibleSpawns,
         flightBounds,
         flightTuning: activeFlightTuning,
         hazards: getCollisionHazardsForTelegraphedSimulation(
@@ -359,6 +376,12 @@ export class Foundation extends Scene {
           hazardStreamContext,
           requestedRunMotion,
           simulationDeltaSeconds,
+        );
+        this.collectibleSpawns = reconcileGeneratedCollectibles(
+          this.collectibleSpawns,
+          this.hazardStream.spawns,
+          this.hazardVerticalDomain.catalog,
+          this.runState.motion.distance,
         );
         this.telegraphedHazardState = stepTelegraphedHazardSimulation(
           this.telegraphedHazardState,
@@ -501,6 +524,12 @@ export class Foundation extends Scene {
       ),
       this.services.runMotion.getSnapshot(),
     );
+    this.collectibleSpawns = reconcileGeneratedCollectibles(
+      [],
+      this.hazardStream.spawns,
+      this.hazardVerticalDomain.catalog,
+      this.runState.motion.distance,
+    );
     this.telegraphedHazardState = stepTelegraphedHazardSimulation(
       createTelegraphedHazardSimulationState(),
       this.hazardStream.spawns,
@@ -524,6 +553,13 @@ export class Foundation extends Scene {
       this.runState.motion,
       playerScreenX,
       this.telegraphedHazardState,
+      projection,
+    );
+    this.generatedCollectiblePresentation?.sync(
+      this.collectibleSpawns,
+      this.runState.collectibles?.consumedCollectibleIds ?? [],
+      this.runState.motion,
+      playerScreenX,
       projection,
     );
     this.playerPresentation?.setPosition(
@@ -553,8 +589,11 @@ export class Foundation extends Scene {
     this.directorPanel = undefined;
     this.scrollingWorldPresentation?.destroy();
     this.scrollingWorldPresentation = undefined;
+    this.generatedCollectiblePresentation?.destroy();
+    this.generatedCollectiblePresentation = undefined;
     this.generatedHazardPresentation?.destroy();
     this.generatedHazardPresentation = undefined;
+    this.collectibleSpawns = Object.freeze([]);
     this.hazardStream = undefined;
     this.telegraphedHazardState = createTelegraphedHazardSimulationState();
     this.playerPresentation?.destroy();
