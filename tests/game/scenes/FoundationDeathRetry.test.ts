@@ -1,10 +1,7 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createAppServices } from '../../../src/core/AppServices';
 import { ViewportService } from '../../../src/core/ViewportService';
-import {
-  createPrototypeFlightBounds,
-  getPrototypeVerticalProjection,
-} from '../../../src/game/PrototypeFlightLayout';
+import { createPrototypeFlightBounds } from '../../../src/game/PrototypeFlightLayout';
 import { Foundation } from '../../../src/game/scenes/Foundation';
 import { PROTOTYPE_PATTERN_REACHABILITY_CONTEXT } from '../../../src/generation/FlightReachability';
 import {
@@ -148,6 +145,11 @@ const forceLethalCollision = (foundation: Foundation): void => {
   foundation.update(0, 16);
 };
 
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+});
+
 describe('Foundation M5 death-to-retry flow', () => {
   it('freezes authoritative run truth through aftermath and accepts exactly one fresh retry action', () => {
     const {
@@ -199,7 +201,9 @@ describe('Foundation M5 death-to-retry flow', () => {
 
     foundation.update(0, 50);
     expect(getDeathRetryState(foundation).phase).toBe('retry-ready');
-    expect(instructions.setText).toHaveBeenLastCalledWith(expect.stringContaining('press Space to retry'));
+    expect(instructions.setText).toHaveBeenLastCalledWith(
+      expect.stringContaining('press Space to retry'),
+    );
     expect(getRunState(foundation)).toBe(deadState);
 
     services.input.setSpaceHeld(true);
@@ -287,14 +291,53 @@ describe('Foundation M5 death-to-retry flow', () => {
   });
 
   it('reuses scene-owned presentation across repeated logical retries without stale result/input', () => {
-    const { foundation, playerPresentation, services } = createHarness();
+    const {
+      foundation,
+      generatedHazardPresentation,
+      playerPresentation,
+      scrollingWorldPresentation,
+      services,
+      viewportService,
+    } = createHarness();
     const restartRun = Reflect.get(foundation, 'restartRun') as (
-      viewport: ReturnType<ViewPortSnapshotProvider>,
+      viewport: ReturnType<ViewportService['getSnapshot']>,
       seed: number,
     ) => void;
-    type ViewPortSnapshotProvider = () => ReturnType<ViewPortSnapshotProvider>;
-    void restartRun;
-    void playerPresentation;
-    void services;
+    const result = createPrototypeRunResultSnapshot(600, {
+      collectedCount: 0,
+      collectedValue: 0,
+      earnedReward: 0,
+      grazeCount: 3,
+    });
+
+    for (const seed of [11, 22, 33]) {
+      Reflect.set(foundation, 'runState', {
+        phase: 'dead',
+        motion: { distance: result.finalDistance },
+        flight: { positionY: 195, velocityY: 0 },
+        finalResult: result,
+      } satisfies PrototypeRunState);
+      Reflect.set(foundation, 'deathRetryState', enterPrototypeFailState(result));
+      services.input.pressPointer(seed, 'touch');
+
+      restartRun(viewportService.getSnapshot(), seed);
+
+      expect(getRunState(foundation)).toMatchObject({ phase: 'running', motion: { distance: 0 } });
+      expect(getRunState(foundation).finalResult).toBeUndefined();
+      expect(getDeathRetryState(foundation).phase).toBe('running');
+      expect(getHazardStream(foundation).generationState.seed).toBe(seed);
+      expect(services.input.isThrustHeld()).toBe(false);
+      expect(Reflect.get(foundation, 'playerPresentation')).toBe(playerPresentation);
+      expect(Reflect.get(foundation, 'generatedHazardPresentation')).toBe(
+        generatedHazardPresentation,
+      );
+      expect(Reflect.get(foundation, 'scrollingWorldPresentation')).toBe(
+        scrollingWorldPresentation,
+      );
+    }
+
+    expect(playerPresentation.destroy).not.toHaveBeenCalled();
+    expect(generatedHazardPresentation.destroy).not.toHaveBeenCalled();
+    expect(scrollingWorldPresentation.destroy).not.toHaveBeenCalled();
   });
 });
