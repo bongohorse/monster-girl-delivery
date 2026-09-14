@@ -72,9 +72,7 @@ const runPartitioned = (
 
 const TERMINAL_SCHEDULES: ReadonlyArray<readonly [string, ReadonlyArray<number>]> = [
   ['coarse 50 ms', [0.05]],
-  ...[30, 60, 90, 120, 144].map(
-    (hz) => [`${hz} Hz`, partitionDuration(0.05, hz)] as const,
-  ),
+  ...[30, 60, 90, 120, 144].map((hz) => [`${hz} Hz`, partitionDuration(0.05, hz)] as const),
   ['deterministic jitter', [0.013, 0.007, 0.014, 0.016]],
 ];
 
