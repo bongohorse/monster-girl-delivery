@@ -69,6 +69,15 @@ describe('DirectorDebugOverlay geometry', () => {
     expect(lineByKind.get('flight-ceiling')).toMatchObject({ x1: 0, x2: 400, y1: 28, y2: 28 });
     expect(lineByKind.get('flight-floor')).toMatchObject({ x1: 0, x2: 400, y1: 772, y2: 772 });
     expect(lineByKind.get('despawn-boundary')).toMatchObject({ x1: -60, x2: -60 });
+    expect(lineByKind.get('despawn-indicator')).toMatchObject({ x1: 1, x2: 1, y1: 0, y2: 800 });
+    expect(geometry.labels).toEqual([
+      {
+        color: DIRECTOR_DEBUG_COLORS.despawnBoundary,
+        text: 'DESPAWN ← 60px',
+        x: 4,
+        y: 4,
+      },
+    ]);
     expect(lineByKind.get('scheduling-boundary')).toMatchObject({ x1: 250, x2: 250 });
   });
 
