@@ -33,7 +33,11 @@
     "vscode": {
       "settings": {
         "editor.formatOnSave": true,
-        "workbench.secondarySideBar.defaultVisibility": "hidden"
+        "workbench.secondarySideBar.defaultVisibility": "hidden",
+        "workbench.startupEditor": "none",
+        "terminal.integrated.enablePersistentSessions": false,
+        "extensions.ignoreRecommendations": true,
+        "chat.disableAIFeatures": true
       },
       "extensions": ["biomejs.biome"]
     }
