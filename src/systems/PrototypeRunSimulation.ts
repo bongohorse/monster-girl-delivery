@@ -1,12 +1,12 @@
 import type { FlightTuningValues } from '../config/FlightTuningConfig';
 import type { RunMotionValues } from '../config/RunMotionConfig';
 import type { LogicalCollectibleSpawnInstance } from '../generation/GeneratedCollectibles';
+import type { LogicalHazard } from './HazardCollision';
 import {
   EMPTY_PROTOTYPE_COLLECTIBLE_RUN_STATE,
   evaluatePrototypeCollectibleStep,
   type PrototypeCollectibleRunState,
 } from './PrototypeCollectibles';
-import type { LogicalHazard } from './HazardCollision';
 import {
   EMPTY_PROTOTYPE_GRAZE_RUN_STATE,
   evaluatePrototypeGrazeStep,
@@ -117,8 +117,8 @@ export const stepPrototypeRun = (
   );
   const collectibles =
     state.collectibles ||
-    context.collectibles !== undefined ||
     collectibleResult.collectedCount > 0 ||
+    collectibleResult.consumedCollectibleIds.length > 0 ||
     collectibleResult.pendingCollectibleIds.length > 0
       ? collectibleResult
       : undefined;
