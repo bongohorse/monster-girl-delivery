@@ -90,11 +90,10 @@ A new Codespace should:
 4. install the Bun version defined by the repository setup;
 5. install project dependencies;
 6. install the latest Codex CLI, Google Antigravity CLI, and Graphify CLI as optional coding-agent tools;
-7. forward port `8080` for Vite preview/testing.
+7. run a production build before reporting the Codespace ready;
+8. forward port `8080` for Vite preview/testing.
 
-Python is declared explicitly because the generic Ubuntu devcontainer base does not guarantee a Python runtime. This keeps repository and maintenance scripts able to rely on `python`/`python3` being available in Codespaces.
-
-Codex, Antigravity, and Graphify intentionally track their latest available releases when a new Codespace is created. Failures to install these optional agent tools must not make the project dependencies unusable.
+The post-create script reports numbered setup steps with elapsed time. In an interactive terminal it also displays a spinner while a step is running. Required setup failures print the last captured command output and stop setup; optional coding-agent tool failures print a warning and continue. Full per-step logs are retained under `/tmp/mgd-codespace-setup` for diagnosis.
 
 The Antigravity installer places `agy` in the user environment, so a newly created Codespace can launch it directly with `agy` after setup completes. Authentication remains user-specific and is not stored in the repository.
 
