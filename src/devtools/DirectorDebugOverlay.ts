@@ -58,6 +58,7 @@ export type DirectorDebugRectangleKind =
 
 export type DirectorDebugLineKind =
   | 'despawn-boundary'
+  | 'despawn-indicator'
   | 'flight-ceiling'
   | 'flight-floor'
   | 'scheduling-boundary';
@@ -77,7 +78,15 @@ export interface DirectorDebugLine {
   readonly y2: number;
 }
 
+export interface DirectorDebugLabel {
+  readonly color: number;
+  readonly text: string;
+  readonly x: number;
+  readonly y: number;
+}
+
 export interface DirectorDebugGeometry {
+  readonly labels: ReadonlyArray<Readonly<DirectorDebugLabel>>;
   readonly lines: ReadonlyArray<Readonly<DirectorDebugLine>>;
   readonly rectangles: ReadonlyArray<Readonly<DirectorDebugRectangle>>;
 }
@@ -223,6 +232,8 @@ export const createDirectorDebugGeometry = (
   const flightBounds = createPrototypeFlightBounds(frame.viewport);
   const ceilingY = projectLogicalYToScreen(flightBounds.ceilingY, projection);
   const floorY = projectLogicalYToScreen(flightBounds.floorY, projection);
+  const despawnX =
+    playerScreenX - PROTOTYPE_GENERATED_HAZARD_STREAM_CONFIG.retainBehindDistance;
   const lines: DirectorDebugLine[] = [
     {
       kind: 'flight-ceiling',
@@ -243,12 +254,30 @@ export const createDirectorDebugGeometry = (
     {
       kind: 'despawn-boundary',
       color: DIRECTOR_DEBUG_COLORS.despawnBoundary,
-      x1: playerScreenX - PROTOTYPE_GENERATED_HAZARD_STREAM_CONFIG.retainBehindDistance,
+      x1: despawnX,
       y1: safeArea.top,
-      x2: playerScreenX - PROTOTYPE_GENERATED_HAZARD_STREAM_CONFIG.retainBehindDistance,
+      x2: despawnX,
       y2: safeArea.bottom,
     },
   ];
+  const labels: DirectorDebugLabel[] = [];
+
+  if (despawnX < 0) {
+    lines.push({
+      kind: 'despawn-indicator',
+      color: DIRECTOR_DEBUG_COLORS.despawnBoundary,
+      x1: 1,
+      y1: safeArea.top,
+      x2: 1,
+      y2: safeArea.bottom,
+    });
+    labels.push({
+      color: DIRECTOR_DEBUG_COLORS.despawnBoundary,
+      text: `DESPAWN ← ${Math.round(-despawnX)}px`,
+      x: 4,
+      y: safeArea.top + 4,
+    });
+  }
 
   if (frame.nextPatternStartDistance !== null && Number.isFinite(frame.nextPatternStartDistance)) {
     const schedulingX = playerScreenX + frame.nextPatternStartDistance - frame.motion.distance;
@@ -263,6 +292,7 @@ export const createDirectorDebugGeometry = (
   }
 
   return Object.freeze({
+    labels: Object.freeze(labels),
     lines: Object.freeze(lines),
     rectangles: Object.freeze(rectangles),
   });
@@ -271,6 +301,7 @@ export const createDirectorDebugGeometry = (
 /** Development-only 1px geometry overlay driven directly from authoritative MGD state. */
 export class DirectorDebugOverlay {
   private graphics?: GameObjects.Graphics;
+  private despawnLabel?: GameObjects.Text;
   private destroyed = false;
   private enabled = false;
 
@@ -288,11 +319,25 @@ export class DirectorDebugOverlay {
         this.scene.add.graphics().setScrollFactor(0).setDepth(9_500).setVisible(true);
       this.graphics = graphics;
       graphics.setVisible(true);
+
+      const despawnLabel =
+        this.despawnLabel ??
+        this.scene.add
+          .text(0, 0, '', {
+            color: '#ff4dff',
+            fontFamily: 'monospace',
+            fontSize: '10px',
+          })
+          .setScrollFactor(0)
+          .setDepth(9_501)
+          .setVisible(false);
+      this.despawnLabel = despawnLabel;
       return;
     }
 
     this.graphics?.clear();
     this.graphics?.setVisible(false);
+    this.despawnLabel?.setVisible(false);
   }
 
   render(frame: Readonly<DirectorDebugOverlayFrame>): void {
@@ -322,6 +367,13 @@ export class DirectorDebugOverlay {
       graphics.lineTo(line.x2, line.y2);
       graphics.strokePath();
     }
+
+    const label = geometry.labels[0];
+    if (label) {
+      this.despawnLabel?.setPosition(label.x, label.y).setText(label.text).setVisible(true);
+    } else {
+      this.despawnLabel?.setVisible(false);
+    }
   }
 
   destroy(): void {
@@ -332,5 +384,7 @@ export class DirectorDebugOverlay {
     this.destroyed = true;
     this.graphics?.destroy();
     this.graphics = undefined;
+    this.despawnLabel?.destroy();
+    this.despawnLabel = undefined;
   }
 }
