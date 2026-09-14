@@ -54,6 +54,27 @@ const runForSeconds = (
 };
 
 describe('PrototypeCollectibles', () => {
+  it('preserves pickup qualification on a zero-delta pause boundary', () => {
+    const initial = createPrototypeRunState(FLIGHT_BOUNDS);
+    const zeroDelta = stepPrototypeRun(initial, 0, {
+      collectibles: [
+        Object.freeze({
+          ...COLLECTIBLE,
+          runDistance: 0,
+        }),
+      ],
+      flightBounds: FLIGHT_BOUNDS,
+      flightTuning: FLIGHT_TUNING,
+      hazards: [],
+      runMotionTuning: RUN_MOTION,
+      thrustHeld: false,
+    });
+
+    expect(zeroDelta.enteredDead).toBe(false);
+    expect(zeroDelta.state.motion.distance).toBe(0);
+    expect(zeroDelta.state.collectibles).toBeUndefined();
+  });
+
   it('collects exactly once across the standard frame schedules', () => {
     for (const schedule of Object.values(STANDARD_FRAME_SCHEDULES)) {
       const state = runForSeconds(schedule, 3);
