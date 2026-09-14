@@ -33,6 +33,14 @@ import {
 } from '../../hazards/TelegraphedHazardSimulation';
 import { PhaserInputAdapter } from '../../input/PhaserInputAdapter';
 import {
+  createPrototypeDeathRetryState,
+  type PrototypeDeathRetryState,
+  enterPrototypeFailState,
+  getPrototypeFailStateProgress,
+  stepPrototypeDeathRetryState,
+} from '../../systems/PrototypeDeathRetryFlow';
+import type { PrototypeRunResultSnapshot } from '../../systems/PrototypeRunResult';
+import {
   createPrototypeRunState,
   type PrototypeRunState,
   stepPrototypeRun,
@@ -52,14 +60,24 @@ import { getLogicalViewportFromBacking } from '../RenderResolution';
 
 const RUNNING_INSTRUCTIONS =
   'M4 moving, timed + target-lock hazards\nHold touch, mouse, or Space to thrust.';
-const DEAD_INSTRUCTIONS = 'Delivery interrupted\nTap, click, or press Space to restart.';
-const selectNewDirectorRunSeed = (currentSeed: number | undefined): number => {
+const RETRY_READY_INSTRUCTIONS = 'Tap, click, or press Space to retry.';
+const formatDeadInstructions = (
+  result: Readonly<PrototypeRunResultSnapshot>,
+  retryReady: boolean,
+): string =>
+  [
+    'Delivery interrupted',
+    `Distance ${result.finalDistance.toFixed(1)} · Score ${result.score}`,
+    `Grazes ${result.grazeCount}`,
+    retryReady ? RETRY_READY_INSTRUCTIONS : 'Parcel recovery...',
+  ].join('\n');
+const selectNewRunSeed = (currentSeed: number | undefined): number => {
   const entropy = new Uint32Array(1);
   globalThis.crypto.getRandomValues(entropy);
   const selectedSeed = entropy[0];
 
   if (selectedSeed === undefined) {
-    throw new Error('Director seed selection did not produce a seed.');
+    throw new Error('Run seed selection did not produce a seed.');
   }
 
   return selectedSeed === currentSeed ? (selectedSeed + 1) >>> 0 : selectedSeed;
@@ -108,6 +126,7 @@ export class Foundation extends Scene {
     motion: { distance: 0 },
     flight: { positionY: 0, velocityY: 0 },
   };
+  private deathRetryState: Readonly<PrototypeDeathRetryState> = createPrototypeDeathRetryState();
   private shutdownHandled = false;
 
   constructor(
@@ -119,6 +138,7 @@ export class Foundation extends Scene {
 
   create() {
     this.shutdownHandled = false;
+    this.deathRetryState = createPrototypeDeathRetryState();
     const safeArea = readSafeAreaInsets(document.getElementById('safe-area-probe'));
     const renderViewport = getLogicalViewportFromBacking(
       this.scale.width,
@@ -188,7 +208,7 @@ export class Foundation extends Scene {
       getPrototypePlayerX(viewport),
       projectLogicalYToScreen(this.runState.flight.positionY, initialProjection),
     );
-    this.playerPresentation?.setScale?.(1, initialProjection.scaleY);
+    this.playerPresentation.setScale(1, initialProjection.scaleY);
 
     this.cameras.main.setBackgroundColor(0x121426);
     this.title = this.add
@@ -238,10 +258,27 @@ export class Foundation extends Scene {
     }
 
     if (this.runState.phase === 'dead') {
-      const restartPressed = this.services.input.consumePrimaryActionPress();
+      const previousRetryPhase = this.deathRetryState.phase;
+      this.deathRetryState = stepPrototypeDeathRetryState(
+        this.deathRetryState,
+        simulationDeltaSeconds,
+      );
 
-      if (restartPressed && !this.services.lifecycle.isPaused()) {
-        this.restartRun(viewport);
+      if (
+        previousRetryPhase !== 'retry-ready' &&
+        this.deathRetryState.phase === 'retry-ready' &&
+        this.deathRetryState.result
+      ) {
+        this.instructions?.setText(formatDeadInstructions(this.deathRetryState.result, true));
+      }
+
+      const retryPressed = this.services.input.consumePrimaryActionPress();
+      if (
+        this.deathRetryState.phase === 'retry-ready' &&
+        retryPressed &&
+        !this.services.lifecycle.isPaused()
+      ) {
+        this.restartRun(viewport, selectNewRunSeed(this.hazardStream.generationState.seed));
       }
     } else {
       // While running, primary presses are thrust input rather than queued restart requests.
@@ -306,8 +343,13 @@ export class Foundation extends Scene {
       this.runState = result.state;
 
       if (result.enteredDead) {
+        const finalResult = this.runState.finalResult;
+        if (!finalResult) {
+          throw new TypeError('Authoritative run end must provide a final result snapshot.');
+        }
+        this.deathRetryState = enterPrototypeFailState(finalResult);
         this.services.input.releaseAll();
-        this.instructions?.setText(DEAD_INSTRUCTIONS);
+        this.instructions?.setText(formatDeadInstructions(finalResult, false));
       } else {
         // Age existing reservations by the completed frame, then commit new content at t=0.
         this.hazardStream = advanceGeneratedHazardStream(
@@ -362,17 +404,20 @@ export class Foundation extends Scene {
     const viewport = this.viewportService.getSnapshot();
     const flightBounds = createPrototypeFlightBounds(viewport);
     this.hazardVerticalDomain = createPrototypeHazardVerticalDomain(flightBounds);
-    if (this.hazardStream) {
-      this.hazardStream = constrainGeneratedHazardStream(
-        this.hazardStream,
-        this.hazardVerticalDomain.constraints,
-        PROTOTYPE_PATTERN_REACHABILITY_CONTEXT.playerExtents,
-      );
+
+    if (this.runState.phase === 'running') {
+      if (this.hazardStream) {
+        this.hazardStream = constrainGeneratedHazardStream(
+          this.hazardStream,
+          this.hazardVerticalDomain.constraints,
+          PROTOTYPE_PATTERN_REACHABILITY_CONTEXT.playerExtents,
+        );
+      }
+      this.runState = {
+        ...this.runState,
+        flight: constrainVerticalFlightState(this.runState.flight, flightBounds),
+      };
     }
-    this.runState = {
-      ...this.runState,
-      flight: constrainVerticalFlightState(this.runState.flight, flightBounds),
-    };
     this.layout(viewport);
   };
 
@@ -423,7 +468,10 @@ export class Foundation extends Scene {
       return;
     }
 
-    this.restartRun(this.viewportService.getSnapshot());
+    this.restartRun(
+      this.viewportService.getSnapshot(),
+      this.hazardStream?.generationState.seed ?? PROTOTYPE_LIVE_RUN_SEED,
+    );
   };
 
   private readonly handleStartNewSeed = (): void => {
@@ -431,17 +479,18 @@ export class Foundation extends Scene {
       return;
     }
 
-    const seed = selectNewDirectorRunSeed(this.hazardStream?.generationState.seed);
+    const seed = selectNewRunSeed(this.hazardStream?.generationState.seed);
     this.restartRun(this.viewportService.getSnapshot(), seed);
   };
 
   private restartRun(
     viewport: ReturnType<ViewportService['getSnapshot']>,
-    seed = this.hazardStream?.generationState.seed ?? PROTOTYPE_LIVE_RUN_SEED,
+    seed: Parameters<typeof createGeneratedHazardStream>[0] = PROTOTYPE_LIVE_RUN_SEED,
   ): void {
     this.directorPanel?.reset();
     const flightBounds = createPrototypeFlightBounds(viewport);
     this.runState = createPrototypeRunState(flightBounds);
+    this.deathRetryState = createPrototypeDeathRetryState();
     this.hazardStream = createGeneratedHazardStream(
       seed,
       createLiveHazardStreamContext(
@@ -480,7 +529,10 @@ export class Foundation extends Scene {
       playerScreenX,
       projectLogicalYToScreen(this.runState.flight.positionY, projection),
     );
-    this.playerPresentation?.setScale?.(1, projection.scaleY);
+    this.playerPresentation?.setScale(1, projection.scaleY);
+    this.playerPresentation?.setRotation(
+      getPrototypeFailStateProgress(this.deathRetryState) * Math.PI * 0.7,
+    );
   }
 
   private readonly handleShutdown = (): void => {
@@ -510,6 +562,7 @@ export class Foundation extends Scene {
     this.inputAdapter = undefined;
     this.lifecycleAdapter?.destroy();
     this.lifecycleAdapter = undefined;
+    this.deathRetryState = createPrototypeDeathRetryState();
     this.services.input.releaseAll();
   };
 }
