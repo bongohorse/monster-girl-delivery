@@ -46,7 +46,7 @@ describe('GeneratedCollectibles', () => {
     expect(schedule.state).not.toBe(initialState);
   });
 
-  it('preserves accepted geometry and distinguishes risk-reward path identity', () => {
+  it('preserves accepted geometry when resize/domain reconciliation no longer rematerializes it', () => {
     const schedule = scheduleNextPattern({
       catalog: [PROTOTYPE_OFFSET_PAIR_PATTERN],
       patternStartDistance: 2_000,
@@ -64,12 +64,7 @@ describe('GeneratedCollectibles', () => {
       [PROTOTYPE_OFFSET_PAIR_PATTERN],
       0,
     );
-    const preserved = reconcileGeneratedCollectibles(
-      initial,
-      [],
-      [PROTOTYPE_OFFSET_PAIR_PATTERN],
-      2_100,
-    );
+    const preserved = reconcileGeneratedCollectibles(initial, [], [], 2_100);
 
     expect(initial).toHaveLength(5);
     expect(initial.every((spawn) => spawn.intent === 'risk-reward')).toBe(true);
