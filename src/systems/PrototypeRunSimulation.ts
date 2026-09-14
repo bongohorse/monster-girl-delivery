@@ -1,9 +1,14 @@
 import type { FlightTuningValues } from '../config/FlightTuningConfig';
 import type { RunMotionValues } from '../config/RunMotionConfig';
 import type { LogicalHazard } from './HazardCollision';
-import { isPlayerCollidingWithHazardDuringStep } from './HazardCollision';
+import {
+  EMPTY_PROTOTYPE_GRAZE_RUN_STATE,
+  evaluatePrototypeGrazeStep,
+  type PrototypeGrazeRunState,
+} from './PrototypeGraze';
 import {
   createPrototypeRunResultSnapshot,
+  EMPTY_PROTOTYPE_RUN_RESULT_TOTALS,
   type PrototypeRunResultSnapshot,
   type PrototypeRunResultTotals,
 } from './PrototypeRunResult';
@@ -21,7 +26,7 @@ export interface PrototypeRunState {
   flight: VerticalFlightState;
   motion: RunMotionState;
   phase: PrototypeRunPhase;
-  /** Present only after the authoritative running -> dead transition has finalized this run. */
+  graze?: Readonly<PrototypeGrazeRunState>;
   finalResult?: Readonly<PrototypeRunResultSnapshot>;
 }
 
@@ -29,10 +34,6 @@ export interface PrototypeRunStepContext {
   flightBounds: Readonly<VerticalFlightBounds>;
   flightTuning: Readonly<FlightTuningValues>;
   hazards: ReadonlyArray<Readonly<LogicalHazard>>;
-  /**
-   * Authoritative run-local totals supplied by their owning gameplay systems.
-   * Until #84/#90 land, callers omit this and the snapshot records zero skill/reward totals.
-   */
   resultTotals?: Readonly<PrototypeRunResultTotals>;
   runMotionTuning: Readonly<RunMotionValues>;
   thrustHeld: boolean;
@@ -43,7 +44,6 @@ export interface PrototypeRunStepResult {
   state: PrototypeRunState;
 }
 
-/** Creates the one deterministic starting state used by initial entry and every restart. */
 export const createPrototypeRunState = (
   flightBounds: Readonly<VerticalFlightBounds>,
 ): PrototypeRunState => {
@@ -63,11 +63,10 @@ export const createPrototypeRunState = (
 };
 
 /**
- * Advances one authoritative run step and evaluates continuous collision along the same trajectory.
- * A collision keeps the completed step state and exposes no time of impact, preserving the existing
- * run contract. The same one-shot transition captures the immutable M5 result snapshot from the
- * completed authoritative state; later dead-state/presentation work cannot recalculate or extend it.
- * A dead run is held exactly as-is until the caller explicitly replaces it with a fresh state.
+ * Advances one authoritative run step. Lethal core collision and Graze inspect the same continuous
+ * trajectory and lifecycle interval. Graze candidates remain pending until their possible lethal
+ * core opportunity has resolved, so fine frame partitions cannot award a pre-lethal outer-zone touch
+ * that a coarser terminal step would suppress. No presentation or secondary clock owns qualification.
  */
 export const stepPrototypeRun = (
   state: Readonly<PrototypeRunState>,
@@ -87,26 +86,36 @@ export const stepPrototypeRun = (
     context.flightBounds,
   );
   const flight = { ...flightTrajectory.finalState };
-  const enteredDead = context.hazards.some((hazard) =>
-    isPlayerCollidingWithHazardDuringStep(
-      state.motion,
-      flightTrajectory,
-      elapsedSeconds,
-      context.runMotionTuning,
-      hazard,
-    ),
+  const grazeResult = evaluatePrototypeGrazeStep(
+    state.graze ?? EMPTY_PROTOTYPE_GRAZE_RUN_STATE,
+    state.motion,
+    flightTrajectory,
+    elapsedSeconds,
+    context.runMotionTuning,
+    context.hazards,
   );
+  const graze =
+    state.graze || grazeResult.state.count > 0 || grazeResult.state.pendingOccurrenceIds.length > 0
+      ? grazeResult.state
+      : undefined;
 
-  if (!enteredDead) {
+  if (!grazeResult.lethalCollision) {
     return {
       enteredDead: false,
       state: {
         phase: 'running',
         motion,
         flight,
+        ...(graze ? { graze } : {}),
       },
     };
   }
+
+  const suppliedTotals = context.resultTotals ?? EMPTY_PROTOTYPE_RUN_RESULT_TOTALS;
+  const finalTotals: PrototypeRunResultTotals = {
+    ...suppliedTotals,
+    grazeCount: graze?.count ?? suppliedTotals.grazeCount,
+  };
 
   return {
     enteredDead: true,
@@ -114,7 +123,8 @@ export const stepPrototypeRun = (
       phase: 'dead',
       motion,
       flight,
-      finalResult: createPrototypeRunResultSnapshot(motion.distance, context.resultTotals),
+      ...(graze ? { graze } : {}),
+      finalResult: createPrototypeRunResultSnapshot(motion.distance, finalTotals),
     },
   };
 };

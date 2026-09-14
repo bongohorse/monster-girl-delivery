@@ -169,6 +169,7 @@ export const getCollisionHazardsForTelegraphedSimulation = (
       Object.freeze({
         ...spawn,
         collisionInterval: instance.activeInterval,
+        collisionEndsAtIntervalEnd: instance.lifecycle.phase === 'expired',
         hitbox,
       }),
     );
