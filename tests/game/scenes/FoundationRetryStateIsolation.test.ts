@@ -27,8 +27,8 @@ import {
 } from '../../../src/systems/HazardCollision';
 import {
   enterPrototypeFailState,
-  type PrototypeDeathRetryState,
   PROTOTYPE_FAIL_STATE_DURATION_SECONDS,
+  type PrototypeDeathRetryState,
   stepPrototypeDeathRetryState,
 } from '../../../src/systems/PrototypeDeathRetryFlow';
 import { createPrototypeRunResultSnapshot } from '../../../src/systems/PrototypeRunResult';
@@ -130,7 +130,9 @@ describe('Foundation M5 retry state isolation', () => {
     const foundation = new Foundation(services, false);
     const viewportService = new ViewportService(400, 800);
     const viewport = viewportService.getSnapshot();
-    const verticalDomain = createPrototypeHazardVerticalDomain(createPrototypeFlightBounds(viewport));
+    const verticalDomain = createPrototypeHazardVerticalDomain(
+      createPrototypeFlightBounds(viewport),
+    );
     const generatedStream = createGeneratedHazardStream(
       PROTOTYPE_LIVE_RUN_SEED,
       Object.freeze({
