@@ -124,12 +124,7 @@ export class DirectorPerformanceHud {
     this.resetButton.title = 'Reset performance statistics';
     this.resetButton.setAttribute('aria-label', 'Reset performance statistics');
 
-    this.root.append(
-      this.visibilityButton,
-      this.values,
-      this.wireframeLabel,
-      this.resetButton,
-    );
+    this.root.append(this.visibilityButton, this.values, this.wireframeLabel, this.resetButton);
     container.append(this.root);
 
     this.addControlListeners(this.visibilityButton, this.handleVisibilityClick);
@@ -258,10 +253,7 @@ export class DirectorPerformanceHud {
     this.refreshVisibleValues();
   };
 
-  private addControlListeners(
-    element: HTMLElement,
-    clickHandler: (event: Event) => void,
-  ): void {
+  private addControlListeners(element: HTMLElement, clickHandler: (event: Event) => void): void {
     element.addEventListener('pointerdown', this.handlePointerDown);
     element.addEventListener('pointerup', this.handlePointerRelease);
     element.addEventListener('pointercancel', this.handlePointerRelease);
@@ -269,10 +261,7 @@ export class DirectorPerformanceHud {
     element.addEventListener('click', clickHandler);
   }
 
-  private removeControlListeners(
-    element: HTMLElement,
-    clickHandler: (event: Event) => void,
-  ): void {
+  private removeControlListeners(element: HTMLElement, clickHandler: (event: Event) => void): void {
     element.removeEventListener('pointerdown', this.handlePointerDown);
     element.removeEventListener('pointerup', this.handlePointerRelease);
     element.removeEventListener('pointercancel', this.handlePointerRelease);
