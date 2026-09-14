@@ -3,7 +3,6 @@ set -euo pipefail
 
 REPOSITORY_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 BUN_VERSION_FILE="$REPOSITORY_ROOT/.bun-version"
-GRAPHIFY_VERSION_FILE="$REPOSITORY_ROOT/.graphify-version"
 BUN_BIN="$HOME/.bun/bin/bun"
 
 if [[ ! -f "$BUN_VERSION_FILE" ]]; then
@@ -46,41 +45,30 @@ else
   printf '[Codespaces] Warning: Google Antigravity CLI installation failed; project dependencies are ready.\n' >&2
 fi
 
-printf '\n[Codespaces] Installing Graphify CLI (optional)...\n'
-if [[ ! -f "$GRAPHIFY_VERSION_FILE" ]]; then
-  printf '[Codespaces] Warning: Graphify version file not found: %s\n' "$GRAPHIFY_VERSION_FILE" >&2
-else
-  GRAPHIFY_VERSION="$(<"$GRAPHIFY_VERSION_FILE")"
-  GRAPHIFY_VERSION="${GRAPHIFY_VERSION%"${GRAPHIFY_VERSION##*[![:space:]]}"}"
+printf '\n[Codespaces] Installing latest Graphify CLI (optional)...\n'
+export PATH="$HOME/.local/bin:$PATH"
 
-  if [[ -z "$GRAPHIFY_VERSION" ]]; then
-    printf '[Codespaces] Warning: Graphify version file is empty: %s\n' "$GRAPHIFY_VERSION_FILE" >&2
+GRAPHIFY_PATH_EXPORT='export PATH="$HOME/.local/bin:$PATH"'
+if ! grep -qxF "$GRAPHIFY_PATH_EXPORT" "$HOME/.bashrc" 2>/dev/null; then
+  printf '\n%s\n' "$GRAPHIFY_PATH_EXPORT" >> "$HOME/.bashrc"
+fi
+
+if ! command -v uv >/dev/null 2>&1; then
+  if curl --fail --silent --show-error --location --retry 5 --connect-timeout 10 \
+      https://astral.sh/uv/install.sh | sh; then
+    printf '[Codespaces] uv installed for Graphify.\n'
   else
-    export PATH="$HOME/.local/bin:$PATH"
+    printf '[Codespaces] Warning: uv installation failed; Graphify was not installed.\n' >&2
+  fi
+fi
 
-    GRAPHIFY_PATH_EXPORT='export PATH="$HOME/.local/bin:$PATH"'
-    if ! grep -qxF "$GRAPHIFY_PATH_EXPORT" "$HOME/.bashrc" 2>/dev/null; then
-      printf '\n%s\n' "$GRAPHIFY_PATH_EXPORT" >> "$HOME/.bashrc"
-    fi
+export PATH="$HOME/.local/bin:$PATH"
 
-    if ! command -v uv >/dev/null 2>&1; then
-      if curl --fail --silent --show-error --location --retry 5 --connect-timeout 10 \
-          https://astral.sh/uv/install.sh | sh; then
-        printf '[Codespaces] uv installed for Graphify.\n'
-      else
-        printf '[Codespaces] Warning: uv installation failed; Graphify was not installed.\n' >&2
-      fi
-    fi
-
-    export PATH="$HOME/.local/bin:$PATH"
-
-    if command -v uv >/dev/null 2>&1; then
-      if uv tool install --upgrade "graphifyy==$GRAPHIFY_VERSION"; then
-        printf '[Codespaces] Graphify CLI %s installed.\n' "$GRAPHIFY_VERSION"
-      else
-        printf '[Codespaces] Warning: Graphify CLI installation failed; project dependencies are ready.\n' >&2
-      fi
-    fi
+if command -v uv >/dev/null 2>&1; then
+  if uv tool install 'graphifyy@latest'; then
+    printf '[Codespaces] Latest Graphify CLI installed.\n'
+  else
+    printf '[Codespaces] Warning: Graphify CLI installation failed; project dependencies are ready.\n' >&2
   fi
 fi
 
