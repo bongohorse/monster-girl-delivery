@@ -34,9 +34,9 @@ import {
 import { PhaserInputAdapter } from '../../input/PhaserInputAdapter';
 import {
   createPrototypeDeathRetryState,
-  type PrototypeDeathRetryState,
   enterPrototypeFailState,
   getPrototypeFailStateProgress,
+  type PrototypeDeathRetryState,
   stepPrototypeDeathRetryState,
 } from '../../systems/PrototypeDeathRetryFlow';
 import type { PrototypeRunResultSnapshot } from '../../systems/PrototypeRunResult';
