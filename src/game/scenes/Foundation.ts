@@ -120,9 +120,8 @@ export class Foundation extends Scene {
   private directorTuningControls?: DirectorTuningControls;
   private inputAdapter?: PhaserInputAdapter;
   private lifecycleAdapter?: PhaserLifecycleAdapter;
-  private collectibleSpawns: ReadonlyArray<Readonly<LogicalCollectibleSpawnInstance>> = Object.freeze(
-    [],
-  );
+  private collectibleSpawns: ReadonlyArray<Readonly<LogicalCollectibleSpawnInstance>> =
+    Object.freeze([]);
   private generatedCollectiblePresentation?: GeneratedCollectiblePresentation;
   private generatedHazardPresentation?: GeneratedHazardPresentation;
   private hazardStream?: Readonly<GeneratedHazardStreamState>;
