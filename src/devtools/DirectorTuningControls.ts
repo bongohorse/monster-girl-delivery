@@ -126,21 +126,23 @@ export class DirectorTuningControls {
 
     const { tuningControls } = createDirectorResponsiveLayout(viewport);
     const buttonLeft = tuningControls.x + tuningControls.width - 72;
+    const textResolution = this.scene.cameras.main.zoom;
 
     this.background
       .setPosition(tuningControls.x, tuningControls.y)
       .setSize(tuningControls.width, tuningControls.height);
-    this.title.setPosition(tuningControls.x + 12, tuningControls.y + 10);
-    this.visibilityButton.setPosition(
-      tuningControls.x + tuningControls.width - 40,
-      tuningControls.y + 8,
-    );
+    this.title
+      .setResolution(textResolution)
+      .setPosition(tuningControls.x + 12, tuningControls.y + 10);
+    this.visibilityButton
+      .setResolution(textResolution)
+      .setPosition(tuningControls.x + tuningControls.width - 40, tuningControls.y + 8);
 
     this.rows.forEach((row, index) => {
       const rowY = tuningControls.y + 44 + index * 34;
-      row.label.setPosition(tuningControls.x + 12, rowY);
-      row.minus.setPosition(buttonLeft, rowY - 4);
-      row.plus.setPosition(buttonLeft + 38, rowY - 4);
+      row.label.setResolution(textResolution).setPosition(tuningControls.x + 12, rowY);
+      row.minus.setResolution(textResolution).setPosition(buttonLeft, rowY - 4);
+      row.plus.setResolution(textResolution).setPosition(buttonLeft + 38, rowY - 4);
     });
   }
 

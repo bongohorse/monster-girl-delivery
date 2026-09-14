@@ -2,7 +2,11 @@ import type { Scene } from 'phaser';
 import { describe, expect, it, vi } from 'vitest';
 import { ViewportService } from '../../src/core/ViewportService';
 import { DirectorEncounterDiagnostics } from '../../src/devtools/DirectorEncounterDiagnostics';
-import { DirectorPanel, fitDirectorDiagnosticLines } from '../../src/devtools/DirectorPanel';
+import {
+  DIRECTOR_PANEL_VISIBILITY_EVENT,
+  DirectorPanel,
+  fitDirectorDiagnosticLines,
+} from '../../src/devtools/DirectorPanel';
 import { createGeneratedHazardStream } from '../../src/generation/GeneratedHazardStream';
 import { PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG } from '../../src/generation/LiveEncounterPolicy';
 import { PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES } from '../../src/generation/PrototypeHazardPatternFixtures';
@@ -23,6 +27,7 @@ const objectFake = () => {
     setDepth: vi.fn(),
     setOrigin: vi.fn(),
     setPosition: vi.fn(),
+    setResolution: vi.fn(),
     setScrollFactor: vi.fn(),
     setSize: vi.fn(),
     setText: vi.fn(),
@@ -35,6 +40,7 @@ const objectFake = () => {
     object.setDepth,
     object.setOrigin,
     object.setPosition,
+    object.setResolution,
     object.setScrollFactor,
     object.setSize,
     object.setText,
@@ -53,6 +59,7 @@ const setup = () => {
   const canvas = new EventTarget();
   const pageLifecycle = new EventTarget();
   const events = { on: vi.fn(), off: vi.fn() };
+  const sceneEvents = { emit: vi.fn() };
   const scene = {
     add: {
       rectangle: () => background,
@@ -62,6 +69,8 @@ const setup = () => {
         .mockReturnValueOnce(button)
         .mockReturnValueOnce(visibilityButton),
     },
+    cameras: { main: { zoom: 2 } },
+    events: sceneEvents,
     game: { canvas, events },
   } as unknown as Scene;
   const input = new InputService();
@@ -98,6 +107,7 @@ const setup = () => {
     canvas,
     pageLifecycle,
     events,
+    sceneEvents,
     background,
     text,
     button,
@@ -110,7 +120,7 @@ const setup = () => {
 };
 describe('DirectorPanel', () => {
   it('displays authoritative values and gates formatting to 4 Hz and visible pages', () => {
-    const { panel, text, button, refresh, click, viewport } = setup();
+    const { panel, text, button, visibilityButton, refresh, click, viewport } = setup();
     const format = vi.spyOn(DirectorEncounterDiagnostics.prototype, 'lines');
     panel.layout(viewport);
     refresh();
@@ -118,6 +128,9 @@ describe('DirectorPanel', () => {
       expect.arrayContaining(['Seed: 3433278918', 'Applied speed: 350.00', 'Pacing: breather / 0']),
     );
     expect(button.setText).toHaveBeenLastCalledWith('M5 Run 1/8 ›');
+    expect(text.setResolution).toHaveBeenLastCalledWith(2);
+    expect(button.setResolution).toHaveBeenLastCalledWith(2);
+    expect(visibilityButton.setResolution).toHaveBeenLastCalledWith(2);
     refresh(100);
     expect(format).toHaveBeenCalledTimes(1);
     refresh(150);
@@ -132,8 +145,17 @@ describe('DirectorPanel', () => {
     panel.destroy();
   });
   it('collapses and restores the overlay from the eye control without leaking gameplay input', () => {
-    const { panel, input, background, text, button, visibilityButton, refresh, clickVisibility } =
-      setup();
+    const {
+      panel,
+      input,
+      background,
+      text,
+      button,
+      visibilityButton,
+      sceneEvents,
+      refresh,
+      clickVisibility,
+    } = setup();
     const format = vi.spyOn(DirectorEncounterDiagnostics.prototype, 'lines');
 
     refresh();
@@ -144,6 +166,7 @@ describe('DirectorPanel', () => {
     expect(text.setVisible).toHaveBeenLastCalledWith(false);
     expect(button.setVisible).toHaveBeenLastCalledWith(false);
     expect(button.disableInteractive).toHaveBeenCalledOnce();
+    expect(sceneEvents.emit).toHaveBeenLastCalledWith(DIRECTOR_PANEL_VISIBILITY_EVENT, false);
 
     refresh(1000);
     expect(format).toHaveBeenCalledTimes(1);
@@ -153,6 +176,7 @@ describe('DirectorPanel', () => {
     expect(text.setVisible).toHaveBeenLastCalledWith(true);
     expect(button.setVisible).toHaveBeenLastCalledWith(true);
     expect(button.setInteractive).toHaveBeenCalledTimes(2);
+    expect(sceneEvents.emit).toHaveBeenLastCalledWith(DIRECTOR_PANEL_VISIBILITY_EVENT, true);
     refresh();
     expect(format).toHaveBeenCalledTimes(2);
     expect(visibilityButton.setVisible).not.toHaveBeenCalledWith(false);

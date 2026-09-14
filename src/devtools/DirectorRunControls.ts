@@ -1,6 +1,7 @@
 import type { Scene } from 'phaser';
 import type { ViewportSnapshot } from '../core/ViewportService';
 import type { InputService } from '../input/InputService';
+import { DIRECTOR_PANEL_VISIBILITY_EVENT } from './DirectorPanel';
 import { createDirectorResponsiveLayout } from './DirectorResponsiveLayout';
 
 interface PointerEventData {
@@ -20,6 +21,7 @@ export class DirectorRunControls {
   private readonly restartButton: Phaser.GameObjects.Text;
   private readonly newSeedButton: Phaser.GameObjects.Text;
   private destroyed = false;
+  private visible = true;
   private activePointerId: number | null = null;
   private pressedAction: RunAction | null = null;
 
@@ -32,6 +34,7 @@ export class DirectorRunControls {
     this.restartButton = this.createButton(scene, 'Restart same seed', 'restart');
     this.newSeedButton = this.createButton(scene, 'New random seed', 'new-seed');
     this.scene.game.canvas.addEventListener('pointercancel', this.cancelInteraction);
+    this.scene.events.on(DIRECTOR_PANEL_VISIBILITY_EVENT, this.handlePanelVisibility);
   }
 
   layout(viewport: ViewportSnapshot): void {
@@ -42,10 +45,15 @@ export class DirectorRunControls {
     const { diagnostics } = createDirectorResponsiveLayout(viewport);
     const controlsWidth = Math.max(0, diagnostics.width - 24);
     const buttonWidth = Math.max(0, (controlsWidth - BUTTON_GAP) / 2);
+    const textResolution = this.scene.cameras.main.zoom;
     const y = diagnostics.y + diagnostics.height - 40;
 
-    this.restartButton.setPosition(diagnostics.x + 12, y).setFixedSize(buttonWidth, 32);
+    this.restartButton
+      .setResolution(textResolution)
+      .setPosition(diagnostics.x + 12, y)
+      .setFixedSize(buttonWidth, 32);
     this.newSeedButton
+      .setResolution(textResolution)
       .setPosition(diagnostics.x + 12 + buttonWidth + BUTTON_GAP, y)
       .setFixedSize(buttonWidth, 32);
   }
@@ -58,12 +66,32 @@ export class DirectorRunControls {
     this.destroyed = true;
     this.cancelInteraction();
     this.scene.game.canvas.removeEventListener('pointercancel', this.cancelInteraction);
+    this.scene.events.off(DIRECTOR_PANEL_VISIBILITY_EVENT, this.handlePanelVisibility);
     this.restartButton.destroy();
     this.newSeedButton.destroy();
   }
 
   private readonly blockGameplay = (): void => {
     this.inputService.setGameplayBlocked(true);
+  };
+
+  private readonly handlePanelVisibility = (visible: boolean): void => {
+    if (this.destroyed || visible === this.visible) {
+      return;
+    }
+
+    this.visible = visible;
+    this.cancelInteraction();
+    this.restartButton.setVisible(visible);
+    this.newSeedButton.setVisible(visible);
+
+    for (const button of [this.restartButton, this.newSeedButton]) {
+      if (visible) {
+        button.setInteractive();
+      } else {
+        button.disableInteractive();
+      }
+    }
   };
 
   private createButton(scene: Scene, label: string, action: RunAction): Phaser.GameObjects.Text {
