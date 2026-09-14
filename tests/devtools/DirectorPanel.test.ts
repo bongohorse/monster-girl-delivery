@@ -15,6 +15,7 @@ const objectFake = () => {
   const object = {
     handlers,
     destroy: vi.fn(),
+    disableInteractive: vi.fn(),
     on: vi.fn((name: string, handler: Handler) => {
       handlers.set(name, handler);
       return object;
@@ -27,8 +28,10 @@ const objectFake = () => {
     setText: vi.fn(),
     setFixedSize: vi.fn(),
     setInteractive: vi.fn(),
+    setVisible: vi.fn(),
   };
   for (const method of [
+    object.disableInteractive,
     object.setDepth,
     object.setOrigin,
     object.setPosition,
@@ -37,6 +40,7 @@ const objectFake = () => {
     object.setText,
     object.setFixedSize,
     object.setInteractive,
+    object.setVisible,
   ])
     method.mockReturnValue(object);
   return object;
@@ -44,14 +48,19 @@ const objectFake = () => {
 const setup = () => {
   const background = objectFake(),
     text = objectFake(),
-    button = objectFake();
+    button = objectFake(),
+    visibilityButton = objectFake();
   const canvas = new EventTarget();
   const pageLifecycle = new EventTarget();
   const events = { on: vi.fn(), off: vi.fn() };
   const scene = {
     add: {
       rectangle: () => background,
-      text: vi.fn().mockReturnValueOnce(text).mockReturnValueOnce(button),
+      text: vi
+        .fn()
+        .mockReturnValueOnce(text)
+        .mockReturnValueOnce(button)
+        .mockReturnValueOnce(visibilityButton),
     },
     game: { canvas, events },
   } as unknown as Scene;
@@ -79,6 +88,10 @@ const setup = () => {
     button.handlers.get('pointerdown')?.({ id }, 0, 0, { stopPropagation: vi.fn() });
     button.handlers.get('pointerup')?.({ id }, 0, 0, { stopPropagation: vi.fn() });
   };
+  const clickVisibility = (id = 2) => {
+    visibilityButton.handlers.get('pointerdown')?.({ id }, 0, 0, { stopPropagation: vi.fn() });
+    visibilityButton.handlers.get('pointerup')?.({ id }, 0, 0, { stopPropagation: vi.fn() });
+  };
   return {
     panel,
     input,
@@ -88,8 +101,10 @@ const setup = () => {
     background,
     text,
     button,
+    visibilityButton,
     refresh,
     click,
+    clickVisibility,
     viewport,
   };
 };
@@ -116,6 +131,35 @@ describe('DirectorPanel', () => {
     format.mockRestore();
     panel.destroy();
   });
+  it('collapses and restores the overlay from the eye control without leaking gameplay input', () => {
+    const { panel, input, background, text, button, visibilityButton, refresh, clickVisibility } =
+      setup();
+    const format = vi.spyOn(DirectorEncounterDiagnostics.prototype, 'lines');
+
+    refresh();
+    expect(format).toHaveBeenCalledTimes(1);
+    clickVisibility();
+    expect(input.getSnapshot().gameplayBlocked).toBe(false);
+    expect(background.setVisible).toHaveBeenLastCalledWith(false);
+    expect(text.setVisible).toHaveBeenLastCalledWith(false);
+    expect(button.setVisible).toHaveBeenLastCalledWith(false);
+    expect(button.disableInteractive).toHaveBeenCalledOnce();
+
+    refresh(1000);
+    expect(format).toHaveBeenCalledTimes(1);
+
+    clickVisibility();
+    expect(background.setVisible).toHaveBeenLastCalledWith(true);
+    expect(text.setVisible).toHaveBeenLastCalledWith(true);
+    expect(button.setVisible).toHaveBeenLastCalledWith(true);
+    expect(button.setInteractive).toHaveBeenCalledTimes(2);
+    refresh();
+    expect(format).toHaveBeenCalledTimes(2);
+    expect(visibilityButton.setVisible).not.toHaveBeenCalledWith(false);
+
+    format.mockRestore();
+    panel.destroy();
+  });
   it('blocks thrust and changes pages only for a completed matching pointer', () => {
     const { panel, input, button, click } = setup();
     input.pressPointer(9, 'touch');
@@ -139,6 +183,7 @@ describe('DirectorPanel', () => {
       panel,
       input,
       button,
+      visibilityButton,
       canvas,
       pageLifecycle,
       events,
@@ -177,6 +222,7 @@ describe('DirectorPanel', () => {
     expect(input.getSnapshot().gameplayBlocked).toBe(false);
     expect(events.off).toHaveBeenCalledWith('blur', gameEventHandler('blur'));
     expect(events.off).toHaveBeenCalledWith('hidden', gameEventHandler('hidden'));
+    expect(visibilityButton.destroy).toHaveBeenCalledOnce();
     expect(button.destroy).toHaveBeenCalledOnce();
     expect(text.destroy).toHaveBeenCalledOnce();
     expect(background.destroy).toHaveBeenCalledOnce();

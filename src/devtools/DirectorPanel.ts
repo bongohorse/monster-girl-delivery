@@ -25,17 +25,22 @@ interface DirectorPageLifecycleTarget {
   removeEventListener(type: 'pagehide', listener: EventListener): void;
 }
 
+type DirectorPanelControl = 'page' | 'visibility';
+
 /** Paged, read-only evidence at 4 Hz inside the existing Director footprint. */
 export class DirectorPanel {
   private readonly background: Phaser.GameObjects.Rectangle;
   private readonly text: Phaser.GameObjects.Text;
   private readonly pageButton: Phaser.GameObjects.Text;
+  private readonly visibilityButton: Phaser.GameObjects.Text;
   private readonly evidence = new DirectorEncounterDiagnostics();
   readonly observeEncounter = this.evidence.observe;
   private elapsedSinceRefresh = Number.POSITIVE_INFINITY;
   private page = 0;
   private textWidth = 336;
   private activePointerId: number | null = null;
+  private activeControl: DirectorPanelControl | null = null;
+  private hidden = false;
   private destroyed = false;
 
   constructor(
@@ -69,11 +74,30 @@ export class DirectorPanel {
       .setScrollFactor(0)
       .setDepth(10_002)
       .setInteractive();
-    this.pageButton.on('pointerdown', this.handlePointerDown);
-    this.pageButton.on('pointerup', this.handlePointerUp);
+    this.visibilityButton = scene.add
+      .text(0, 0, '👁', {
+        color: '#ffffff',
+        backgroundColor: '#26314f',
+        fixedWidth: 28,
+        fontFamily: 'monospace',
+        fontSize: '14px',
+        padding: { y: 3 },
+        align: 'center',
+      })
+      .setScrollFactor(0)
+      .setDepth(10_003)
+      .setInteractive();
+
+    this.pageButton.on('pointerdown', this.handlePagePointerDown);
+    this.pageButton.on('pointerup', this.handlePagePointerUp);
     this.pageButton.on('pointerout', this.cancelInteraction);
     this.pageButton.on('pointerupoutside', this.cancelInteraction);
     this.pageButton.on('pointercancel', this.cancelInteraction);
+    this.visibilityButton.on('pointerdown', this.handleVisibilityPointerDown);
+    this.visibilityButton.on('pointerup', this.handleVisibilityPointerUp);
+    this.visibilityButton.on('pointerout', this.cancelInteraction);
+    this.visibilityButton.on('pointerupoutside', this.cancelInteraction);
+    this.visibilityButton.on('pointercancel', this.cancelInteraction);
     this.scene.game.canvas.addEventListener('pointercancel', this.cancelInteraction);
     this.scene.game.events.on('blur', this.cancelInteraction);
     this.scene.game.events.on('hidden', this.cancelInteraction);
@@ -96,7 +120,8 @@ export class DirectorPanel {
       .setSize(diagnostics.width, diagnostics.height);
     this.pageButton
       .setPosition(diagnostics.x + 12, diagnostics.y + 8)
-      .setFixedSize(this.textWidth, 24);
+      .setFixedSize(Math.max(1, this.textWidth - 36), 24);
+    this.visibilityButton.setPosition(diagnostics.x + diagnostics.width - 40, diagnostics.y + 8);
     this.text.setPosition(diagnostics.x + 12, diagnostics.y + 40);
     this.cancelInteraction();
     this.elapsedSinceRefresh = Number.POSITIVE_INFINITY;
@@ -110,7 +135,7 @@ export class DirectorPanel {
     stream: Readonly<GeneratedHazardStreamState>,
     telegraphs: Readonly<TelegraphedHazardSimulationState>,
   ): void {
-    if (this.destroyed) return;
+    if (this.destroyed || this.hidden) return;
     if (lifecycle.paused) this.cancelInteraction();
     if (this.page === DIRECTOR_DIAGNOSTIC_PAGES.length - 1) return;
     this.elapsedSinceRefresh += Math.max(
@@ -135,43 +160,93 @@ export class DirectorPanel {
     this.scene.game.events.off('blur', this.cancelInteraction);
     this.scene.game.events.off('hidden', this.cancelInteraction);
     this.pageLifecycleTarget.removeEventListener('pagehide', this.cancelInteraction);
+    this.visibilityButton.destroy();
     this.pageButton.destroy();
     this.text.destroy();
     this.background.destroy();
     this.evidence.reset();
   }
 
-  private readonly handlePointerDown = (
+  private readonly handlePagePointerDown = (
     pointer: { id: number },
     _x: number,
     _y: number,
     event: { stopPropagation(): void },
   ): void => {
-    event.stopPropagation();
-    if (this.activePointerId !== null) return;
-    this.activePointerId = pointer.id;
-    this.inputService.setGameplayBlocked(true);
+    this.beginInteraction('page', pointer.id, event);
   };
 
-  private readonly handlePointerUp = (
+  private readonly handlePagePointerUp = (
     pointer: { id: number },
     _x: number,
     _y: number,
     event: { stopPropagation(): void },
   ): void => {
     event.stopPropagation();
-    if (pointer.id !== this.activePointerId) return;
-    this.cancelInteraction();
+    if (!this.finishInteraction('page', pointer.id)) return;
     this.page = (this.page + 1) % DIRECTOR_DIAGNOSTIC_PAGES.length;
     this.text.setText('');
     this.refreshTitle();
     this.elapsedSinceRefresh = Number.POSITIVE_INFINITY;
   };
 
+  private readonly handleVisibilityPointerDown = (
+    pointer: { id: number },
+    _x: number,
+    _y: number,
+    event: { stopPropagation(): void },
+  ): void => {
+    this.beginInteraction('visibility', pointer.id, event);
+  };
+
+  private readonly handleVisibilityPointerUp = (
+    pointer: { id: number },
+    _x: number,
+    _y: number,
+    event: { stopPropagation(): void },
+  ): void => {
+    event.stopPropagation();
+    if (!this.finishInteraction('visibility', pointer.id)) return;
+    this.setHidden(!this.hidden);
+  };
+
+  private beginInteraction(
+    control: DirectorPanelControl,
+    pointerId: number,
+    event: { stopPropagation(): void },
+  ): void {
+    event.stopPropagation();
+    if (this.activePointerId !== null) return;
+    this.activePointerId = pointerId;
+    this.activeControl = control;
+    this.inputService.setGameplayBlocked(true);
+  }
+
+  private finishInteraction(control: DirectorPanelControl, pointerId: number): boolean {
+    if (pointerId !== this.activePointerId || control !== this.activeControl) return false;
+    this.cancelInteraction();
+    return true;
+  }
+
   private readonly cancelInteraction = (): void => {
     if (this.activePointerId !== null) this.inputService.setGameplayBlocked(false);
     this.activePointerId = null;
+    this.activeControl = null;
   };
+
+  private setHidden(hidden: boolean): void {
+    this.hidden = hidden;
+    this.background.setVisible(!hidden);
+    this.text.setVisible(!hidden);
+    this.pageButton.setVisible(!hidden);
+    if (hidden) {
+      this.pageButton.disableInteractive();
+      return;
+    }
+
+    this.pageButton.setInteractive();
+    this.elapsedSinceRefresh = Number.POSITIVE_INFINITY;
+  }
 
   private refreshTitle(): void {
     this.pageButton.setText(

@@ -42,7 +42,10 @@ const CONTROLS: readonly ControlDefinition[] = [
 export class DirectorTuningControls {
   private readonly background: Phaser.GameObjects.Rectangle;
   private readonly title: Phaser.GameObjects.Text;
+  private readonly visibilityButton: Phaser.GameObjects.Text;
   private readonly rows: ControlRow[];
+  private hidden = false;
+  private visibilityPointerId: number | null = null;
   private destroyed = false;
 
   constructor(
@@ -65,6 +68,24 @@ export class DirectorTuningControls {
       })
       .setScrollFactor(0)
       .setDepth(10_001);
+    this.visibilityButton = scene.add
+      .text(0, 0, '👁', {
+        backgroundColor: '#26314f',
+        color: '#ffffff',
+        fixedWidth: 28,
+        fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+        fontSize: '14px',
+        padding: { y: 3 },
+        align: 'center',
+      })
+      .setScrollFactor(0)
+      .setDepth(10_003)
+      .setInteractive();
+    this.visibilityButton.on('pointerdown', this.handleVisibilityPointerDown);
+    this.visibilityButton.on('pointerup', this.handleVisibilityPointerUp);
+    this.visibilityButton.on('pointerout', this.cancelVisibilityInteraction);
+    this.visibilityButton.on('pointerupoutside', this.cancelVisibilityInteraction);
+    this.visibilityButton.on('pointercancel', this.cancelVisibilityInteraction);
 
     this.rows = CONTROLS.map((definition) => ({
       definition,
@@ -110,6 +131,10 @@ export class DirectorTuningControls {
       .setPosition(tuningControls.x, tuningControls.y)
       .setSize(tuningControls.width, tuningControls.height);
     this.title.setPosition(tuningControls.x + 12, tuningControls.y + 10);
+    this.visibilityButton.setPosition(
+      tuningControls.x + tuningControls.width - 40,
+      tuningControls.y + 8,
+    );
 
     this.rows.forEach((row, index) => {
       const rowY = tuningControls.y + 44 + index * 34;
@@ -125,9 +150,11 @@ export class DirectorTuningControls {
     }
 
     this.destroyed = true;
+    this.cancelVisibilityInteraction();
     this.inputService.setGameplayBlocked(false);
     this.background.destroy();
     this.title.destroy();
+    this.visibilityButton.destroy();
 
     for (const row of this.rows) {
       row.label.destroy();
@@ -189,6 +216,56 @@ export class DirectorTuningControls {
     button.on('pointerout', releaseGameplay);
 
     return button;
+  }
+
+  private readonly handleVisibilityPointerDown = (
+    pointer: { id: number },
+    _localX?: unknown,
+    _localY?: unknown,
+    event?: PointerEventData,
+  ): void => {
+    event?.stopPropagation?.();
+    if (this.visibilityPointerId !== null) return;
+    this.visibilityPointerId = pointer.id;
+    this.inputService.setGameplayBlocked(true);
+  };
+
+  private readonly handleVisibilityPointerUp = (
+    pointer: { id: number },
+    _localX?: unknown,
+    _localY?: unknown,
+    event?: PointerEventData,
+  ): void => {
+    event?.stopPropagation?.();
+    if (pointer.id !== this.visibilityPointerId) return;
+    this.cancelVisibilityInteraction();
+    this.setHidden(!this.hidden);
+  };
+
+  private readonly cancelVisibilityInteraction = (): void => {
+    if (this.visibilityPointerId !== null) this.inputService.setGameplayBlocked(false);
+    this.visibilityPointerId = null;
+  };
+
+  private setHidden(hidden: boolean): void {
+    this.hidden = hidden;
+    this.background.setVisible(!hidden);
+    this.title.setVisible(!hidden);
+
+    for (const row of this.rows) {
+      row.label.setVisible(!hidden);
+      row.minus.setVisible(!hidden);
+      row.plus.setVisible(!hidden);
+      if (hidden) {
+        row.minus.disableInteractive();
+        row.plus.disableInteractive();
+      } else {
+        row.minus.setInteractive();
+        row.plus.setInteractive();
+      }
+    }
+
+    if (!hidden) this.refreshValues();
   }
 
   private refreshValues(): void {
