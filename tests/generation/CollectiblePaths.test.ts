@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { generateNextPattern } from '../../src/generation/PatternGenerator';
 import { createHazardPattern } from '../../src/generation/HazardPattern';
+import { generateNextPattern } from '../../src/generation/PatternGenerator';
 import { validatePattern } from '../../src/generation/PatternValidator';
 import {
   PROTOTYPE_CORRIDOR_PATTERN,
@@ -57,7 +57,11 @@ describe('collectible paths', () => {
     expect(Object.isFrozen(first.collectiblePaths?.[0]?.points)).toBe(true);
     expect(Object.isFrozen(first.collectiblePaths?.[0]?.points[0])).toBe(true);
 
-    sourcePoints[0]!.y = 250;
+    const mutableFirstPoint = sourcePoints[0];
+    if (mutableFirstPoint === undefined) {
+      throw new Error('Expected a first source point.');
+    }
+    mutableFirstPoint.y = 250;
     expect(first.collectiblePaths?.[0]?.points[0]?.y).toBe(100);
   });
 
@@ -169,7 +173,10 @@ describe('collectible paths', () => {
   it('keeps collectible path selection deterministic for the same seed and catalog', () => {
     const catalog = [PROTOTYPE_CORRIDOR_PATTERN, PROTOTYPE_OFFSET_PAIR_PATTERN];
     const first = generateNextPattern(createRunGenerationState('collectible-path-seed'), catalog);
-    const repeated = generateNextPattern(createRunGenerationState('collectible-path-seed'), catalog);
+    const repeated = generateNextPattern(
+      createRunGenerationState('collectible-path-seed'),
+      catalog,
+    );
 
     expect(first.catalogIndex).toBe(repeated.catalogIndex);
     expect(first.pattern.id).toBe(repeated.pattern.id);
@@ -177,10 +184,9 @@ describe('collectible paths', () => {
   });
 
   it('maps collectible guidance with an expanded logical flight domain without changing run distance', () => {
-    const domain = createPrototypeHazardVerticalDomain(
-      { ceilingY: -272, floorY: 362 },
-      [PROTOTYPE_OFFSET_PAIR_PATTERN],
-    );
+    const domain = createPrototypeHazardVerticalDomain({ ceilingY: -272, floorY: 362 }, [
+      PROTOTYPE_OFFSET_PAIR_PATTERN,
+    ]);
     const adapted = domain.catalog[0];
     const authoredPath = PROTOTYPE_OFFSET_PAIR_PATTERN.collectiblePaths?.[0];
     const adaptedPath = adapted?.collectiblePaths?.[0];
