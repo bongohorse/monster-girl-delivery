@@ -106,7 +106,12 @@ const createFoundationHarness = () => {
   instructions.setPosition.mockReturnValue(instructions);
   instructions.setText.mockReturnValue(instructions);
   instructions.setWordWrapWidth.mockReturnValue(instructions);
-  const playerPresentation = { destroy: vi.fn(), setPosition: vi.fn(), setScale: vi.fn() };
+  const playerPresentation = {
+    destroy: vi.fn(),
+    setPosition: vi.fn(),
+    setRotation: vi.fn(),
+    setScale: vi.fn(),
+  };
   const scrollingWorldPresentation = { destroy: vi.fn(), render: vi.fn() };
   const scaleOff = vi.fn();
   const cameraResize = vi.fn();
@@ -418,15 +423,8 @@ describe('Foundation scene gameplay orchestration', () => {
     expect(getRunMotionState(foundation).distance).toBeGreaterThan(runBeforePause.distance);
   });
 
-  it('enters death once, holds simulation, and restarts from fresh input', () => {
-    const {
-      foundation,
-      generatedHazardPresentation,
-      instructions,
-      services,
-      scrollingWorldPresentation,
-    } = createFoundationHarness();
-    const initialHazardStream = getHazardStream(foundation);
+  it('enters death once and holds authoritative simulation throughout the fail state', () => {
+    const { foundation, instructions, services } = createFoundationHarness();
     const { context: lowPhaseContext, stream: scheduledHazardStream } =
       createLowPhaseHazardStream(services);
     const collisionHazard = scheduledHazardStream.spawns.find(
@@ -464,40 +462,29 @@ describe('Foundation scene gameplay orchestration', () => {
     foundation.update(0, 50);
 
     const deadState = getRunState(foundation);
+    const deadStream = getHazardStream(foundation);
     expect(deadState.phase).toBe('dead');
     expect(deadState.motion.distance).toBe(collisionHazard.hitbox.left);
+    expect(deadState.finalResult).toBeDefined();
     expect(services.input.isThrustHeld()).toBe(false);
     expect(instructions.setText).toHaveBeenCalledExactlyOnceWith(
-      'Delivery interrupted\nTap, click, or press Space to restart.',
+      expect.stringContaining('Delivery interrupted'),
     );
+    expect(instructions.setText).toHaveBeenLastCalledWith(expect.stringContaining('Score'));
 
-    foundation.update(0, 1_000);
+    for (let frame = 0; frame < 5; frame += 1) {
+      foundation.update(0, 50);
+    }
 
-    expect(getRunState(foundation)).toEqual(deadState);
-    expect(instructions.setText).toHaveBeenCalledOnce();
+    expect(getRunState(foundation)).toBe(deadState);
+    expect(getHazardStream(foundation)).toBe(deadStream);
 
     services.input.pressPointer(9, 'touch');
     foundation.update(0, 16);
 
-    expect(getRunState(foundation)).toEqual({
-      phase: 'running',
-      motion: { distance: 0 },
-      flight: { positionY: -10, velocityY: 0 },
-    });
-    expect(getHazardStream(foundation)).toEqual(initialHazardStream);
-    expect(services.input.isThrustHeld()).toBe(false);
-    expect(instructions.setText).toHaveBeenNthCalledWith(
-      2,
-      'M4 moving, timed + target-lock hazards\nHold touch, mouse, or Space to thrust.',
-    );
-    expect(scrollingWorldPresentation.render).toHaveBeenLastCalledWith(0, expect.any(Object));
-    expect(generatedHazardPresentation.sync).toHaveBeenLastCalledWith(
-      initialHazardStream.spawns,
-      { distance: 0 },
-      100,
-      getTelegraphedHazardState(foundation),
-      { offsetY: expect.any(Number), scaleY: expect.any(Number) },
-    );
+    expect(getRunState(foundation)).toBe(deadState);
+    expect(getHazardStream(foundation)).toBe(deadStream);
+    expect(services.input.consumePrimaryActionPress()).toBe(false);
   });
 
   it('recalculates resize bounds immediately without advancing simulation time', () => {

@@ -11,6 +11,7 @@ const createSceneFake = () => {
     fillTriangle: vi.fn(),
     lineStyle: vi.fn(),
     setPosition: vi.fn(),
+    setRotation: vi.fn(),
     strokeCircle: vi.fn(),
     strokeRoundedRect: vi.fn(),
   };
@@ -22,6 +23,7 @@ const createSceneFake = () => {
     graphics.fillTriangle,
     graphics.lineStyle,
     graphics.setPosition,
+    graphics.setRotation,
     graphics.strokeCircle,
     graphics.strokeRoundedRect,
   ]) {
@@ -47,26 +49,37 @@ describe('PrototypePlayerPresentation', () => {
     expect(graphics.fillTriangle).toHaveBeenCalled();
   });
 
-  it('accepts position updates from scene orchestration', () => {
+  it('accepts position and fail-state rotation updates from scene orchestration', () => {
     const { graphics, scene } = createSceneFake();
     const presentation = new PrototypePlayerPresentation(scene);
 
     presentation.setPosition(320, 180);
     presentation.setPosition(330, 170);
+    presentation.setRotation(Math.PI / 2);
 
     expect(graphics.setPosition).toHaveBeenNthCalledWith(1, 320, 180);
     expect(graphics.setPosition).toHaveBeenNthCalledWith(2, 330, 170);
+    expect(graphics.setRotation).toHaveBeenCalledWith(Math.PI / 2);
   });
 
-  it('destroys its Phaser object once and ignores later position updates', () => {
+  it('rejects non-finite presentation rotation', () => {
+    const { scene } = createSceneFake();
+    const presentation = new PrototypePlayerPresentation(scene);
+
+    expect(() => presentation.setRotation(Number.NaN)).toThrow(RangeError);
+  });
+
+  it('destroys its Phaser object once and ignores later presentation updates', () => {
     const { graphics, scene } = createSceneFake();
     const presentation = new PrototypePlayerPresentation(scene);
 
     presentation.destroy();
     presentation.destroy();
     presentation.setPosition(320, 180);
+    presentation.setRotation(0.5);
 
     expect(graphics.destroy).toHaveBeenCalledOnce();
     expect(graphics.setPosition).not.toHaveBeenCalled();
+    expect(graphics.setRotation).not.toHaveBeenCalled();
   });
 });
