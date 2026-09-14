@@ -1,8 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import type { Scene } from 'phaser';
+import { describe, expect, it, vi } from 'vitest';
 import { ViewportService } from '../../src/core/ViewportService';
 import {
   createDirectorDebugGeometry,
   DIRECTOR_DEBUG_COLORS,
+  DirectorDebugOverlay,
 } from '../../src/devtools/DirectorDebugOverlay';
 import type { LogicalCollectibleSpawnInstance } from '../../src/generation/GeneratedCollectibles';
 import type { LogicalHazardSpawnInstance } from '../../src/generation/PatternSpawnScheduler';
@@ -86,5 +88,60 @@ describe('DirectorDebugOverlay geometry', () => {
     const geometry = createDirectorDebugGeometry(createFrame([identity]));
 
     expect(geometry.rectangles.some((rectangle) => rectangle.kind === 'collectible')).toBe(false);
+  });
+
+  it('keeps lazy debug label textures aligned with camera render scale', () => {
+    const graphics = {
+      beginPath: vi.fn(),
+      clear: vi.fn(),
+      destroy: vi.fn(),
+      lineStyle: vi.fn(),
+      lineTo: vi.fn(),
+      moveTo: vi.fn(),
+      setDepth: vi.fn(),
+      setScrollFactor: vi.fn(),
+      setVisible: vi.fn(),
+      strokePath: vi.fn(),
+      strokeRect: vi.fn(),
+    };
+    const label = {
+      destroy: vi.fn(),
+      setDepth: vi.fn(),
+      setPosition: vi.fn(),
+      setResolution: vi.fn(),
+      setScrollFactor: vi.fn(),
+      setText: vi.fn(),
+      setVisible: vi.fn(),
+    };
+    for (const method of [
+      graphics.setDepth,
+      graphics.setScrollFactor,
+      graphics.setVisible,
+      label.setDepth,
+      label.setPosition,
+      label.setResolution,
+      label.setScrollFactor,
+      label.setText,
+      label.setVisible,
+    ]) {
+      method.mockReturnValue(method === graphics.setDepth || method === graphics.setScrollFactor || method === graphics.setVisible ? graphics : label);
+    }
+    const scene = {
+      add: {
+        graphics: vi.fn(() => graphics),
+        text: vi.fn(() => label),
+      },
+      cameras: { main: { zoom: 2 } },
+    } as unknown as Scene;
+    const overlay = new DirectorDebugOverlay(scene);
+
+    overlay.setEnabled(true);
+    expect(label.setResolution).toHaveBeenLastCalledWith(2);
+
+    scene.cameras.main.zoom = 1.5;
+    overlay.render(createFrame());
+    expect(label.setResolution).toHaveBeenLastCalledWith(1.5);
+
+    overlay.destroy();
   });
 });
