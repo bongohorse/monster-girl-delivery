@@ -40,8 +40,8 @@ SOFTWARE.
 
 ## Graphify
 
-The MGD [`graphify`](graphify/SKILL.md) skill and Codespaces integration are based on the public behavior and usage documented by [`Graphify-Labs/graphify`](https://github.com/Graphify-Labs/graphify), pinned to upstream version `0.9.56`, commit `67f99bd0059dd1bac9e44382907ef9f10098b39f` (2026-09-07).
+The committed MGD [`graphify`](graphify/SKILL.md) skill is based on the public behavior and usage documented by [`Graphify-Labs/graphify`](https://github.com/Graphify-Labs/graphify), originally adapted against upstream version `0.9.56`, commit `67f99bd0059dd1bac9e44382907ef9f10098b39f` (2026-09-07).
 
-MGD does not vendor the Graphify Python package. Codespaces install the official PyPI package `graphifyy` at the version pinned in `/.graphify-version`. The committed skill is intentionally MGD-specific guidance: it narrows Graphify to code navigation and impact analysis, keeps Graphify output non-authoritative, and does not install upstream hooks, strict mode, or always-on behavior.
+MGD does not vendor the Graphify Python package. New Codespaces intentionally install the latest available official PyPI package `graphifyy` rather than pinning the runtime CLI to the skill's original provenance version. The committed skill remains intentionally MGD-specific guidance: it narrows Graphify to code navigation and impact analysis, keeps Graphify output non-authoritative, and does not install upstream hooks, strict mode, or always-on behavior.
 
 Graphify upstream is licensed under the Apache License 2.0. See the upstream [`LICENSE`](https://github.com/Graphify-Labs/graphify/blob/67f99bd0059dd1bac9e44382907ef9f10098b39f/LICENSE) and [`NOTICE`](https://github.com/Graphify-Labs/graphify/blob/67f99bd0059dd1bac9e44382907ef9f10098b39f/NOTICE) for the applicable terms and notices.
