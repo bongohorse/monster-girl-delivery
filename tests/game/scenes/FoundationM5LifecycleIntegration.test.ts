@@ -87,7 +87,9 @@ const getHazardStream = (foundation: Foundation): Readonly<GeneratedHazardStream
 const getCollectibleSpawns = (
   foundation: Foundation,
 ): ReadonlyArray<Readonly<LogicalCollectibleSpawnInstance>> =>
-  Reflect.get(foundation, 'collectibleSpawns') as ReadonlyArray<Readonly<LogicalCollectibleSpawnInstance>>;
+  Reflect.get(foundation, 'collectibleSpawns') as ReadonlyArray<
+    Readonly<LogicalCollectibleSpawnInstance>
+  >;
 
 const getTelegraphedState = (foundation: Foundation): Readonly<TelegraphedHazardSimulationState> =>
   Reflect.get(foundation, 'telegraphedHazardState') as Readonly<TelegraphedHazardSimulationState>;
@@ -359,9 +361,9 @@ describe('Foundation integrated M5 arcade lifecycle', () => {
       });
       expect(restartedStream.generationState.seed).toBe(NEXT_RUN_SEED);
       expect(restartedStream).not.toBe(deadStream);
-      expect(
-        restartedCollectibles.map(getLogicalCollectibleSpawnIdentity),
-      ).not.toContain(getLogicalCollectibleSpawnIdentity(COLLECTIBLE));
+      expect(restartedCollectibles.map(getLogicalCollectibleSpawnIdentity)).not.toContain(
+        getLogicalCollectibleSpawnIdentity(COLLECTIBLE),
+      );
       expect(services.input.isThrustHeld()).toBe(false);
       expect(services.input.consumePrimaryActionPress()).toBe(false);
       expect(finalResult).toEqual(finalResultValue);
