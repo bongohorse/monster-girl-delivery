@@ -41,16 +41,42 @@ const START: PrototypeRunState = {
   flight: { positionY: 0, velocityY: 0 },
 };
 
+const MOVING_START: PrototypeRunState = {
+  phase: 'running',
+  motion: { distance: 1000 },
+  flight: { positionY: 64.4, velocityY: 100 },
+};
+
+const partitionDuration = (duration: number, hz: number): ReadonlyArray<number> => {
+  const step = 1 / hz;
+  const fullSteps = Math.floor(duration / step + 1e-9);
+  const steps = Array.from({ length: fullSteps }, () => step);
+  const remainder = duration - fullSteps * step;
+  if (remainder > 1e-12) {
+    steps.push(remainder);
+  }
+  return steps;
+};
+
 const runPartitioned = (
   steps: ReadonlyArray<number>,
   hazards: ReadonlyArray<Readonly<LogicalHazard>>,
+  initialState: Readonly<PrototypeRunState> = START,
 ): Readonly<PrototypeRunState> => {
-  let state: Readonly<PrototypeRunState> = START;
+  let state: Readonly<PrototypeRunState> = initialState;
   for (const step of steps) {
     state = stepPrototypeRun(state, step, context(hazards)).state;
   }
   return state;
 };
+
+const TERMINAL_SCHEDULES: ReadonlyArray<readonly [string, ReadonlyArray<number>]> = [
+  ['coarse 50 ms', [0.05]],
+  ...[30, 60, 90, 120, 144].map(
+    (hz) => [`${hz} Hz`, partitionDuration(0.05, hz)] as const,
+  ),
+  ['deterministic jitter', [0.013, 0.007, 0.014, 0.016]],
+];
 
 describe('prototype Graze skill layer', () => {
   it('bounds occurrence history to the retained hazard window without losing run totals', () => {
@@ -145,6 +171,36 @@ describe('prototype Graze skill layer', () => {
     expect(result.state.graze?.count).toBe(1);
     expect(result.state.finalResult?.grazeCount).toBe(1);
   });
+
+  it.each(TERMINAL_SCHEDULES)(
+    'suppresses a vertically later Graze after an earlier lethal contact under %s',
+    (_label, steps) => {
+      const laterGraze = hazard('later-vertical-graze', 100, 110, 975, 985);
+      const earlierLethal = hazard('earlier-lethal', 60, 70, 1021.2, 1031.2);
+
+      for (const hazards of [
+        [laterGraze, earlierLethal],
+        [earlierLethal, laterGraze],
+      ] as const) {
+        const state = runPartitioned(steps, hazards, MOVING_START);
+        expect(state.phase).toBe('dead');
+        expect(state.graze?.pendingOccurrenceIds ?? []).toHaveLength(0);
+        expect(state.finalResult?.grazeCount).toBe(0);
+      }
+    },
+  );
+
+  it.each(TERMINAL_SCHEDULES)(
+    'retains a genuinely earlier completed Graze before a later lethal contact under %s',
+    (_label, steps) => {
+      const earlierGraze = hazard('earlier-vertical-graze', 96, 106, 966, 976);
+      const laterLethal = hazard('later-lethal', 60, 70, 1021.2, 1031.2);
+      const state = runPartitioned(steps, [earlierGraze, laterLethal], MOVING_START);
+
+      expect(state.phase).toBe('dead');
+      expect(state.finalResult?.grazeCount).toBe(1);
+    },
+  );
 
   it('freezes Graze after death and resets it with a fresh run', () => {
     const grazed = stepPrototypeRun(START, 1, context([hazard('graze', 25, 30)])).state;
