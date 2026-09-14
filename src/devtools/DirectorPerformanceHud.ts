@@ -140,7 +140,11 @@ export class DirectorPerformanceHud {
 
     this.playgroundControls = ownerDocument.createElement('span');
     this.playgroundControls.className = 'director-performance-hud__playground';
-    this.godModeButton = this.createButton(ownerDocument, 'GOD', 'Godmode: survive lethal hazard contact');
+    this.godModeButton = this.createButton(
+      ownerDocument,
+      'GOD',
+      'Godmode: survive lethal hazard contact',
+    );
     this.autoHazardsButton = this.createButton(
       ownerDocument,
       'AUTO',
@@ -151,7 +155,11 @@ export class DirectorPerformanceHud {
     this.laserButton = this.createButton(ownerDocument, 'L', 'Spawn Timed Laser');
     this.clearButton = this.createButton(ownerDocument, 'CLR', 'Clear active test hazards');
     this.freezeButton = this.createButton(ownerDocument, '⏸', 'Freeze gameplay simulation');
-    this.deathButton = this.createButton(ownerDocument, '☠', 'Trigger normal death / fail-state flow');
+    this.deathButton = this.createButton(
+      ownerDocument,
+      '☠',
+      'Trigger normal death / fail-state flow',
+    );
     this.playgroundControls.append(
       this.godModeButton,
       this.autoHazardsButton,
