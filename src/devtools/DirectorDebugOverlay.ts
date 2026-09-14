@@ -232,8 +232,7 @@ export const createDirectorDebugGeometry = (
   const flightBounds = createPrototypeFlightBounds(frame.viewport);
   const ceilingY = projectLogicalYToScreen(flightBounds.ceilingY, projection);
   const floorY = projectLogicalYToScreen(flightBounds.floorY, projection);
-  const despawnX =
-    playerScreenX - PROTOTYPE_GENERATED_HAZARD_STREAM_CONFIG.retainBehindDistance;
+  const despawnX = playerScreenX - PROTOTYPE_GENERATED_HAZARD_STREAM_CONFIG.retainBehindDistance;
   const lines: DirectorDebugLine[] = [
     {
       kind: 'flight-ceiling',
