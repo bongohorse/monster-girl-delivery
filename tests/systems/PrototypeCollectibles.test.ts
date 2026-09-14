@@ -70,7 +70,7 @@ describe('PrototypeCollectibles', () => {
   });
 
   it('does not duplicate a collected pickup while it remains in the generated window', () => {
-    const state = runForSeconds(STANDARD_FRAME_SCHEDULES.hz60, 5);
+    const state = runForSeconds(STANDARD_FRAME_SCHEDULES['60hz'], 5);
 
     expect(state.collectibles).toMatchObject({
       collectedCount: 1,
