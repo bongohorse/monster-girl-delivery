@@ -128,11 +128,13 @@ step_dependencies() {
 step_codex() {
   curl --fail --silent --show-error --location --retry 5 --connect-timeout 10 \
     https://chatgpt.com/codex/install.sh | CODEX_NON_INTERACTIVE=1 sh
+  command -v codex >/dev/null
 }
 
 step_antigravity() {
   curl --fail --silent --show-error --location --retry 5 --connect-timeout 10 \
     https://antigravity.google/cli/install.sh | bash
+  command -v agy >/dev/null
 }
 
 step_graphify() {
@@ -143,6 +145,7 @@ step_graphify() {
 
   export PATH="$HOME/.local/bin:$PATH"
   uv tool install --upgrade 'graphifyy@latest'
+  command -v graphify >/dev/null
 }
 
 step_build() {
