@@ -14,6 +14,7 @@ const createGameObjectFake = () => {
   const handlers = new Map<string, EventHandler>();
   const object = {
     destroy: vi.fn(),
+    disableInteractive: vi.fn(),
     on: vi.fn((event: string, handler: EventHandler) => {
       handlers.set(event, handler);
       return object;
@@ -25,9 +26,11 @@ const createGameObjectFake = () => {
     setScrollFactor: vi.fn(),
     setSize: vi.fn(),
     setText: vi.fn(),
+    setVisible: vi.fn(),
   };
 
   for (const method of [
+    object.disableInteractive,
     object.setDepth,
     object.setInteractive,
     object.setOrigin,
@@ -35,6 +38,7 @@ const createGameObjectFake = () => {
     object.setScrollFactor,
     object.setSize,
     object.setText,
+    object.setVisible,
   ]) {
     method.mockReturnValue(object);
   }
@@ -152,6 +156,52 @@ describe('DirectorTuningControls', () => {
     expect(input.getSnapshot().gameplayBlocked).toBe(false);
   });
 
+  it('collapses and restores the tuning overlay from the eye control', () => {
+    const { objects, scene } = createSceneFake();
+    const input = new InputService();
+    const controls = new DirectorTuningControls(
+      scene,
+      new FlightTuningConfig(),
+      new RunMotionConfig(),
+      input,
+    );
+    const [background, title, visibilityButton, ...rowObjects] = objects;
+    const rowButtons = rowObjects.filter((entry) => entry.object.setInteractive.mock.calls.length > 0);
+
+    expect(background).toBeDefined();
+    expect(title).toBeDefined();
+    expect(visibilityButton).toBeDefined();
+    if (!background || !title || !visibilityButton) {
+      throw new Error('Expected Director tuning overlay objects.');
+    }
+
+    const clickVisibility = (id: number) => {
+      const stopPropagation = vi.fn();
+      visibilityButton.handlers
+        .get('pointerdown')?.({ id }, undefined, undefined, { stopPropagation });
+      visibilityButton.handlers.get('pointerup')?.({ id }, undefined, undefined, { stopPropagation });
+      expect(stopPropagation).toHaveBeenCalledTimes(2);
+    };
+
+    clickVisibility(3);
+    expect(input.getSnapshot().gameplayBlocked).toBe(false);
+    expect(background.object.setVisible).toHaveBeenLastCalledWith(false);
+    expect(title.object.setVisible).toHaveBeenLastCalledWith(false);
+    expect(rowObjects.every((entry) => entry.object.setVisible.mock.lastCall?.[0] === false)).toBe(true);
+    expect(rowButtons.every((entry) => entry.object.disableInteractive.mock.calls.length === 1)).toBe(
+      true,
+    );
+    expect(visibilityButton.object.setVisible).not.toHaveBeenCalledWith(false);
+
+    clickVisibility(4);
+    expect(background.object.setVisible).toHaveBeenLastCalledWith(true);
+    expect(title.object.setVisible).toHaveBeenLastCalledWith(true);
+    expect(rowObjects.every((entry) => entry.object.setVisible.mock.lastCall?.[0] === true)).toBe(true);
+    expect(rowButtons.every((entry) => entry.object.setInteractive.mock.calls.length === 2)).toBe(true);
+
+    controls.destroy();
+  });
+
   it('cleans up idempotently and always releases gameplay blocking', () => {
     const { objects, scene } = createSceneFake();
     const input = new InputService();
@@ -161,7 +211,7 @@ describe('DirectorTuningControls', () => {
       new RunMotionConfig(),
       input,
     );
-    const interactive = objects.find((entry) => entry.object.setInteractive.mock.calls.length > 0);
+    const interactive = objects.find((entry) => entry.handlers.has('pointerover'));
 
     interactive?.handlers.get('pointerover')?.();
     expect(input.getSnapshot().gameplayBlocked).toBe(true);
