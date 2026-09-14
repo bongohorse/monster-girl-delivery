@@ -2,8 +2,8 @@
 
 **Document status:** Living product/game specification  
 **Project status:** Pre-Production  
-**Current milestone:** Pre-M5 transition (M4 complete; M5 parent #197 approved; implementation blocked by Pre-M5 exit gate)
-**Current version:** `0.4` (`package.json`: `0.4.0`), working toward M5 / `0.5`
+**Current milestone:** M5 — Complete Arcade Loop & Skill Layer (in progress; parent #197)
+**Current version:** `0.4` (`package.json`: `0.4.0`), with M5 in progress toward factual closeout / `0.5`
 
 **Human role:** Game Director / Product Owner  
 **Coding-agent role:** Implementation / Engineering
@@ -40,7 +40,7 @@ Never turn `PROTOTYPE`, `EXPERIMENT`, `TBD`, or `FUTURE` into a permanent rule w
 2. Responsive, satisfying one-touch movement.
 3. Fair but demanding hazards.
 4. Short, repeatable runs.
-5. Risk/reward through Graze when the approved M5 system is implemented.
+5. Risk/reward through Graze as the current M5 prototype skill layer.
 6. Failure presentation should be entertaining/readable and lead quickly into another run rather than feeling like a hard interruption.
 7. Collectible placement should help teach/guide movement and communicate optional risk where appropriate, not merely scatter rewards randomly.
 8. Preserve the small permanent input vocabulary; future temporary modes may reinterpret the same controls rather than accumulating permanent buttons/mechanics.
@@ -112,7 +112,7 @@ The same action must flow through the platform-independent input abstraction.
 ```text
 Start Run
   ↓
-Fly / Dodge / Collect / Graze (when M5 systems are implemented)
+Fly / Dodge / Collect / Graze
   ↓
 Survive
   ↓
@@ -125,7 +125,7 @@ Results / Basic Run Rewards / Records
 One-action Restart
 ```
 
-M5 parent Issue #197 approves completing this arcade loop once its Pre-M5 entry gate is satisfied. Focused implementation work is tracked by #198 (score/result snapshot/basic rewards), #90 (Graze), #84 (collectible paths), and #85 (fail-state/retry).
+M5 parent Issue #197 owns the active arcade-loop implementation and acceptance trail. Foundational focused work is tracked by #198 (score/result snapshot/basic rewards), #90 (Graze), #84/#227 (collectible paths and visible pickups), #85 (fail-state/retry), and #223 (integrated deterministic lifecycle evidence).
 
 ### DECIDED M5 replay principles
 
@@ -294,9 +294,9 @@ MGD does not deliberately weaken these guarantees to create a feeling of manufac
 
 ## 9. Graze
 
-### DECIDED M5 direction — implementation pending
+### DECIDED M5 direction — implemented prototype
 
-Graze is the approved M5 risk/reward near-miss mechanic, tracked by Issue #90 and blocked by the relevant Pre-M5 run-event/consequence boundaries.
+Graze is the active M5 risk/reward near-miss mechanic implemented under Issue #90 and the authoritative run-event/consequence boundaries established before M5.
 
 Concept:
 
@@ -305,11 +305,11 @@ Core hitbox       → collision / death
 Outer Graze zone  → near miss / reward
 ```
 
-A hazard/projectile should normally reward a Graze only once per approved logical pass/contact contract. Exact event semantics must consume the authoritative M5 run-event decision rather than being reconstructed from presentation.
+A hazard/projectile should normally reward a Graze only once per approved logical pass/contact contract. Exact event semantics consume the authoritative M5 run-event decision rather than being reconstructed from presentation.
 
 Graze is optional skill/risk. A pattern must not require Graze merely to satisfy survival fairness.
 
-Exact hitbox dimensions, score/reward values, and presentation remain non-final until the focused system is implemented and tested.
+Exact hitbox dimensions, score/reward values, and presentation remain **PROTOTYPE / non-final** and may still be tuned through M5 acceptance.
 
 Scheduling belongs in [`docs/ROADMAP.md`](docs/ROADMAP.md) and parent Issue #197.
 
@@ -374,9 +374,9 @@ Scheduling belongs in [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## 11. Score, results, and run rewards
 
-### DECIDED M5 direction — implementation pending
+### DECIDED M5 direction — implemented prototype foundation
 
-M5 will provide the smallest score/result/basic-reward model needed for the complete arcade loop. Focused ownership is Issue #198, with #85 consuming its result data for fail/results/retry presentation.
+M5 provides the current minimal score/result/basic-reward model needed for the arcade loop. Issue #198 owns the authoritative score/result snapshot and basic reward foundation; #85 consumes that immutable result data for fail/results/retry presentation.
 
 Score may reflect approved authoritative skill signals such as:
 
@@ -385,7 +385,7 @@ Score may reflect approved authoritative skill signals such as:
 - collectibles;
 - other explicitly approved run-local skill signals.
 
-Exact formulas and reward values remain **TBD / PROTOTYPE** until implemented and playtested.
+Exact formulas and reward values remain **TBD / PROTOTYPE** and are still subject to playtesting.
 
 M5 requirements:
 
@@ -610,11 +610,12 @@ This specification intentionally does not duplicate the complete M0–M10 roadma
 
 Current milestone:
 
-- **Pre-M5 transition (M4 complete; M5 parent #197 approved; implementation blocked by Pre-M5 exit gate)**
-- **Current version: `0.4`; target after M5 closeout: `0.5`**
-- Approved M5 parent Issue: [#197](https://github.com/bongohorse/monster-girl-delivery/issues/197)
+- **M5 — Complete Arcade Loop & Skill Layer (in progress; parent #197)**
+- **Pre-M5 authority gate: passed; #179 remains historical audit evidence**
+- **Current version: `0.4`; target after factual M5 closeout: `0.5`**
+- Active M5 parent Issue: [#197](https://github.com/bongohorse/monster-girl-delivery/issues/197)
 - Previous parent Issue: [#116](https://github.com/bongohorse/monster-girl-delivery/issues/116) (closed on M4 closeout merge)
-- Milestone completion report: [`docs/milestones/M4-run-pacing-hazard-language.md`](docs/milestones/M4-run-pacing-hazard-language.md)
+- Latest completed milestone report: [`docs/milestones/M4-run-pacing-hazard-language.md`](docs/milestones/M4-run-pacing-hazard-language.md)
 
 Completed milestone history and evidence live under [`docs/milestones/`](docs/milestones/).
 

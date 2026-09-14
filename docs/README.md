@@ -10,11 +10,11 @@ The hub is intentionally a navigation/ownership document, not another specificat
 ## Current project pointer
 
 - **Project phase:** Pre-Production
-- **Current milestone:** Pre-M5 Gameplay Authority Gate (M4 complete; M5 parent #197 approved; implementation blocked)
-- **Current version:** `0.4` (`package.json`: `0.4.0`), working toward M5 / `0.5`
-- **Current gate owner:** [Issue #179](https://github.com/bongohorse/monster-girl-delivery/issues/179); approved next milestone parent: [M5 #197](https://github.com/bongohorse/monster-girl-delivery/issues/197)
+- **Current milestone:** M5 — Complete Arcade Loop & Skill Layer (in progress; parent #197)
+- **Current version:** `0.4` (`package.json`: `0.4.0`), working toward M5 closeout / `0.5`
+- **Current milestone owner:** [M5 Issue #197](https://github.com/bongohorse/monster-girl-delivery/issues/197)
 - **Latest completed milestone:** M4 — [`milestones/M4-run-pacing-hazard-language.md`](milestones/M4-run-pacing-hazard-language.md)
-- **Current validation evidence:** [`milestones/M4-run-pacing-validation.md`](milestones/M4-run-pacing-validation.md)
+- **Latest completed milestone evidence:** [`milestones/M4-run-pacing-validation.md`](milestones/M4-run-pacing-validation.md)
 - **Roadmap:** [`ROADMAP.md`](ROADMAP.md)
 - **Product/game specification:** [`../MASTER_SPEC.md`](../MASTER_SPEC.md)
 
@@ -226,7 +226,7 @@ Current completed reports:
 - supporting M3 evidence: [`milestones/M3-seeded-run-validation.md`](milestones/M3-seeded-run-validation.md)
 - supporting M4 evidence: [`milestones/M4-run-pacing-validation.md`](milestones/M4-run-pacing-validation.md)
 
-M4 closeout is recorded in [`milestones/M4-run-pacing-hazard-language.md`](milestones/M4-run-pacing-hazard-language.md) with supporting evidence in [`milestones/M4-run-pacing-validation.md`](milestones/M4-run-pacing-validation.md). M5 parent #197 is approved; implementation remains blocked until its Pre-M5 entry gate passes.
+M4 closeout is recorded in [`milestones/M4-run-pacing-hazard-language.md`](milestones/M4-run-pacing-hazard-language.md) with supporting evidence in [`milestones/M4-run-pacing-validation.md`](milestones/M4-run-pacing-validation.md). M5 parent #197 is active; implementation is in progress and remains version `0.4.x` until M5's factual closeout.
 
 Historical reports should be corrected only when factual evidence is wrong, not rewritten to match later plans.
 

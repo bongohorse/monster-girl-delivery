@@ -4,8 +4,8 @@
 **Approved by:** Game Director / Product Owner
 **Originally approved:** 2026-09-03
 **Roadmap 3.1 revision:** 2026-09-13
-**Current milestone:** Pre-M5 transition (M4 complete; M5 parent #197 approved; implementation blocked by Pre-M5 exit gate)
-**Current version:** `0.4` (`package.json`: `0.4.0`); working toward M5 / `0.5`
+**Current milestone:** M5 — Complete Arcade Loop & Skill Layer (in progress; parent #197)
+**Current version:** `0.4` (`package.json`: `0.4.0`); M5 is in progress, target after factual closeout: `0.5`
 
 > [!IMPORTANT]
 > This file is the **single source of truth for milestone sequencing and milestone-level future scope**. `MASTER_SPEC.md` owns durable product/game decisions; focused GitHub Issues own live implementation scope.
@@ -132,11 +132,11 @@ M0–M4 are complete. Reports own delivered scope, acceptance, and limitations; 
 
 ---
 
-# Current — Pre-M5 Gameplay Authority Gate
+# Completed decision gate — Pre-M5 Gameplay Authority Gate
 
-**Status: CURRENT. M5 implementation is blocked; its parent plan is approved.**
+**Status: PASSED. M5 implementation is active under parent #197.**
 
-[Issue #179](https://github.com/bongohorse/monster-girl-delivery/issues/179) owns the authority audit; [M5 parent #197](https://github.com/bongohorse/monster-girl-delivery/issues/197) owns the entry dependencies.
+[Issue #179](https://github.com/bongohorse/monster-girl-delivery/issues/179) records the authority audit; [M5 parent #197](https://github.com/bongohorse/monster-girl-delivery/issues/197) owns the active M5 implementation and acceptance trail.
 
 | Domain | Focused owner |
 |---|---|
@@ -147,7 +147,7 @@ M0–M4 are complete. Reports own delivered scope, acceptance, and limitations; 
 | Hit / death / consequence ownership | #184 |
 | Pacing / timing units | #183 — comparison completed in #179 |
 
-### Exit evidence
+### Recorded exit evidence
 
 - Each audit records **KEEP / ADJUST / REWORK / DEFER**, evidence, and its effect on M5 consumers.
 - Blocking corrections are merged and validated; accepted deferrals name the limitation and why M5 can safely proceed.
@@ -173,7 +173,7 @@ KEEP and justified DEFER are valid outcomes. No rewrite, reference-game parity, 
 - M4 run pacing/hazard language is accepted;
 - the core run can sustain representative generated play;
 - focused parent plan [Issue #197](https://github.com/bongohorse/monster-girl-delivery/issues/197) is approved;
-- implementation remains blocked until the Pre-M5 correctness/reference exit gate in #197/#179 is resolved sufficiently.
+- the Pre-M5 correctness/reference exit gate in #197/#179 has passed sufficiently for M5 implementation.
 
 ### Approved M5 design rules
 
@@ -197,7 +197,7 @@ MGD does **not** adopt manufactured procedural unfairness as a retention tactic.
 - clear result presentation and meaningful run statistics;
 - deterministic integration tests for the complete run lifecycle.
 
-Promoted focused work is tracked by #198 (score/result snapshot/basic rewards), #90 (Graze), #84 (collectible paths), and #85 (fail-state/retry), subject to #197's entry gate and dependency ordering.
+The original promoted work is tracked by #198 (score/result snapshot/basic rewards), #90 (Graze), #84 (collectible paths), and #85 (fail-state/retry). Current acceptance/follow-up work remains owned by #197 and focused child Issues.
 
 ### Execution order within M5
 
@@ -622,7 +622,7 @@ M0–M4 are complete. The current and future route is:
 
 ```mermaid
 flowchart TD
-  PRE["CURRENT: Pre-M5 authority gate"] --> M5["M5 / 0.5: outcome → skill → arcade integration"]
+  PRE["PASSED: Pre-M5 authority gate"] --> M5["CURRENT: M5 / 0.5 — outcome → skill → arcade integration"]
   M5 --> PRODUCT["Product and Art Gates"]
   PRODUCT --> M6["M6 / 0.6: vertical slice"]
   M6 --> PLATFORM["Platform Gate"]

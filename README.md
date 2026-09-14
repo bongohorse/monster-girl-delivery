@@ -3,7 +3,7 @@
 2D mobile-first sidescroller built with Phaser 4 and TypeScript.
 
 **Current project phase:** Pre-Production  
-**Current milestone:** Pre-M5 Gameplay Authority Gate (M4 complete; M5 parent #197 approved; implementation blocked)
+**Current milestone:** M5 — Complete Arcade Loop & Skill Layer (in progress; parent #197)
 
 > Start with the [`Documentation Hub`](docs/README.md) for product decisions, roadmap ownership, architecture, future ideas, AI workflow, and milestone history.
 
@@ -125,4 +125,4 @@ The current core game is **Landscape**, left-to-right, with one-button flight. T
 
 Portrait remains a **FUTURE** separate-mode/variant possibility, not current core gameplay.
 
-For completed M4 scope and evidence, see [`docs/milestones/M4-run-pacing-hazard-language.md`](docs/milestones/M4-run-pacing-hazard-language.md); M5 implementation begins when its focused parent plan is approved.
+For completed M4 scope and evidence, see [`docs/milestones/M4-run-pacing-hazard-language.md`](docs/milestones/M4-run-pacing-hazard-language.md). M5 implementation is active under parent Issue #197; the project remains version `0.4.x` until M5's factual closeout.
