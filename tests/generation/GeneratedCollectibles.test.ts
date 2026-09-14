@@ -3,11 +3,11 @@ import {
   getLogicalCollectibleSpawnIdentity,
   reconcileGeneratedCollectibles,
 } from '../../src/generation/GeneratedCollectibles';
+import { scheduleNextPattern } from '../../src/generation/PatternSpawnScheduler';
 import {
   PROTOTYPE_CORRIDOR_PATTERN,
   PROTOTYPE_OFFSET_PAIR_PATTERN,
 } from '../../src/generation/PrototypeHazardPatternFixtures';
-import { scheduleNextPattern } from '../../src/generation/PatternSpawnScheduler';
 import { createRunGenerationState } from '../../src/generation/RunGenerationState';
 
 describe('GeneratedCollectibles', () => {
