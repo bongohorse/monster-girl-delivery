@@ -1,5 +1,9 @@
 import { getHazardSweptHitbox } from '../hazards/HazardArchetype';
 import {
+  type CollectiblePathValidationIssue,
+  validateCollectiblePaths,
+} from './CollectiblePathValidator';
+import {
   evaluateFlightReachability,
   type FlightReachabilityResult,
   type PatternReachabilityContext,
@@ -25,6 +29,7 @@ export const PROTOTYPE_PATTERN_VALIDATION_CONSTRAINTS: Readonly<PatternValidatio
   });
 
 export type PatternValidationIssueCode =
+  | CollectiblePathValidationIssue['code']
   | 'insufficient-reaction-spacing'
   | 'vertical-corridor-too-narrow'
   | 'vertical-corridor-unreachable'
@@ -39,7 +44,10 @@ interface PatternValidationIssueBase {
 
 export interface PatternThresholdValidationIssue extends PatternValidationIssueBase {
   readonly actual: number;
-  readonly code: Exclude<PatternValidationIssueCode, 'vertical-corridor-unreachable'>;
+  readonly code: Exclude<
+    PatternValidationIssueCode,
+    CollectiblePathValidationIssue['code'] | 'vertical-corridor-unreachable'
+  >;
   readonly required: number;
 }
 
@@ -49,6 +57,7 @@ export interface PatternReachabilityValidationIssue extends PatternValidationIss
 }
 
 export type PatternValidationIssue =
+  | CollectiblePathValidationIssue
   | PatternThresholdValidationIssue
   | PatternReachabilityValidationIssue;
 
@@ -299,7 +308,7 @@ const collectReactionSpacingIssues = (
   return issues;
 };
 
-/** Validates deterministic geometry and flight reachability in logical gameplay space. */
+/** Validates deterministic geometry, flight reachability, and collectible guidance in logical space. */
 export const validatePattern = (
   pattern: Readonly<HazardPattern>,
   constraints: Readonly<PatternValidationConstraints> = PROTOTYPE_PATTERN_VALIDATION_CONSTRAINTS,
@@ -310,6 +319,7 @@ export const validatePattern = (
   const issues = Object.freeze([
     ...collectVerticalCorridorIssues(pattern, constraints, reachabilityContext),
     ...collectReactionSpacingIssues(pattern, constraints),
+    ...validateCollectiblePaths(pattern, constraints, reachabilityContext.playerExtents),
   ]);
 
   return Object.freeze({ valid: issues.length === 0, issues });
