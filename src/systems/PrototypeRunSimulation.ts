@@ -1,6 +1,12 @@
 import type { FlightTuningValues } from '../config/FlightTuningConfig';
 import type { RunMotionValues } from '../config/RunMotionConfig';
+import type { LogicalCollectibleSpawnInstance } from '../generation/GeneratedCollectibles';
 import type { LogicalHazard } from './HazardCollision';
+import {
+  EMPTY_PROTOTYPE_COLLECTIBLE_RUN_STATE,
+  evaluatePrototypeCollectibleStep,
+  type PrototypeCollectibleRunState,
+} from './PrototypeCollectibles';
 import {
   EMPTY_PROTOTYPE_GRAZE_RUN_STATE,
   evaluatePrototypeGrazeStep,
@@ -23,6 +29,7 @@ import {
 export type PrototypeRunPhase = 'running' | 'dead';
 
 export interface PrototypeRunState {
+  collectibles?: Readonly<PrototypeCollectibleRunState>;
   flight: VerticalFlightState;
   motion: RunMotionState;
   phase: PrototypeRunPhase;
@@ -31,6 +38,7 @@ export interface PrototypeRunState {
 }
 
 export interface PrototypeRunStepContext {
+  collectibles?: ReadonlyArray<Readonly<LogicalCollectibleSpawnInstance>>;
   flightBounds: Readonly<VerticalFlightBounds>;
   flightTuning: Readonly<FlightTuningValues>;
   hazards: ReadonlyArray<Readonly<LogicalHazard>>;
@@ -63,10 +71,10 @@ export const createPrototypeRunState = (
 };
 
 /**
- * Advances one authoritative run step. Lethal core collision and Graze inspect the same continuous
- * trajectory and lifecycle interval. Graze candidates remain pending until their possible lethal
- * core opportunity has resolved, so fine frame partitions cannot award a pre-lethal outer-zone touch
- * that a coarser terminal step would suppress. No presentation or secondary clock owns qualification.
+ * Advances one authoritative run step. Lethal core collision, Graze, and M5 collectible pickup
+ * inspect the same continuous player trajectory. Pickup qualification is resolved against lethal
+ * collision ordering before the immutable terminal result is created, so presentation never owns
+ * collection and a coarse terminal step cannot award a pickup that occurs only after death.
  */
 export const stepPrototypeRun = (
   state: Readonly<PrototypeRunState>,
@@ -98,6 +106,22 @@ export const stepPrototypeRun = (
     state.graze || grazeResult.state.count > 0 || grazeResult.state.pendingOccurrenceIds.length > 0
       ? grazeResult.state
       : undefined;
+  const collectibleResult = evaluatePrototypeCollectibleStep(
+    state.collectibles ?? EMPTY_PROTOTYPE_COLLECTIBLE_RUN_STATE,
+    state.motion,
+    flightTrajectory,
+    elapsedSeconds,
+    context.runMotionTuning,
+    context.collectibles ?? [],
+    context.hazards,
+  );
+  const collectibles =
+    state.collectibles ||
+    collectibleResult.collectedCount > 0 ||
+    collectibleResult.consumedCollectibleIds.length > 0 ||
+    collectibleResult.pendingCollectibleIds.length > 0
+      ? collectibleResult
+      : undefined;
 
   if (!grazeResult.lethalCollision) {
     return {
@@ -107,13 +131,16 @@ export const stepPrototypeRun = (
         motion,
         flight,
         ...(graze ? { graze } : {}),
+        ...(collectibles ? { collectibles } : {}),
       },
     };
   }
 
   const suppliedTotals = context.resultTotals ?? EMPTY_PROTOTYPE_RUN_RESULT_TOTALS;
   const finalTotals: PrototypeRunResultTotals = {
-    ...suppliedTotals,
+    collectedCount: collectibles?.collectedCount ?? suppliedTotals.collectedCount,
+    collectedValue: collectibles?.collectedValue ?? suppliedTotals.collectedValue,
+    earnedReward: collectibles?.earnedReward ?? suppliedTotals.earnedReward,
     grazeCount: graze?.count ?? suppliedTotals.grazeCount,
   };
 
@@ -124,6 +151,7 @@ export const stepPrototypeRun = (
       motion,
       flight,
       ...(graze ? { graze } : {}),
+      ...(collectibles ? { collectibles } : {}),
       finalResult: createPrototypeRunResultSnapshot(motion.distance, finalTotals),
     },
   };
