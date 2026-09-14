@@ -41,16 +41,16 @@ import {
 } from '../../hazards/TelegraphedHazardSimulation';
 import { PhaserInputAdapter } from '../../input/PhaserInputAdapter';
 import {
+  createPrototypePlayerHitbox,
+  PROTOTYPE_PLAYER_COLLISION_EXTENTS,
+} from '../../systems/HazardCollision';
+import {
   createPrototypeDeathRetryState,
   enterPrototypeFailState,
   getPrototypeFailStateProgress,
   type PrototypeDeathRetryState,
   stepPrototypeDeathRetryState,
 } from '../../systems/PrototypeDeathRetryFlow';
-import {
-  createPrototypePlayerHitbox,
-  PROTOTYPE_PLAYER_COLLISION_EXTENTS,
-} from '../../systems/HazardCollision';
 import type { PrototypeRunResultSnapshot } from '../../systems/PrototypeRunResult';
 import {
   createPrototypeRunState,
@@ -184,9 +184,8 @@ export class Foundation extends Scene {
     flight: { positionY: 0, velocityY: 0 },
   };
   private deathRetryState: Readonly<PrototypeDeathRetryState> = createPrototypeDeathRetryState();
-  private directorManualHazards: ReadonlyArray<Readonly<LogicalHazardSpawnInstance>> = Object.freeze(
-    [],
-  );
+  private directorManualHazards: ReadonlyArray<Readonly<LogicalHazardSpawnInstance>> =
+    Object.freeze([]);
   private directorGodModeEnabled = false;
   private directorAutoHazardsEnabled = true;
   private directorSimulationFrozen = false;
@@ -344,7 +343,9 @@ export class Foundation extends Scene {
         rawFrameTimeMilliseconds,
         this.game.loop.actualFps,
         directorLifecycle.paused,
-        !directorLifecycle.paused && rawFrameTimeMilliseconds > 0 && normalizedSimulationDeltaSeconds === 0,
+        !directorLifecycle.paused &&
+          rawFrameTimeMilliseconds > 0 &&
+          normalizedSimulationDeltaSeconds === 0,
       );
     }
 
@@ -633,7 +634,9 @@ export class Foundation extends Scene {
     }
 
     const patternId = DIRECTOR_HAZARD_PATTERN_IDS[kind];
-    const pattern = this.hazardVerticalDomain.catalog.find((candidate) => candidate.id === patternId);
+    const pattern = this.hazardVerticalDomain.catalog.find(
+      (candidate) => candidate.id === patternId,
+    );
     if (!pattern) {
       throw new TypeError(`Director hazard pattern is unavailable: ${patternId}`);
     }
@@ -649,7 +652,11 @@ export class Foundation extends Scene {
     const worldLeft = this.runState.motion.distance + desiredScreenLeft - playerScreenX;
     const patternStartDistance = Math.max(0, worldLeft - entry.hitbox.left);
     this.directorHazardSerial += 1;
-    const spawn = createDirectorManualSpawn(pattern, patternStartDistance, this.directorHazardSerial);
+    const spawn = createDirectorManualSpawn(
+      pattern,
+      patternStartDistance,
+      this.directorHazardSerial,
+    );
     this.directorManualHazards = Object.freeze([...this.directorManualHazards, spawn]);
     this.telegraphedHazardState = stepTelegraphedHazardSimulation(
       this.telegraphedHazardState,
@@ -686,7 +693,8 @@ export class Foundation extends Scene {
     }
 
     const viewport = this.viewportService.getSnapshot();
-    const flightTuning = this.hazardStream?.policy?.flightTuning ?? this.services.flightTuning.getSnapshot();
+    const flightTuning =
+      this.hazardStream?.policy?.flightTuning ?? this.services.flightTuning.getSnapshot();
     const runMotionTuning = Object.freeze({
       baseScrollSpeed:
         this.hazardStream?.schedulingWindow.scrollSpeed ??
