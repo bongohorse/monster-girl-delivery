@@ -76,9 +76,7 @@ const TERMINAL_SCHEDULES: ReadonlyArray<readonly [string, ReadonlyArray<number>]
   ['deterministic jitter', [0.013, 0.007, 0.014, 0.016]],
 ];
 
-const LATER_VERTICAL_LETHAL_SCHEDULES: ReadonlyArray<
-  readonly [string, ReadonlyArray<number>]
-> = [
+const LATER_VERTICAL_LETHAL_SCHEDULES: ReadonlyArray<readonly [string, ReadonlyArray<number>]> = [
   ['coarse 100 ms', [0.1]],
   ...[30, 60, 90, 120, 144].map((hz) => [`${hz} Hz`, partitionDuration(0.1, hz)] as const),
   ['deterministic jitter', [0.013, 0.007, 0.014, 0.016, 0.011, 0.018, 0.021]],
