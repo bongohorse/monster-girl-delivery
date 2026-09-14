@@ -13,6 +13,8 @@ import {
   DIRECTOR_DIAGNOSTICS_PANEL_HEIGHT,
 } from './DirectorResponsiveLayout';
 
+export const DIRECTOR_PANEL_VISIBILITY_EVENT = 'director-panel-visibility';
+
 export const fitDirectorDiagnosticLines = (lines: readonly string[], width: number): string[] => {
   const columns = Math.max(1, Math.floor(width / 6.6));
   return lines
@@ -114,15 +116,19 @@ export class DirectorPanel {
   layout(viewport: ViewportSnapshot): void {
     if (this.destroyed) return;
     const { diagnostics } = createDirectorResponsiveLayout(viewport);
+    const textResolution = this.scene.cameras.main.zoom;
     this.textWidth = Math.max(1, diagnostics.width - 24);
     this.background
       .setPosition(diagnostics.x, diagnostics.y)
       .setSize(diagnostics.width, diagnostics.height);
     this.pageButton
+      .setResolution(textResolution)
       .setPosition(diagnostics.x + 12, diagnostics.y + 8)
       .setFixedSize(Math.max(1, this.textWidth - 36), 24);
-    this.visibilityButton.setPosition(diagnostics.x + diagnostics.width - 40, diagnostics.y + 8);
-    this.text.setPosition(diagnostics.x + 12, diagnostics.y + 40);
+    this.visibilityButton
+      .setResolution(textResolution)
+      .setPosition(diagnostics.x + diagnostics.width - 40, diagnostics.y + 8);
+    this.text.setResolution(textResolution).setPosition(diagnostics.x + 12, diagnostics.y + 40);
     this.cancelInteraction();
     this.elapsedSinceRefresh = Number.POSITIVE_INFINITY;
   }
@@ -239,6 +245,7 @@ export class DirectorPanel {
     this.background.setVisible(!hidden);
     this.text.setVisible(!hidden);
     this.pageButton.setVisible(!hidden);
+    this.scene.events.emit(DIRECTOR_PANEL_VISIBILITY_EVENT, !hidden);
     if (hidden) {
       this.pageButton.disableInteractive();
       return;
