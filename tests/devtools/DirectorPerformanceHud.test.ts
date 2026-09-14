@@ -11,6 +11,7 @@ class FakeElement {
   readonly dataset: Record<string, string | undefined> = {};
   readonly listeners = new Map<string, Set<FakeEventHandler>>();
   readonly style: Record<string, string> = {};
+  checked = false;
   className = '';
   hidden = false;
   removed = false;
@@ -89,22 +90,52 @@ const createHarness = () => {
   const container = new FakeElement(ownerDocument);
   const input = new InputService();
   const sampler = new PerformanceSampler({ sampleWindowSize: 8 });
-  const hud = new DirectorPerformanceHud(container as unknown as HTMLElement, input, sampler);
+  const setFpsLimit = vi.fn();
+  const setWireframesEnabled = vi.fn();
+  const hud = new DirectorPerformanceHud(container as unknown as HTMLElement, input, sampler, {
+    setFpsLimit,
+    setWireframesEnabled,
+  });
   const root = container.children[0];
   const visibilityButton = root?.children[0];
   const values = root?.children[1];
-  const resetButton = root?.children[2];
+  const wireframeLabel = root?.children[2];
+  const resetButton = root?.children[3];
+  const fpsButton = values?.children[0];
+  const wireframeCheckbox = wireframeLabel?.children[0];
 
-  if (!root || !visibilityButton || !values || !resetButton) {
+  if (
+    !root ||
+    !visibilityButton ||
+    !values ||
+    !wireframeLabel ||
+    !resetButton ||
+    !fpsButton ||
+    !wireframeCheckbox
+  ) {
     throw new Error('Expected the performance HUD structure.');
   }
 
-  return { container, hud, input, resetButton, root, sampler, values, visibilityButton };
+  return {
+    container,
+    fpsButton,
+    hud,
+    input,
+    resetButton,
+    root,
+    sampler,
+    setFpsLimit,
+    setWireframesEnabled,
+    values,
+    visibilityButton,
+    wireframeCheckbox,
+    wireframeLabel,
+  };
 };
 
 describe('DirectorPerformanceHud', () => {
   it('creates one compact DOM row and lays it out inside safe-area bounds', () => {
-    const { container, hud, root, values } = createHarness();
+    const { container, hud, root, values, wireframeLabel } = createHarness();
     const viewport = new ViewportService(844, 390, {
       top: 12,
       right: 44,
@@ -118,6 +149,7 @@ describe('DirectorPerformanceHud', () => {
     expect(root.className).toBe('director-performance-hud');
     expect(root.style).toMatchObject({ left: '52px', top: '20px', maxWidth: '740px' });
     expect(values.children).toHaveLength(3);
+    expect(wireframeLabel.children).toHaveLength(2);
   });
 
   it('samples every frame but refreshes formatted values at most every 250 ms', () => {
@@ -131,11 +163,24 @@ describe('DirectorPerformanceHud', () => {
 
     expect(sampler.createSnapshot().sampleCount).toBe(8);
     expect(createSnapshot).toHaveBeenCalledTimes(3);
-    expect(values.children[0]?.textContent).toBe('60 FPS');
+    expect(values.children[0]?.textContent).toBe('60 FPS [∞]');
     expect(values.children[1]?.textContent).toBe(' | 16.0 ms');
     expect(values.children[2]?.textContent).toContain('P95 16.0 | P99 16.0');
     expect(values.children[0]?.dataset.health).toBe('good');
     expect(values.children[1]?.dataset.health).toBe('good');
+  });
+
+  it('cycles runtime FPS limits from unlimited through all requested presets', () => {
+    const { fpsButton, hud, setFpsLimit } = createHarness();
+    hud.update(16, 58.7, false);
+
+    for (const expected of [30, 60, 90, 120, 144, 0]) {
+      fpsButton.dispatch('click');
+      expect(setFpsLimit).toHaveBeenLastCalledWith(expected);
+    }
+
+    expect(setFpsLimit.mock.calls.map(([limit]) => limit)).toEqual([30, 60, 90, 120, 144, 0]);
+    expect(fpsButton.textContent).toBe('59 FPS [∞]');
   });
 
   it('uses the specified frame-time and FPS health bands', () => {
@@ -187,8 +232,24 @@ describe('DirectorPerformanceHud', () => {
     expect(values.children[2]?.textContent).toContain('S 20');
   });
 
+  it('toggles authoritative wireframe rendering without hiding the checkbox with metrics', () => {
+    const { setWireframesEnabled, visibilityButton, wireframeCheckbox, wireframeLabel } =
+      createHarness();
+
+    wireframeCheckbox.checked = true;
+    wireframeCheckbox.dispatch('change');
+    expect(setWireframesEnabled).toHaveBeenLastCalledWith(true);
+
+    visibilityButton.dispatch('click');
+    expect(wireframeLabel.hidden).toBe(false);
+
+    wireframeCheckbox.checked = false;
+    wireframeCheckbox.dispatch('change');
+    expect(setWireframesEnabled).toHaveBeenLastCalledWith(false);
+  });
+
   it('blocks gameplay and suppresses DOM control events without queuing thrust', () => {
-    const { input, visibilityButton } = createHarness();
+    const { input, visibilityButton, wireframeLabel } = createHarness();
     input.pressPointer(7, 'touch');
 
     const down = visibilityButton.dispatch('pointerdown');
@@ -207,6 +268,11 @@ describe('DirectorPerformanceHud', () => {
     expect(up.stopPropagation).toHaveBeenCalledOnce();
     expect(input.getSnapshot().gameplayBlocked).toBe(false);
     expect(input.consumePrimaryActionPress()).toBe(false);
+
+    wireframeLabel.dispatch('pointerdown');
+    expect(input.getSnapshot().gameplayBlocked).toBe(true);
+    wireframeLabel.dispatch('pointerup');
+    expect(input.getSnapshot().gameplayBlocked).toBe(false);
   });
 
   it('resets visible metrics without restarting or replacing the sampler', () => {
@@ -221,7 +287,16 @@ describe('DirectorPerformanceHud', () => {
   });
 
   it('removes its DOM and listeners idempotently on shutdown', () => {
-    const { hud, input, resetButton, root, visibilityButton } = createHarness();
+    const {
+      fpsButton,
+      hud,
+      input,
+      resetButton,
+      root,
+      visibilityButton,
+      wireframeCheckbox,
+      wireframeLabel,
+    } = createHarness();
     visibilityButton.dispatch('pointerdown');
 
     hud.destroy();
@@ -229,8 +304,14 @@ describe('DirectorPerformanceHud', () => {
 
     expect(root.removed).toBe(true);
     expect(input.getSnapshot().gameplayBlocked).toBe(false);
-    for (const button of [visibilityButton, resetButton]) {
-      expect([...button.listeners.values()].every((listeners) => listeners.size === 0)).toBe(true);
+    for (const element of [
+      visibilityButton,
+      fpsButton,
+      resetButton,
+      wireframeLabel,
+      wireframeCheckbox,
+    ]) {
+      expect([...element.listeners.values()].every((listeners) => listeners.size === 0)).toBe(true);
     }
   });
 });

@@ -90,7 +90,34 @@ body {
   cursor: pointer;
 }
 
-.director-performance-hud__button:focus-visible {
+.director-performance-hud__fps {
+  min-width: 78px;
+}
+
+.director-performance-hud__toggle {
+  display: inline-flex;
+  height: 20px;
+  align-items: center;
+  gap: 3px;
+  padding: 0 4px;
+  border-radius: 3px;
+  background: #26314f;
+  color: #fff;
+  pointer-events: auto;
+  touch-action: manipulation;
+  cursor: pointer;
+  user-select: none;
+}
+
+.director-performance-hud__toggle input {
+  width: 13px;
+  height: 13px;
+  margin: 0;
+  accent-color: #6fffe9;
+}
+
+.director-performance-hud__button:focus-visible,
+.director-performance-hud__toggle:focus-within {
   outline: 2px solid #b9c8ec;
   outline-offset: 1px;
 }
