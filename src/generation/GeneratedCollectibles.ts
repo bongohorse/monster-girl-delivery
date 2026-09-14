@@ -1,5 +1,5 @@
-import type { GeneratedHazardSpawnInstance } from './GeneratedHazardStream';
 import type { CollectiblePathIntent, HazardPattern } from './HazardPattern';
+import type { LogicalHazardSpawnInstance } from './PatternSpawnScheduler';
 
 export const PROTOTYPE_COLLECTIBLE_VALUE = 1;
 export const PROTOTYPE_COLLECTIBLE_RETAIN_BEHIND_DISTANCE = 160;
@@ -21,7 +21,7 @@ export const getLogicalCollectibleSpawnIdentity = (
   `${spawn.patternId}:${spawn.patternStartDistance}:${spawn.pathId}:${spawn.pathPointIndex}`;
 
 const materializeCurrentPatternOccurrences = (
-  hazardSpawns: ReadonlyArray<Readonly<GeneratedHazardSpawnInstance>>,
+  hazardSpawns: ReadonlyArray<Readonly<LogicalHazardSpawnInstance>>,
   catalog: ReadonlyArray<Readonly<HazardPattern>>,
 ): ReadonlyArray<Readonly<LogicalCollectibleSpawnInstance>> => {
   const patternsById = new Map(catalog.map((pattern) => [pattern.id, pattern] as const));
@@ -89,7 +89,7 @@ const materializeCurrentPatternOccurrences = (
  */
 export const reconcileGeneratedCollectibles = (
   state: ReadonlyArray<Readonly<LogicalCollectibleSpawnInstance>>,
-  hazardSpawns: ReadonlyArray<Readonly<GeneratedHazardSpawnInstance>>,
+  hazardSpawns: ReadonlyArray<Readonly<LogicalHazardSpawnInstance>>,
   catalog: ReadonlyArray<Readonly<HazardPattern>>,
   runDistance: number,
   retainBehindDistance = PROTOTYPE_COLLECTIBLE_RETAIN_BEHIND_DISTANCE,
