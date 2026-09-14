@@ -179,10 +179,12 @@ describe('DirectorTuningControls', () => {
 
     const clickVisibility = (id: number) => {
       const stopPropagation = vi.fn();
-      visibilityButton.handlers
-        .get('pointerdown')?.({ id }, undefined, undefined, { stopPropagation });
-      visibilityButton.handlers
-        .get('pointerup')?.({ id }, undefined, undefined, { stopPropagation });
+      visibilityButton.handlers.get('pointerdown')?.({ id }, undefined, undefined, {
+        stopPropagation,
+      });
+      visibilityButton.handlers.get('pointerup')?.({ id }, undefined, undefined, {
+        stopPropagation,
+      });
       expect(stopPropagation).toHaveBeenCalledTimes(2);
     };
 
@@ -190,9 +192,9 @@ describe('DirectorTuningControls', () => {
     expect(input.getSnapshot().gameplayBlocked).toBe(false);
     expect(background.object.setVisible).toHaveBeenLastCalledWith(false);
     expect(title.object.setVisible).toHaveBeenLastCalledWith(false);
-    expect(
-      rowObjects.every((entry) => entry.object.setVisible.mock.lastCall?.[0] === false),
-    ).toBe(true);
+    expect(rowObjects.every((entry) => entry.object.setVisible.mock.lastCall?.[0] === false)).toBe(
+      true,
+    );
     expect(
       rowButtons.every((entry) => entry.object.disableInteractive.mock.calls.length === 1),
     ).toBe(true);
@@ -201,12 +203,12 @@ describe('DirectorTuningControls', () => {
     clickVisibility(4);
     expect(background.object.setVisible).toHaveBeenLastCalledWith(true);
     expect(title.object.setVisible).toHaveBeenLastCalledWith(true);
-    expect(
-      rowObjects.every((entry) => entry.object.setVisible.mock.lastCall?.[0] === true),
-    ).toBe(true);
-    expect(
-      rowButtons.every((entry) => entry.object.setInteractive.mock.calls.length === 2),
-    ).toBe(true);
+    expect(rowObjects.every((entry) => entry.object.setVisible.mock.lastCall?.[0] === true)).toBe(
+      true,
+    );
+    expect(rowButtons.every((entry) => entry.object.setInteractive.mock.calls.length === 2)).toBe(
+      true,
+    );
 
     controls.destroy();
   });

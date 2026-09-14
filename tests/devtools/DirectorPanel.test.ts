@@ -89,8 +89,7 @@ const setup = () => {
     button.handlers.get('pointerup')?.({ id }, 0, 0, { stopPropagation: vi.fn() });
   };
   const clickVisibility = (id = 2) => {
-    visibilityButton.handlers
-      .get('pointerdown')?.({ id }, 0, 0, { stopPropagation: vi.fn() });
+    visibilityButton.handlers.get('pointerdown')?.({ id }, 0, 0, { stopPropagation: vi.fn() });
     visibilityButton.handlers.get('pointerup')?.({ id }, 0, 0, { stopPropagation: vi.fn() });
   };
   return {
