@@ -35,6 +35,7 @@
         "editor.formatOnSave": true,
         "workbench.secondarySideBar.defaultVisibility": "hidden",
         "workbench.startupEditor": "none",
+        "workbench.editor.restoreEditors": false,
         "terminal.integrated.enablePersistentSessions": false,
         "extensions.ignoreRecommendations": true,
         "chat.disableAIFeatures": true,
