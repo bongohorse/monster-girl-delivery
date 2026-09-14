@@ -3,7 +3,6 @@ import {
   isPlayerCollidingWithHazardDuringStep,
   type LogicalHazard,
   type LogicalHazardCollisionInterval,
-  PROTOTYPE_PLAYER_COLLISION_EXTENTS,
   type PrototypePlayerCollisionExtents,
 } from './HazardCollision';
 import type { RunMotionState } from './RunMotionSimulation';
