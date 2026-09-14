@@ -3,8 +3,8 @@ import type { LogicalCollectibleSpawnInstance } from '../../src/generation/Gener
 import type { LogicalHazard } from '../../src/systems/HazardCollision';
 import {
   createPrototypeRunState,
-  stepPrototypeRun,
   type PrototypeRunState,
+  stepPrototypeRun,
 } from '../../src/systems/PrototypeRunSimulation';
 import { type FrameSchedule, STANDARD_FRAME_SCHEDULES } from '../support/FramePartitionHarness';
 
