@@ -46,6 +46,14 @@ export class PrototypePlayerPresentation {
     this.graphics?.setPosition(x, y);
   }
 
+  setRotation(rotationRadians: number): void {
+    if (!Number.isFinite(rotationRadians)) {
+      throw new RangeError('Player presentation rotation must be finite.');
+    }
+
+    this.graphics?.setRotation(rotationRadians);
+  }
+
   setScale(x: number, y: number): void {
     this.graphics?.setScale(x, y);
   }
