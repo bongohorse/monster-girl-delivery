@@ -76,6 +76,14 @@ const TERMINAL_SCHEDULES: ReadonlyArray<readonly [string, ReadonlyArray<number>]
   ['deterministic jitter', [0.013, 0.007, 0.014, 0.016]],
 ];
 
+const LATER_VERTICAL_LETHAL_SCHEDULES: ReadonlyArray<
+  readonly [string, ReadonlyArray<number>]
+> = [
+  ['coarse 100 ms', [0.1]],
+  ...[30, 60, 90, 120, 144].map((hz) => [`${hz} Hz`, partitionDuration(0.1, hz)] as const),
+  ['deterministic jitter', [0.013, 0.007, 0.014, 0.016, 0.011, 0.018, 0.021]],
+];
+
 describe('prototype Graze skill layer', () => {
   it('bounds occurrence history to the retained hazard window without losing run totals', () => {
     let state = START;
@@ -197,6 +205,23 @@ describe('prototype Graze skill layer', () => {
 
       expect(state.phase).toBe('dead');
       expect(state.finalResult?.grazeCount).toBe(1);
+    },
+  );
+
+  it.each(LATER_VERTICAL_LETHAL_SCHEDULES)(
+    'retains a Graze when lethal horizontal opportunity starts first but vertical contact is later under %s',
+    (_label, steps) => {
+      const earlierGraze = hazard('earlier-graze-late-lethal', 96, 106, 966, 976);
+      const laterVerticalLethal = hazard('later-vertical-lethal', 95, 105, 1019, 1029);
+
+      for (const hazards of [
+        [earlierGraze, laterVerticalLethal],
+        [laterVerticalLethal, earlierGraze],
+      ] as const) {
+        const state = runPartitioned(steps, hazards, MOVING_START);
+        expect(state.phase).toBe('dead');
+        expect(state.finalResult?.grazeCount).toBe(1);
+      }
     },
   );
 
