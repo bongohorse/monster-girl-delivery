@@ -16,6 +16,11 @@
     }
   },
 
+  "remoteEnv": {
+    "BUN_INSTALL": "${containerEnv:HOME}/.bun",
+    "PATH": "${containerEnv:HOME}/.bun/bin:${containerEnv:HOME}/.local/bin:${containerEnv:PATH}"
+  },
+
   "postCreateCommand": "bash .devcontainer/post-create.sh",
 
   "postStartCommand": "grep -qxF 'export GH_TOKEN=\"$MGD_GH_TOKEN\"' ~/.bashrc || echo 'export GH_TOKEN=\"$MGD_GH_TOKEN\"' >> ~/.bashrc",
