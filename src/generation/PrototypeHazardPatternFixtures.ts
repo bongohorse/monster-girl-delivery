@@ -60,6 +60,19 @@ export const PROTOTYPE_CORRIDOR_PATTERN = createHazardPattern({
       hitbox: { left: 160, right: 208, top: 258, bottom: 342 },
     },
   ],
+  collectiblePaths: [
+    {
+      id: 'corridor-safe-guide',
+      intent: 'safe-guide',
+      points: [
+        { runDistance: 80, y: 195 },
+        { runDistance: 140, y: 195 },
+        { runDistance: 184, y: 195 },
+        { runDistance: 248, y: 195 },
+        { runDistance: 320, y: 195 },
+      ],
+    },
+  ],
 });
 
 /** PROTOTYPE example/test data only; fairness has not yet been evaluated. */
@@ -86,6 +99,19 @@ export const PROTOTYPE_OFFSET_PAIR_PATTERN = createHazardPattern({
       id: 'offset-low',
       type: 'placeholder-barrier',
       hitbox: { left: 330, right: 378, top: 220, bottom: 292 },
+    },
+  ],
+  collectiblePaths: [
+    {
+      id: 'offset-graze-route',
+      intent: 'risk-reward',
+      points: [
+        { runDistance: 64, y: 195 },
+        { runDistance: 144, y: 195 },
+        { runDistance: 250, y: 195 },
+        { runDistance: 354, y: 195 },
+        { runDistance: 456, y: 195 },
+      ],
     },
   ],
 });
