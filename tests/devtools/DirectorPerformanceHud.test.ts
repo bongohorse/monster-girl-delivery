@@ -304,7 +304,13 @@ describe('DirectorPerformanceHud', () => {
 
     expect(root.removed).toBe(true);
     expect(input.getSnapshot().gameplayBlocked).toBe(false);
-    for (const element of [visibilityButton, fpsButton, resetButton, wireframeLabel, wireframeCheckbox]) {
+    for (const element of [
+      visibilityButton,
+      fpsButton,
+      resetButton,
+      wireframeLabel,
+      wireframeCheckbox,
+    ]) {
       expect([...element.listeners.values()].every((listeners) => listeners.size === 0)).toBe(true);
     }
   });
