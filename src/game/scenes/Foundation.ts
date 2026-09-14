@@ -2,6 +2,7 @@ import { Scale, Scene, Scenes } from 'phaser';
 import type { AppServices } from '../../core/AppServices';
 import { PhaserLifecycleAdapter } from '../../core/PhaserLifecycleAdapter';
 import { readSafeAreaInsets, ViewportService } from '../../core/ViewportService';
+import { DirectorDebugOverlay } from '../../devtools/DirectorDebugOverlay';
 import { DirectorPanel } from '../../devtools/DirectorPanel';
 import { DirectorPerformanceHud } from '../../devtools/DirectorPerformanceHud';
 import { createDirectorResponsiveLayout } from '../../devtools/DirectorResponsiveLayout';
@@ -114,6 +115,7 @@ export class Foundation extends Scene {
   private title?: Phaser.GameObjects.Text;
   private instructions?: Phaser.GameObjects.Text;
   private viewportService?: ViewportService;
+  private directorDebugOverlay?: DirectorDebugOverlay;
   private directorPanel?: DirectorPanel;
   private directorPerformanceHud?: DirectorPerformanceHud;
   private directorRunControls?: DirectorRunControls;
@@ -170,7 +172,16 @@ export class Foundation extends Scene {
         throw new Error('Director performance HUD requires the game container.');
       }
 
-      this.directorPerformanceHud = new DirectorPerformanceHud(gameContainer, this.services.input);
+      this.directorDebugOverlay = new DirectorDebugOverlay(this);
+      this.directorPerformanceHud = new DirectorPerformanceHud(
+        gameContainer,
+        this.services.input,
+        undefined,
+        {
+          setFpsLimit: (limit) => this.game.loop.setFPSLimit(limit),
+          setWireframesEnabled: (enabled) => this.directorDebugOverlay?.setEnabled(enabled),
+        },
+      );
       this.directorPanel = new DirectorPanel(this, this.services.input);
       this.directorTuningControls = new DirectorTuningControls(
         this,
@@ -569,6 +580,16 @@ export class Foundation extends Scene {
     this.playerPresentation?.setRotation?.(
       getPrototypeFailStateProgress(this.deathRetryState) * Math.PI * 0.7,
     );
+    this.directorDebugOverlay?.render({
+      collectibles: this.collectibleSpawns,
+      consumedCollectibleIds: this.runState.collectibles?.consumedCollectibleIds ?? [],
+      flight: this.runState.flight,
+      hazards: this.hazardStream?.spawns ?? [],
+      motion: this.runState.motion,
+      nextPatternStartDistance: this.hazardStream?.nextPatternStartDistance ?? null,
+      telegraphedHazards: this.telegraphedHazardState,
+      viewport,
+    });
   }
 
   private readonly handleShutdown = (): void => {
@@ -586,6 +607,8 @@ export class Foundation extends Scene {
     this.directorPerformanceHud = undefined;
     this.directorPanel?.destroy();
     this.directorPanel = undefined;
+    this.directorDebugOverlay?.destroy();
+    this.directorDebugOverlay = undefined;
     this.scrollingWorldPresentation?.destroy();
     this.scrollingWorldPresentation = undefined;
     this.generatedCollectiblePresentation?.destroy();

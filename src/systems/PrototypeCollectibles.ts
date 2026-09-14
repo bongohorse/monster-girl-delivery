@@ -12,7 +12,7 @@ import {
 import type { RunMotionState } from './RunMotionSimulation';
 import type { VerticalFlightTrajectory } from './VerticalFlightSimulation';
 
-const PROTOTYPE_COLLECTIBLE_HALF_SIZE = 8;
+export const PROTOTYPE_COLLECTIBLE_HALF_SIZE = 8;
 
 export interface PrototypeCollectibleRunState {
   readonly collectedCount: number;

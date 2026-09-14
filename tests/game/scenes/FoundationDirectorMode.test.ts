@@ -10,6 +10,7 @@ const directorControlsConstructed = vi.hoisted(() => vi.fn());
 const directorControlsDestroyed = vi.hoisted(() => vi.fn());
 const directorRunControlsConstructed = vi.hoisted(() => vi.fn());
 const directorRunControlsDestroyed = vi.hoisted(() => vi.fn());
+const setFpsLimit = vi.hoisted(() => vi.fn());
 
 vi.mock('phaser', () => {
   const createText = () => ({
@@ -48,7 +49,7 @@ vi.mock('phaser', () => {
       resize: () => undefined,
     };
     readonly events = { once: () => undefined };
-    readonly game = { loop: { actualFps: 60, rawDelta: 17 } };
+    readonly game = { loop: { actualFps: 60, rawDelta: 17, setFPSLimit: setFpsLimit } };
     readonly scale = {
       height: 450,
       off: () => undefined,
@@ -163,6 +164,7 @@ beforeEach(() => {
   directorControlsDestroyed.mockClear();
   directorRunControlsConstructed.mockClear();
   directorRunControlsDestroyed.mockClear();
+  setFpsLimit.mockClear();
   const gameContainer = {};
   vi.stubGlobal('document', {
     getElementById: (id: string) => (id === 'game-container' ? gameContainer : null),
@@ -187,6 +189,7 @@ describe('Foundation Director mode boundary', () => {
     expect(directorPerformanceHudConstructed).not.toHaveBeenCalled();
     expect(directorControlsConstructed).not.toHaveBeenCalled();
     expect(directorRunControlsConstructed).not.toHaveBeenCalled();
+    expect(Reflect.get(foundation, 'directorDebugOverlay')).toBeUndefined();
     expect(Reflect.get(foundation, 'directorPanel')).toBeUndefined();
     expect(Reflect.get(foundation, 'directorPerformanceHud')).toBeUndefined();
     expect(Reflect.get(foundation, 'directorRunControls')).toBeUndefined();
@@ -220,6 +223,11 @@ describe('Foundation Director mode boundary', () => {
     expect(directorPerformanceHudConstructed).toHaveBeenCalledWith(
       expect.any(Object),
       services.input,
+      undefined,
+      expect.objectContaining({
+        setFpsLimit: expect.any(Function),
+        setWireframesEnabled: expect.any(Function),
+      }),
     );
     expect(directorControlsConstructed).toHaveBeenCalledWith(
       foundation,
@@ -234,6 +242,12 @@ describe('Foundation Director mode boundary', () => {
       expect.any(Function),
     );
     expect(directorPerformanceHudLayout).toHaveBeenCalledOnce();
+
+    const performanceControls = directorPerformanceHudConstructed.mock.calls[0]?.[3] as
+      | { setFpsLimit?: (limit: number) => void }
+      | undefined;
+    performanceControls?.setFpsLimit?.(90);
+    expect(setFpsLimit).toHaveBeenCalledWith(90);
 
     foundation.update(0, 16);
     expect(directorPerformanceHudUpdate).toHaveBeenCalledWith(17, 60, false, false);

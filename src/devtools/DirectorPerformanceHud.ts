@@ -4,11 +4,19 @@ import { createDirectorResponsiveLayout } from './DirectorResponsiveLayout';
 import { PerformanceSampler, type PerformanceSnapshot } from './PerformanceSampler';
 
 export const DIRECTOR_PERFORMANCE_HUD_REFRESH_MILLISECONDS = 250;
+export const DIRECTOR_FPS_LIMIT_OPTIONS = Object.freeze([0, 30, 60, 90, 120, 144] as const);
+
+export interface DirectorPerformanceHudControls {
+  readonly setFpsLimit: (limit: number) => void;
+  readonly setWireframesEnabled: (enabled: boolean) => void;
+}
 
 type PerformanceHealth = 'good' | 'mild' | 'noticeable' | 'severe' | 'unknown';
 
 const formatMilliseconds = (value: number | null): string =>
   value === null ? '--' : value.toFixed(1);
+
+const formatFpsLimit = (limit: number): string => (limit === 0 ? '∞' : String(limit));
 
 const getFrameTimeHealth = (frameTimeMilliseconds: number | null): PerformanceHealth => {
   if (frameTimeMilliseconds === null || !Number.isFinite(frameTimeMilliseconds)) {
@@ -59,12 +67,15 @@ export class DirectorPerformanceHud {
   private readonly root: HTMLDivElement;
   private readonly visibilityButton: HTMLButtonElement;
   private readonly values: HTMLSpanElement;
-  private readonly fpsValue: HTMLSpanElement;
+  private readonly fpsValue: HTMLButtonElement;
   private readonly frameTimeValue: HTMLSpanElement;
   private readonly statisticsValue: HTMLSpanElement;
+  private readonly wireframeLabel: HTMLLabelElement;
+  private readonly wireframeCheckbox: HTMLInputElement;
   private readonly resetButton: HTMLButtonElement;
   private destroyed = false;
   private elapsedSinceRefreshMilliseconds = Number.POSITIVE_INFINITY;
+  private fpsLimitIndex = 0;
   private hidden = false;
   private latestFramesPerSecond = 0;
 
@@ -72,6 +83,7 @@ export class DirectorPerformanceHud {
     container: HTMLElement,
     private readonly inputService: InputService,
     private readonly sampler: PerformanceSampler = new PerformanceSampler(),
+    private readonly controls?: Readonly<DirectorPerformanceHudControls>,
   ) {
     const ownerDocument = container.ownerDocument;
     this.root = ownerDocument.createElement('div');
@@ -89,10 +101,21 @@ export class DirectorPerformanceHud {
 
     this.values = ownerDocument.createElement('span');
     this.values.className = 'director-performance-hud__values';
-    this.fpsValue = ownerDocument.createElement('span');
+    this.fpsValue = ownerDocument.createElement('button');
+    this.fpsValue.className = 'director-performance-hud__button director-performance-hud__fps';
+    this.fpsValue.type = 'button';
     this.frameTimeValue = ownerDocument.createElement('span');
     this.statisticsValue = ownerDocument.createElement('span');
     this.values.append(this.fpsValue, this.frameTimeValue, this.statisticsValue);
+
+    this.wireframeLabel = ownerDocument.createElement('label');
+    this.wireframeLabel.className = 'director-performance-hud__toggle';
+    this.wireframeCheckbox = ownerDocument.createElement('input');
+    this.wireframeCheckbox.type = 'checkbox';
+    this.wireframeCheckbox.setAttribute('aria-label', 'Show collision and gameplay wireframes');
+    const wireframeText = ownerDocument.createElement('span');
+    wireframeText.textContent = 'Hitboxes';
+    this.wireframeLabel.append(this.wireframeCheckbox, wireframeText);
 
     this.resetButton = ownerDocument.createElement('button');
     this.resetButton.className = 'director-performance-hud__button';
@@ -101,11 +124,20 @@ export class DirectorPerformanceHud {
     this.resetButton.title = 'Reset performance statistics';
     this.resetButton.setAttribute('aria-label', 'Reset performance statistics');
 
-    this.root.append(this.visibilityButton, this.values, this.resetButton);
+    this.root.append(
+      this.visibilityButton,
+      this.values,
+      this.wireframeLabel,
+      this.resetButton,
+    );
     container.append(this.root);
 
     this.addControlListeners(this.visibilityButton, this.handleVisibilityClick);
+    this.addControlListeners(this.fpsValue, this.handleFpsLimitClick);
     this.addControlListeners(this.resetButton, this.handleResetClick);
+    this.addTogglePointerListeners(this.wireframeLabel);
+    this.wireframeCheckbox.addEventListener('change', this.handleWireframeChange);
+    this.refreshFpsLimitTitle();
     this.refreshVisibleValues();
   }
 
@@ -159,7 +191,10 @@ export class DirectorPerformanceHud {
     this.destroyed = true;
     this.inputService.setGameplayBlocked(false);
     this.removeControlListeners(this.visibilityButton, this.handleVisibilityClick);
+    this.removeControlListeners(this.fpsValue, this.handleFpsLimitClick);
     this.removeControlListeners(this.resetButton, this.handleResetClick);
+    this.removeTogglePointerListeners(this.wireframeLabel);
+    this.wireframeCheckbox.removeEventListener('change', this.handleWireframeChange);
     this.root.remove();
   }
 
@@ -170,6 +205,16 @@ export class DirectorPerformanceHud {
 
   private readonly handlePointerRelease = (event: Event): void => {
     this.stopControlEvent(event);
+    this.inputService.setGameplayBlocked(false);
+  };
+
+  private readonly handleTogglePointerDown = (event: Event): void => {
+    event.stopPropagation();
+    this.inputService.setGameplayBlocked(true);
+  };
+
+  private readonly handleTogglePointerRelease = (event: Event): void => {
+    event.stopPropagation();
     this.inputService.setGameplayBlocked(false);
   };
 
@@ -192,6 +237,20 @@ export class DirectorPerformanceHud {
     }
   };
 
+  private readonly handleFpsLimitClick = (event: Event): void => {
+    this.stopControlEvent(event);
+    this.fpsLimitIndex = (this.fpsLimitIndex + 1) % DIRECTOR_FPS_LIMIT_OPTIONS.length;
+    const limit = DIRECTOR_FPS_LIMIT_OPTIONS[this.fpsLimitIndex] ?? 0;
+    this.controls?.setFpsLimit(limit);
+    this.refreshFpsLimitTitle();
+    this.refreshVisibleValues();
+  };
+
+  private readonly handleWireframeChange = (event: Event): void => {
+    event.stopPropagation();
+    this.controls?.setWireframesEnabled(this.wireframeCheckbox.checked);
+  };
+
   private readonly handleResetClick = (event: Event): void => {
     this.stopControlEvent(event);
     this.sampler.reset();
@@ -200,25 +259,39 @@ export class DirectorPerformanceHud {
   };
 
   private addControlListeners(
-    button: HTMLButtonElement,
+    element: HTMLElement,
     clickHandler: (event: Event) => void,
   ): void {
-    button.addEventListener('pointerdown', this.handlePointerDown);
-    button.addEventListener('pointerup', this.handlePointerRelease);
-    button.addEventListener('pointercancel', this.handlePointerRelease);
-    button.addEventListener('pointerleave', this.handlePointerRelease);
-    button.addEventListener('click', clickHandler);
+    element.addEventListener('pointerdown', this.handlePointerDown);
+    element.addEventListener('pointerup', this.handlePointerRelease);
+    element.addEventListener('pointercancel', this.handlePointerRelease);
+    element.addEventListener('pointerleave', this.handlePointerRelease);
+    element.addEventListener('click', clickHandler);
   }
 
   private removeControlListeners(
-    button: HTMLButtonElement,
+    element: HTMLElement,
     clickHandler: (event: Event) => void,
   ): void {
-    button.removeEventListener('pointerdown', this.handlePointerDown);
-    button.removeEventListener('pointerup', this.handlePointerRelease);
-    button.removeEventListener('pointercancel', this.handlePointerRelease);
-    button.removeEventListener('pointerleave', this.handlePointerRelease);
-    button.removeEventListener('click', clickHandler);
+    element.removeEventListener('pointerdown', this.handlePointerDown);
+    element.removeEventListener('pointerup', this.handlePointerRelease);
+    element.removeEventListener('pointercancel', this.handlePointerRelease);
+    element.removeEventListener('pointerleave', this.handlePointerRelease);
+    element.removeEventListener('click', clickHandler);
+  }
+
+  private addTogglePointerListeners(element: HTMLElement): void {
+    element.addEventListener('pointerdown', this.handleTogglePointerDown);
+    element.addEventListener('pointerup', this.handleTogglePointerRelease);
+    element.addEventListener('pointercancel', this.handleTogglePointerRelease);
+    element.addEventListener('pointerleave', this.handleTogglePointerRelease);
+  }
+
+  private removeTogglePointerListeners(element: HTMLElement): void {
+    element.removeEventListener('pointerdown', this.handleTogglePointerDown);
+    element.removeEventListener('pointerup', this.handleTogglePointerRelease);
+    element.removeEventListener('pointercancel', this.handleTogglePointerRelease);
+    element.removeEventListener('pointerleave', this.handleTogglePointerRelease);
   }
 
   private stopControlEvent(event: Event): void {
@@ -226,14 +299,23 @@ export class DirectorPerformanceHud {
     event.stopPropagation();
   }
 
+  private refreshFpsLimitTitle(): void {
+    const currentLimit = DIRECTOR_FPS_LIMIT_OPTIONS[this.fpsLimitIndex] ?? 0;
+    const nextLimit =
+      DIRECTOR_FPS_LIMIT_OPTIONS[(this.fpsLimitIndex + 1) % DIRECTOR_FPS_LIMIT_OPTIONS.length] ?? 0;
+    this.fpsValue.title = `FPS limit ${formatFpsLimit(currentLimit)}; click for ${formatFpsLimit(nextLimit)}`;
+    this.fpsValue.setAttribute('aria-label', this.fpsValue.title);
+  }
+
   private refreshVisibleValues(): void {
     const snapshot = this.sampler.createSnapshot();
-    const fpsText =
+    const measuredFps =
       Number.isFinite(this.latestFramesPerSecond) && this.latestFramesPerSecond > 0
         ? `${Math.round(this.latestFramesPerSecond)} FPS`
         : '-- FPS';
+    const limit = DIRECTOR_FPS_LIMIT_OPTIONS[this.fpsLimitIndex] ?? 0;
 
-    setTextIfChanged(this.fpsValue, fpsText);
+    setTextIfChanged(this.fpsValue, `${measuredFps} [${formatFpsLimit(limit)}]`);
     setTextIfChanged(
       this.frameTimeValue,
       ` | ${formatMilliseconds(snapshot.currentFrameTimeMilliseconds)} ms`,
