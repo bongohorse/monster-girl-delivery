@@ -17,12 +17,21 @@ fi
 rm -rf "$LOG_DIR"
 mkdir -p "$LOG_DIR"
 
-export PATH="$HOME/.bun/bin:$HOME/.local/bin:$PATH"
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$HOME/.local/bin:$PATH"
 
-GRAPHIFY_PATH_EXPORT='export PATH="$HOME/.local/bin:$PATH"'
-if ! grep -qxF "$GRAPHIFY_PATH_EXPORT" "$HOME/.bashrc" 2>/dev/null; then
-  printf '\n%s\n' "$GRAPHIFY_PATH_EXPORT" >> "$HOME/.bashrc"
-fi
+BUN_INSTALL_EXPORT='export BUN_INSTALL="$HOME/.bun"'
+TOOL_PATH_EXPORT='export PATH="$BUN_INSTALL/bin:$HOME/.local/bin:$PATH"'
+
+for shell_profile in "$HOME/.bashrc" "$HOME/.profile"; do
+  if ! grep -qxF "$BUN_INSTALL_EXPORT" "$shell_profile" 2>/dev/null; then
+    printf '\n%s\n' "$BUN_INSTALL_EXPORT" >> "$shell_profile"
+  fi
+
+  if ! grep -qxF "$TOOL_PATH_EXPORT" "$shell_profile" 2>/dev/null; then
+    printf '%s\n' "$TOOL_PATH_EXPORT" >> "$shell_profile"
+  fi
+done
 
 if [[ ! -f "$BUN_VERSION_FILE" ]]; then
   printf '✗ Codespaces setup cannot start: Bun version file not found: %s\n' "$BUN_VERSION_FILE" >&2
