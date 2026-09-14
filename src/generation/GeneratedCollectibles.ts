@@ -95,7 +95,9 @@ export const reconcileGeneratedCollectibles = (
   retainBehindDistance = PROTOTYPE_COLLECTIBLE_RETAIN_BEHIND_DISTANCE,
 ): ReadonlyArray<Readonly<LogicalCollectibleSpawnInstance>> => {
   if (!Number.isFinite(runDistance) || runDistance < 0) {
-    throw new RangeError('Collectible reconciliation run distance must be non-negative and finite.');
+    throw new RangeError(
+      'Collectible reconciliation run distance must be non-negative and finite.',
+    );
   }
   if (!Number.isFinite(retainBehindDistance) || retainBehindDistance < 0) {
     throw new RangeError('Collectible retention distance must be non-negative and finite.');
