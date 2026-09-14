@@ -86,12 +86,16 @@ A new Codespace should:
 
 1. start from the Ubuntu 24.04 devcontainer base;
 2. provide Git and GitHub CLI;
-3. provide the Ubuntu-supported Python runtime through the official devcontainer Python feature;
+3. provide the Ubuntu-supported Python runtime through the official devcontainer Python feature without installing its Python/Pylance/autopep8 VS Code extensions;
 4. install the Bun version defined by the repository setup;
 5. install project dependencies;
 6. install the latest Codex CLI, Google Antigravity CLI, and Graphify CLI as optional coding-agent tools;
 7. run a production build before reporting the Codespace ready;
 8. forward port `8080` for Vite preview/testing.
+
+The only project-requested VS Code extension is Biome. GitHub Codespaces and VS Code may still provide platform/built-in extensions or the selected display-language pack.
+
+For reproducible project isolation, keep GitHub Codespaces **Settings Sync** and automatic **dotfiles** disabled for this repository/account workflow. Settings Sync can otherwise inject extensions and UI state from unrelated projects into a fresh Codespace.
 
 The post-create script reports numbered setup steps with elapsed time. In an interactive terminal it also displays a spinner while a step is running. Required setup failures print the last captured command output and stop setup; optional coding-agent tool failures print a warning and continue. Full per-step logs are retained under `/tmp/mgd-codespace-setup` for diagnosis.
 
@@ -178,73 +182,16 @@ Pull Request
 GitHub Actions
     ↓
 review / acceptance
-    ↓
-merge when authorized
 ```
 
-Keep changes focused and reviewable. A passing CI run does not automatically authorize merge.
+Keep PRs focused. Do not mix unrelated cleanup into milestone/gameplay work.
 
-Coding-agent scope/merge rules, including continued execution under an existing explicit merge authorization, are defined in [`AGENTS.md` §17](AGENTS.md#17-github--pr-discipline). Cross-agent coordination is documented in [`docs/AI_WORKFLOW.md`](docs/AI_WORKFLOW.md).
+When a PR is ready to merge:
 
-## 11. Asset commands
+1. all required checks are green;
+2. review findings are resolved;
+3. required manual/Game Director acceptance exists;
+4. the branch is based on the intended target;
+5. the resulting repository state still matches the active milestone gate.
 
-The following are **planned interfaces**, not guaranteed current scripts:
-
-```bash
-bun run assets:validate
-bun run assets:build
-```
-
-Do not invent or document asset tooling as implemented until an approved task adds it.
-
-## 12. Deployment and packaging targets
-
-Current web deployment target:
-
-- GitHub Pages.
-
-Possible later distribution/packaging work, only when promoted by the roadmap/product plan:
-
-- itch.io;
-- Android/iOS packaging (for example Capacitor evaluation);
-- Desktop/Steam wrapper evaluation;
-- gamepad/desktop UX;
-- PWA evaluation.
-
-Do not add Cloudflare/backend infrastructure without a concrete approved requirement.
-
-## 13. Security and secrets
-
-- Never commit API keys, PATs, or other secrets.
-- Use GitHub/Codespaces secrets for external credentials.
-- Do not print secrets in logs, documentation, Issues, or PRs.
-- Do not weaken repository protections to make automation easier.
-
-## 14. Milestone closeout
-
-Every completed milestone receives a factual report under `docs/milestones/` before, or as part of, advancing the documented current milestone.
-
-Use [`docs/milestones/TEMPLATE.md`](docs/milestones/TEMPLATE.md).
-
-A closeout report must distinguish:
-
-1. planned scope;
-2. what actually landed;
-3. architecture/product decisions established;
-4. automated validation;
-5. manual/device evidence actually observed;
-6. deferred/open work;
-7. supporting maintenance outside milestone product scope;
-8. main Issues/PRs;
-9. exit decision;
-10. what the next milestone may safely inherit.
-
-Accuracy rules:
-
-- never turn planned scope into historical fact;
-- never claim unperformed manual/device checks;
-- automated coverage does not substitute for manual evidence;
-- keep `PROTOTYPE`, `EXPERIMENT`, `TBD`, `FUTURE`, and deferred states explicit;
-- historical reports must not be rewritten simply because later plans changed.
-
-Apply [required verification](#3-required-verification) to closeout/documentation transitions as well.
+After merge, update the owning Issue/milestone documentation when required.
