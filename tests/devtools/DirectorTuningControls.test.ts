@@ -23,6 +23,7 @@ const createGameObjectFake = () => {
     setInteractive: vi.fn(),
     setOrigin: vi.fn(),
     setPosition: vi.fn(),
+    setResolution: vi.fn(),
     setScrollFactor: vi.fn(),
     setSize: vi.fn(),
     setText: vi.fn(),
@@ -35,6 +36,7 @@ const createGameObjectFake = () => {
     object.setInteractive,
     object.setOrigin,
     object.setPosition,
+    object.setResolution,
     object.setScrollFactor,
     object.setSize,
     object.setText,
@@ -58,6 +60,7 @@ const createSceneFake = () => {
       rectangle: vi.fn(addObject),
       text: vi.fn(addObject),
     },
+    cameras: { main: { zoom: 2 } },
   } as unknown as Scene;
 
   return { objects, scene };
@@ -106,6 +109,9 @@ describe('DirectorTuningControls', () => {
       objects.some((entry) =>
         entry.object.setText.mock.calls.some(([text]) => text === 'Scroll: 500 px/s'),
       ),
+    ).toBe(true);
+    expect(
+      objects.slice(1).every((entry) => entry.object.setResolution.mock.lastCall?.[0] === 2),
     ).toBe(true);
   });
 
