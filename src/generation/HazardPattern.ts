@@ -22,18 +22,39 @@ export interface HazardPatternEntryDefinition extends Omit<HazardPatternEntry, '
   readonly behavior?: Readonly<HazardBehavior>;
 }
 
+export type CollectiblePathIntent = 'safe-guide' | 'risk-reward';
+
+export interface CollectiblePathPoint {
+  /** Pattern-local logical run-distance offset, independent of viewport dimensions. */
+  readonly runDistance: number;
+  /** Logical player-center Y suggested by this collectible point. */
+  readonly y: number;
+}
+
+export interface CollectiblePath {
+  /** Stable identity within this pattern for presentation/diagnostics. */
+  readonly id: string;
+  /** Presentation-readable route purpose; this never changes collision/fairness authority. */
+  readonly intent: CollectiblePathIntent;
+  /** Authored traversal order. Run distance must increase strictly from point to point. */
+  readonly points: ReadonlyArray<Readonly<CollectiblePathPoint>>;
+}
+
 export interface HazardPattern {
+  /** Optional authored movement-language routes. Omitted when this pattern has no collectible path. */
+  readonly collectiblePaths?: ReadonlyArray<Readonly<CollectiblePath>>;
   /** Stable catalog identity. */
   readonly id: string;
   /** Entries retain this authored order; construction does not sort them. */
   readonly entries: ReadonlyArray<Readonly<HazardPatternEntry>>;
   /** Explicit immutable metadata for later difficulty, pacing, variety, and readability policy. */
   readonly profile: Readonly<EncounterProfile>;
-  /** Logical run-distance span; every entry must remain within zero through this value. */
+  /** Logical run-distance span; every entry and collectible point must remain within this value. */
   readonly runLength: number;
 }
 
-export interface HazardPatternDefinition extends Omit<HazardPattern, 'entries'> {
+export interface HazardPatternDefinition extends Omit<HazardPattern, 'collectiblePaths' | 'entries'> {
+  readonly collectiblePaths?: ReadonlyArray<Readonly<CollectiblePath>>;
   readonly entries: ReadonlyArray<Readonly<HazardPatternEntryDefinition>>;
 }
 
@@ -68,6 +89,59 @@ const assertValidPatternHitbox = (hitbox: Readonly<LogicalHitbox>, runLength: nu
   if (hitbox.bottom <= hitbox.top) {
     throw new RangeError('Pattern hitbox must have positive height.');
   }
+};
+
+const createCollectiblePaths = (
+  paths: ReadonlyArray<Readonly<CollectiblePath>> | undefined,
+  runLength: number,
+): ReadonlyArray<Readonly<CollectiblePath>> | undefined => {
+  if (paths === undefined) {
+    return undefined;
+  }
+
+  const pathIds = new Set<string>();
+  const collectiblePaths = paths.map((path) => {
+    assertNonEmptyId(path.id, 'Collectible path id');
+
+    if (pathIds.has(path.id)) {
+      throw new TypeError(`Collectible path id must be unique: ${path.id}`);
+    }
+    pathIds.add(path.id);
+
+    if (path.intent !== 'safe-guide' && path.intent !== 'risk-reward') {
+      throw new TypeError(`Unsupported collectible path intent: ${path.intent}`);
+    }
+
+    if (path.points.length < 2) {
+      throw new RangeError('Collectible path must contain at least two ordered points.');
+    }
+
+    let previousRunDistance = Number.NEGATIVE_INFINITY;
+    const points = path.points.map((point) => {
+      if (!Number.isFinite(point.runDistance) || !Number.isFinite(point.y)) {
+        throw new RangeError('Collectible path coordinates must be finite.');
+      }
+
+      if (point.runDistance < 0 || point.runDistance > runLength) {
+        throw new RangeError('Collectible path run distance must remain within the pattern runLength.');
+      }
+
+      if (point.runDistance <= previousRunDistance) {
+        throw new RangeError('Collectible path run distance must increase strictly in authored order.');
+      }
+      previousRunDistance = point.runDistance;
+
+      return Object.freeze({ runDistance: point.runDistance, y: point.y });
+    });
+
+    return Object.freeze({
+      id: path.id,
+      intent: path.intent,
+      points: Object.freeze(points),
+    });
+  });
+
+  return Object.freeze(collectiblePaths);
 };
 
 /**
@@ -106,8 +180,10 @@ export const createHazardPattern = (
       hitbox: Object.freeze({ ...entry.hitbox }),
     });
   });
+  const collectiblePaths = createCollectiblePaths(definition.collectiblePaths, definition.runLength);
 
   return Object.freeze({
+    ...(collectiblePaths === undefined ? {} : { collectiblePaths }),
     id: definition.id,
     runLength: definition.runLength,
     entries: Object.freeze(entries),
