@@ -166,7 +166,9 @@ describe('DirectorTuningControls', () => {
       input,
     );
     const [background, title, visibilityButton, ...rowObjects] = objects;
-    const rowButtons = rowObjects.filter((entry) => entry.object.setInteractive.mock.calls.length > 0);
+    const rowButtons = rowObjects.filter(
+      (entry) => entry.object.setInteractive.mock.calls.length > 0,
+    );
 
     expect(background).toBeDefined();
     expect(title).toBeDefined();
@@ -179,7 +181,8 @@ describe('DirectorTuningControls', () => {
       const stopPropagation = vi.fn();
       visibilityButton.handlers
         .get('pointerdown')?.({ id }, undefined, undefined, { stopPropagation });
-      visibilityButton.handlers.get('pointerup')?.({ id }, undefined, undefined, { stopPropagation });
+      visibilityButton.handlers
+        .get('pointerup')?.({ id }, undefined, undefined, { stopPropagation });
       expect(stopPropagation).toHaveBeenCalledTimes(2);
     };
 
@@ -187,17 +190,23 @@ describe('DirectorTuningControls', () => {
     expect(input.getSnapshot().gameplayBlocked).toBe(false);
     expect(background.object.setVisible).toHaveBeenLastCalledWith(false);
     expect(title.object.setVisible).toHaveBeenLastCalledWith(false);
-    expect(rowObjects.every((entry) => entry.object.setVisible.mock.lastCall?.[0] === false)).toBe(true);
-    expect(rowButtons.every((entry) => entry.object.disableInteractive.mock.calls.length === 1)).toBe(
-      true,
-    );
+    expect(
+      rowObjects.every((entry) => entry.object.setVisible.mock.lastCall?.[0] === false),
+    ).toBe(true);
+    expect(
+      rowButtons.every((entry) => entry.object.disableInteractive.mock.calls.length === 1),
+    ).toBe(true);
     expect(visibilityButton.object.setVisible).not.toHaveBeenCalledWith(false);
 
     clickVisibility(4);
     expect(background.object.setVisible).toHaveBeenLastCalledWith(true);
     expect(title.object.setVisible).toHaveBeenLastCalledWith(true);
-    expect(rowObjects.every((entry) => entry.object.setVisible.mock.lastCall?.[0] === true)).toBe(true);
-    expect(rowButtons.every((entry) => entry.object.setInteractive.mock.calls.length === 2)).toBe(true);
+    expect(
+      rowObjects.every((entry) => entry.object.setVisible.mock.lastCall?.[0] === true),
+    ).toBe(true);
+    expect(
+      rowButtons.every((entry) => entry.object.setInteractive.mock.calls.length === 2),
+    ).toBe(true);
 
     controls.destroy();
   });
