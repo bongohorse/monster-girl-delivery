@@ -69,6 +69,7 @@ const formatDeadInstructions = (
     'Delivery interrupted',
     `Distance ${result.finalDistance.toFixed(1)} · Score ${result.score}`,
     `Grazes ${result.grazeCount}`,
+    `Items ${result.collectedCount} · Value ${result.collectedValue} · Reward ${result.earnedReward}`,
     retryReady ? RETRY_READY_INSTRUCTIONS : 'Parcel recovery...',
   ].join('\n');
 const selectNewRunSeed = (currentSeed: number | undefined): number => {
@@ -274,7 +275,7 @@ export class Foundation extends Scene {
 
       const retryPressed = this.services.input.consumePrimaryActionPress();
       if (
-        this.deathRetryState.phase === 'retry-ready' &&
+        previousRetryPhase === 'retry-ready' &&
         retryPressed &&
         !this.services.lifecycle.isPaused()
       ) {
