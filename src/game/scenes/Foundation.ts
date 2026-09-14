@@ -209,7 +209,7 @@ export class Foundation extends Scene {
       getPrototypePlayerX(viewport),
       projectLogicalYToScreen(this.runState.flight.positionY, initialProjection),
     );
-    this.playerPresentation.setScale(1, initialProjection.scaleY);
+    this.playerPresentation?.setScale?.(1, initialProjection.scaleY);
 
     this.cameras.main.setBackgroundColor(0x121426);
     this.title = this.add
@@ -530,8 +530,8 @@ export class Foundation extends Scene {
       playerScreenX,
       projectLogicalYToScreen(this.runState.flight.positionY, projection),
     );
-    this.playerPresentation?.setScale(1, projection.scaleY);
-    this.playerPresentation?.setRotation(
+    this.playerPresentation?.setScale?.(1, projection.scaleY);
+    this.playerPresentation?.setRotation?.(
       getPrototypeFailStateProgress(this.deathRetryState) * Math.PI * 0.7,
     );
   }
