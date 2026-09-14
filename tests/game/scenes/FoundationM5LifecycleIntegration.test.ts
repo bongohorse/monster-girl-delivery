@@ -18,8 +18,8 @@ import {
   type TelegraphedHazardSimulationState,
 } from '../../../src/hazards/TelegraphedHazardSimulation';
 import {
-  PROTOTYPE_PLAYER_COLLISION_EXTENTS,
   type LogicalHitbox,
+  PROTOTYPE_PLAYER_COLLISION_EXTENTS,
 } from '../../../src/systems/HazardCollision';
 import {
   PROTOTYPE_FAIL_STATE_DURATION_SECONDS,
