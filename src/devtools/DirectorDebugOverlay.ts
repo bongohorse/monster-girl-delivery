@@ -303,6 +303,7 @@ export class DirectorDebugOverlay {
   private despawnLabel?: GameObjects.Text;
   private destroyed = false;
   private enabled = false;
+  private textResolution = 1;
 
   constructor(private readonly scene: Scene) {}
 
@@ -318,6 +319,7 @@ export class DirectorDebugOverlay {
         this.scene.add.graphics().setScrollFactor(0).setDepth(9_500).setVisible(true);
       this.graphics = graphics;
       graphics.setVisible(true);
+      this.syncTextResolution();
 
       const despawnLabel =
         this.despawnLabel ??
@@ -327,6 +329,7 @@ export class DirectorDebugOverlay {
             fontFamily: 'monospace',
             fontSize: '10px',
           })
+          .setResolution(this.textResolution)
           .setScrollFactor(0)
           .setDepth(9_501)
           .setVisible(false);
@@ -345,6 +348,7 @@ export class DirectorDebugOverlay {
       return;
     }
 
+    this.syncTextResolution();
     const geometry = createDirectorDebugGeometry(frame);
     graphics.clear();
 
@@ -385,5 +389,15 @@ export class DirectorDebugOverlay {
     this.graphics = undefined;
     this.despawnLabel?.destroy();
     this.despawnLabel = undefined;
+  }
+
+  private syncTextResolution(): void {
+    const resolution = this.scene.cameras.main.zoom;
+    if (resolution === this.textResolution) {
+      return;
+    }
+
+    this.textResolution = resolution;
+    this.despawnLabel?.setResolution(resolution);
   }
 }
