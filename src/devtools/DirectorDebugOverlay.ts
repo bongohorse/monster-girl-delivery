@@ -1,18 +1,18 @@
 import type { GameObjects, Scene } from 'phaser';
 import type { ViewportSnapshot } from '../core/ViewportService';
 import {
+  createPrototypeFlightBounds,
+  getPrototypePlayerX,
+  getPrototypeVerticalProjection,
+  type PrototypeVerticalProjection,
+  projectLogicalYToScreen,
+} from '../game/PrototypeFlightLayout';
+import {
   getLogicalCollectibleSpawnIdentity,
   type LogicalCollectibleSpawnInstance,
 } from '../generation/GeneratedCollectibles';
 import { PROTOTYPE_GENERATED_HAZARD_STREAM_CONFIG } from '../generation/GeneratedHazardStream';
 import type { LogicalHazardSpawnInstance } from '../generation/PatternSpawnScheduler';
-import {
-  createPrototypeFlightBounds,
-  getPrototypePlayerX,
-  getPrototypeVerticalProjection,
-  projectLogicalYToScreen,
-  type PrototypeVerticalProjection,
-} from '../game/PrototypeFlightLayout';
 import {
   isTargetLockStrikeHazardBehavior,
   isTelegraphedHazardBehavior,
