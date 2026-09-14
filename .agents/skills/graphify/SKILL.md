@@ -96,8 +96,8 @@ architecture/refactor question
 
 ## Installation and version
 
-Codespaces install the Graphify CLI through `uv` from the official PyPI package `graphifyy`, pinned by `.graphify-version`.
+Codespaces install the latest available Graphify CLI through `uv` from the official PyPI package `graphifyy` whenever a new Codespace is created. The runtime CLI is intentionally not version-pinned.
 
-The MGD integration is based on Graphify upstream version `0.9.56`, commit `67f99bd0059dd1bac9e44382907ef9f10098b39f` (2026-09-07). Provenance is recorded in `.agents/skills/THIRD_PARTY_NOTICES.md`.
+The committed MGD-specific guidance was originally adapted against Graphify upstream version `0.9.56`, commit `67f99bd0059dd1bac9e44382907ef9f10098b39f` (2026-09-07). That provenance describes the origin of this skill, not the version of the Graphify CLI installed in Codespaces. Provenance is recorded in `.agents/skills/THIRD_PARTY_NOTICES.md`.
 
 If Graphify is unavailable, do not block the task. Fall back to normal repository search and direct source inspection, and report the tooling limitation only when it materially affected the investigation.
