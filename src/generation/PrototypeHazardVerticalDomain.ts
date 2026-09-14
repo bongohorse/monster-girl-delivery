@@ -66,6 +66,14 @@ const adaptPattern = (
     id: pattern.id,
     runLength: pattern.runLength,
     profile: pattern.profile,
+    collectiblePaths: pattern.collectiblePaths?.map((path) => ({
+      id: path.id,
+      intent: path.intent,
+      points: path.points.map((point) => ({
+        runDistance: point.runDistance,
+        y: mapAuthoredCenterY(point.y),
+      })),
+    })),
     entries: pattern.entries.map((entry) => {
       const centerY = (entry.hitbox.top + entry.hitbox.bottom) / 2;
       const halfHeight = (entry.hitbox.bottom - entry.hitbox.top) / 2;
@@ -99,12 +107,12 @@ const adaptPattern = (
 /**
  * Derives the live prototype encounter catalog from the effective logical flight domain.
  *
- * The authored baseline is returned unchanged. When the ceiling/floor changes, hazard centers are
- * distributed across the corresponding validation band while preserving each authored hazard's
- * size and horizontal timing. Reactive target-lock limits expand with the flight-bound edges so the
- * full supported player domain remains targetable. The resulting catalog is passed to validation
- * and scheduling before spawn acceptance; already accepted spawn data is never mutated by this
- * adapter, which makes live resize affect only future scheduling at its normal deterministic gate.
+ * The authored baseline is returned unchanged. When the ceiling/floor changes, hazard centers and
+ * collectible guidance are distributed across the corresponding validation band while preserving
+ * horizontal timing. Reactive target-lock limits expand with the flight-bound edges so the full
+ * supported player domain remains targetable. The resulting catalog is passed to validation and
+ * scheduling before spawn acceptance; already accepted spawn data is never mutated by this adapter,
+ * which makes live resize affect only future scheduling at its normal deterministic gate.
  */
 export const createPrototypeHazardVerticalDomain = (
   bounds: Readonly<VerticalFlightBounds>,
