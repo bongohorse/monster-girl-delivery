@@ -100,32 +100,6 @@ const getHorizontalOpportunityBounds = (
 };
 
 /**
- * Returns only the deterministic horizontal opportunity window inside this simulation step. This is
- * deliberately not a physical TOI: vertical qualification remains owned by continuous collision.
- */
-const getHorizontalOpportunityWindow = (
-  initialDistance: number,
-  scrollSpeed: number,
-  hazard: Readonly<LogicalHazard>,
-  extents: Readonly<PrototypePlayerCollisionExtents>,
-  elapsedSeconds: number,
-): Readonly<LogicalHazardCollisionInterval> | null => {
-  const interval = getHazardInterval(hazard, elapsedSeconds);
-  if (interval.endSeconds <= interval.startSeconds) {
-    return null;
-  }
-
-  const bounds = getHorizontalOpportunityBounds(initialDistance, scrollSpeed, hazard, extents);
-  if (!bounds) {
-    return null;
-  }
-
-  const startSeconds = Math.max(interval.startSeconds, bounds.startSeconds);
-  const endSeconds = Math.min(interval.endSeconds, bounds.endSeconds);
-  return endSeconds > startSeconds ? { startSeconds, endSeconds } : null;
-};
-
-/**
  * Returns the earliest point in this step after which a previously observed outer-zone contact is
  * fully qualified as a near miss. The complete outer horizontal opportunity must have passed, or an
  * explicitly final lifecycle interval must have ended. This is a conservative ordering boundary, not
@@ -154,13 +128,51 @@ const getGrazeResolutionSeconds = (
 };
 
 /**
+ * Reuses the existing continuous collision authority on the prefix ending at a Graze resolution
+ * boundary. This answers only whether a lethal overlap has already happened by that deterministic
+ * boundary; it does not calculate or expose an exact physical time of impact.
+ */
+const hasLethalCollisionBy = (
+  initialRunState: Readonly<RunMotionState>,
+  trajectory: Readonly<VerticalFlightTrajectory>,
+  elapsedSeconds: number,
+  runMotionTuning: Readonly<RunMotionValues>,
+  hazard: Readonly<LogicalHazard>,
+  boundarySeconds: number,
+): boolean => {
+  if (boundarySeconds <= 0) {
+    return false;
+  }
+
+  const interval = getHazardInterval(hazard, elapsedSeconds);
+  const boundedEndSeconds = Math.min(interval.endSeconds, boundarySeconds);
+  if (boundedEndSeconds <= interval.startSeconds) {
+    return false;
+  }
+
+  return isPlayerCollidingWithHazardDuringStep(
+    initialRunState,
+    trajectory,
+    boundarySeconds,
+    runMotionTuning,
+    {
+      ...hazard,
+      collisionInterval: {
+        startSeconds: interval.startSeconds,
+        endSeconds: boundedEndSeconds,
+      },
+    },
+  );
+};
+
+/**
  * Evaluates lethal core collision and optional Graze from the same continuous trajectory/lifecycle
  * interval. Entering the outer zone only marks an occurrence pending. It is awarded after that outer
  * opportunity has safely resolved without a core hit, preventing a fine partition from counting a
  * pre-lethal outer-zone touch that a coarse terminal step would suppress. In a terminal step,
- * resolved different-hazard candidates are retained only when their conservative outer-zone
- * resolution boundary is no later than the earliest horizontal core-opportunity window of any lethal
- * hazard. These are deterministic qualification bounds, not unsupported physical TOI ordering.
+ * resolved different-hazard candidates are retained only when the existing continuous collision
+ * authority confirms that no lethal overlap has happened by that candidate's resolution boundary.
+ * The boundary is deterministic qualification state, not unsupported physical TOI ordering.
  */
 export const evaluatePrototypeGrazeStep = (
   state: Readonly<PrototypeGrazeRunState>,
@@ -204,9 +216,9 @@ export const evaluatePrototypeGrazeStep = (
     state.pendingOccurrenceIds.filter((occurrenceId) => retainedOccurrenceIds.has(occurrenceId)),
   );
   const lethalOccurrenceIds = new Set<string>();
+  const lethalHazards: Array<Readonly<LogicalHazard>> = [];
   const resolvedCandidates = new Map<string, number>();
   let lethalCollision = false;
-  let earliestLethalOpportunityStart = Number.POSITIVE_INFINITY;
 
   for (const hazard of hazards) {
     const occurrenceId = getGrazeOccurrenceId(hazard);
@@ -220,22 +232,10 @@ export const evaluatePrototypeGrazeStep = (
 
     if (coreHit) {
       lethalCollision = true;
+      lethalHazards.push(hazard);
       if (occurrenceId) {
         lethalOccurrenceIds.add(occurrenceId);
         pending.delete(occurrenceId);
-      }
-      const coreWindow = getHorizontalOpportunityWindow(
-        initialRunState.distance,
-        runMotionTuning.baseScrollSpeed,
-        hazard,
-        PROTOTYPE_PLAYER_COLLISION_EXTENTS,
-        elapsedSeconds,
-      );
-      if (coreWindow) {
-        earliestLethalOpportunityStart = Math.min(
-          earliestLethalOpportunityStart,
-          coreWindow.startSeconds,
-        );
       }
       continue;
     }
@@ -274,7 +274,17 @@ export const evaluatePrototypeGrazeStep = (
     .filter(
       ([occurrenceId, resolutionSeconds]) =>
         !lethalOccurrenceIds.has(occurrenceId) &&
-        (!lethalCollision || resolutionSeconds <= earliestLethalOpportunityStart),
+        (!lethalCollision ||
+          !lethalHazards.some((hazard) =>
+            hasLethalCollisionBy(
+              initialRunState,
+              trajectory,
+              elapsedSeconds,
+              runMotionTuning,
+              hazard,
+              resolutionSeconds,
+            ),
+          )),
     )
     .map(([occurrenceId]) => occurrenceId)
     .sort();
