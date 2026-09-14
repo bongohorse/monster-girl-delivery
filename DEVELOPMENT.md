@@ -84,12 +84,17 @@ The repository contains `.devcontainer/devcontainer.json` and a post-create setu
 
 A new Codespace should:
 
-1. start from the pinned devcontainer base;
+1. start from the Ubuntu 24.04 devcontainer base;
 2. provide Git and GitHub CLI;
-3. install the Bun version defined by the repository setup;
-4. install project dependencies;
-5. install Codex CLI and Google Antigravity CLI as optional coding-agent tools;
-6. forward port `8080` for Vite preview/testing.
+3. provide the Ubuntu-supported Python runtime through the official devcontainer Python feature;
+4. install the Bun version defined by the repository setup;
+5. install project dependencies;
+6. install the latest Codex CLI, Google Antigravity CLI, and Graphify CLI as optional coding-agent tools;
+7. forward port `8080` for Vite preview/testing.
+
+Python is declared explicitly because the generic Ubuntu devcontainer base does not guarantee a Python runtime. This keeps repository and maintenance scripts able to rely on `python`/`python3` being available in Codespaces.
+
+Codex, Antigravity, and Graphify intentionally track their latest available releases when a new Codespace is created. Failures to install these optional agent tools must not make the project dependencies unusable.
 
 The Antigravity installer places `agy` in the user environment, so a newly created Codespace can launch it directly with `agy` after setup completes. Authentication remains user-specific and is not stored in the repository.
 
