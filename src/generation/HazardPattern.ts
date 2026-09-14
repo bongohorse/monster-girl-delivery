@@ -53,7 +53,8 @@ export interface HazardPattern {
   readonly runLength: number;
 }
 
-export interface HazardPatternDefinition extends Omit<HazardPattern, 'collectiblePaths' | 'entries'> {
+export interface HazardPatternDefinition
+  extends Omit<HazardPattern, 'collectiblePaths' | 'entries'> {
   readonly collectiblePaths?: ReadonlyArray<Readonly<CollectiblePath>>;
   readonly entries: ReadonlyArray<Readonly<HazardPatternEntryDefinition>>;
 }
@@ -123,11 +124,15 @@ const createCollectiblePaths = (
       }
 
       if (point.runDistance < 0 || point.runDistance > runLength) {
-        throw new RangeError('Collectible path run distance must remain within the pattern runLength.');
+        throw new RangeError(
+          'Collectible path run distance must remain within the pattern runLength.',
+        );
       }
 
       if (point.runDistance <= previousRunDistance) {
-        throw new RangeError('Collectible path run distance must increase strictly in authored order.');
+        throw new RangeError(
+          'Collectible path run distance must increase strictly in authored order.',
+        );
       }
       previousRunDistance = point.runDistance;
 
@@ -180,7 +185,10 @@ export const createHazardPattern = (
       hitbox: Object.freeze({ ...entry.hitbox }),
     });
   });
-  const collectiblePaths = createCollectiblePaths(definition.collectiblePaths, definition.runLength);
+  const collectiblePaths = createCollectiblePaths(
+    definition.collectiblePaths,
+    definition.runLength,
+  );
 
   return Object.freeze({
     ...(collectiblePaths === undefined ? {} : { collectiblePaths }),
