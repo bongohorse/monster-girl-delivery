@@ -37,9 +37,16 @@
         "workbench.startupEditor": "none",
         "terminal.integrated.enablePersistentSessions": false,
         "extensions.ignoreRecommendations": true,
-        "chat.disableAIFeatures": true
+        "chat.disableAIFeatures": true,
+        "github.copilot.chat.codeGeneration.instructions": [],
+        "[python]": {}
       },
-      "extensions": ["biomejs.biome"]
+      "extensions": [
+        "biomejs.biome",
+        "-ms-python.python",
+        "-ms-python.vscode-pylance",
+        "-ms-python.autopep8"
+      ]
     }
   }
 }

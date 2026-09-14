@@ -86,12 +86,16 @@ A new Codespace should:
 
 1. start from the Ubuntu 24.04 devcontainer base;
 2. provide Git and GitHub CLI;
-3. provide the Ubuntu-supported Python runtime through the official devcontainer Python feature;
+3. provide the Ubuntu-supported Python runtime through the official devcontainer Python feature without installing its Python/Pylance/autopep8 VS Code extensions;
 4. install the Bun version defined by the repository setup;
 5. install project dependencies;
 6. install the latest Codex CLI, Google Antigravity CLI, and Graphify CLI as optional coding-agent tools;
 7. run a production build before reporting the Codespace ready;
 8. forward port `8080` for Vite preview/testing.
+
+The only project-requested VS Code extension is Biome. GitHub Codespaces and VS Code may still provide platform/built-in extensions or the selected display-language pack.
+
+For reproducible project isolation, keep GitHub Codespaces **Settings Sync** and automatic **dotfiles** disabled for this workflow. Settings Sync can otherwise inject extensions and UI state from unrelated projects into a fresh Codespace.
 
 The post-create script reports numbered setup steps with elapsed time. In an interactive terminal it also displays a spinner while a step is running. Required setup failures print the last captured command output and stop setup; optional coding-agent tool failures print a warning and continue. Full per-step logs are retained under `/tmp/mgd-codespace-setup` for diagnosis.
 
