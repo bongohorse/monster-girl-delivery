@@ -116,10 +116,17 @@ body {
   accent-color: #6fffe9;
 }
 
-.director-performance-hud__button:focus-visible,
-.director-performance-hud__toggle:focus-within {
+.director-performance-hud__button:focus-visible {
   outline: 2px solid #b9c8ec;
   outline-offset: 1px;
+}
+
+.director-performance-hud__toggle:focus-within {
+  background: #314065;
+}
+
+.director-performance-hud__toggle input:focus-visible {
+  outline: none;
 }
 
 .director-performance-hud [data-health="good"] {
