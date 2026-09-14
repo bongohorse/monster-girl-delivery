@@ -5,6 +5,10 @@ import { createPrototypeFlightBounds } from '../../../src/game/PrototypeFlightLa
 import { Foundation } from '../../../src/game/scenes/Foundation';
 import { PROTOTYPE_PATTERN_REACHABILITY_CONTEXT } from '../../../src/generation/FlightReachability';
 import {
+  getLogicalCollectibleSpawnIdentity,
+  type LogicalCollectibleSpawnInstance,
+} from '../../../src/generation/GeneratedCollectibles';
+import {
   createGeneratedHazardStream,
   type GeneratedHazardSpawnInstance,
   type GeneratedHazardStreamState,
@@ -35,6 +39,16 @@ vi.mock('phaser', () => ({
 }));
 
 const PLAYER_Y = 195;
+const COLLECTIBLE: Readonly<LogicalCollectibleSpawnInstance> = Object.freeze({
+  intent: 'safe-guide',
+  pathId: 'integration-guide',
+  pathPointIndex: 0,
+  patternId: 'm5-lifecycle-integration',
+  patternStartDistance: 0,
+  runDistance: 500,
+  value: 1,
+  y: PLAYER_Y,
+});
 const GRAZE_HITBOX: Readonly<LogicalHitbox> = Object.freeze({
   left: 800,
   right: 820,
@@ -54,6 +68,7 @@ const EPSILON = 1e-9;
 const SCHEDULE_ENTRIES = Object.entries(STANDARD_FRAME_SCHEDULES);
 
 interface LifecycleEvidence {
+  readonly collectedCount: number;
   readonly deathDistance: number;
   readonly grazeCount: number;
   readonly retrySeed: number;
@@ -68,6 +83,11 @@ const getDeathRetryState = (foundation: Foundation): Readonly<PrototypeDeathRetr
 
 const getHazardStream = (foundation: Foundation): Readonly<GeneratedHazardStreamState> =>
   Reflect.get(foundation, 'hazardStream') as Readonly<GeneratedHazardStreamState>;
+
+const getCollectibleSpawns = (
+  foundation: Foundation,
+): ReadonlyArray<Readonly<LogicalCollectibleSpawnInstance>> =>
+  Reflect.get(foundation, 'collectibleSpawns') as ReadonlyArray<Readonly<LogicalCollectibleSpawnInstance>>;
 
 const getTelegraphedState = (foundation: Foundation): Readonly<TelegraphedHazardSimulationState> =>
   Reflect.get(foundation, 'telegraphedHazardState') as Readonly<TelegraphedHazardSimulationState>;
@@ -132,6 +152,7 @@ const createHarness = () => {
     ]),
     status: 'exhausted',
   });
+  const generatedCollectiblePresentation = { destroy: vi.fn(), sync: vi.fn() };
   const generatedHazardPresentation = { destroy: vi.fn(), sync: vi.fn() };
   const playerPresentation = {
     destroy: vi.fn(),
@@ -156,9 +177,11 @@ const createHarness = () => {
   Reflect.set(foundation, 'viewportService', viewportService);
   Reflect.set(foundation, 'hazardVerticalDomain', verticalDomain);
   Reflect.set(foundation, 'hazardStream', hazardStream);
+  Reflect.set(foundation, 'collectibleSpawns', Object.freeze([COLLECTIBLE]));
   Reflect.set(foundation, 'telegraphedHazardState', createTelegraphedHazardSimulationState());
   Reflect.set(foundation, 'instructions', instructions);
   Reflect.set(foundation, 'playerPresentation', playerPresentation);
+  Reflect.set(foundation, 'generatedCollectiblePresentation', generatedCollectiblePresentation);
   Reflect.set(foundation, 'generatedHazardPresentation', generatedHazardPresentation);
   Reflect.set(foundation, 'scrollingWorldPresentation', scrollingWorldPresentation);
   Reflect.set(foundation, 'runState', {
@@ -180,6 +203,7 @@ const createHarness = () => {
 
   return {
     foundation,
+    generatedCollectiblePresentation,
     generatedHazardPresentation,
     initialStream: hazardStream,
     playerPresentation,
@@ -224,7 +248,7 @@ afterEach(() => {
 });
 
 describe('Foundation integrated M5 arcade lifecycle', () => {
-  it('preserves Graze, death, immutable results, and fresh retry across frame partitions', () => {
+  it('preserves collection, Graze, death, immutable results, and fresh retry across frame partitions', () => {
     vi.stubGlobal('crypto', {
       getRandomValues: vi.fn((values: Uint32Array) => {
         values[0] = NEXT_RUN_SEED;
@@ -237,6 +261,7 @@ describe('Foundation integrated M5 arcade lifecycle', () => {
     for (const [name, schedule] of SCHEDULE_ENTRIES) {
       const {
         foundation,
+        generatedCollectiblePresentation,
         generatedHazardPresentation,
         initialStream,
         playerPresentation,
@@ -252,6 +277,7 @@ describe('Foundation integrated M5 arcade lifecycle', () => {
       const deadState = getRunState(foundation);
       const finalResult = deadState.finalResult;
       const deadStream = getHazardStream(foundation);
+      const deadCollectibles = getCollectibleSpawns(foundation);
       const deadTelegraphs = getTelegraphedState(foundation);
       const deadRetryState = getDeathRetryState(foundation);
 
@@ -261,11 +287,12 @@ describe('Foundation integrated M5 arcade lifecycle', () => {
       }
       const finalResultValue = { ...finalResult };
 
+      expect(deadState.collectibles?.collectedCount).toBe(1);
       expect(deadState.graze?.count).toBe(1);
       expect(finalResult.grazeCount).toBe(1);
-      expect(finalResult.collectedCount).toBe(0);
-      expect(finalResult.collectedValue).toBe(0);
-      expect(finalResult.earnedReward).toBe(0);
+      expect(finalResult.collectedCount).toBe(1);
+      expect(finalResult.collectedValue).toBe(1);
+      expect(finalResult.earnedReward).toBe(1);
       expect(finalResult.score).toBe(Math.floor(finalResult.finalDistance));
       expect(Object.isFrozen(finalResult)).toBe(true);
       expect(finalResult.finalDistance).toBeGreaterThan(collisionOpportunityStart);
@@ -283,12 +310,14 @@ describe('Foundation integrated M5 arcade lifecycle', () => {
       expect(getDeathRetryState(foundation)).toBe(deadRetryState);
       expect(getRunState(foundation).finalResult).toBe(finalResult);
       expect(getHazardStream(foundation)).toBe(deadStream);
+      expect(getCollectibleSpawns(foundation)).toBe(deadCollectibles);
       expect(getTelegraphedState(foundation)).toBe(deadTelegraphs);
 
       services.lifecycle.pause('hidden');
       foundation.update(0, 1_000);
       expect(getDeathRetryState(foundation)).toBe(deadRetryState);
       expect(getRunState(foundation).finalResult).toBe(finalResult);
+      expect(getCollectibleSpawns(foundation)).toBe(deadCollectibles);
       services.lifecycle.resume('hidden');
       foundation.update(0, 1_000);
       expect(getDeathRetryState(foundation)).toBe(deadRetryState);
@@ -309,6 +338,7 @@ describe('Foundation integrated M5 arcade lifecycle', () => {
       expect(getRunState(foundation).finalResult).toBe(finalResult);
       expect(getRunState(foundation).finalResult).toEqual(finalResultValue);
       expect(getHazardStream(foundation)).toBe(deadStream);
+      expect(getCollectibleSpawns(foundation)).toBe(deadCollectibles);
       expect(getTelegraphedState(foundation)).toBe(deadTelegraphs);
       expect(services.input.consumePrimaryActionPress()).toBe(false);
 
@@ -317,9 +347,11 @@ describe('Foundation integrated M5 arcade lifecycle', () => {
 
       const restartedState = getRunState(foundation);
       const restartedStream = getHazardStream(foundation);
+      const restartedCollectibles = getCollectibleSpawns(foundation);
       expect(restartedState).toMatchObject({ phase: 'running', motion: { distance: 0 } });
       expect(restartedState.finalResult).toBeUndefined();
       expect(restartedState.graze).toBeUndefined();
+      expect(restartedState.collectibles).toBeUndefined();
       expect(getDeathRetryState(foundation)).toEqual({
         elapsedSeconds: 0,
         phase: 'running',
@@ -327,10 +359,16 @@ describe('Foundation integrated M5 arcade lifecycle', () => {
       });
       expect(restartedStream.generationState.seed).toBe(NEXT_RUN_SEED);
       expect(restartedStream).not.toBe(deadStream);
+      expect(
+        restartedCollectibles.map(getLogicalCollectibleSpawnIdentity),
+      ).not.toContain(getLogicalCollectibleSpawnIdentity(COLLECTIBLE));
       expect(services.input.isThrustHeld()).toBe(false);
       expect(services.input.consumePrimaryActionPress()).toBe(false);
       expect(finalResult).toEqual(finalResultValue);
       expect(Reflect.get(foundation, 'playerPresentation')).toBe(playerPresentation);
+      expect(Reflect.get(foundation, 'generatedCollectiblePresentation')).toBe(
+        generatedCollectiblePresentation,
+      );
       expect(Reflect.get(foundation, 'generatedHazardPresentation')).toBe(
         generatedHazardPresentation,
       );
@@ -338,10 +376,12 @@ describe('Foundation integrated M5 arcade lifecycle', () => {
         scrollingWorldPresentation,
       );
       expect(playerPresentation.destroy).not.toHaveBeenCalled();
+      expect(generatedCollectiblePresentation.destroy).not.toHaveBeenCalled();
       expect(generatedHazardPresentation.destroy).not.toHaveBeenCalled();
       expect(scrollingWorldPresentation.destroy).not.toHaveBeenCalled();
 
       evidence.push({
+        collectedCount: finalResult.collectedCount,
         deathDistance: finalResult.finalDistance,
         grazeCount: finalResult.grazeCount,
         retrySeed: restartedStream.generationState.seed,
@@ -350,6 +390,7 @@ describe('Foundation integrated M5 arcade lifecycle', () => {
     }
 
     expect(evidence).toHaveLength(SCHEDULE_ENTRIES.length);
+    expect(new Set(evidence.map((entry) => entry.collectedCount))).toEqual(new Set([1]));
     expect(new Set(evidence.map((entry) => entry.grazeCount))).toEqual(new Set([1]));
     expect(new Set(evidence.map((entry) => entry.retrySeed))).toEqual(new Set([NEXT_RUN_SEED]));
 
