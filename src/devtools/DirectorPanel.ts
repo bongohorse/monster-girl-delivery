@@ -175,7 +175,7 @@ export class DirectorPanel {
 
   private refreshTitle(): void {
     this.pageButton.setText(
-      `M4 ${DIRECTOR_DIAGNOSTIC_PAGES[this.page]} ${this.page + 1}/${DIRECTOR_DIAGNOSTIC_PAGES.length} ›`,
+      `M5 ${DIRECTOR_DIAGNOSTIC_PAGES[this.page]} ${this.page + 1}/${DIRECTOR_DIAGNOSTIC_PAGES.length} ›`,
     );
   }
 }

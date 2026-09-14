@@ -102,7 +102,7 @@ describe('DirectorPanel', () => {
     expect(text.setText).toHaveBeenCalledWith(
       expect.arrayContaining(['Seed: 3433278918', 'Applied speed: 350.00', 'Pacing: breather / 0']),
     );
-    expect(button.setText).toHaveBeenLastCalledWith('M4 Run 1/8 ›');
+    expect(button.setText).toHaveBeenLastCalledWith('M5 Run 1/8 ›');
     refresh(100);
     expect(format).toHaveBeenCalledTimes(1);
     refresh(150);
@@ -127,7 +127,7 @@ describe('DirectorPanel', () => {
     button.handlers.get('pointerup')?.({ id: 2 }, 0, 0, { stopPropagation: stop });
     expect(input.getSnapshot().gameplayBlocked).toBe(true);
     button.handlers.get('pointerup')?.({ id: 1 }, 0, 0, { stopPropagation: stop });
-    expect(button.setText).toHaveBeenLastCalledWith('M4 Encounters 2/8 ›');
+    expect(button.setText).toHaveBeenLastCalledWith('M5 Encounters 2/8 ›');
     expect(input.isThrustHeld()).toBe(false);
     expect(input.consumePrimaryActionPress()).toBe(false);
     expect(stop).toHaveBeenCalledTimes(3);

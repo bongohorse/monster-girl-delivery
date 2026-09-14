@@ -64,7 +64,7 @@ import {
 import { getLogicalViewportFromBacking } from '../RenderResolution';
 
 const RUNNING_INSTRUCTIONS =
-  'M4 moving, timed + target-lock hazards\nHold touch, mouse, or Space to thrust.';
+  'M5 in progress — hazards, Graze + collectibles\nHold touch, mouse, or Space to thrust.';
 const RETRY_READY_INSTRUCTIONS = 'Tap, click, or press Space to retry.';
 const formatDeadInstructions = (
   result: Readonly<PrototypeRunResultSnapshot>,
