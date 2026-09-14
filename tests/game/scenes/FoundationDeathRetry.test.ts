@@ -148,7 +148,7 @@ afterEach(() => {
 });
 
 describe('Foundation M5 death-to-retry flow', () => {
-  it('freezes authoritative run truth through aftermath and accepts exactly one fresh retry action', () => {
+  it('freezes authoritative run truth through aftermath and accepts exactly one fresh post-ready retry action', () => {
     const {
       foundation,
       hazardStream: initialStream,
@@ -181,6 +181,8 @@ describe('Foundation M5 death-to-retry flow', () => {
     );
     expect(instructions.setText).toHaveBeenLastCalledWith(expect.stringContaining('Score'));
     expect(instructions.setText).toHaveBeenLastCalledWith(expect.stringContaining('Grazes'));
+    expect(instructions.setText).toHaveBeenLastCalledWith(expect.stringContaining('Items'));
+    expect(instructions.setText).toHaveBeenLastCalledWith(expect.stringContaining('Reward'));
     expect(services.input.isThrustHeld()).toBe(false);
 
     services.input.pressPointer(4, 'touch');
@@ -196,13 +198,16 @@ describe('Foundation M5 death-to-retry flow', () => {
     expect(getHazardStream(foundation)).toBe(deadStream);
     expect(getTelegraphedState(foundation)).toBe(deadTelegraphs);
 
+    services.input.setSpaceHeld(true);
     foundation.update(0, 50);
     expect(getDeathRetryState(foundation).phase).toBe('retry-ready');
     expect(instructions.setText).toHaveBeenLastCalledWith(
       expect.stringContaining('press Space to retry'),
     );
     expect(getRunState(foundation)).toBe(deadState);
+    expect(services.input.consumePrimaryActionPress()).toBe(false);
 
+    services.input.setSpaceHeld(false);
     services.input.setSpaceHeld(true);
     foundation.update(0, 0);
 
