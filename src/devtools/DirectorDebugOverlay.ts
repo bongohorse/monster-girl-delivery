@@ -184,15 +184,7 @@ const createProjectedCapsulePath = (
   const dy = end.y - start.y;
   const length = Math.hypot(dx, dy);
   if (length === 0) {
-    return createProjectedCirclePath(
-      start,
-      radius,
-      color,
-      kind,
-      motion,
-      playerScreenX,
-      projection,
-    );
+    return createProjectedCirclePath(start, radius, color, kind, motion, playerScreenX, projection);
   }
 
   const tangentAngle = Math.atan2(dy, dx);
