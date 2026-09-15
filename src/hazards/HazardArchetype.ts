@@ -36,7 +36,8 @@ export interface TimedPulseHazardBehavior {
 export interface TargetLockMissileMotion {
   readonly launchSide: 'left' | 'right';
   readonly offscreenPadding: number;
-  readonly trackingResponsiveness: number;
+  /** Maximum vertical warning-marker chase speed in logical pixels per second. */
+  readonly trackingSpeed: number;
   readonly travelSpeed: number;
 }
 
@@ -121,13 +122,7 @@ const assertValidHazardBehavior = (definition: Readonly<HazardBehavior>): void =
 
       const missile = definition.missile;
       if (missile) {
-        if (
-          !Number.isFinite(missile.trackingResponsiveness) ||
-          missile.trackingResponsiveness <= 0 ||
-          missile.trackingResponsiveness > 1
-        ) {
-          throw new RangeError('Hazard Missile trackingResponsiveness must be in (0, 1].');
-        }
+        assertPositiveFinite(missile.trackingSpeed, 'Hazard Missile trackingSpeed');
         if (missile.launchSide !== 'left' && missile.launchSide !== 'right') {
           throw new TypeError('Hazard Missile launchSide must be left or right.');
         }
