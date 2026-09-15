@@ -28,15 +28,20 @@ export const isPrototypeMissileBehavior = (
 ): behavior is Readonly<PrototypeMissileBehavior> => behavior.missile !== undefined;
 
 /**
- * Keeps the marker behind player movement without integrating frame-by-frame chase state.
- * The warning origin is immutable, so the same exact player target at a lifecycle boundary produces
- * the same marker position across frame partitions.
+ * Moves the warning marker toward the observed player position at a bounded vertical speed.
+ * `trackingOrigin` is the marker position at the beginning of the current simulation step, so
+ * thrust/reversal changes the player's motion but cannot directly stop or teleport the marker while
+ * it is still behind. The same resolver is used at exact lifecycle boundaries.
  */
 export const resolvePrototypeMissileTrackingTarget = (
   hazard: Readonly<BehavioralLogicalHazard>,
-  warningOrigin: Readonly<TelegraphedHazardTarget>,
+  trackingOrigin: Readonly<TelegraphedHazardTarget>,
   observedTarget: Readonly<TelegraphedHazardTarget>,
+  elapsedSeconds: number,
 ): Readonly<TelegraphedHazardTarget> => {
+  if (!Number.isFinite(elapsedSeconds) || elapsedSeconds < 0) {
+    throw new RangeError('Missile tracking elapsed time must be non-negative and finite.');
+  }
   if (
     !isTargetLockStrikeHazardBehavior(hazard.behavior) ||
     !isPrototypeMissileBehavior(hazard.behavior)
@@ -44,10 +49,12 @@ export const resolvePrototypeMissileTrackingTarget = (
     return observedTarget;
   }
 
+  const deltaY = observedTarget.positionY - trackingOrigin.positionY;
+  const maximumTravelY = hazard.behavior.missile.trackingSpeed * elapsedSeconds;
   const trackedPositionY =
-    warningOrigin.positionY +
-    (observedTarget.positionY - warningOrigin.positionY) *
-      hazard.behavior.missile.trackingResponsiveness;
+    Math.abs(deltaY) <= maximumTravelY
+      ? observedTarget.positionY
+      : trackingOrigin.positionY + Math.sign(deltaY) * maximumTravelY;
   const clampedHitbox = resolveTargetLockStrikeHitbox(hazard, trackedPositionY);
 
   return Object.freeze({
