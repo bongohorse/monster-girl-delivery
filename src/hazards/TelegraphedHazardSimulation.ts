@@ -12,6 +12,7 @@ import {
   getPrototypeMissileRelativeVelocityX,
   isPrototypeMissileBehavior,
   type PrototypeMissileHorizontalLayout,
+  resolvePrototypeMissileLaunchScreenLeft,
   resolvePrototypeMissileTrackingTarget,
   resolvePrototypeMissileTravelHitbox,
 } from './PrototypeMissileHazard';
@@ -28,6 +29,8 @@ import {
 export interface TelegraphedHazardLifecycleInstance {
   readonly activeInterval: Readonly<TelegraphedHazardActiveInterval> | null;
   readonly lifecycle: Readonly<TelegraphedHazardLifecycleState>;
+  /** Immutable screen-space X captured when a Missile enters Active. */
+  readonly missileLaunchScreenLeft: number | null;
   readonly spawnIdentity: string;
   /** Immutable first warning observation used by the M5 Missile lag response. */
   readonly warningOriginTarget: Readonly<TelegraphedHazardTarget>;
@@ -90,15 +93,24 @@ const freezeInstance = (
   lifecycle: Readonly<TelegraphedHazardLifecycleState>,
   activeInterval: Readonly<TelegraphedHazardActiveInterval> | null,
   warningOriginTarget: Readonly<TelegraphedHazardTarget>,
+  missileLaunchScreenLeft: number | null,
 ): Readonly<TelegraphedHazardLifecycleInstance> =>
-  Object.freeze({ activeInterval, lifecycle, spawnIdentity, warningOriginTarget });
+  Object.freeze({
+    activeInterval,
+    lifecycle,
+    missileLaunchScreenLeft,
+    spawnIdentity,
+    warningOriginTarget,
+  });
 
 /**
  * Synchronizes all telegraphed lifecycles to the generated spawn window. Timed pulses observe their
  * fixed authored center; legacy reactive strikes sample the logical player directly. The M5 Missile
  * instead resolves a deterministic lagged marker from its immutable warning origin, then freezes
- * that marker at the same authoritative warning → lock boundary. All timing still advances only
- * from TimeService-normalized simulation delta through the generic lifecycle.
+ * that marker at the same authoritative warning → lock boundary. Its horizontal launch screen X is
+ * captured once at lock → active so later viewport changes cannot move an in-flight projectile.
+ * All timing still advances only from TimeService-normalized simulation delta through the generic
+ * lifecycle.
  */
 export const stepTelegraphedHazardSimulation = (
   state: Readonly<TelegraphedHazardSimulationState>,
@@ -106,6 +118,7 @@ export const stepTelegraphedHazardSimulation = (
   elapsedSeconds: number,
   playerTarget: Readonly<TelegraphedHazardTarget>,
   resolvePlayerTargetAtDelta?: TelegraphedHazardTargetResolver,
+  missileLayout?: Readonly<PrototypeMissileHorizontalLayout>,
 ): Readonly<TelegraphedHazardSimulationState> => {
   if (!Number.isFinite(elapsedSeconds) || elapsedSeconds < 0) {
     throw new RangeError('Telegraphed hazard elapsedSeconds must be non-negative and finite.');
@@ -148,15 +161,29 @@ export const stepTelegraphedHazardSimulation = (
       resolveTargetAtDelta,
     );
     const lifecycle = lifecycleStep.state;
+    let missileLaunchScreenLeft = existing?.missileLaunchScreenLeft ?? null;
+
+    if (
+      missileLaunchScreenLeft === null &&
+      lifecycleStep.transition?.to === 'active' &&
+      isTargetLockStrikeHazardBehavior(spawn.behavior) &&
+      isPrototypeMissileBehavior(spawn.behavior) &&
+      missileLayout
+    ) {
+      missileLaunchScreenLeft = resolvePrototypeMissileLaunchScreenLeft(spawn, missileLayout);
+    }
 
     instances.push(
-      existing?.lifecycle === lifecycle && existing.activeInterval === lifecycleStep.activeInterval
+      existing?.lifecycle === lifecycle &&
+        existing.activeInterval === lifecycleStep.activeInterval &&
+        existing.missileLaunchScreenLeft === missileLaunchScreenLeft
         ? existing
         : freezeInstance(
             spawnIdentity,
             lifecycle,
             lifecycleStep.activeInterval,
             warningOriginTarget,
+            missileLaunchScreenLeft,
           ),
     );
   }
@@ -225,6 +252,7 @@ export const getCollisionHazardsForTelegraphedSimulation = (
             target,
             getMissileActiveElapsedAtStepStart(spawn, instance),
             missileContext,
+            instance.missileLaunchScreenLeft,
           )
         : isTargetLockStrikeHazardBehavior(spawn.behavior)
           ? resolveTargetLockStrikeHitbox(spawn, target.positionY)
@@ -260,6 +288,24 @@ export const getTelegraphedHazardLifecycle = (
   return state.instances.find((instance) => instance.spawnIdentity === identity)?.lifecycle ?? null;
 };
 
+export const getPrototypeMissileLaunchScreenLeft = (
+  state: Readonly<TelegraphedHazardSimulationState>,
+  spawn: Readonly<LogicalHazardSpawnInstance>,
+): number | null => {
+  if (
+    !isTargetLockStrikeHazardBehavior(spawn.behavior) ||
+    !isPrototypeMissileBehavior(spawn.behavior)
+  ) {
+    return null;
+  }
+
+  const identity = getLogicalHazardSpawnIdentity(spawn);
+  return (
+    state.instances.find((instance) => instance.spawnIdentity === identity)?.missileLaunchScreenLeft ??
+    null
+  );
+};
+
 /**
  * Supplies the existing collision authority with persistent hazards plus active telegraphed ones.
  * Reactive strikes resolve immutable hitboxes from their committed target and current travel state.
@@ -277,7 +323,9 @@ export const getLethalHazardsForTelegraphedSimulation = (
       continue;
     }
 
-    const lifecycle = getTelegraphedHazardLifecycle(state, spawn);
+    const identity = getLogicalHazardSpawnIdentity(spawn);
+    const instance = state.instances.find((candidate) => candidate.spawnIdentity === identity);
+    const lifecycle = instance?.lifecycle;
     if (!lifecycle || !isTelegraphedHazardLethal(lifecycle)) {
       continue;
     }
@@ -291,6 +339,7 @@ export const getLethalHazardsForTelegraphedSimulation = (
               target,
               lifecycle.elapsedPhaseSeconds,
               missileLayout,
+              instance?.missileLaunchScreenLeft,
             )
           : resolveTargetLockStrikeHitbox(spawn, target.positionY);
       lethalHazards.push(Object.freeze({ ...spawn, hitbox }));
