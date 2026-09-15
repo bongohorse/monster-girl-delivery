@@ -137,7 +137,11 @@ const getFirstVerticalOverlapSeconds = (
     for (let index = 0; index < uniqueCandidates.length - 1; index += 1) {
       const intervalStart = uniqueCandidates[index];
       const intervalEnd = uniqueCandidates[index + 1];
-      if (intervalStart === undefined || intervalEnd === undefined || intervalEnd <= intervalStart) {
+      if (
+        intervalStart === undefined ||
+        intervalEnd === undefined ||
+        intervalEnd <= intervalStart
+      ) {
         continue;
       }
       const midpoint = intervalStart + (intervalEnd - intervalStart) / 2;
