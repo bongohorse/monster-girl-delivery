@@ -155,9 +155,9 @@ const PROTOTYPE_STATIC_ZAPPER_BEHAVIOR = createPrototypeZapperBehavior(
   PROTOTYPE_ZAPPER_LENGTHS.medium,
 );
 
-/** M5 baseline Zapper: permanently active horizontal spatial obstacle. */
-export const PROTOTYPE_ZAPPER_PATTERN = createHazardPattern({
-  id: 'prototype-vertical-patrol',
+/** Static Zapper fixture retained for focused geometry tests and the later Director variant cycle. */
+export const PROTOTYPE_STATIC_ZAPPER_PATTERN = createHazardPattern({
+  id: 'prototype-zapper-static',
   runLength: 640,
   profile: {
     behaviorTags: ['static-barrier'],
@@ -186,9 +186,13 @@ const PROTOTYPE_ROTATING_ZAPPER_BEHAVIOR = createPrototypeZapperBehavior(
   },
 );
 
-/** M5 rotating Zapper baseline: short, slow, midpoint rotation with a generous lower escape lane. */
+/**
+ * M5 live Zapper: short, slow midpoint rotation with a generous lower escape lane. It intentionally
+ * keeps the replaced M4 pattern id so existing Director `Z` and deterministic catalog plumbing keep
+ * one stable slot while #252 later adds the explicit variant cycle.
+ */
 export const PROTOTYPE_ROTATING_ZAPPER_PATTERN = createHazardPattern({
-  id: 'prototype-zapper-rotating',
+  id: 'prototype-vertical-patrol',
   runLength: 640,
   profile: {
     behaviorTags: ['moving-barrier'],
@@ -207,6 +211,9 @@ export const PROTOTYPE_ROTATING_ZAPPER_PATTERN = createHazardPattern({
     },
   ],
 });
+
+/** Compatibility name for the one live Zapper slot used by existing M5/Director callers. */
+export const PROTOTYPE_ZAPPER_PATTERN = PROTOTYPE_ROTATING_ZAPPER_PATTERN;
 
 /** PROTOTYPE one-shot timed pulse; lifecycle tuning and presentation are not production content. */
 export const PROTOTYPE_TIMED_PULSE_PATTERN = createHazardPattern({
@@ -349,13 +356,12 @@ export const PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES = Object.freeze([
 ]);
 
 /**
- * M5 live catalog contains both the static Zapper baseline and a deliberately slow rotating variant,
- * while preserving the bait-and-dodge Missile swap from the legacy M4 target-lock prototype.
+ * M5 keeps the historical live catalog slot count/order while replacing the old moving proxy with
+ * the slow rotating Zapper and the legacy target-lock prototype with the bait-and-dodge Missile.
  */
 export const PROTOTYPE_M5_HAZARD_PATTERN_FIXTURES = Object.freeze([
   ...PROTOTYPE_HAZARD_PATTERN_FIXTURES,
   PROTOTYPE_ZAPPER_PATTERN,
-  PROTOTYPE_ROTATING_ZAPPER_PATTERN,
   PROTOTYPE_TIMED_PULSE_PATTERN,
   PROTOTYPE_MISSILE_PATTERN,
 ]);
