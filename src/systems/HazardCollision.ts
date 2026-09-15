@@ -8,8 +8,8 @@ import {
   doesHitboxOverlapPrototypeZapper,
   isPrototypeZapperHazard,
   PROTOTYPE_ZAPPER_LETHAL_PADDING,
-  resolvePrototypeZapperGeometry,
   type PrototypeZapperGeometryPadding,
+  resolvePrototypeZapperGeometry,
 } from '../hazards/PrototypeZapperHazard';
 import type { RunMotionState } from './RunMotionSimulation';
 import type {
