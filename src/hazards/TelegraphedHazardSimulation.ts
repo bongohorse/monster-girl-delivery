@@ -202,7 +202,12 @@ export const stepTelegraphedHazardSimulation = (
   return Object.freeze({ instances: Object.freeze(instances) });
 };
 
-const getMissileActiveElapsedAtStepStart = (
+/**
+ * Returns the Missile trajectory time at the beginning of the current simulation step. A negative
+ * result is intentional when Active begins partway through the step: collision extrapolates the same
+ * linear path backward to t=0, then the Active interval clips lethality until the true launch time.
+ */
+const getMissileTrajectoryElapsedAtStepStart = (
   spawn: Readonly<LogicalHazardSpawnInstance>,
   instance: Readonly<TelegraphedHazardLifecycleInstance>,
 ): number => {
@@ -212,10 +217,10 @@ const getMissileActiveElapsedAtStepStart = (
   }
 
   if (instance.lifecycle.phase === 'expired') {
-    return Math.max(0, spawn.behavior.lifecycle.durations.activeSeconds - interval.endSeconds);
+    return spawn.behavior.lifecycle.durations.activeSeconds - interval.endSeconds;
   }
 
-  return Math.max(0, instance.lifecycle.elapsedPhaseSeconds - interval.endSeconds);
+  return instance.lifecycle.elapsedPhaseSeconds - interval.endSeconds;
 };
 
 /**
@@ -250,7 +255,7 @@ export const getCollisionHazardsForTelegraphedSimulation = (
         ? resolvePrototypeMissileTravelHitbox(
             spawn,
             target,
-            getMissileActiveElapsedAtStepStart(spawn, instance),
+            getMissileTrajectoryElapsedAtStepStart(spawn, instance),
             missileContext,
             instance.missileLaunchRelativeLeft,
           )
