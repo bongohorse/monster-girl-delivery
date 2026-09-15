@@ -17,6 +17,7 @@ import {
 import {
   isPrototypeMissileBehavior,
   PROTOTYPE_MISSILE_WARNING_BLINK_SECONDS,
+  PROTOTYPE_MISSILE_WARNING_EDGE_MARGIN,
   resolvePrototypeMissileTravelHitbox,
 } from '../hazards/PrototypeMissileHazard';
 import type {
@@ -25,8 +26,6 @@ import type {
 } from '../hazards/TelegraphedHazardLifecycle';
 import type { LogicalHazard } from '../systems/HazardCollision';
 import type { RunMotionState } from '../systems/RunMotionSimulation';
-
-const MISSILE_EDGE_MARGIN = 10;
 
 /** Temporary barrier presentation; logical collision and generated identity remain outside Phaser. */
 export class PrototypeHazardPresentation {
@@ -149,10 +148,10 @@ export class PrototypeHazardPresentation {
         if (missile && logicalViewportWidth !== null) {
           const width = screenHitbox.right - screenHitbox.left;
           if (this.hazard.behavior.missile.launchSide === 'right') {
-            const right = logicalViewportWidth - MISSILE_EDGE_MARGIN;
+            const right = logicalViewportWidth - PROTOTYPE_MISSILE_WARNING_EDGE_MARGIN;
             screenHitbox = { ...screenHitbox, left: right - width, right };
           } else {
-            const left = MISSILE_EDGE_MARGIN;
+            const left = PROTOTYPE_MISSILE_WARNING_EDGE_MARGIN;
             screenHitbox = { ...screenHitbox, left, right: left + width };
           }
         }
