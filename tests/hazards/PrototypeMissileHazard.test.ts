@@ -50,7 +50,7 @@ const getLifecycle = (
 };
 
 describe('M5 bait-and-dodge Missile', () => {
-  it('trails player movement during warning instead of snapping to the player', () => {
+  it('trails fast player movement during warning at a bounded chase speed', () => {
     const spawn = createMissileSpawn();
     let state = stepTelegraphedHazardSimulation(
       createTelegraphedHazardSimulationState(),
@@ -66,12 +66,43 @@ describe('M5 bait-and-dodge Missile', () => {
 
     expect(getLifecycle(state, spawn)).toMatchObject({
       phase: 'warning',
-      latestObservedTarget: { positionY: 148, runDistance: 210 },
+      latestObservedTarget: { positionY: 172, runDistance: 210 },
       lockedTarget: null,
     });
   });
 
-  it('commits the lagged marker, launches offscreen, and cannot retarget afterward', () => {
+  it('continues chasing after player thrust reversal until the marker actually catches the player', () => {
+    const spawn = createMissileSpawn();
+    let state = stepTelegraphedHazardSimulation(
+      createTelegraphedHazardSimulationState(),
+      [spawn],
+      0,
+      { positionY: 100, runDistance: 0 },
+    );
+
+    state = stepTelegraphedHazardSimulation(state, [spawn], 0.5, {
+      positionY: 200,
+      runDistance: 175,
+    });
+    expect(getLifecycle(state, spawn).latestObservedTarget.positionY).toBe(160);
+
+    // The player has started moving upward again (200 -> 190), but is still below the marker.
+    // A real chase must continue downward toward the player instead of stopping with the input reversal.
+    state = stepTelegraphedHazardSimulation(state, [spawn], 0.2, {
+      positionY: 190,
+      runDistance: 245,
+    });
+    expect(getLifecycle(state, spawn).latestObservedTarget.positionY).toBe(184);
+
+    // Only after the player crosses above the marker should the warning marker reverse direction.
+    state = stepTelegraphedHazardSimulation(state, [spawn], 0.2, {
+      positionY: 140,
+      runDistance: 315,
+    });
+    expect(getLifecycle(state, spawn).latestObservedTarget.positionY).toBe(160);
+  });
+
+  it('commits the tracked marker, launches offscreen, and cannot retarget afterward', () => {
     const spawn = createMissileSpawn();
     let state = stepTelegraphedHazardSimulation(
       createTelegraphedHazardSimulationState(),
@@ -93,9 +124,9 @@ describe('M5 bait-and-dodge Missile', () => {
 
     const locked = getLifecycle(state, spawn);
     expect(locked.phase).toBe('lock');
-    expect(locked.latestObservedTarget.positionY).toBeCloseTo(142, 9);
+    expect(locked.latestObservedTarget.positionY).toBeCloseTo(170, 9);
     expect(locked.latestObservedTarget.runDistance).toBeCloseTo(490, 9);
-    expect(locked.lockedTarget?.positionY).toBeCloseTo(142, 9);
+    expect(locked.lockedTarget?.positionY).toBeCloseTo(170, 9);
     expect(locked.lockedTarget?.runDistance).toBeCloseTo(490, 9);
 
     state = stepTelegraphedHazardSimulation(state, [spawn], 0.4, {
@@ -106,11 +137,11 @@ describe('M5 bait-and-dodge Missile', () => {
     const active = getLifecycle(state, spawn);
     expect(active.phase).toBe('active');
     expect(active.elapsedPhaseSeconds).toBeCloseTo(0, 9);
-    expect(active.latestObservedTarget.positionY).toBeCloseTo(142, 9);
-    expect(active.lockedTarget?.positionY).toBeCloseTo(142, 9);
+    expect(active.latestObservedTarget.positionY).toBeCloseTo(170, 9);
+    expect(active.lockedTarget?.positionY).toBeCloseTo(170, 9);
 
     const launched = getLethalHazardsForTelegraphedSimulation(state, [spawn], MISSILE_LAYOUT)[0];
-    expect(launched?.hitbox).toEqual({ left: 978, right: 1042, top: 118, bottom: 166 });
+    expect(launched?.hitbox).toEqual({ left: 978, right: 1042, top: 146, bottom: 194 });
 
     state = stepTelegraphedHazardSimulation(state, [spawn], 0.5, {
       positionY: 60,
@@ -118,13 +149,13 @@ describe('M5 bait-and-dodge Missile', () => {
     });
     const crossingLayout = { ...MISSILE_LAYOUT, playerRunDistance: 805 };
     const crossing = getLethalHazardsForTelegraphedSimulation(state, [spawn], crossingLayout)[0];
-    expect(crossing?.hitbox).toEqual({ left: 803, right: 867, top: 118, bottom: 166 });
+    expect(crossing?.hitbox).toEqual({ left: 803, right: 867, top: 146, bottom: 194 });
     if (!crossing) {
       throw new Error('Expected active Missile crossing the player lane.');
     }
 
     expect(
-      isPlayerCollidingWithHazard({ distance: 805 }, { positionY: 142, velocityY: 0 }, crossing),
+      isPlayerCollidingWithHazard({ distance: 805 }, { positionY: 170, velocityY: 0 }, crossing),
     ).toBe(true);
     expect(
       isPlayerCollidingWithHazard({ distance: 805 }, { positionY: 60, velocityY: 0 }, crossing),
@@ -176,14 +207,14 @@ describe('M5 bait-and-dodge Missile', () => {
     }
 
     expect(wide.hitbox).toEqual(narrow.hitbox);
-    expect(wide.hitbox).toEqual({ left: 803, right: 867, top: 118, bottom: 166 });
+    expect(wide.hitbox).toEqual({ left: 803, right: 867, top: 146, bottom: 194 });
     const narrowScreenLeft =
       narrow.hitbox.left - narrowLayout.playerRunDistance + narrowLayout.playerScreenX;
     const wideScreenLeft =
       wide.hitbox.left - wideLayout.playerRunDistance + wideLayout.playerScreenX;
     expect(narrowScreenLeft - narrowLayout.playerScreenX).toBe(-2);
     expect(wideScreenLeft - wideLayout.playerScreenX).toBe(-2);
-    expect(getLifecycle(state, spawn).lockedTarget?.positionY).toBeCloseTo(142, 9);
+    expect(getLifecycle(state, spawn).lockedTarget?.positionY).toBeCloseTo(170, 9);
   });
 
   it('models launch side as data so a left-side Missile travels right', () => {
@@ -265,7 +296,7 @@ describe('M5 bait-and-dodge Missile', () => {
     expect(resumed.phase).toBe('lock');
     expect(resumed.elapsedPhaseSeconds).toBeCloseTo(0, 9);
     expect(resumed.lockedTarget).toEqual(resumed.latestObservedTarget);
-    expect(resumed.lockedTarget?.positionY).toBeCloseTo(138.4, 9);
+    expect(resumed.lockedTarget?.positionY).toBeCloseTo(164, 9);
     expect(resumed.lockedTarget?.runDistance).toBeCloseTo(490, 9);
   });
 
@@ -314,12 +345,12 @@ describe('M5 bait-and-dodge Missile', () => {
 
     for (const result of Object.values(results)) {
       expect(result.lifecycle.phase).toBe('active');
-      expect(result.lifecycle.lockedTarget?.positionY).toBeCloseTo(142, 9);
+      expect(result.lifecycle.lockedTarget?.positionY).toBeCloseTo(170, 9);
       expect(result.lifecycle.lockedTarget?.runDistance).toBeCloseTo(490, 9);
       expect(result.hitbox?.left).toBeCloseTo(908, 9);
       expect(result.hitbox?.right).toBeCloseTo(972, 9);
-      expect(result.hitbox?.top).toBeCloseTo(118, 9);
-      expect(result.hitbox?.bottom).toBeCloseTo(166, 9);
+      expect(result.hitbox?.top).toBeCloseTo(146, 9);
+      expect(result.hitbox?.bottom).toBeCloseTo(194, 9);
     }
   });
 });
