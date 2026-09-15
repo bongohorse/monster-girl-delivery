@@ -65,7 +65,7 @@ export class PrototypeHazardPresentation {
     playerScreenX: number,
     lifecycle: Readonly<TelegraphedHazardLifecycleState> | null = null,
     verticalProjection: PrototypeVerticalOffsetOrProjection = 0,
-    missileLaunchScreenLeft: number | null = null,
+    missileLaunchRelativeLeft: number | null = null,
   ): void {
     const graphics = this.graphics;
 
@@ -125,7 +125,7 @@ export class PrototypeHazardPresentation {
                   viewportLeft: 0,
                   viewportRight: logicalViewportWidth,
                 },
-                missileLaunchScreenLeft,
+                missileLaunchRelativeLeft,
               )
             : resolveTargetLockStrikeHitbox(this.hazard, target.positionY);
         screenHitbox = projectHazardHitboxToScreen(
