@@ -60,28 +60,7 @@ export const getPrototypeMissileRelativeVelocityX = (
   behavior: Readonly<PrototypeMissileBehavior>,
 ): number => (behavior.missile.launchSide === 'right' ? -1 : 1) * behavior.missile.travelSpeed;
 
-/**
- * Resolves the Missile's current authoritative world hitbox from a player-relative horizontal
- * trajectory. The present M5 content launches from the right, while the same rule also supports a
- * left-side launch without teaching collision or presentation that Missiles have one fixed side.
- */
-export const resolvePrototypeMissileTravelHitbox = (
-  hazard: Readonly<BehavioralLogicalHazard>,
-  target: Readonly<TelegraphedHazardTarget>,
-  activeElapsedSeconds: number,
-  layout: Readonly<PrototypeMissileHorizontalLayout>,
-): Readonly<LogicalHitbox> => {
-  const baseHitbox = resolveTargetLockStrikeHitbox(hazard, target.positionY);
-
-  if (
-    !isTargetLockStrikeHazardBehavior(hazard.behavior) ||
-    !isPrototypeMissileBehavior(hazard.behavior)
-  ) {
-    return baseHitbox;
-  }
-  if (!Number.isFinite(activeElapsedSeconds)) {
-    throw new RangeError('Missile active elapsed time must be finite.');
-  }
+const assertValidHorizontalLayout = (layout: Readonly<PrototypeMissileHorizontalLayout>): void => {
   if (
     !Number.isFinite(layout.playerRunDistance) ||
     !Number.isFinite(layout.playerScreenX) ||
@@ -91,17 +70,68 @@ export const resolvePrototypeMissileTravelHitbox = (
   ) {
     throw new RangeError('Missile horizontal layout must be finite with positive viewport width.');
   }
+};
+
+/**
+ * Resolves the immutable screen-space launch origin at the Active boundary. Warning/Lock may follow
+ * a resized viewport, but once the Missile launches this X coordinate must not be recomputed from a
+ * later viewport or the projectile would jump horizontally after resize.
+ */
+export const resolvePrototypeMissileLaunchScreenLeft = (
+  hazard: Readonly<BehavioralLogicalHazard>,
+  layout: Readonly<PrototypeMissileHorizontalLayout>,
+): number => {
+  assertValidHorizontalLayout(layout);
+  if (
+    !isTargetLockStrikeHazardBehavior(hazard.behavior) ||
+    !isPrototypeMissileBehavior(hazard.behavior)
+  ) {
+    return layout.playerScreenX + hazard.hitbox.left - layout.playerRunDistance;
+  }
+
+  const width = hazard.hitbox.right - hazard.hitbox.left;
+  const motion = hazard.behavior.missile;
+  return motion.launchSide === 'right'
+    ? layout.viewportRight + motion.offscreenPadding
+    : layout.viewportLeft - motion.offscreenPadding - width;
+};
+
+/**
+ * Resolves the Missile's current authoritative world hitbox from a player-relative horizontal
+ * trajectory. The launch screen X is frozen at the Active boundary, while current player/world
+ * coordinates are used only to convert that immutable screen trajectory back into world space.
+ * The present M5 content launches from the right, and the same rule supports a left-side launch.
+ */
+export const resolvePrototypeMissileTravelHitbox = (
+  hazard: Readonly<BehavioralLogicalHazard>,
+  target: Readonly<TelegraphedHazardTarget>,
+  activeElapsedSeconds: number,
+  layout: Readonly<PrototypeMissileHorizontalLayout>,
+  launchScreenLeft?: number | null,
+): Readonly<LogicalHitbox> => {
+  const baseHitbox = resolveTargetLockStrikeHitbox(hazard, target.positionY);
+
+  if (
+    !isTargetLockStrikeHazardBehavior(hazard.behavior) ||
+    !isPrototypeMissileBehavior(hazard.behavior)
+  ) {
+    return baseHitbox;
+  }
+  if (!Number.isFinite(activeElapsedSeconds) || activeElapsedSeconds < 0) {
+    throw new RangeError('Missile active elapsed time must be non-negative and finite.');
+  }
+  assertValidHorizontalLayout(layout);
+  if (launchScreenLeft !== undefined && launchScreenLeft !== null && !Number.isFinite(launchScreenLeft)) {
+    throw new RangeError('Missile launch screen position must be finite when provided.');
+  }
 
   const width = baseHitbox.right - baseHitbox.left;
-  const motion = hazard.behavior.missile;
-  const launchLeftOffset =
-    motion.launchSide === 'right'
-      ? layout.viewportRight - layout.playerScreenX + motion.offscreenPadding
-      : layout.viewportLeft - layout.playerScreenX - motion.offscreenPadding - width;
-  const left =
-    layout.playerRunDistance +
-    launchLeftOffset +
+  const frozenLaunchScreenLeft =
+    launchScreenLeft ?? resolvePrototypeMissileLaunchScreenLeft(hazard, layout);
+  const currentScreenLeft =
+    frozenLaunchScreenLeft +
     getPrototypeMissileRelativeVelocityX(hazard.behavior) * activeElapsedSeconds;
+  const left = layout.playerRunDistance + currentScreenLeft - layout.playerScreenX;
 
   return Object.freeze({
     left,
