@@ -65,7 +65,7 @@ export const createPrototypeRunState = (
 
   return {
     phase: 'running',
-    motion: { distance: 0 },
+    motion: { distance: 0, simulationSeconds: 0 },
     flight: centeredFlight,
   };
 };
