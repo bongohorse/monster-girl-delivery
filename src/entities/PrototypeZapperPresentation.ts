@@ -1,8 +1,6 @@
 import type { GameObjects, Scene } from 'phaser';
 import type { PrototypeVerticalOffsetOrProjection } from '../game/PrototypeFlightLayout';
-import {
-  resolveVerticalProjection,
-} from '../game/PrototypeFlightLayout';
+import { resolveVerticalProjection } from '../game/PrototypeFlightLayout';
 import { projectHazardHitboxToScreen } from '../hazards/PrototypeHazard';
 import {
   type PrototypeZapperGeometry,
@@ -74,10 +72,7 @@ export class PrototypeZapperPresentation {
       return;
     }
 
-    const geometry = resolvePrototypeZapperGeometry(
-      this.hazard,
-      runState.simulationSeconds ?? 0,
-    );
+    const geometry = resolvePrototypeZapperGeometry(this.hazard, runState.simulationSeconds ?? 0);
     if (!geometry) {
       return;
     }
