@@ -133,17 +133,12 @@ const resolveCurrentHazardHitbox = (
 
     if (isPrototypeMissileBehavior(spawn.behavior)) {
       if (lifecycle.phase === 'active') {
-        return resolvePrototypeMissileTravelHitbox(
-          spawn,
-          target,
-          lifecycle.elapsedPhaseSeconds,
-          {
-            playerRunDistance: runDistance,
-            playerScreenX,
-            viewportLeft: 0,
-            viewportRight: viewport.width,
-          },
-        );
+        return resolvePrototypeMissileTravelHitbox(spawn, target, lifecycle.elapsedPhaseSeconds, {
+          playerRunDistance: runDistance,
+          playerScreenX,
+          viewportLeft: 0,
+          viewportRight: viewport.width,
+        });
       }
 
       const geometry = spawn.behavior.lifecycle.warningGeometry;
