@@ -26,6 +26,7 @@ import {
   resolvePrototypeMissileTravelHitbox,
 } from '../hazards/PrototypeMissileHazard';
 import {
+  getPrototypeMissileLaunchScreenLeft,
   getTelegraphedHazardLifecycle,
   type TelegraphedHazardSimulationState,
 } from '../hazards/TelegraphedHazardSimulation';
@@ -133,12 +134,18 @@ const resolveCurrentHazardHitbox = (
 
     if (isPrototypeMissileBehavior(spawn.behavior)) {
       if (lifecycle.phase === 'active') {
-        return resolvePrototypeMissileTravelHitbox(spawn, target, lifecycle.elapsedPhaseSeconds, {
-          playerRunDistance: runDistance,
-          playerScreenX,
-          viewportLeft: 0,
-          viewportRight: viewport.width,
-        });
+        return resolvePrototypeMissileTravelHitbox(
+          spawn,
+          target,
+          lifecycle.elapsedPhaseSeconds,
+          {
+            playerRunDistance: runDistance,
+            playerScreenX,
+            viewportLeft: 0,
+            viewportRight: viewport.width,
+          },
+          getPrototypeMissileLaunchScreenLeft(telegraphedHazards, spawn),
+        );
       }
 
       const geometry = spawn.behavior.lifecycle.warningGeometry;
