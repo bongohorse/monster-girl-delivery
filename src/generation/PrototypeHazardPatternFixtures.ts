@@ -2,6 +2,7 @@ import {
   createPrototypeZapperBehavior,
   createPrototypeZapperHitbox,
   PROTOTYPE_ZAPPER_LENGTHS,
+  PROTOTYPE_ZAPPER_ROTATION_SPEEDS,
 } from '../hazards/PrototypeZapperHazard';
 import { createHazardPattern } from './HazardPattern';
 
@@ -176,6 +177,37 @@ export const PROTOTYPE_ZAPPER_PATTERN = createHazardPattern({
   ],
 });
 
+const PROTOTYPE_ROTATING_ZAPPER_BEHAVIOR = createPrototypeZapperBehavior(
+  45,
+  PROTOTYPE_ZAPPER_LENGTHS.short,
+  {
+    direction: 'clockwise',
+    speedDegreesPerSecond: PROTOTYPE_ZAPPER_ROTATION_SPEEDS.slow,
+  },
+);
+
+/** M5 rotating Zapper baseline: short, slow, midpoint rotation with a generous lower escape lane. */
+export const PROTOTYPE_ROTATING_ZAPPER_PATTERN = createHazardPattern({
+  id: 'prototype-zapper-rotating',
+  runLength: 640,
+  profile: {
+    behaviorTags: ['moving-barrier'],
+    difficultyTierRange: { minimumTierIndex: 1, maximumTierIndex: null },
+    pacingIntensities: ['low', 'medium', 'high', 'peak'],
+    pressureCost: 1,
+    readabilityCost: 2,
+    varietyFamilyId: 'zapper',
+  },
+  entries: [
+    {
+      behavior: PROTOTYPE_ROTATING_ZAPPER_BEHAVIOR,
+      id: 'zapper-rotating-1',
+      type: 'placeholder-barrier',
+      hitbox: createPrototypeZapperHitbox(280, 120, PROTOTYPE_ROTATING_ZAPPER_BEHAVIOR),
+    },
+  ],
+});
+
 /** PROTOTYPE one-shot timed pulse; lifecycle tuning and presentation are not production content. */
 export const PROTOTYPE_TIMED_PULSE_PATTERN = createHazardPattern({
   id: 'prototype-timed-pulse',
@@ -317,12 +349,13 @@ export const PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES = Object.freeze([
 ]);
 
 /**
- * M5 live catalog replaces the M4 moving-barrier prototype with the real static Zapper core and
- * replaces the legacy target-lock prototype with the bait-and-dodge Missile.
+ * M5 live catalog contains both the static Zapper baseline and a deliberately slow rotating variant,
+ * while preserving the bait-and-dodge Missile swap from the legacy M4 target-lock prototype.
  */
 export const PROTOTYPE_M5_HAZARD_PATTERN_FIXTURES = Object.freeze([
   ...PROTOTYPE_HAZARD_PATTERN_FIXTURES,
   PROTOTYPE_ZAPPER_PATTERN,
+  PROTOTYPE_ROTATING_ZAPPER_PATTERN,
   PROTOTYPE_TIMED_PULSE_PATTERN,
   PROTOTYPE_MISSILE_PATTERN,
 ]);
