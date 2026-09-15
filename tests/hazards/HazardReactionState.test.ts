@@ -112,12 +112,7 @@ describe('shared hazard reaction state', () => {
     );
     expect(getHazardGameplayState(state, 'hazard-a')).toBe('destroyed');
 
-    state = applyHazardExternalEffect(
-      state,
-      'hazard-b',
-      { kind: 'destroy' },
-      destroyOnDisable,
-    );
+    state = applyHazardExternalEffect(state, 'hazard-b', { kind: 'destroy' }, destroyOnDisable);
     expect(getHazardGameplayState(state, 'hazard-b')).toBe('active');
   });
 
