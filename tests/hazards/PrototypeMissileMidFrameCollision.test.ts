@@ -82,8 +82,8 @@ describe('M5 Missile mid-frame launch collision', () => {
     // At frame start the linear trajectory is intentionally extrapolated 0.4s backward.
     expect(collision.hitbox.left).toBeCloseTo(1258, 9);
     expect(collision.hitbox.right).toBeCloseTo(1322, 9);
-    expect(collision.hitbox.top).toBeCloseTo(118, 9);
-    expect(collision.hitbox.bottom).toBeCloseTo(166, 9);
+    expect(collision.hitbox.top).toBeCloseTo(146, 9);
+    expect(collision.hitbox.bottom).toBeCloseTo(194, 9);
 
     // At the exact Active boundary the Missile must be at its frozen offscreen launch offset,
     // not 0.4s farther along its path as the old clamp-to-zero representation would imply.
@@ -94,7 +94,7 @@ describe('M5 Missile mid-frame launch collision', () => {
     expect(missileLeftAtLaunch - playerDistanceAtLaunch).toBeCloseTo(348, 9);
 
     const trajectory = createVerticalFlightTrajectory(
-      { positionY: 142, velocityY: 0 },
+      { positionY: 170, velocityY: 0 },
       0.5,
       false,
       { gravity: 0, thrust: 0, maxFallVelocity: 1000, maxRiseVelocity: 1000 },
