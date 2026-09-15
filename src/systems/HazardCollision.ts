@@ -142,7 +142,7 @@ const evaluateFlightTrajectoryPosition = (
     trajectory.segments.find(
       (candidate) =>
         elapsedSeconds >= candidate.startSeconds && elapsedSeconds <= candidate.endSeconds,
-    ) ?? trajectory.segments.at(-1);
+    ) ?? trajectory.segments[trajectory.segments.length - 1];
   if (!segment) {
     return trajectory.finalState.positionY;
   }
