@@ -1,4 +1,5 @@
 import type { HazardBehavior } from '../hazards/HazardArchetype';
+import type { HazardReactionPolicy } from '../hazards/HazardReactionState';
 import type { LogicalHazard, LogicalHitbox } from '../systems/HazardCollision';
 import {
   type EncounterTransitionContext,
@@ -39,6 +40,8 @@ export interface LogicalHazardSpawnInstance extends LogicalHazard {
   /** Authored entry position retained as a deterministic tie-breaker and diagnostic. */
   readonly patternEntryIndex: number;
   readonly patternId: string;
+  /** Optional authored override; omission uses the shared default hazard reaction policy. */
+  readonly reactionPolicy?: Readonly<HazardReactionPolicy>;
   /** Absolute leading-edge position in logical run-distance space. */
   readonly runDistance: number;
   readonly type: HazardPatternEntryType;
@@ -132,6 +135,7 @@ const mapPatternToAbsoluteSpawns = (
           }),
           patternEntryIndex,
           patternId: pattern.id,
+          ...(entry.reactionPolicy === undefined ? {} : { reactionPolicy: entry.reactionPolicy }),
           runDistance: left,
           type: entry.type,
         });

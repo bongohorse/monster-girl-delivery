@@ -3,6 +3,10 @@ import {
   type HazardBehavior,
   STATIC_GEOMETRIC_HAZARD_BEHAVIOR,
 } from '../hazards/HazardArchetype';
+import {
+  createHazardReactionPolicy,
+  type HazardReactionPolicy,
+} from '../hazards/HazardReactionState';
 import type { LogicalHitbox } from '../systems/HazardCollision';
 import { createEncounterProfile, type EncounterProfile } from './EncounterProfile';
 
@@ -14,6 +18,8 @@ export interface HazardPatternEntry {
   readonly id: string;
   /** Pattern-local logical bounds: left/right are run-distance offsets; top/bottom are vertical. */
   readonly hitbox: Readonly<LogicalHitbox>;
+  /** Omitted for the default disable/destroy semantics; explicit content may override either effect. */
+  readonly reactionPolicy?: Readonly<HazardReactionPolicy>;
   readonly type: HazardPatternEntryType;
 }
 
@@ -177,12 +183,17 @@ export const createHazardPattern = (
     }
 
     assertValidPatternHitbox(entry.hitbox, definition.runLength);
+    const reactionPolicy =
+      entry.reactionPolicy === undefined
+        ? undefined
+        : createHazardReactionPolicy(entry.reactionPolicy);
 
     return Object.freeze({
       behavior: createHazardBehavior(entry.behavior ?? STATIC_GEOMETRIC_HAZARD_BEHAVIOR),
       id: entry.id,
       type: entry.type,
       hitbox: Object.freeze({ ...entry.hitbox }),
+      ...(reactionPolicy === undefined ? {} : { reactionPolicy }),
     });
   });
   const collectiblePaths = createCollectiblePaths(
