@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { LogicalHazard } from '../../src/systems/HazardCollision';
-import {
-  type PrototypeRunState,
-  stepPrototypeRun,
-} from '../../src/systems/PrototypeRunSimulation';
+import { type PrototypeRunState, stepPrototypeRun } from '../../src/systems/PrototypeRunSimulation';
 
 const BOUNDS = Object.freeze({ ceilingY: -100, floorY: 100 });
 const FLIGHT = Object.freeze({
@@ -54,9 +51,7 @@ const partitionDuration = (duration: number, hz: number): ReadonlyArray<number> 
 
 const SCHEDULES: ReadonlyArray<readonly [string, ReadonlyArray<number>]> = [
   ['coarse 50 ms', [0.05]],
-  ...[30, 60, 90, 120, 144].map(
-    (hz) => [`${hz} Hz`, partitionDuration(0.05, hz)] as const,
-  ),
+  ...[30, 60, 90, 120, 144].map((hz) => [`${hz} Hz`, partitionDuration(0.05, hz)] as const),
   ['deterministic jitter', [0.007, 0.011, 0.005, 0.013, 0.014]],
 ];
 
