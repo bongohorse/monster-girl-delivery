@@ -156,7 +156,7 @@ const PROTOTYPE_STATIC_ZAPPER_BEHAVIOR = createPrototypeZapperBehavior(
 
 /** M5 baseline Zapper: permanently active horizontal spatial obstacle. */
 export const PROTOTYPE_ZAPPER_PATTERN = createHazardPattern({
-  id: 'prototype-zapper-static',
+  id: 'prototype-vertical-patrol',
   runLength: 640,
   profile: {
     behaviorTags: ['static-barrier'],
