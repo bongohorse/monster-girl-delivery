@@ -82,16 +82,21 @@ const getHorizontalOpportunityBounds = (
   hazard: Readonly<LogicalHazard>,
   extents: Readonly<PrototypePlayerCollisionExtents>,
 ): Readonly<LogicalHazardCollisionInterval> | null => {
+  const hazardVelocity = hazard.horizontalVelocity ?? 0;
+  if (!Number.isFinite(hazardVelocity)) {
+    throw new RangeError('Hazard horizontalVelocity must be finite when provided.');
+  }
+  const relativeScrollSpeed = scrollSpeed - hazardVelocity;
   const minimumDistance = hazard.hitbox.left - extents.right;
   const maximumDistance = hazard.hitbox.right + extents.left;
-  if (scrollSpeed === 0) {
+  if (relativeScrollSpeed === 0) {
     return initialDistance > minimumDistance && initialDistance < maximumDistance
       ? { startSeconds: Number.NEGATIVE_INFINITY, endSeconds: Number.POSITIVE_INFINITY }
       : null;
   }
 
-  const firstSeconds = (minimumDistance - initialDistance) / scrollSpeed;
-  const secondSeconds = (maximumDistance - initialDistance) / scrollSpeed;
+  const firstSeconds = (minimumDistance - initialDistance) / relativeScrollSpeed;
+  const secondSeconds = (maximumDistance - initialDistance) / relativeScrollSpeed;
   return {
     startSeconds: Math.min(firstSeconds, secondSeconds),
     endSeconds: Math.max(firstSeconds, secondSeconds),
