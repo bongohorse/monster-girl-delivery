@@ -216,7 +216,8 @@ export const getCollisionHazardsForTelegraphedSimulation = (
 
     const target = instance.lifecycle.lockedTarget ?? instance.lifecycle.latestObservedTarget;
     const missile =
-      isTargetLockStrikeHazardBehavior(spawn.behavior) && isPrototypeMissileBehavior(spawn.behavior);
+      isTargetLockStrikeHazardBehavior(spawn.behavior) &&
+      isPrototypeMissileBehavior(spawn.behavior);
     const hitbox =
       missile && missileContext
         ? resolvePrototypeMissileTravelHitbox(
