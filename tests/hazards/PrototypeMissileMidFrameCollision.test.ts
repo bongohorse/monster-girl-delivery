@@ -9,6 +9,8 @@ import {
   getTelegraphedHazardLifecycle,
   stepTelegraphedHazardSimulation,
 } from '../../src/hazards/TelegraphedHazardSimulation';
+import { isPlayerCollidingWithHazardDuringStep } from '../../src/systems/HazardCollision';
+import { createVerticalFlightTrajectory } from '../../src/systems/VerticalFlightSimulation';
 
 const MISSILE_LAYOUT = Object.freeze({
   playerRunDistance: 630,
@@ -90,5 +92,35 @@ describe('M5 Missile mid-frame launch collision', () => {
     const missileLeftAtLaunch =
       collision.hitbox.left + collision.horizontalVelocity * launchBoundarySeconds;
     expect(missileLeftAtLaunch - playerDistanceAtLaunch).toBeCloseTo(348, 9);
+
+    const trajectory = createVerticalFlightTrajectory(
+      { positionY: 142, velocityY: 0 },
+      0.5,
+      false,
+      { gravity: 0, thrust: 0, maxFallVelocity: 1000, maxRiseVelocity: 1000 },
+      { ceilingY: 0, floorY: 300 },
+    );
+
+    // A player overlapping the back-extrapolated path during pre-launch (t < 0.4s) must not collide.
+    expect(
+      isPlayerCollidingWithHazardDuringStep(
+        { distance: 1118 },
+        trajectory,
+        0.5,
+        { baseScrollSpeed: 350 },
+        collision,
+      ),
+    ).toBe(false);
+
+    // A player overlapping the authoritative path during the Active slice [0.4s, 0.5s] must collide.
+    expect(
+      isPlayerCollidingWithHazardDuringStep(
+        { distance: 943 },
+        trajectory,
+        0.5,
+        { baseScrollSpeed: 350 },
+        collision,
+      ),
+    ).toBe(true);
   });
 });

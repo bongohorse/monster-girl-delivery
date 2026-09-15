@@ -171,5 +171,29 @@ describe('Foundation M5 Missile resize integration', () => {
     const afterRelativeScreenLeft = after.hitbox.left - motion.distance;
     expect(afterRelativeScreenLeft).toBe(beforeRelativeScreenLeft);
     expect(afterPlayerX).toBe(160);
+
+    // Stepping subsequent frames after resize continues along the frozen player-relative trajectory
+    foundation.update(0, 50);
+
+    const steppedState = getTelegraphedState(foundation);
+    const steppedMotion = getRunState(foundation).motion;
+    const steppedPlayerX = getPrototypePlayerX(viewportService.getSnapshot());
+    const stepped = getLethalHazardsForTelegraphedSimulation(steppedState, [missile], {
+      playerRunDistance: steppedMotion.distance,
+      playerScreenX: steppedPlayerX,
+      viewportLeft: 0,
+      viewportRight: viewportService.getSnapshot().width,
+    })[0];
+    if (!stepped) {
+      throw new Error('Expected Active Missile after post-resize update.');
+    }
+
+    expect(getPrototypeMissileLaunchRelativeLeft(steppedState, missile)).toBe(348);
+    expect(stepped.hitbox.left - steppedMotion.distance).toBeCloseTo(
+      afterRelativeScreenLeft - 700 * 0.05,
+      9,
+    );
+    expect(stepped.hitbox.top).toBe(after.hitbox.top);
+    expect(stepped.hitbox.bottom).toBe(after.hitbox.bottom);
   });
 });
