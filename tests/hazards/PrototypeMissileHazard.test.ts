@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { scheduleNextPattern } from '../../src/generation/PatternSpawnScheduler';
 import { PROTOTYPE_MISSILE_PATTERN } from '../../src/generation/PrototypeHazardPatternFixtures';
 import { createRunGenerationState } from '../../src/generation/RunGenerationState';
+import { isTargetLockStrikeHazardBehavior } from '../../src/hazards/HazardArchetype';
 import {
   isPrototypeMissileBehavior,
   resolvePrototypeMissileTravelHitbox,
@@ -131,7 +132,10 @@ describe('M5 bait-and-dodge Missile', () => {
 
   it('models launch side as data so a left-side Missile travels right', () => {
     const spawn = createMissileSpawn();
-    if (!isPrototypeMissileBehavior(spawn.behavior)) {
+    if (
+      !isTargetLockStrikeHazardBehavior(spawn.behavior) ||
+      !isPrototypeMissileBehavior(spawn.behavior)
+    ) {
       throw new Error('Expected M5 Missile behavior.');
     }
 
