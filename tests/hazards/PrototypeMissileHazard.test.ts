@@ -10,6 +10,7 @@ import {
 import {
   createTelegraphedHazardSimulationState,
   getLethalHazardsForTelegraphedSimulation,
+  getPrototypeMissileLaunchScreenLeft,
   getTelegraphedHazardLifecycle,
   stepTelegraphedHazardSimulation,
 } from '../../src/hazards/TelegraphedHazardSimulation';
@@ -128,6 +129,58 @@ describe('M5 bait-and-dodge Missile', () => {
     expect(
       isPlayerCollidingWithHazard({ distance: 805 }, { positionY: 60, velocityY: 0 }, crossing),
     ).toBe(false);
+  });
+
+  it('freezes the Active launch X so resize cannot jump or retarget an in-flight Missile', () => {
+    const spawn = createMissileSpawn();
+    let state = stepTelegraphedHazardSimulation(
+      createTelegraphedHazardSimulationState(),
+      [spawn],
+      0,
+      { positionY: 100, runDistance: 0 },
+    );
+    state = stepTelegraphedHazardSimulation(
+      state,
+      [spawn],
+      1.4,
+      { positionY: 100, runDistance: 0 },
+      (delta) => ({ positionY: 100 + 50 * delta, runDistance: 350 * delta }),
+    );
+    state = stepTelegraphedHazardSimulation(
+      state,
+      [spawn],
+      0.4,
+      { positionY: 72, runDistance: 630 },
+      undefined,
+      MISSILE_LAYOUT,
+    );
+
+    expect(getPrototypeMissileLaunchScreenLeft(state, spawn)).toBe(448);
+
+    state = stepTelegraphedHazardSimulation(state, [spawn], 0.5, {
+      positionY: 60,
+      runDistance: 805,
+    });
+
+    const narrowLayout = { ...MISSILE_LAYOUT, playerRunDistance: 805 };
+    const wideLayout = {
+      playerRunDistance: 805,
+      playerScreenX: 160,
+      viewportLeft: 0,
+      viewportRight: 640,
+    };
+    const narrow = getLethalHazardsForTelegraphedSimulation(state, [spawn], narrowLayout)[0];
+    const wide = getLethalHazardsForTelegraphedSimulation(state, [spawn], wideLayout)[0];
+    if (!narrow || !wide) {
+      throw new Error('Expected active Missile before and after resize.');
+    }
+
+    const narrowScreenLeft = narrow.hitbox.left - narrowLayout.playerRunDistance + narrowLayout.playerScreenX;
+    const wideScreenLeft = wide.hitbox.left - wideLayout.playerRunDistance + wideLayout.playerScreenX;
+    expect(narrowScreenLeft).toBe(98);
+    expect(wideScreenLeft).toBe(98);
+    expect(wide.hitbox).toEqual({ left: 743, right: 807, top: 118, bottom: 166 });
+    expect(getLifecycle(state, spawn).lockedTarget?.positionY).toBeCloseTo(142, 9);
   });
 
   it('models launch side as data so a left-side Missile travels right', () => {
