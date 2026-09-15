@@ -4,6 +4,7 @@ import {
   getLogicalHazardSpawnIdentity,
   type LogicalHazardSpawnInstance,
 } from '../generation/PatternSpawnScheduler';
+import { isPrototypeZapperHazard } from '../hazards/PrototypeZapperHazard';
 import {
   getPrototypeMissileLaunchRelativeLeft,
   getTelegraphedHazardLifecycle,
@@ -11,9 +12,12 @@ import {
 } from '../hazards/TelegraphedHazardSimulation';
 import type { RunMotionState } from '../systems/RunMotionSimulation';
 import { PrototypeHazardPresentation } from './PrototypeHazardPresentation';
+import { PrototypeZapperPresentation } from './PrototypeZapperPresentation';
+
+type HazardPresentation = PrototypeHazardPresentation | PrototypeZapperPresentation;
 
 interface ActiveHazardPresentation {
-  readonly presentation: PrototypeHazardPresentation;
+  readonly presentation: HazardPresentation;
 }
 
 /** Synchronizes temporary Phaser graphics to the authoritative logical generated-spawn window. */
@@ -42,17 +46,25 @@ export class GeneratedHazardPresentation {
       let active = this.active.get(identity);
 
       if (!active) {
-        active = { presentation: new PrototypeHazardPresentation(this.scene, spawn) };
+        active = {
+          presentation: isPrototypeZapperHazard(spawn)
+            ? new PrototypeZapperPresentation(this.scene, spawn)
+            : new PrototypeHazardPresentation(this.scene, spawn),
+        };
         this.active.set(identity, active);
       }
 
-      active.presentation.render(
-        runState,
-        playerScreenX,
-        getTelegraphedHazardLifecycle(telegraphedHazards, spawn),
-        verticalProjection,
-        getPrototypeMissileLaunchRelativeLeft(telegraphedHazards, spawn),
-      );
+      if (active.presentation instanceof PrototypeZapperPresentation) {
+        active.presentation.render(runState, playerScreenX, verticalProjection);
+      } else {
+        active.presentation.render(
+          runState,
+          playerScreenX,
+          getTelegraphedHazardLifecycle(telegraphedHazards, spawn),
+          verticalProjection,
+          getPrototypeMissileLaunchRelativeLeft(telegraphedHazards, spawn),
+        );
+      }
     }
 
     for (const [identity, active] of this.active) {

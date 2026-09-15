@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { PROTOTYPE_LOGICAL_FLIGHT_BOUNDS } from '../../src/game/PrototypeFlightLayout';
+import { createHazardPattern } from '../../src/generation/HazardPattern';
 import { PROTOTYPE_PATTERN_VALIDATION_CONSTRAINTS } from '../../src/generation/PatternValidator';
 import {
   PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES,
@@ -63,6 +64,35 @@ describe('prototype hazard vertical domain', () => {
     expect(adapted.hitbox.left).toBe(authored.hitbox.left);
     expect(adapted.hitbox.right).toBe(authored.hitbox.right);
     expect(adaptedCenter).toBeLessThan(authoredCenter);
+  });
+
+  it('preserves authored reaction policy while adapting a non-baseline vertical domain', () => {
+    const pattern = createHazardPattern({
+      id: 'reaction-policy-domain-test',
+      runLength: 400,
+      profile: {
+        behaviorTags: ['static-barrier'],
+        difficultyTierRange: { minimumTierIndex: 0, maximumTierIndex: null },
+        pacingIntensities: ['low'],
+        pressureCost: 1,
+        readabilityCost: 1,
+        varietyFamilyId: 'reaction-policy-domain-test',
+      },
+      entries: [
+        {
+          id: 'policy-hazard',
+          type: 'placeholder-barrier',
+          hitbox: { left: 120, right: 168, top: 160, bottom: 208 },
+          reactionPolicy: { disable: 'destroy', destroy: 'immune' },
+        },
+      ],
+    });
+    const domain = createPrototypeHazardVerticalDomain({ ceilingY: -272, floorY: 362 }, [pattern]);
+
+    expect(domain.catalog[0]?.entries[0]?.reactionPolicy).toEqual({
+      disable: 'destroy',
+      destroy: 'immune',
+    });
   });
 
   it('expands target-lock coverage with the flight-bound edges while preserving strike size', () => {

@@ -11,6 +11,19 @@ export interface StaticGeometricHazardBehavior {
   readonly kind: 'static';
 }
 
+/** Static two-node electric barrier. Angle and length remain free content data. */
+export interface ZapperHazardBehavior {
+  readonly angleDegrees: number;
+  readonly archetype: 'geometric';
+  readonly beamThickness: number;
+  readonly endpointDiameter: number;
+  readonly grazeBeamPadding: number;
+  readonly grazeEndpointPadding: number;
+  readonly kind: 'zapper';
+  /** Distance between endpoint centers in logical pixels. */
+  readonly length: number;
+}
+
 /** PROTOTYPE triangle-wave movement authored in logical run-distance space. */
 export interface VerticalPatrolHazardBehavior {
   readonly amplitudeY: number;
@@ -56,7 +69,8 @@ export type HazardBehavior =
   | StaticGeometricHazardBehavior
   | TargetLockStrikeHazardBehavior
   | TimedPulseHazardBehavior
-  | VerticalPatrolHazardBehavior;
+  | VerticalPatrolHazardBehavior
+  | ZapperHazardBehavior;
 
 export interface BehavioralLogicalHazard extends LogicalHazard {
   readonly behavior: Readonly<HazardBehavior>;
@@ -76,11 +90,19 @@ const assertPositiveFinite = (value: number, name: string): void => {
   }
 };
 
+const assertNonNegativeFinite = (value: number, name: string): void => {
+  if (!Number.isFinite(value) || value < 0) {
+    throw new RangeError(`${name} must be a non-negative finite number.`);
+  }
+};
+
 const assertValidHazardBehavior = (definition: Readonly<HazardBehavior>): void => {
   const rawDefinition = definition as { readonly archetype: unknown; readonly kind: unknown };
   const supportedPair =
     (rawDefinition.archetype === 'geometric' &&
-      (rawDefinition.kind === 'static' || rawDefinition.kind === 'vertical-patrol')) ||
+      (rawDefinition.kind === 'static' ||
+        rawDefinition.kind === 'vertical-patrol' ||
+        rawDefinition.kind === 'zapper')) ||
     (rawDefinition.archetype === 'timed' && rawDefinition.kind === 'pulse') ||
     (rawDefinition.archetype === 'reactive' && rawDefinition.kind === 'target-lock-strike');
   if (!supportedPair) {
@@ -91,6 +113,19 @@ const assertValidHazardBehavior = (definition: Readonly<HazardBehavior>): void =
 
   switch (definition.kind) {
     case 'static':
+      return;
+    case 'zapper':
+      if (!Number.isFinite(definition.angleDegrees)) {
+        throw new RangeError('Hazard Zapper angleDegrees must be finite.');
+      }
+      assertPositiveFinite(definition.length, 'Hazard Zapper length');
+      assertPositiveFinite(definition.beamThickness, 'Hazard Zapper beamThickness');
+      assertPositiveFinite(definition.endpointDiameter, 'Hazard Zapper endpointDiameter');
+      assertNonNegativeFinite(definition.grazeBeamPadding, 'Hazard Zapper grazeBeamPadding');
+      assertNonNegativeFinite(
+        definition.grazeEndpointPadding,
+        'Hazard Zapper grazeEndpointPadding',
+      );
       return;
     case 'vertical-patrol':
       assertPositiveFinite(definition.amplitudeY, 'Hazard vertical-patrol amplitudeY');
@@ -150,6 +185,7 @@ export const createHazardBehavior = (
   switch (definition.kind) {
     case 'static':
       return STATIC_GEOMETRIC_HAZARD_BEHAVIOR;
+    case 'zapper':
     case 'vertical-patrol':
       return Object.freeze({ ...definition });
     case 'pulse':
@@ -175,6 +211,11 @@ export const isTargetLockStrikeHazardBehavior = (
   behavior: Readonly<HazardBehavior>,
 ): behavior is Readonly<TargetLockStrikeHazardBehavior> =>
   behavior.archetype === 'reactive' && behavior.kind === 'target-lock-strike';
+
+export const isZapperHazardBehavior = (
+  behavior: Readonly<HazardBehavior>,
+): behavior is Readonly<ZapperHazardBehavior> =>
+  behavior.archetype === 'geometric' && behavior.kind === 'zapper';
 
 export const isTelegraphedHazardBehavior = (
   behavior: Readonly<HazardBehavior>,
@@ -215,7 +256,7 @@ export const resolveVerticalPatrolOffsetAtRunDistance = (
 /**
  * Returns the current logical hitbox from authoritative run progress. The triangle wave is stable
  * across frame partitions and relative to the spawn's immutable impact anchor. Static hazards keep
- * their authored geometry. Collision remains with the shared logical AABB authority.
+ * their authored geometry. Collision remains with the shared logical authority.
  */
 export const resolveHazardHitboxAtRunDistance = (
   hazard: Readonly<LogicalHazard>,

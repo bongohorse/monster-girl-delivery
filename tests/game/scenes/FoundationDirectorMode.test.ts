@@ -152,6 +152,7 @@ vi.mock('../../../src/devtools/DirectorRunControls', () => ({
   },
 }));
 
+import { getPrototypePlayerX } from '../../../src/game/PrototypeFlightLayout';
 import { Foundation } from '../../../src/game/scenes/Foundation';
 
 beforeEach(() => {
@@ -251,6 +252,40 @@ describe('Foundation Director mode boundary', () => {
 
     foundation.update(0, 16);
     expect(directorPerformanceHudUpdate).toHaveBeenCalledWith(17, 60, false, false);
+  });
+
+  it('uses Director Z to spawn the real Zapper fully beyond the right viewport edge', () => {
+    const services = createAppServices();
+    const foundation = new Foundation(services, true);
+    foundation.create();
+
+    const performanceControls = directorPerformanceHudConstructed.mock.calls[0]?.[3] as
+      | { spawnZapper?: () => void }
+      | undefined;
+    expect(performanceControls?.spawnZapper).toBeTypeOf('function');
+    performanceControls?.spawnZapper?.();
+
+    const manualHazards = Reflect.get(foundation, 'directorManualHazards') as ReadonlyArray<{
+      behavior: { kind: string };
+      hitbox: { left: number };
+    }>;
+    const viewportService = Reflect.get(foundation, 'viewportService') as {
+      getSnapshot: () => ReturnType<
+        typeof import('../../../src/core/ViewportService').ViewportService.prototype.getSnapshot
+      >;
+    };
+    const runState = Reflect.get(foundation, 'runState') as { motion: { distance: number } };
+    const viewport = viewportService.getSnapshot();
+    const spawn = manualHazards[0];
+
+    expect(manualHazards).toHaveLength(1);
+    expect(spawn?.behavior.kind).toBe('zapper');
+    if (!spawn) {
+      throw new Error('Expected Director Zapper spawn.');
+    }
+    const screenLeft = getPrototypePlayerX(viewport) + spawn.hitbox.left - runState.motion.distance;
+    expect(screenLeft).toBeGreaterThan(viewport.width);
+    expect(screenLeft).toBeCloseTo(viewport.width + 24, 9);
   });
 
   it('starts explicit new seeds and makes each one the same-seed restart authority', () => {
