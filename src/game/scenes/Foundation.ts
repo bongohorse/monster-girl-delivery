@@ -433,6 +433,12 @@ export class Foundation extends Scene {
           runDistance: this.runState.motion.distance,
         },
         resolvePlayerTargetAtDelta,
+        {
+          playerRunDistance: initialMotion.distance,
+          playerScreenX,
+          viewportLeft: 0,
+          viewportRight: viewport.width,
+        },
       );
       const result = stepPrototypeRun(this.runState, simulationDeltaSeconds, {
         collectibles: this.collectibleSpawns,
