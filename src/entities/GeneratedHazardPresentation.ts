@@ -5,6 +5,7 @@ import {
   type LogicalHazardSpawnInstance,
 } from '../generation/PatternSpawnScheduler';
 import {
+  getPrototypeMissileLaunchScreenLeft,
   getTelegraphedHazardLifecycle,
   type TelegraphedHazardSimulationState,
 } from '../hazards/TelegraphedHazardSimulation';
@@ -50,6 +51,7 @@ export class GeneratedHazardPresentation {
         playerScreenX,
         getTelegraphedHazardLifecycle(telegraphedHazards, spawn),
         verticalProjection,
+        getPrototypeMissileLaunchScreenLeft(telegraphedHazards, spawn),
       );
     }
 
