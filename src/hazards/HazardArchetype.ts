@@ -36,6 +36,10 @@ export interface TargetLockStrikeHazardBehavior {
   readonly maximumTargetY: number;
   readonly minimumTargetY: number;
   readonly strikeHeight: number;
+  /** Optional M5 bait-and-dodge response. 1 snaps to the player; lower values visibly trail. */
+  readonly trackingResponsiveness?: number;
+  /** Optional M5 minimum horizontal lead from the locked player run position before launch. */
+  readonly minimumLaunchLeadDistance?: number;
 }
 
 export type HazardBehavior =
@@ -93,7 +97,7 @@ const assertValidHazardBehavior = (definition: Readonly<HazardBehavior>): void =
     case 'pulse':
       createTelegraphedHazardLifecycleConfig(definition.lifecycle);
       return;
-    case 'target-lock-strike':
+    case 'target-lock-strike': {
       createTelegraphedHazardLifecycleConfig(definition.lifecycle);
       assertPositiveFinite(definition.strikeHeight, 'Hazard target-lock strikeHeight');
       if (
@@ -105,7 +109,29 @@ const assertValidHazardBehavior = (definition: Readonly<HazardBehavior>): void =
           'Hazard target-lock target range must be finite with maximumTargetY above minimumTargetY.',
         );
       }
+
+      const hasTracking = definition.trackingResponsiveness !== undefined;
+      const hasLaunchLead = definition.minimumLaunchLeadDistance !== undefined;
+      if (hasTracking !== hasLaunchLead) {
+        throw new TypeError(
+          'Hazard target-lock missile tuning requires both trackingResponsiveness and minimumLaunchLeadDistance.',
+        );
+      }
+      if (definition.trackingResponsiveness !== undefined) {
+        if (
+          !Number.isFinite(definition.trackingResponsiveness) ||
+          definition.trackingResponsiveness <= 0 ||
+          definition.trackingResponsiveness > 1
+        ) {
+          throw new RangeError('Hazard target-lock trackingResponsiveness must be in (0, 1].');
+        }
+        assertPositiveFinite(
+          definition.minimumLaunchLeadDistance as number,
+          'Hazard target-lock minimumLaunchLeadDistance',
+        );
+      }
       return;
+    }
     default:
       throw new TypeError(
         `Unsupported hazard behavior kind: ${String(
