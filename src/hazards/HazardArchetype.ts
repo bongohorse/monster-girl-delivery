@@ -11,7 +11,14 @@ export interface StaticGeometricHazardBehavior {
   readonly kind: 'static';
 }
 
-/** Static two-node electric barrier. Angle and length remain free content data. */
+export type ZapperRotationDirection = 'clockwise' | 'counterclockwise';
+
+export interface ZapperRotationMotion {
+  readonly direction: ZapperRotationDirection;
+  readonly speedDegreesPerSecond: number;
+}
+
+/** Two-node electric barrier. Angle and length remain free content data. */
 export interface ZapperHazardBehavior {
   readonly angleDegrees: number;
   readonly archetype: 'geometric';
@@ -22,6 +29,8 @@ export interface ZapperHazardBehavior {
   readonly kind: 'zapper';
   /** Distance between endpoint centers in logical pixels. */
   readonly length: number;
+  /** Optional continuous midpoint rotation driven only by authoritative simulation time. */
+  readonly rotation?: Readonly<ZapperRotationMotion>;
 }
 
 /** PROTOTYPE triangle-wave movement authored in logical run-distance space. */
@@ -126,6 +135,18 @@ const assertValidHazardBehavior = (definition: Readonly<HazardBehavior>): void =
         definition.grazeEndpointPadding,
         'Hazard Zapper grazeEndpointPadding',
       );
+      if (definition.rotation) {
+        if (
+          definition.rotation.direction !== 'clockwise' &&
+          definition.rotation.direction !== 'counterclockwise'
+        ) {
+          throw new TypeError('Hazard Zapper rotation direction must be clockwise or counterclockwise.');
+        }
+        assertPositiveFinite(
+          definition.rotation.speedDegreesPerSecond,
+          'Hazard Zapper rotation speedDegreesPerSecond',
+        );
+      }
       return;
     case 'vertical-patrol':
       assertPositiveFinite(definition.amplitudeY, 'Hazard vertical-patrol amplitudeY');
@@ -186,6 +207,10 @@ export const createHazardBehavior = (
     case 'static':
       return STATIC_GEOMETRIC_HAZARD_BEHAVIOR;
     case 'zapper':
+      return Object.freeze({
+        ...definition,
+        ...(definition.rotation ? { rotation: Object.freeze({ ...definition.rotation }) } : {}),
+      });
     case 'vertical-patrol':
       return Object.freeze({ ...definition });
     case 'pulse':
@@ -330,6 +355,18 @@ export const getHazardSweptHitbox = (
       right: hazard.hitbox.right,
       top: behavior.minimumTargetY - halfHeight,
       bottom: behavior.maximumTargetY + halfHeight,
+    });
+  }
+  if (behavior.kind === 'zapper' && behavior.rotation) {
+    const centerX = (hazard.hitbox.left + hazard.hitbox.right) / 2;
+    const centerY = (hazard.hitbox.top + hazard.hitbox.bottom) / 2;
+    const radius =
+      behavior.length / 2 + Math.max(behavior.beamThickness / 2, behavior.endpointDiameter / 2);
+    return Object.freeze({
+      left: centerX - radius,
+      right: centerX + radius,
+      top: centerY - radius,
+      bottom: centerY + radius,
     });
   }
   if (behavior.kind !== 'vertical-patrol') {
