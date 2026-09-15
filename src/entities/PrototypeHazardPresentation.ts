@@ -8,6 +8,7 @@ import {
   isTargetLockStrikeHazardBehavior,
   isTelegraphedHazardBehavior,
   resolveHazardHitboxAtRunDistance,
+  resolveTargetLockStrikeHitbox,
 } from '../hazards/HazardArchetype';
 import {
   PROTOTYPE_PLACEHOLDER_HAZARD,
@@ -16,7 +17,7 @@ import {
 import {
   isPrototypeMissileBehavior,
   PROTOTYPE_MISSILE_WARNING_BLINK_SECONDS,
-  resolvePrototypeMissileStrikeHitbox,
+  resolvePrototypeMissileTravelHitbox,
 } from '../hazards/PrototypeMissileHazard';
 import type {
   TelegraphedHazardLifecycleState,
@@ -100,10 +101,34 @@ export class PrototypeHazardPresentation {
             : (lifecycle.lockedTarget ?? lifecycle.latestObservedTarget);
       const reactive = isTargetLockStrikeHazardBehavior(this.hazard.behavior);
       const missile = reactive && isPrototypeMissileBehavior(this.hazard.behavior);
+      const camera = this.scene.cameras?.main;
+      const cameraZoom = camera?.zoom;
+      const logicalViewportWidth =
+        camera &&
+        Number.isFinite(camera.width) &&
+        Number.isFinite(cameraZoom) &&
+        cameraZoom !== undefined &&
+        cameraZoom > 0
+          ? camera.width / cameraZoom
+          : null;
 
       if (reactive && target) {
+        const resolvedHitbox =
+          missile && lifecycle && phase === 'active' && logicalViewportWidth !== null
+            ? resolvePrototypeMissileTravelHitbox(
+                this.hazard,
+                target,
+                lifecycle.elapsedPhaseSeconds,
+                {
+                  playerRunDistance: runState.distance,
+                  playerScreenX,
+                  viewportLeft: 0,
+                  viewportRight: logicalViewportWidth,
+                },
+              )
+            : resolveTargetLockStrikeHitbox(this.hazard, target.positionY);
         screenHitbox = projectHazardHitboxToScreen(
-          { hitbox: resolvePrototypeMissileStrikeHitbox(this.hazard, target) },
+          { hitbox: resolvedHitbox },
           runState,
           playerScreenX,
           projection,
@@ -121,19 +146,14 @@ export class PrototypeHazardPresentation {
           bottom: centerY + geometry.bottomOffset * projection.scaleY,
         };
 
-        if (missile) {
-          const camera = this.scene.cameras?.main;
-          const cameraZoom = camera?.zoom;
-          if (
-            camera &&
-            Number.isFinite(camera.width) &&
-            Number.isFinite(cameraZoom) &&
-            cameraZoom !== undefined &&
-            cameraZoom > 0
-          ) {
-            const width = screenHitbox.right - screenHitbox.left;
-            const right = camera.width / cameraZoom - MISSILE_EDGE_MARGIN;
+        if (missile && logicalViewportWidth !== null) {
+          const width = screenHitbox.right - screenHitbox.left;
+          if (this.hazard.behavior.missile.launchSide === 'right') {
+            const right = logicalViewportWidth - MISSILE_EDGE_MARGIN;
             screenHitbox = { ...screenHitbox, left: right - width, right };
+          } else {
+            const left = MISSILE_EDGE_MARGIN;
+            screenHitbox = { ...screenHitbox, left, right: left + width };
           }
         }
       }
