@@ -92,6 +92,7 @@ const adaptPattern = (
       return {
         behavior,
         id: entry.id,
+        ...(entry.reactionPolicy === undefined ? {} : { reactionPolicy: entry.reactionPolicy }),
         type: entry.type,
         hitbox: {
           left: entry.hitbox.left,
