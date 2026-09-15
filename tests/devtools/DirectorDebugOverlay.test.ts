@@ -170,8 +170,7 @@ describe('DirectorDebugOverlay geometry', () => {
 
     expect(
       geometry.rectangles.some(
-        (rectangle) =>
-          rectangle.kind === 'hazard-lethal' || rectangle.kind === 'hazard-preview',
+        (rectangle) => rectangle.kind === 'hazard-lethal' || rectangle.kind === 'hazard-preview',
       ),
     ).toBe(false);
     expect(geometry.paths).toHaveLength(3);
