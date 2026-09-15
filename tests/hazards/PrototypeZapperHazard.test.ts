@@ -104,7 +104,7 @@ describe('M5 static Zapper geometry', () => {
       doesHitboxOverlapPrototypeZapper({ left: 195, right: 205, top: 187, bottom: 203 }, geometry),
     ).toBe(true);
 
-    const nearBeam = { left: 270, right: 290, top: 211, bottom: 219 };
+    const nearBeam = { left: 270, right: 290, top: 204, bottom: 212 };
     expect(doesHitboxOverlapPrototypeZapper(nearBeam, geometry)).toBe(false);
     expect(
       doesHitboxOverlapPrototypeZapper(nearBeam, geometry, PROTOTYPE_ZAPPER_GRAZE_PADDING),
