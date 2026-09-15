@@ -5,7 +5,7 @@ import {
   type PatternValidationConstraints,
   PROTOTYPE_PATTERN_VALIDATION_CONSTRAINTS,
 } from './PatternValidator';
-import { PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES } from './PrototypeHazardPatternFixtures';
+import { PROTOTYPE_M5_HAZARD_PATTERN_FIXTURES } from './PrototypeHazardPatternFixtures';
 
 export interface PrototypeHazardVerticalDomain {
   readonly catalog: ReadonlyArray<Readonly<HazardPattern>>;
@@ -116,7 +116,7 @@ const adaptPattern = (
  */
 export const createPrototypeHazardVerticalDomain = (
   bounds: Readonly<VerticalFlightBounds>,
-  catalog: ReadonlyArray<Readonly<HazardPattern>> = PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES,
+  catalog: ReadonlyArray<Readonly<HazardPattern>> = PROTOTYPE_M5_HAZARD_PATTERN_FIXTURES,
 ): Readonly<PrototypeHazardVerticalDomain> => {
   assertValidFlightBounds(bounds);
   const constraints = createDomainConstraints(bounds);
