@@ -71,11 +71,7 @@ describe('M5 Missile presentation', () => {
       { positionY: 100, runDistance: 0 },
     );
 
-    presentation.render(
-      { distance: 0 },
-      100,
-      getTelegraphedHazardLifecycle(state, spawn),
-    );
+    presentation.render({ distance: 0 }, 100, getTelegraphedHazardLifecycle(state, spawn));
     expect(graphics.setPosition).toHaveBeenLastCalledWith(354, 78);
     expect(graphics.setVisible).toHaveBeenLastCalledWith(true);
 
@@ -86,11 +82,7 @@ describe('M5 Missile presentation', () => {
       { positionY: 100, runDistance: 0 },
       (delta) => ({ positionY: 100 + 50 * delta, runDistance: 350 * delta }),
     );
-    presentation.render(
-      { distance: 490 },
-      100,
-      getTelegraphedHazardLifecycle(state, spawn),
-    );
+    presentation.render({ distance: 490 }, 100, getTelegraphedHazardLifecycle(state, spawn));
     expect(graphics.setPosition).toHaveBeenLastCalledWith(354, 120);
     expect(graphics.fillStyle).toHaveBeenCalledWith(0xff9f1c, 0.64);
     expect(graphics.lineStyle).toHaveBeenCalledWith(6, 0xffffff, 1);
@@ -99,11 +91,7 @@ describe('M5 Missile presentation', () => {
       positionY: 72,
       runDistance: 630,
     });
-    presentation.render(
-      { distance: 630 },
-      100,
-      getTelegraphedHazardLifecycle(state, spawn),
-    );
+    presentation.render({ distance: 630 }, 100, getTelegraphedHazardLifecycle(state, spawn));
     expect(graphics.setPosition).toHaveBeenLastCalledWith(400, 118);
   });
 });
