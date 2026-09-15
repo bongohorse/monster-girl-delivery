@@ -442,10 +442,7 @@ export const isPlayerCollidingWithPrototypeZapperDuringStep = (
       { positionY: evaluateFlightTrajectoryPosition(trajectory, seconds), velocityY: 0 },
       playerExtents,
     );
-    const geometry = resolvePrototypeZapperGeometry(
-      hazard,
-      initialSimulationSeconds + seconds,
-    );
+    const geometry = resolvePrototypeZapperGeometry(hazard, initialSimulationSeconds + seconds);
     return geometry ? doesHitboxOverlapPrototypeZapper(playerHitbox, geometry, padding) : false;
   });
 };
