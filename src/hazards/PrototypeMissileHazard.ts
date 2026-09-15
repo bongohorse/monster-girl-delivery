@@ -103,11 +103,15 @@ export const resolvePrototypeMissileLaunchRelativeLeft = (
  * change the Missile's logical distance from the player. Presentation still follows the normal world
  * projection and therefore adapts with the player's resized screen anchor. The present M5 content
  * launches from the right, and the same rule supports a left-side launch.
+ *
+ * `trajectoryElapsedSeconds` is normally the non-negative elapsed Active time. Continuous collision
+ * may pass a negative value only to extrapolate the same linear trajectory back to the beginning of
+ * a simulation step whose lethal Active interval starts later inside that step.
  */
 export const resolvePrototypeMissileTravelHitbox = (
   hazard: Readonly<BehavioralLogicalHazard>,
   target: Readonly<TelegraphedHazardTarget>,
-  activeElapsedSeconds: number,
+  trajectoryElapsedSeconds: number,
   layout: Readonly<PrototypeMissileHorizontalLayout>,
   launchRelativeLeft?: number | null,
 ): Readonly<LogicalHitbox> => {
@@ -119,8 +123,8 @@ export const resolvePrototypeMissileTravelHitbox = (
   ) {
     return baseHitbox;
   }
-  if (!Number.isFinite(activeElapsedSeconds) || activeElapsedSeconds < 0) {
-    throw new RangeError('Missile active elapsed time must be non-negative and finite.');
+  if (!Number.isFinite(trajectoryElapsedSeconds)) {
+    throw new RangeError('Missile trajectory elapsed time must be finite.');
   }
   assertValidHorizontalLayout(layout);
   if (
@@ -136,7 +140,7 @@ export const resolvePrototypeMissileTravelHitbox = (
     launchRelativeLeft ?? resolvePrototypeMissileLaunchRelativeLeft(hazard, layout);
   const currentRelativeLeft =
     frozenLaunchRelativeLeft +
-    getPrototypeMissileRelativeVelocityX(hazard.behavior) * activeElapsedSeconds;
+    getPrototypeMissileRelativeVelocityX(hazard.behavior) * trajectoryElapsedSeconds;
   const left = layout.playerRunDistance + currentRelativeLeft;
 
   return Object.freeze({
