@@ -301,8 +301,8 @@ export const getPrototypeMissileLaunchScreenLeft = (
 
   const identity = getLogicalHazardSpawnIdentity(spawn);
   return (
-    state.instances.find((instance) => instance.spawnIdentity === identity)?.missileLaunchScreenLeft ??
-    null
+    state.instances.find((instance) => instance.spawnIdentity === identity)
+      ?.missileLaunchScreenLeft ?? null
   );
 };
 
