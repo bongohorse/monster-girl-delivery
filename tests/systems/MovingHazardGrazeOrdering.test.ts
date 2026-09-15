@@ -68,8 +68,8 @@ const run = (
 
 describe('moving-hazard Graze/death same-step ordering', () => {
   const movingGraze = hazard('moving-graze', 25, 30, -33, -23, -500);
-  const laterLethal = hazard('later-lethal', 20, 30, 26, 36);
-  const earlierLethal = hazard('earlier-lethal', 20, 30, 24.2, 34.2);
+  const laterLethal = hazard('later-lethal', 20, 30, 20, 30);
+  const earlierLethal = hazard('earlier-lethal', 20, 30, 18.2, 28.2);
 
   it('does not advance Graze or death state on zero delta', () => {
     for (const hazards of [
