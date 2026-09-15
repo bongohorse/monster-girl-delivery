@@ -63,7 +63,7 @@ describe('DirectorDebugOverlay geometry', () => {
     });
     expect(byKind.get('collectible')).toMatchObject({
       color: DIRECTOR_DEBUG_COLORS.collectible,
-      hitbox: { left: 102, right: 118, top: 502, bottom: 518 },
+      hitbox: { left: 96, right: 124, top: 496, bottom: 524 },
     });
     expect(byKind.get('viewport')?.hitbox).toEqual({ left: 0, right: 400, top: 0, bottom: 800 });
     expect(byKind.get('safe-area')?.hitbox).toEqual({ left: 0, right: 400, top: 0, bottom: 800 });
