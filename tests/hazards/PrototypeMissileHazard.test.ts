@@ -101,12 +101,12 @@ describe('M5 bait-and-dodge Missile', () => {
       throw new Error('Expected active Missile.');
     }
 
-    expect(isPlayerCollidingWithHazard({ distance: 962 }, { positionY: 142, velocityY: 0 }, missile)).toBe(
-      true,
-    );
-    expect(isPlayerCollidingWithHazard({ distance: 962 }, { positionY: 60, velocityY: 0 }, missile)).toBe(
-      false,
-    );
+    expect(
+      isPlayerCollidingWithHazard({ distance: 962 }, { positionY: 142, velocityY: 0 }, missile),
+    ).toBe(true);
+    expect(
+      isPlayerCollidingWithHazard({ distance: 962 }, { positionY: 60, velocityY: 0 }, missile),
+    ).toBe(false);
   });
 
   it('does not advance targeting or lifecycle on zero delta', () => {
