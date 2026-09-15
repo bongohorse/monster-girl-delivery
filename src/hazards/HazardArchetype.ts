@@ -28,6 +28,18 @@ export interface TimedPulseHazardBehavior {
   readonly lifecycle: Readonly<TelegraphedHazardLifecycleConfig>;
 }
 
+/**
+ * Optional M5 Missile motion layered onto the generic target-lock interaction. The current authored
+ * Missile launches from the right and travels left, but launch side is data so later content is not
+ * coupled to one permanent direction. Curved/homing trajectories remain future behavior work.
+ */
+export interface TargetLockMissileMotion {
+  readonly launchSide: 'left' | 'right';
+  readonly offscreenPadding: number;
+  readonly trackingResponsiveness: number;
+  readonly travelSpeed: number;
+}
+
 /** PROTOTYPE warning-track, lock, then fixed-height strike with no post-lock tracking. */
 export interface TargetLockStrikeHazardBehavior {
   readonly archetype: 'reactive';
@@ -36,10 +48,7 @@ export interface TargetLockStrikeHazardBehavior {
   readonly maximumTargetY: number;
   readonly minimumTargetY: number;
   readonly strikeHeight: number;
-  /** Optional M5 bait-and-dodge response. 1 snaps to the player; lower values visibly trail. */
-  readonly trackingResponsiveness?: number;
-  /** Optional M5 minimum horizontal lead from the locked player run position before launch. */
-  readonly minimumLaunchLeadDistance?: number;
+  readonly missile?: Readonly<TargetLockMissileMotion>;
 }
 
 export type HazardBehavior =
@@ -110,25 +119,22 @@ const assertValidHazardBehavior = (definition: Readonly<HazardBehavior>): void =
         );
       }
 
-      const hasTracking = definition.trackingResponsiveness !== undefined;
-      const hasLaunchLead = definition.minimumLaunchLeadDistance !== undefined;
-      if (hasTracking !== hasLaunchLead) {
-        throw new TypeError(
-          'Hazard target-lock missile tuning requires both trackingResponsiveness and minimumLaunchLeadDistance.',
-        );
-      }
-      if (definition.trackingResponsiveness !== undefined) {
+      const missile = definition.missile;
+      if (missile) {
         if (
-          !Number.isFinite(definition.trackingResponsiveness) ||
-          definition.trackingResponsiveness <= 0 ||
-          definition.trackingResponsiveness > 1
+          !Number.isFinite(missile.trackingResponsiveness) ||
+          missile.trackingResponsiveness <= 0 ||
+          missile.trackingResponsiveness > 1
         ) {
-          throw new RangeError('Hazard target-lock trackingResponsiveness must be in (0, 1].');
+          throw new RangeError('Hazard Missile trackingResponsiveness must be in (0, 1].');
         }
-        assertPositiveFinite(
-          definition.minimumLaunchLeadDistance as number,
-          'Hazard target-lock minimumLaunchLeadDistance',
-        );
+        if (missile.launchSide !== 'left' && missile.launchSide !== 'right') {
+          throw new TypeError('Hazard Missile launchSide must be left or right.');
+        }
+        assertPositiveFinite(missile.travelSpeed, 'Hazard Missile travelSpeed');
+        if (!Number.isFinite(missile.offscreenPadding) || missile.offscreenPadding < 0) {
+          throw new RangeError('Hazard Missile offscreenPadding must be non-negative and finite.');
+        }
       }
       return;
     }
@@ -160,6 +166,7 @@ export const createHazardBehavior = (
       return Object.freeze({
         ...definition,
         lifecycle: createTelegraphedHazardLifecycleConfig(definition.lifecycle),
+        ...(definition.missile ? { missile: Object.freeze({ ...definition.missile }) } : {}),
       });
   }
 };
