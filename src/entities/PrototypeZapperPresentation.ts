@@ -5,8 +5,8 @@ import {
 } from '../game/PrototypeFlightLayout';
 import { projectHazardHitboxToScreen } from '../hazards/PrototypeHazard';
 import {
-  resolvePrototypeZapperGeometry,
   type PrototypeZapperGeometry,
+  resolvePrototypeZapperGeometry,
 } from '../hazards/PrototypeZapperHazard';
 import type { LogicalHazard } from '../systems/HazardCollision';
 import type { RunMotionState } from '../systems/RunMotionSimulation';
@@ -19,10 +19,7 @@ export class PrototypeZapperPresentation {
   private graphics?: GameObjects.Graphics;
   private readonly geometry: Readonly<PrototypeZapperGeometry>;
 
-  constructor(
-    scene: Scene,
-    hazard: Readonly<LogicalHazard>,
-  ) {
+  constructor(scene: Scene, hazard: Readonly<LogicalHazard>) {
     const geometry = resolvePrototypeZapperGeometry(hazard);
     if (!geometry) {
       throw new TypeError('PrototypeZapperPresentation requires a Zapper hazard.');
