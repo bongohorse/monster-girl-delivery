@@ -8,8 +8,12 @@ import {
   isTargetLockStrikeHazardBehavior,
   isTelegraphedHazardBehavior,
   resolveHazardHitboxAtRunDistance,
-  resolveTargetLockStrikeHitbox,
 } from '../hazards/HazardArchetype';
+import {
+  isPrototypeMissileBehavior,
+  PROTOTYPE_MISSILE_WARNING_BLINK_SECONDS,
+  resolvePrototypeMissileStrikeHitbox,
+} from '../hazards/PrototypeMissileHazard';
 import {
   PROTOTYPE_PLACEHOLDER_HAZARD,
   projectHazardHitboxToScreen,
@@ -21,13 +25,15 @@ import type {
 import type { LogicalHazard } from '../systems/HazardCollision';
 import type { RunMotionState } from '../systems/RunMotionSimulation';
 
+const MISSILE_EDGE_MARGIN = 10;
+
 /** Temporary barrier presentation; logical collision and generated identity remain outside Phaser. */
 export class PrototypeHazardPresentation {
   private graphics?: GameObjects.Graphics;
   private telegraphedPhase?: TelegraphedHazardPhase;
 
   constructor(
-    scene: Scene,
+    private readonly scene: Scene,
     private readonly hazard: Readonly<LogicalHazard> = PROTOTYPE_PLACEHOLDER_HAZARD,
   ) {
     const graphics = scene.add.graphics().setDepth(-50);
@@ -92,9 +98,12 @@ export class PrototypeHazardPresentation {
           : phase === 'warning'
             ? lifecycle.latestObservedTarget
             : (lifecycle.lockedTarget ?? lifecycle.latestObservedTarget);
-      if (isTargetLockStrikeHazardBehavior(this.hazard.behavior) && target) {
+      const reactive = isTargetLockStrikeHazardBehavior(this.hazard.behavior);
+      const missile = reactive && isPrototypeMissileBehavior(this.hazard.behavior);
+
+      if (reactive && target) {
         screenHitbox = projectHazardHitboxToScreen(
-          { hitbox: resolveTargetLockStrikeHitbox(this.hazard, target.positionY) },
+          { hitbox: resolvePrototypeMissileStrikeHitbox(this.hazard, target) },
           runState,
           playerScreenX,
           projection,
@@ -111,6 +120,31 @@ export class PrototypeHazardPresentation {
           top: centerY + geometry.topOffset * projection.scaleY,
           bottom: centerY + geometry.bottomOffset * projection.scaleY,
         };
+
+        if (missile) {
+          const camera = this.scene.cameras?.main;
+          const cameraZoom = camera?.zoom;
+          if (
+            camera &&
+            Number.isFinite(camera.width) &&
+            Number.isFinite(cameraZoom) &&
+            cameraZoom !== undefined &&
+            cameraZoom > 0
+          ) {
+            const width = screenHitbox.right - screenHitbox.left;
+            const right = camera.width / cameraZoom - MISSILE_EDGE_MARGIN;
+            screenHitbox = { ...screenHitbox, left: right - width, right };
+          }
+        }
+      }
+
+      if (missile && lifecycle && phase === 'warning') {
+        const blinkIndex = Math.floor(
+          lifecycle.elapsedPhaseSeconds / PROTOTYPE_MISSILE_WARNING_BLINK_SECONDS,
+        );
+        graphics.setVisible(blinkIndex % 2 === 0);
+      } else {
+        graphics.setVisible(true);
       }
     }
 
@@ -148,20 +182,28 @@ export class PrototypeHazardPresentation {
     const width = safePhase ? warningWidth : activeWidth;
     const height = safePhase ? warningHeight : activeHeight;
     const reactive = isTargetLockStrikeHazardBehavior(this.hazard.behavior);
+    const missile = reactive && isPrototypeMissileBehavior(this.hazard.behavior);
     const fillColor = reactive
       ? phase === 'warning'
         ? 0x6fffe9
         : phase === 'lock'
-          ? 0x3a86ff
+          ? missile
+            ? 0xff9f1c
+            : 0x3a86ff
           : 0xff2d95
       : phase === 'warning'
         ? 0xffd166
         : phase === 'lock'
           ? 0xff9f1c
           : 0xf72545;
-    const fillAlpha = phase === 'warning' ? 0.16 : phase === 'lock' ? 0.36 : 0.95;
-    const strokeColor = phase === 'active' ? 0xffffff : reactive ? 0x6fffe9 : 0xffd166;
-    const lineWidth = phase === 'warning' ? 3 : 5;
+    const fillAlpha = phase === 'warning' ? 0.16 : phase === 'lock' ? (missile ? 0.64 : 0.36) : 0.95;
+    const strokeColor =
+      phase === 'active' || (missile && phase === 'lock')
+        ? 0xffffff
+        : reactive
+          ? 0x6fffe9
+          : 0xffd166;
+    const lineWidth = phase === 'warning' ? 3 : missile && phase === 'lock' ? 6 : 5;
 
     graphics
       .fillStyle(fillColor, fillAlpha)
