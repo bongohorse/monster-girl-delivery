@@ -212,10 +212,10 @@ const getMissileActiveElapsedAtStepStart = (
   }
 
   if (instance.lifecycle.phase === 'expired') {
-    return spawn.behavior.lifecycle.durations.activeSeconds - interval.endSeconds;
+    return Math.max(0, spawn.behavior.lifecycle.durations.activeSeconds - interval.endSeconds);
   }
 
-  return instance.lifecycle.elapsedPhaseSeconds - interval.endSeconds;
+  return Math.max(0, instance.lifecycle.elapsedPhaseSeconds - interval.endSeconds);
 };
 
 /**
