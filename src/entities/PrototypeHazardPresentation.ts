@@ -10,14 +10,14 @@ import {
   resolveHazardHitboxAtRunDistance,
 } from '../hazards/HazardArchetype';
 import {
+  PROTOTYPE_PLACEHOLDER_HAZARD,
+  projectHazardHitboxToScreen,
+} from '../hazards/PrototypeHazard';
+import {
   isPrototypeMissileBehavior,
   PROTOTYPE_MISSILE_WARNING_BLINK_SECONDS,
   resolvePrototypeMissileStrikeHitbox,
 } from '../hazards/PrototypeMissileHazard';
-import {
-  PROTOTYPE_PLACEHOLDER_HAZARD,
-  projectHazardHitboxToScreen,
-} from '../hazards/PrototypeHazard';
 import type {
   TelegraphedHazardLifecycleState,
   TelegraphedHazardPhase,
@@ -196,7 +196,8 @@ export class PrototypeHazardPresentation {
         : phase === 'lock'
           ? 0xff9f1c
           : 0xf72545;
-    const fillAlpha = phase === 'warning' ? 0.16 : phase === 'lock' ? (missile ? 0.64 : 0.36) : 0.95;
+    const fillAlpha =
+      phase === 'warning' ? 0.16 : phase === 'lock' ? (missile ? 0.64 : 0.36) : 0.95;
     const strokeColor =
       phase === 'active' || (missile && phase === 'lock')
         ? 0xffffff
