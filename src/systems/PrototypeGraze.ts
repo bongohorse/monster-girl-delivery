@@ -1,16 +1,22 @@
 import type { RunMotionValues } from '../config/RunMotionConfig';
 import {
+  getPrototypeZapperGrazePadding,
+  isPrototypeZapperHazard,
+} from '../hazards/PrototypeZapperHazard';
+import {
   isPlayerCollidingWithHazardDuringStep,
+  isPlayerCollidingWithPrototypeZapperDuringStep,
   type LogicalHazard,
   type LogicalHazardCollisionInterval,
+  PROTOTYPE_PLAYER_COLLISION_EXTENTS,
   type PrototypePlayerCollisionExtents,
 } from './HazardCollision';
 import type { RunMotionState } from './RunMotionSimulation';
 import type { VerticalFlightTrajectory } from './VerticalFlightSimulation';
 
 /**
- * PROTOTYPE M5 near-miss footprint. The lethal core continues to use
- * PROTOTYPE_PLAYER_COLLISION_EXTENTS; these larger logical extents are independent of sprite bounds.
+ * PROTOTYPE M5 near-miss footprint for legacy hazards. Zappers instead expand their authoritative
+ * beam/node geometry by independently authorable Graze padding around the normal player core.
  */
 export const PROTOTYPE_PLAYER_GRAZE_EXTENTS: Readonly<PrototypePlayerCollisionExtents> =
   Object.freeze({
@@ -76,6 +82,23 @@ const getHazardInterval = (
 ): Readonly<LogicalHazardCollisionInterval> =>
   hazard.collisionInterval ?? { startSeconds: 0, endSeconds: elapsedSeconds };
 
+const getGrazeOpportunityExtents = (
+  hazard: Readonly<LogicalHazard>,
+): Readonly<PrototypePlayerCollisionExtents> => {
+  if (!isPrototypeZapperHazard(hazard)) {
+    return PROTOTYPE_PLAYER_GRAZE_EXTENTS;
+  }
+
+  const padding = getPrototypeZapperGrazePadding(hazard);
+  const maximumPadding = Math.max(padding.beam, padding.endpoints);
+  return Object.freeze({
+    left: PROTOTYPE_PLAYER_COLLISION_EXTENTS.left + maximumPadding,
+    right: PROTOTYPE_PLAYER_COLLISION_EXTENTS.right + maximumPadding,
+    top: PROTOTYPE_PLAYER_COLLISION_EXTENTS.top + maximumPadding,
+    bottom: PROTOTYPE_PLAYER_COLLISION_EXTENTS.bottom + maximumPadding,
+  });
+};
+
 const getHorizontalOpportunityBounds = (
   initialDistance: number,
   scrollSpeed: number,
@@ -120,7 +143,7 @@ const getGrazeResolutionSeconds = (
     initialDistance,
     scrollSpeed,
     hazard,
-    PROTOTYPE_PLAYER_GRAZE_EXTENTS,
+    getGrazeOpportunityExtents(hazard),
   );
   let resolutionSeconds = bounds?.endSeconds ?? Number.POSITIVE_INFINITY;
 
@@ -168,6 +191,32 @@ const hasLethalCollisionBy = (
     },
   );
 };
+
+const isPlayerInGrazeZoneDuringStep = (
+  initialRunState: Readonly<RunMotionState>,
+  trajectory: Readonly<VerticalFlightTrajectory>,
+  elapsedSeconds: number,
+  runMotionTuning: Readonly<RunMotionValues>,
+  hazard: Readonly<LogicalHazard>,
+): boolean =>
+  isPrototypeZapperHazard(hazard)
+    ? isPlayerCollidingWithPrototypeZapperDuringStep(
+        initialRunState,
+        trajectory,
+        elapsedSeconds,
+        runMotionTuning,
+        hazard,
+        PROTOTYPE_PLAYER_COLLISION_EXTENTS,
+        getPrototypeZapperGrazePadding(hazard),
+      )
+    : isPlayerCollidingWithHazardDuringStep(
+        initialRunState,
+        trajectory,
+        elapsedSeconds,
+        runMotionTuning,
+        hazard,
+        PROTOTYPE_PLAYER_GRAZE_EXTENTS,
+      );
 
 /**
  * Evaluates lethal core collision and optional Graze from the same continuous trajectory/lifecycle
@@ -248,16 +297,7 @@ export const evaluatePrototypeGrazeStep = (
       continue;
     }
 
-    if (
-      isPlayerCollidingWithHazardDuringStep(
-        initialRunState,
-        trajectory,
-        elapsedSeconds,
-        runMotionTuning,
-        hazard,
-        PROTOTYPE_PLAYER_GRAZE_EXTENTS,
-      )
-    ) {
+    if (isPlayerInGrazeZoneDuringStep(initialRunState, trajectory, elapsedSeconds, runMotionTuning, hazard)) {
       pending.add(occurrenceId);
     }
 
@@ -305,9 +345,7 @@ export const evaluatePrototypeGrazeStep = (
     pending.size === state.pendingOccurrenceIds.length &&
     consumed.size === state.consumedOccurrenceIds.length
   ) {
-    const samePending = state.pendingOccurrenceIds.every((occurrenceId) =>
-      pending.has(occurrenceId),
-    );
+    const samePending = state.pendingOccurrenceIds.every((occurrenceId) => pending.has(occurrenceId));
     if (samePending) {
       return { grazeDelta: 0, lethalCollision, state };
     }
