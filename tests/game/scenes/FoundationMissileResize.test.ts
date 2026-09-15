@@ -121,7 +121,12 @@ describe('Foundation M5 Missile resize integration', () => {
       resize: vi.fn(),
     });
 
-    for (let frame = 0; frame < 8; frame += 1) {
+    for (let frame = 0; frame < 20; frame += 1) {
+      if (
+        getTelegraphedHazardLifecycle(getTelegraphedState(foundation), missile)?.phase === 'active'
+      ) {
+        break;
+      }
       foundation.update(0, 50);
     }
 
