@@ -297,7 +297,15 @@ export const evaluatePrototypeGrazeStep = (
       continue;
     }
 
-    if (isPlayerInGrazeZoneDuringStep(initialRunState, trajectory, elapsedSeconds, runMotionTuning, hazard)) {
+    if (
+      isPlayerInGrazeZoneDuringStep(
+        initialRunState,
+        trajectory,
+        elapsedSeconds,
+        runMotionTuning,
+        hazard,
+      )
+    ) {
       pending.add(occurrenceId);
     }
 
@@ -345,7 +353,9 @@ export const evaluatePrototypeGrazeStep = (
     pending.size === state.pendingOccurrenceIds.length &&
     consumed.size === state.consumedOccurrenceIds.length
   ) {
-    const samePending = state.pendingOccurrenceIds.every((occurrenceId) => pending.has(occurrenceId));
+    const samePending = state.pendingOccurrenceIds.every((occurrenceId) =>
+      pending.has(occurrenceId),
+    );
     if (samePending) {
       return { grazeDelta: 0, lethalCollision, state };
     }
