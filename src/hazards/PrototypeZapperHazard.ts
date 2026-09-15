@@ -1,9 +1,9 @@
+import type { LogicalHazard, LogicalHitbox } from '../systems/HazardCollision';
 import {
   isBehavioralLogicalHazard,
   isZapperHazardBehavior,
   type ZapperHazardBehavior,
 } from './HazardArchetype';
-import type { LogicalHazard, LogicalHitbox } from '../systems/HazardCollision';
 
 export const PROTOTYPE_ZAPPER_BEAM_THICKNESS = 14;
 export const PROTOTYPE_ZAPPER_ENDPOINT_DIAMETER = 32;
@@ -123,7 +123,8 @@ export const createPrototypeZapperHitbox = (
   centerX: number,
   centerY: number,
   behavior: Readonly<ZapperHazardBehavior>,
-): Readonly<LogicalHitbox> => resolveGeometryFromCenter({ x: centerX, y: centerY }, behavior).bounds;
+): Readonly<LogicalHitbox> =>
+  resolveGeometryFromCenter({ x: centerX, y: centerY }, behavior).bounds;
 
 export const isPrototypeZapperHazard = (
   hazard: Readonly<LogicalHazard>,
