@@ -7,8 +7,8 @@ import {
   DirectorDebugOverlay,
 } from '../../src/devtools/DirectorDebugOverlay';
 import type { LogicalCollectibleSpawnInstance } from '../../src/generation/GeneratedCollectibles';
-import { scheduleNextPattern } from '../../src/generation/PatternSpawnScheduler';
 import type { LogicalHazardSpawnInstance } from '../../src/generation/PatternSpawnScheduler';
+import { scheduleNextPattern } from '../../src/generation/PatternSpawnScheduler';
 import { PROTOTYPE_MISSILE_PATTERN } from '../../src/generation/PrototypeHazardPatternFixtures';
 import { createRunGenerationState } from '../../src/generation/RunGenerationState';
 import { STATIC_GEOMETRIC_HAZARD_BEHAVIOR } from '../../src/hazards/HazardArchetype';
@@ -116,18 +116,14 @@ describe('DirectorDebugOverlay geometry', () => {
       { positionY: 100, runDistance: 0 },
       (delta) => ({ positionY: 100 + 50 * delta, runDistance: 350 * delta }),
     );
-    telegraphedHazards = stepTelegraphedHazardSimulation(
-      telegraphedHazards,
-      [missile],
-      0.4,
-      { positionY: 72, runDistance: 630 },
-    );
-    telegraphedHazards = stepTelegraphedHazardSimulation(
-      telegraphedHazards,
-      [missile],
-      0.5,
-      { positionY: 60, runDistance: 805 },
-    );
+    telegraphedHazards = stepTelegraphedHazardSimulation(telegraphedHazards, [missile], 0.4, {
+      positionY: 72,
+      runDistance: 630,
+    });
+    telegraphedHazards = stepTelegraphedHazardSimulation(telegraphedHazards, [missile], 0.5, {
+      positionY: 60,
+      runDistance: 805,
+    });
 
     const geometry = createDirectorDebugGeometry({
       collectibles: [],
@@ -139,9 +135,7 @@ describe('DirectorDebugOverlay geometry', () => {
       telegraphedHazards,
       viewport: new ViewportService(400, 800).getSnapshot(),
     });
-    const missileBox = geometry.rectangles.find(
-      (rectangle) => rectangle.kind === 'hazard-lethal',
-    );
+    const missileBox = geometry.rectangles.find((rectangle) => rectangle.kind === 'hazard-lethal');
 
     expect(missileBox).toMatchObject({
       color: DIRECTOR_DEBUG_COLORS.hazardLethal,
