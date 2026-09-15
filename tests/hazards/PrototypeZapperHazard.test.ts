@@ -145,4 +145,25 @@ describe('M5 static Zapper geometry', () => {
 
     expect(new Set(Object.values(results))).toEqual(new Set([true]));
   });
+
+  it('does not miss fast vertical crossing when world scroll is low but nonzero', () => {
+    const zapper = createZapper(0, PROTOTYPE_ZAPPER_LENGTHS.medium, 600, 195);
+    const trajectory = createVerticalFlightTrajectory(
+      { positionY: 100, velocityY: 500 },
+      0.4,
+      false,
+      { gravity: 0, thrust: 0, maxFallVelocity: 1_000, maxRiseVelocity: 1_000 },
+      { ceilingY: 0, floorY: 400 },
+    );
+
+    expect(
+      isPlayerCollidingWithHazardDuringStep(
+        { distance: 600 },
+        trajectory,
+        0.4,
+        { baseScrollSpeed: 1 },
+        zapper,
+      ),
+    ).toBe(true);
+  });
 });
