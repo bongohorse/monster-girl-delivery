@@ -335,8 +335,8 @@ const getRelativeVerticalRange = (
   return { maximum, minimum };
 };
 
-const ZAPPER_COLLISION_SAMPLE_DISTANCE = 0.5;
-const ZAPPER_STATIONARY_SAMPLE_SECONDS = 1 / 720;
+const ZAPPER_MAX_COLLISION_SAMPLE_DISTANCE = 0.5;
+const ZAPPER_MAX_COLLISION_SAMPLE_SECONDS = 1 / 720;
 
 const createZapperCollisionSampleTimes = (
   trajectory: Readonly<VerticalFlightTrajectory>,
@@ -359,24 +359,30 @@ const createZapperCollisionSampleTimes = (
   }
 
   if (scrollSpeed !== 0) {
+    // Keep the absolute-distance lattice partition-stable, but also cap temporal spacing so a
+    // near-stationary world cannot let fast vertical player motion tunnel between sparse samples.
+    const sampleDistance = Math.min(
+      ZAPPER_MAX_COLLISION_SAMPLE_DISTANCE,
+      Math.abs(scrollSpeed) * ZAPPER_MAX_COLLISION_SAMPLE_SECONDS,
+    );
     const firstDistance = initialDistance + scrollSpeed * interval.startSeconds;
     const lastDistance = initialDistance + scrollSpeed * interval.endSeconds;
     const minimumDistance = Math.min(firstDistance, lastDistance);
     const maximumDistance = Math.max(firstDistance, lastDistance);
-    const firstIndex = Math.ceil(minimumDistance / ZAPPER_COLLISION_SAMPLE_DISTANCE);
-    const lastIndex = Math.floor(maximumDistance / ZAPPER_COLLISION_SAMPLE_DISTANCE);
+    const firstIndex = Math.ceil(minimumDistance / sampleDistance);
+    const lastIndex = Math.floor(maximumDistance / sampleDistance);
     for (let index = firstIndex; index <= lastIndex; index += 1) {
-      const distance = index * ZAPPER_COLLISION_SAMPLE_DISTANCE;
+      const distance = index * sampleDistance;
       const seconds = (distance - initialDistance) / scrollSpeed;
       addCandidate(candidates, seconds, interval.startSeconds, interval.endSeconds);
     }
   } else {
-    const firstIndex = Math.ceil(interval.startSeconds / ZAPPER_STATIONARY_SAMPLE_SECONDS);
-    const lastIndex = Math.floor(interval.endSeconds / ZAPPER_STATIONARY_SAMPLE_SECONDS);
+    const firstIndex = Math.ceil(interval.startSeconds / ZAPPER_MAX_COLLISION_SAMPLE_SECONDS);
+    const lastIndex = Math.floor(interval.endSeconds / ZAPPER_MAX_COLLISION_SAMPLE_SECONDS);
     for (let index = firstIndex; index <= lastIndex; index += 1) {
       addCandidate(
         candidates,
-        index * ZAPPER_STATIONARY_SAMPLE_SECONDS,
+        index * ZAPPER_MAX_COLLISION_SAMPLE_SECONDS,
         interval.startSeconds,
         interval.endSeconds,
       );
@@ -388,8 +394,9 @@ const createZapperCollisionSampleTimes = (
 
 /**
  * Continuous-step authority for a static Zapper. Samples are anchored to an absolute world-distance
- * lattice (0.5 logical px), so standard frame partitions observe the same path locations instead of
- * restarting a frame-local sample grid. Each sample uses the exact AABB-vs-capsule/circle test.
+ * lattice capped at 0.5 logical px and 1/720 second spacing, so standard frame partitions observe
+ * the same path locations without allowing near-zero scroll speed to create vertical tunneling.
+ * Each sample uses the exact AABB-vs-capsule/circle test.
  */
 export const isPlayerCollidingWithPrototypeZapperDuringStep = (
   initialRunState: Readonly<RunMotionState>,
