@@ -55,13 +55,36 @@ const SCHEDULES: ReadonlyArray<readonly [string, ReadonlyArray<number>]> = [
   ['deterministic jitter', [0.007, 0.011, 0.005, 0.013, 0.014]],
 ];
 
+const advanceMovingHazards = (
+  hazards: ReadonlyArray<Readonly<LogicalHazard>>,
+  elapsedSeconds: number,
+): ReadonlyArray<Readonly<LogicalHazard>> =>
+  hazards.map((entry) => {
+    const velocity = entry.horizontalVelocity ?? 0;
+    if (velocity === 0) {
+      return entry;
+    }
+
+    const offset = velocity * elapsedSeconds;
+    return Object.freeze({
+      ...entry,
+      hitbox: Object.freeze({
+        ...entry.hitbox,
+        left: entry.hitbox.left + offset,
+        right: entry.hitbox.right + offset,
+      }),
+    });
+  });
+
 const run = (
   steps: ReadonlyArray<number>,
   hazards: ReadonlyArray<Readonly<LogicalHazard>>,
 ): Readonly<PrototypeRunState> => {
   let state: Readonly<PrototypeRunState> = START;
+  let currentHazards = hazards;
   for (const elapsedSeconds of steps) {
-    state = stepPrototypeRun(state, elapsedSeconds, context(hazards)).state;
+    state = stepPrototypeRun(state, elapsedSeconds, context(currentHazards)).state;
+    currentHazards = advanceMovingHazards(currentHazards, elapsedSeconds);
   }
   return state;
 };
