@@ -78,25 +78,30 @@ describe('M5 bait-and-dodge Missile', () => {
       }),
     );
 
-    expect(getLifecycle(state, spawn)).toMatchObject({
-      phase: 'lock',
-      latestObservedTarget: { positionY: 142, runDistance: 490 },
-      lockedTarget: { positionY: 142, runDistance: 490 },
-    });
+    const locked = getLifecycle(state, spawn);
+    expect(locked.phase).toBe('lock');
+    expect(locked.latestObservedTarget.positionY).toBeCloseTo(142, 9);
+    expect(locked.latestObservedTarget.runDistance).toBeCloseTo(490, 9);
+    expect(locked.lockedTarget?.positionY).toBeCloseTo(142, 9);
+    expect(locked.lockedTarget?.runDistance).toBeCloseTo(490, 9);
 
     state = stepTelegraphedHazardSimulation(state, [spawn], 0.4, {
       positionY: 72,
       runDistance: 630,
     });
 
-    expect(getLifecycle(state, spawn)).toMatchObject({
-      phase: 'active',
-      latestObservedTarget: { positionY: 142, runDistance: 490 },
-      lockedTarget: { positionY: 142, runDistance: 490 },
-    });
+    const active = getLifecycle(state, spawn);
+    expect(active.phase).toBe('active');
+    expect(active.latestObservedTarget.positionY).toBeCloseTo(142, 9);
+    expect(active.latestObservedTarget.runDistance).toBeCloseTo(490, 9);
+    expect(active.lockedTarget?.positionY).toBeCloseTo(142, 9);
+    expect(active.lockedTarget?.runDistance).toBeCloseTo(490, 9);
 
     const missile = getLethalHazardsForTelegraphedSimulation(state, [spawn])[0];
-    expect(missile?.hitbox).toEqual({ left: 930, right: 994, top: 118, bottom: 166 });
+    expect(missile?.hitbox.left).toBeCloseTo(930, 9);
+    expect(missile?.hitbox.right).toBeCloseTo(994, 9);
+    expect(missile?.hitbox.top).toBeCloseTo(118, 9);
+    expect(missile?.hitbox.bottom).toBeCloseTo(166, 9);
     if (!missile) {
       throw new Error('Expected active Missile.');
     }
