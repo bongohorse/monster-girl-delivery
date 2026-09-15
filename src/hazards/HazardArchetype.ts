@@ -140,7 +140,9 @@ const assertValidHazardBehavior = (definition: Readonly<HazardBehavior>): void =
           definition.rotation.direction !== 'clockwise' &&
           definition.rotation.direction !== 'counterclockwise'
         ) {
-          throw new TypeError('Hazard Zapper rotation direction must be clockwise or counterclockwise.');
+          throw new TypeError(
+            'Hazard Zapper rotation direction must be clockwise or counterclockwise.',
+          );
         }
         assertPositiveFinite(
           definition.rotation.speedDegreesPerSecond,
