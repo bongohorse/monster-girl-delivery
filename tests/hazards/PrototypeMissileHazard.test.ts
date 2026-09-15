@@ -175,8 +175,10 @@ describe('M5 bait-and-dodge Missile', () => {
       throw new Error('Expected active Missile before and after resize.');
     }
 
-    const narrowScreenLeft = narrow.hitbox.left - narrowLayout.playerRunDistance + narrowLayout.playerScreenX;
-    const wideScreenLeft = wide.hitbox.left - wideLayout.playerRunDistance + wideLayout.playerScreenX;
+    const narrowScreenLeft =
+      narrow.hitbox.left - narrowLayout.playerRunDistance + narrowLayout.playerScreenX;
+    const wideScreenLeft =
+      wide.hitbox.left - wideLayout.playerRunDistance + wideLayout.playerScreenX;
     expect(narrowScreenLeft).toBe(98);
     expect(wideScreenLeft).toBe(98);
     expect(wide.hitbox).toEqual({ left: 743, right: 807, top: 118, bottom: 166 });
