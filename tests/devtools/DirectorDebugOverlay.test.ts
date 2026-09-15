@@ -9,7 +9,10 @@ import {
 import type { LogicalCollectibleSpawnInstance } from '../../src/generation/GeneratedCollectibles';
 import type { LogicalHazardSpawnInstance } from '../../src/generation/PatternSpawnScheduler';
 import { scheduleNextPattern } from '../../src/generation/PatternSpawnScheduler';
-import { PROTOTYPE_MISSILE_PATTERN } from '../../src/generation/PrototypeHazardPatternFixtures';
+import {
+  PROTOTYPE_MISSILE_PATTERN,
+  PROTOTYPE_ZAPPER_PATTERN,
+} from '../../src/generation/PrototypeHazardPatternFixtures';
 import { createRunGenerationState } from '../../src/generation/RunGenerationState';
 import { STATIC_GEOMETRIC_HAZARD_BEHAVIOR } from '../../src/hazards/HazardArchetype';
 import {
@@ -49,17 +52,26 @@ const createFrame = (consumedCollectibleIds: readonly string[] = []) => ({
   viewport: new ViewportService(400, 800).getSnapshot(),
 });
 
-const createMissileSpawn = () => {
+const createPatternSpawn = (
+  catalog: Parameters<typeof scheduleNextPattern>[0]['catalog'],
+  seed: string,
+) => {
   const schedule = scheduleNextPattern({
-    catalog: [PROTOTYPE_MISSILE_PATTERN],
+    catalog,
     patternStartDistance: 0,
-    state: createRunGenerationState('missile-debug-overlay'),
+    state: createRunGenerationState(seed),
   });
   if (schedule.status !== 'accepted' || !schedule.spawns[0]) {
-    throw new Error('Expected M5 Missile spawn.');
+    throw new Error('Expected debug overlay hazard spawn.');
   }
   return schedule.spawns[0];
 };
+
+const createMissileSpawn = () =>
+  createPatternSpawn([PROTOTYPE_MISSILE_PATTERN], 'missile-debug-overlay');
+
+const createZapperSpawn = () =>
+  createPatternSpawn([PROTOTYPE_ZAPPER_PATTERN], 'zapper-debug-overlay');
 
 describe('DirectorDebugOverlay geometry', () => {
   it('projects authoritative player, Graze, hazard, collectible, and gameplay boundaries', () => {
@@ -141,6 +153,35 @@ describe('DirectorDebugOverlay geometry', () => {
       color: DIRECTOR_DEBUG_COLORS.hazardLethal,
       hitbox: { left: 98, right: 162, top: 556, bottom: 604 },
     });
+  });
+
+  it('draws Zapper beam and charged nodes from authoritative compound geometry, not its AABB', () => {
+    const zapper = createZapperSpawn();
+    const geometry = createDirectorDebugGeometry({
+      collectibles: [],
+      consumedCollectibleIds: [],
+      flight: { positionY: 195, velocityY: 0 },
+      hazards: [zapper],
+      motion: { distance: 0 },
+      nextPatternStartDistance: null,
+      telegraphedHazards: createTelegraphedHazardSimulationState(),
+      viewport: new ViewportService(400, 800).getSnapshot(),
+    });
+
+    expect(
+      geometry.rectangles.some(
+        (rectangle) =>
+          rectangle.kind === 'hazard-lethal' || rectangle.kind === 'hazard-preview',
+      ),
+    ).toBe(false);
+    expect(geometry.paths).toHaveLength(3);
+    expect(geometry.paths.map((path) => path.points.length)).toEqual([19, 24, 24]);
+    expect(
+      geometry.paths.every(
+        (path) =>
+          path.kind === 'hazard-lethal' && path.color === DIRECTOR_DEBUG_COLORS.hazardLethal,
+      ),
+    ).toBe(true);
   });
 
   it('does not draw already consumed collectible hitboxes', () => {
