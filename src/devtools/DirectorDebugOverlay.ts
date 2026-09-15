@@ -337,7 +337,7 @@ export const createDirectorDebugGeometry = (
     const lethal = isHazardCurrentlyLethal(spawn, frame.telegraphedHazards);
     const kind = lethal ? 'hazard-lethal' : 'hazard-preview';
     const color = lethal ? DIRECTOR_DEBUG_COLORS.hazardLethal : DIRECTOR_DEBUG_COLORS.hazardPreview;
-    const zapper = resolvePrototypeZapperGeometry(spawn);
+    const zapper = resolvePrototypeZapperGeometry(spawn, frame.motion.simulationSeconds ?? 0);
     if (zapper) {
       paths.push(
         createProjectedCapsulePath(
