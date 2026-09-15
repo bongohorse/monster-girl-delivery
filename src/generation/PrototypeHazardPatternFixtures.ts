@@ -1,3 +1,8 @@
+import {
+  createPrototypeZapperBehavior,
+  createPrototypeZapperHitbox,
+  PROTOTYPE_ZAPPER_LENGTHS,
+} from '../hazards/PrototypeZapperHazard';
 import { createHazardPattern } from './HazardPattern';
 
 /** PROTOTYPE example/test data only; this is not a live or production content catalog. */
@@ -116,7 +121,7 @@ export const PROTOTYPE_OFFSET_PAIR_PATTERN = createHazardPattern({
   ],
 });
 
-/** PROTOTYPE geometric/persistent moving hazard; tuning and presentation are not production art. */
+/** PROTOTYPE geometric/persistent moving hazard retained for M4 evidence. */
 export const PROTOTYPE_VERTICAL_PATROL_PATTERN = createHazardPattern({
   id: 'prototype-vertical-patrol',
   runLength: 640,
@@ -140,6 +145,33 @@ export const PROTOTYPE_VERTICAL_PATROL_PATTERN = createHazardPattern({
       id: 'vertical-patrol-1',
       type: 'placeholder-barrier',
       hitbox: { left: 280, right: 328, top: 147, bottom: 195 },
+    },
+  ],
+});
+
+const PROTOTYPE_STATIC_ZAPPER_BEHAVIOR = createPrototypeZapperBehavior(
+  0,
+  PROTOTYPE_ZAPPER_LENGTHS.medium,
+);
+
+/** M5 baseline Zapper: permanently active horizontal spatial obstacle. */
+export const PROTOTYPE_ZAPPER_PATTERN = createHazardPattern({
+  id: 'prototype-zapper-static',
+  runLength: 640,
+  profile: {
+    behaviorTags: ['static-barrier'],
+    difficultyTierRange: { minimumTierIndex: 1, maximumTierIndex: null },
+    pacingIntensities: ['low', 'medium', 'high', 'peak'],
+    pressureCost: 1,
+    readabilityCost: 2,
+    varietyFamilyId: 'zapper',
+  },
+  entries: [
+    {
+      behavior: PROTOTYPE_STATIC_ZAPPER_BEHAVIOR,
+      id: 'zapper-static-1',
+      type: 'placeholder-barrier',
+      hitbox: createPrototypeZapperHitbox(280, 195, PROTOTYPE_STATIC_ZAPPER_BEHAVIOR),
     },
   ],
 });
@@ -284,10 +316,13 @@ export const PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES = Object.freeze([
   PROTOTYPE_TARGET_LOCK_STRIKE_PATTERN,
 ]);
 
-/** M5 live catalog swaps only the legacy target-lock prototype for the bait-and-dodge Missile. */
+/**
+ * M5 live catalog replaces the M4 moving-barrier prototype with the real static Zapper core and
+ * replaces the legacy target-lock prototype with the bait-and-dodge Missile.
+ */
 export const PROTOTYPE_M5_HAZARD_PATTERN_FIXTURES = Object.freeze([
   ...PROTOTYPE_HAZARD_PATTERN_FIXTURES,
-  PROTOTYPE_VERTICAL_PATROL_PATTERN,
+  PROTOTYPE_ZAPPER_PATTERN,
   PROTOTYPE_TIMED_PULSE_PATTERN,
   PROTOTYPE_MISSILE_PATTERN,
 ]);
