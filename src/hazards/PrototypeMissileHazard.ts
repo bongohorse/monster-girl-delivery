@@ -1,14 +1,22 @@
+import type { LogicalHitbox } from '../systems/HazardCollision';
 import {
   type BehavioralLogicalHazard,
   isTargetLockStrikeHazardBehavior,
   resolveTargetLockStrikeHitbox,
+  type TargetLockMissileMotion,
   type TargetLockStrikeHazardBehavior,
 } from './HazardArchetype';
 import type { TelegraphedHazardTarget } from './TelegraphedHazardLifecycle';
 
 export interface PrototypeMissileBehavior extends TargetLockStrikeHazardBehavior {
-  readonly minimumLaunchLeadDistance: number;
-  readonly trackingResponsiveness: number;
+  readonly missile: Readonly<TargetLockMissileMotion>;
+}
+
+export interface PrototypeMissileHorizontalLayout {
+  readonly playerRunDistance: number;
+  readonly playerScreenX: number;
+  readonly viewportLeft: number;
+  readonly viewportRight: number;
 }
 
 /** Presentation-only blink cadence. Gameplay timing remains owned by the lifecycle. */
@@ -16,8 +24,7 @@ export const PROTOTYPE_MISSILE_WARNING_BLINK_SECONDS = 0.16;
 
 export const isPrototypeMissileBehavior = (
   behavior: Readonly<TargetLockStrikeHazardBehavior>,
-): behavior is Readonly<PrototypeMissileBehavior> =>
-  behavior.trackingResponsiveness !== undefined && behavior.minimumLaunchLeadDistance !== undefined;
+): behavior is Readonly<PrototypeMissileBehavior> => behavior.missile !== undefined;
 
 /**
  * Keeps the marker behind player movement without integrating frame-by-frame chase state.
@@ -38,7 +45,8 @@ export const resolvePrototypeMissileTrackingTarget = (
 
   const trackedPositionY =
     warningOrigin.positionY +
-    (observedTarget.positionY - warningOrigin.positionY) * hazard.behavior.trackingResponsiveness;
+    (observedTarget.positionY - warningOrigin.positionY) *
+      hazard.behavior.missile.trackingResponsiveness;
   const clampedHitbox = resolveTargetLockStrikeHitbox(hazard, trackedPositionY);
 
   return Object.freeze({
@@ -47,15 +55,21 @@ export const resolvePrototypeMissileTrackingTarget = (
   });
 };
 
+export const getPrototypeMissileRelativeVelocityX = (
+  behavior: Readonly<PrototypeMissileBehavior>,
+): number => (behavior.missile.launchSide === 'right' ? -1 : 1) * behavior.missile.travelSpeed;
+
 /**
- * Resolves the committed Missile strike. Authored scheduling remains a lower bound, while the
- * locked player run position guarantees enough lead for a visible right-to-left launch even when
- * the Director spawns a Missile manually near the screen edge.
+ * Resolves the Missile's current authoritative world hitbox from a player-relative horizontal
+ * trajectory. The present M5 content launches from the right, while the same rule also supports a
+ * left-side launch without teaching collision or presentation that Missiles have one fixed side.
  */
-export const resolvePrototypeMissileStrikeHitbox = (
+export const resolvePrototypeMissileTravelHitbox = (
   hazard: Readonly<BehavioralLogicalHazard>,
   target: Readonly<TelegraphedHazardTarget>,
-) => {
+  activeElapsedSeconds: number,
+  layout: Readonly<PrototypeMissileHorizontalLayout>,
+): Readonly<LogicalHitbox> => {
   const baseHitbox = resolveTargetLockStrikeHitbox(hazard, target.positionY);
 
   if (
@@ -64,12 +78,29 @@ export const resolvePrototypeMissileStrikeHitbox = (
   ) {
     return baseHitbox;
   }
+  if (!Number.isFinite(activeElapsedSeconds)) {
+    throw new RangeError('Missile active elapsed time must be finite.');
+  }
+  if (
+    !Number.isFinite(layout.playerRunDistance) ||
+    !Number.isFinite(layout.playerScreenX) ||
+    !Number.isFinite(layout.viewportLeft) ||
+    !Number.isFinite(layout.viewportRight) ||
+    layout.viewportRight <= layout.viewportLeft
+  ) {
+    throw new RangeError('Missile horizontal layout must be finite with positive viewport width.');
+  }
 
   const width = baseHitbox.right - baseHitbox.left;
-  const left = Math.max(
-    baseHitbox.left,
-    target.runDistance + hazard.behavior.minimumLaunchLeadDistance,
-  );
+  const motion = hazard.behavior.missile;
+  const launchLeftOffset =
+    motion.launchSide === 'right'
+      ? layout.viewportRight - layout.playerScreenX + motion.offscreenPadding
+      : layout.viewportLeft - layout.playerScreenX - motion.offscreenPadding - width;
+  const left =
+    layout.playerRunDistance +
+    launchLeftOffset +
+    getPrototypeMissileRelativeVelocityX(hazard.behavior) * activeElapsedSeconds;
 
   return Object.freeze({
     left,
