@@ -121,7 +121,11 @@ export const resolvePrototypeMissileTravelHitbox = (
     throw new RangeError('Missile active elapsed time must be non-negative and finite.');
   }
   assertValidHorizontalLayout(layout);
-  if (launchScreenLeft !== undefined && launchScreenLeft !== null && !Number.isFinite(launchScreenLeft)) {
+  if (
+    launchScreenLeft !== undefined &&
+    launchScreenLeft !== null &&
+    !Number.isFinite(launchScreenLeft)
+  ) {
     throw new RangeError('Missile launch screen position must be finite when provided.');
   }
 
