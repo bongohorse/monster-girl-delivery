@@ -189,9 +189,8 @@ export class Foundation extends Scene {
     flight: { positionY: 0, velocityY: 0 },
   };
   private deathRetryState: Readonly<PrototypeDeathRetryState> = createPrototypeDeathRetryState();
-  private retainedGeneratedTelegraphedHazards: ReadonlyArray<
-    Readonly<LogicalHazardSpawnInstance>
-  > = Object.freeze([]);
+  private retainedGeneratedTelegraphedHazards: ReadonlyArray<Readonly<LogicalHazardSpawnInstance>> =
+    Object.freeze([]);
   private directorManualHazards: ReadonlyArray<Readonly<LogicalHazardSpawnInstance>> =
     Object.freeze([]);
   private directorGodModeEnabled = false;
