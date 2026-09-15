@@ -26,7 +26,7 @@ import {
   resolvePrototypeMissileTravelHitbox,
 } from '../hazards/PrototypeMissileHazard';
 import {
-  getPrototypeMissileLaunchScreenLeft,
+  getPrototypeMissileLaunchRelativeLeft,
   getTelegraphedHazardLifecycle,
   type TelegraphedHazardSimulationState,
 } from '../hazards/TelegraphedHazardSimulation';
@@ -144,7 +144,7 @@ const resolveCurrentHazardHitbox = (
             viewportLeft: 0,
             viewportRight: viewport.width,
           },
-          getPrototypeMissileLaunchScreenLeft(telegraphedHazards, spawn),
+          getPrototypeMissileLaunchRelativeLeft(telegraphedHazards, spawn),
         );
       }
 
