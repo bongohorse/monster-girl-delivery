@@ -128,7 +128,7 @@ const getFirstVerticalOverlapSeconds = (
 
     const uniqueCandidates: number[] = [];
     for (const candidate of candidates) {
-      const previous = uniqueCandidates.at(-1);
+      const previous = uniqueCandidates[uniqueCandidates.length - 1];
       if (previous === undefined || Math.abs(candidate - previous) > 1e-10) {
         uniqueCandidates.push(candidate);
       }
