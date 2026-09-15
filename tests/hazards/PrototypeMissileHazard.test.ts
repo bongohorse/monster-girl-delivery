@@ -146,7 +146,9 @@ describe('M5 bait-and-dodge Missile', () => {
     const launch = resolvePrototypeMissileTravelHitbox(leftLaunch, target, 0, MISSILE_LAYOUT);
     const later = resolvePrototypeMissileTravelHitbox(leftLaunch, target, 0.5, MISSILE_LAYOUT);
 
-    expect(launch.left - MISSILE_LAYOUT.playerRunDistance + MISSILE_LAYOUT.playerScreenX).toBe(-112);
+    expect(launch.left - MISSILE_LAYOUT.playerRunDistance + MISSILE_LAYOUT.playerScreenX).toBe(
+      -112,
+    );
     expect(later.left - MISSILE_LAYOUT.playerRunDistance + MISSILE_LAYOUT.playerScreenX).toBe(238);
     expect(later.left).toBeGreaterThan(launch.left);
   });
