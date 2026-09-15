@@ -173,6 +173,46 @@ describe('M5 bait-and-dodge Missile', () => {
     expect(unchanged).toBe(state);
   });
 
+  it('resumes warning from authoritative elapsed time without a targeting or lifecycle jump', () => {
+    const spawn = createMissileSpawn();
+    let state = stepTelegraphedHazardSimulation(
+      createTelegraphedHazardSimulationState(),
+      [spawn],
+      0,
+      { positionY: 100, runDistance: 0 },
+    );
+    state = stepTelegraphedHazardSimulation(state, [spawn], 0.7, {
+      positionY: 150,
+      runDistance: 245,
+    });
+
+    const beforePause = getLifecycle(state, spawn);
+    const paused = stepTelegraphedHazardSimulation(state, [spawn], 0, {
+      positionY: 40,
+      runDistance: 999,
+    });
+    expect(paused).toBe(state);
+    expect(getLifecycle(paused, spawn)).toEqual(beforePause);
+
+    state = stepTelegraphedHazardSimulation(
+      paused,
+      [spawn],
+      0.7,
+      beforePause.latestObservedTarget,
+      (delta) => ({
+        positionY: 150 + 20 * delta,
+        runDistance: 245 + 350 * delta,
+      }),
+    );
+
+    const resumed = getLifecycle(state, spawn);
+    expect(resumed.phase).toBe('lock');
+    expect(resumed.elapsedPhaseSeconds).toBeCloseTo(0, 9);
+    expect(resumed.lockedTarget).toEqual(resumed.latestObservedTarget);
+    expect(resumed.lockedTarget?.positionY).toBeCloseTo(158.4, 9);
+    expect(resumed.lockedTarget?.runDistance).toBeCloseTo(490, 9);
+  });
+
   it('locks to the same target and travel position across all supported frame partitions', () => {
     const spawn = createMissileSpawn();
     const results = Object.fromEntries(
