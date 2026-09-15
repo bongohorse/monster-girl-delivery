@@ -21,7 +21,7 @@ export class PrototypeZapperPresentation {
 
   constructor(
     scene: Scene,
-    private readonly hazard: Readonly<LogicalHazard>,
+    hazard: Readonly<LogicalHazard>,
   ) {
     const geometry = resolvePrototypeZapperGeometry(hazard);
     if (!geometry) {
@@ -35,14 +35,14 @@ export class PrototypeZapperPresentation {
     const localAY = geometry.endpointA.center.y - geometry.bounds.top;
     const localBX = geometry.endpointB.center.x - geometry.bounds.left;
     const localBY = geometry.endpointB.center.y - geometry.bounds.top;
+    const beamWidth = geometry.beam.radius * 2;
 
-    graphics.lineStyle(hazard.behavior && 'beamThickness' in hazard.behavior ? hazard.behavior.beamThickness + 8 : 22, 0xffd166, 0.22);
+    graphics.lineStyle(beamWidth + 8, 0xffd166, 0.22);
     graphics.beginPath();
     graphics.moveTo(localAX, localAY);
     graphics.lineTo(localBX, localBY);
     graphics.strokePath();
 
-    const beamWidth = hazard.behavior && 'beamThickness' in hazard.behavior ? hazard.behavior.beamThickness : geometry.beam.radius * 2;
     graphics.lineStyle(beamWidth, 0xfff3a6, 1);
     graphics.beginPath();
     graphics.moveTo(localAX, localAY);
