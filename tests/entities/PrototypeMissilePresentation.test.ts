@@ -51,12 +51,13 @@ const createSceneFake = () => {
     method.mockReturnValue(graphics);
   }
 
+  const camera = { width: 400, zoom: 1 };
   const scene = {
     add: { graphics: vi.fn(() => graphics) },
-    cameras: { main: { width: 400, zoom: 1 } },
+    cameras: { main: camera },
   } as unknown as Scene;
 
-  return { graphics, scene };
+  return { camera, graphics, scene };
 };
 
 describe('M5 Missile presentation', () => {
@@ -100,5 +101,47 @@ describe('M5 Missile presentation', () => {
     });
     presentation.render({ distance: 805 }, 100, getTelegraphedHazardLifecycle(state, spawn));
     expect(graphics.setPosition).toHaveBeenLastCalledWith(98, 118);
+  });
+
+  it('adapts locked presentation to resize without changing the committed target', () => {
+    const spawn = createMissileSpawn();
+    const { camera, graphics, scene } = createSceneFake();
+    const presentation = new PrototypeHazardPresentation(scene, spawn);
+    let state = stepTelegraphedHazardSimulation(
+      createTelegraphedHazardSimulationState(),
+      [spawn],
+      0,
+      { positionY: 100, runDistance: 0 },
+    );
+    state = stepTelegraphedHazardSimulation(
+      state,
+      [spawn],
+      1.4,
+      { positionY: 100, runDistance: 0 },
+      (delta) => ({ positionY: 100 + 50 * delta, runDistance: 350 * delta }),
+    );
+
+    const locked = getTelegraphedHazardLifecycle(state, spawn);
+    if (!locked?.lockedTarget) {
+      throw new Error('Expected Missile to be locked before resize.');
+    }
+    const committedTarget = locked.lockedTarget;
+    presentation.render({ distance: 490 }, 100, locked);
+    expect(graphics.setPosition).toHaveBeenLastCalledWith(354, 120);
+
+    camera.width = 640;
+    presentation.render({ distance: 490 }, 100, locked);
+
+    expect(locked.lockedTarget).toBe(committedTarget);
+    expect(locked.lockedTarget.positionY).toBeCloseTo(142, 9);
+    expect(graphics.setPosition).toHaveBeenLastCalledWith(594, 120);
+
+    state = stepTelegraphedHazardSimulation(state, [spawn], 0.4, {
+      positionY: 40,
+      runDistance: 630,
+    });
+    const active = getTelegraphedHazardLifecycle(state, spawn);
+    expect(active?.lockedTarget).toBe(committedTarget);
+    expect(active?.lockedTarget?.positionY).toBeCloseTo(142, 9);
   });
 });
