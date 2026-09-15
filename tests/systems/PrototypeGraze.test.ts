@@ -21,10 +21,12 @@ const hazard = (
   bottom: number,
   left = 50,
   right = 60,
+  horizontalVelocity?: number,
 ): Readonly<LogicalHazard> =>
   Object.freeze({
     grazeOccurrenceId: id,
     hitbox: Object.freeze({ left, right, top, bottom }),
+    ...(horizontalVelocity === undefined ? {} : { horizontalVelocity }),
   }) as Readonly<LogicalHazard>;
 
 const context = (hazards: ReadonlyArray<Readonly<LogicalHazard>>) => ({
@@ -291,5 +293,34 @@ describe('prototype Graze skill layer', () => {
     );
     expect(earlyGraze.phase).toBe('dead');
     expect(earlyGraze.finalResult?.grazeCount).toBe(1);
+  });
+
+  it('qualifies and awards Graze on independently moving hazards using relative velocity', () => {
+    // Hazard moves right-to-left at 500 px/s while run scrolls at 100 px/s (combined relative speed = 600 px/s).
+    // It starts at left=100, right=110. Graze extents are [-26, 26], so outer horizontal window is
+    // [74, 136]. At 600 px/s, the window completely clears in 136 / 600 = 0.2267 s.
+    const fastHazard = hazard('fast-missile', 25, 30, 100, 110, -500);
+    const stepResult = stepPrototypeRun(START, 0.3, context([fastHazard]));
+
+    expect(stepResult.enteredDead).toBe(false);
+    expect(stepResult.state.graze?.count).toBe(1);
+    expect(stepResult.state.graze?.pendingOccurrenceIds).toHaveLength(0);
+
+    // If the player dies on a later obstacle, this completed Graze must not be discarded.
+    const deadResult = stepPrototypeRun(
+      stepResult.state,
+      0.5,
+      context([
+        hazard(
+          'lethal',
+          10,
+          15,
+          stepResult.state.motion.distance + 10,
+          stepResult.state.motion.distance + 20,
+        ),
+      ]),
+    );
+    expect(deadResult.enteredDead).toBe(true);
+    expect(deadResult.state.finalResult?.grazeCount).toBe(1);
   });
 });

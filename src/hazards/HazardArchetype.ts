@@ -28,6 +28,19 @@ export interface TimedPulseHazardBehavior {
   readonly lifecycle: Readonly<TelegraphedHazardLifecycleConfig>;
 }
 
+/**
+ * Optional M5 Missile motion layered onto the generic target-lock interaction. The current authored
+ * Missile launches from the right and travels left, but launch side is data so later content is not
+ * coupled to one permanent direction. Curved/homing trajectories remain future behavior work.
+ */
+export interface TargetLockMissileMotion {
+  readonly launchSide: 'left' | 'right';
+  readonly offscreenPadding: number;
+  /** Maximum vertical warning-marker chase speed in logical pixels per second. */
+  readonly trackingSpeed: number;
+  readonly travelSpeed: number;
+}
+
 /** PROTOTYPE warning-track, lock, then fixed-height strike with no post-lock tracking. */
 export interface TargetLockStrikeHazardBehavior {
   readonly archetype: 'reactive';
@@ -36,6 +49,7 @@ export interface TargetLockStrikeHazardBehavior {
   readonly maximumTargetY: number;
   readonly minimumTargetY: number;
   readonly strikeHeight: number;
+  readonly missile?: Readonly<TargetLockMissileMotion>;
 }
 
 export type HazardBehavior =
@@ -93,7 +107,7 @@ const assertValidHazardBehavior = (definition: Readonly<HazardBehavior>): void =
     case 'pulse':
       createTelegraphedHazardLifecycleConfig(definition.lifecycle);
       return;
-    case 'target-lock-strike':
+    case 'target-lock-strike': {
       createTelegraphedHazardLifecycleConfig(definition.lifecycle);
       assertPositiveFinite(definition.strikeHeight, 'Hazard target-lock strikeHeight');
       if (
@@ -105,7 +119,20 @@ const assertValidHazardBehavior = (definition: Readonly<HazardBehavior>): void =
           'Hazard target-lock target range must be finite with maximumTargetY above minimumTargetY.',
         );
       }
+
+      const missile = definition.missile;
+      if (missile) {
+        assertPositiveFinite(missile.trackingSpeed, 'Hazard Missile trackingSpeed');
+        if (missile.launchSide !== 'left' && missile.launchSide !== 'right') {
+          throw new TypeError('Hazard Missile launchSide must be left or right.');
+        }
+        assertPositiveFinite(missile.travelSpeed, 'Hazard Missile travelSpeed');
+        if (!Number.isFinite(missile.offscreenPadding) || missile.offscreenPadding < 0) {
+          throw new RangeError('Hazard Missile offscreenPadding must be non-negative and finite.');
+        }
+      }
       return;
+    }
     default:
       throw new TypeError(
         `Unsupported hazard behavior kind: ${String(
@@ -134,6 +161,7 @@ export const createHazardBehavior = (
       return Object.freeze({
         ...definition,
         lifecycle: createTelegraphedHazardLifecycleConfig(definition.lifecycle),
+        ...(definition.missile ? { missile: Object.freeze({ ...definition.missile }) } : {}),
       });
   }
 };

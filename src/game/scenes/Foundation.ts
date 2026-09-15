@@ -27,15 +27,20 @@ import {
 } from '../../generation/GeneratedHazardStream';
 import type { HazardPattern } from '../../generation/HazardPattern';
 import { PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG } from '../../generation/LiveEncounterPolicy';
-import type { LogicalHazardSpawnInstance } from '../../generation/PatternSpawnScheduler';
+import {
+  getLogicalHazardSpawnIdentity,
+  type LogicalHazardSpawnInstance,
+} from '../../generation/PatternSpawnScheduler';
 import {
   createPrototypeHazardVerticalDomain,
   type PrototypeHazardVerticalDomain,
 } from '../../generation/PrototypeHazardVerticalDomain';
+import { isTelegraphedHazardBehavior } from '../../hazards/HazardArchetype';
 import type { TelegraphedHazardTarget } from '../../hazards/TelegraphedHazardLifecycle';
 import {
   createTelegraphedHazardSimulationState,
   getCollisionHazardsForTelegraphedSimulation,
+  getTelegraphedHazardLifecycle,
   stepTelegraphedHazardSimulation,
   type TelegraphedHazardSimulationState,
 } from '../../hazards/TelegraphedHazardSimulation';
@@ -183,6 +188,8 @@ export class Foundation extends Scene {
     flight: { positionY: 0, velocityY: 0 },
   };
   private deathRetryState: Readonly<PrototypeDeathRetryState> = createPrototypeDeathRetryState();
+  private retainedGeneratedTelegraphedHazards: ReadonlyArray<Readonly<LogicalHazardSpawnInstance>> =
+    Object.freeze([]);
   private directorManualHazards: ReadonlyArray<Readonly<LogicalHazardSpawnInstance>> =
     Object.freeze([]);
   private directorGodModeEnabled = false;
@@ -201,6 +208,7 @@ export class Foundation extends Scene {
   create() {
     this.shutdownHandled = false;
     this.deathRetryState = createPrototypeDeathRetryState();
+    this.retainedGeneratedTelegraphedHazards = Object.freeze([]);
     const safeArea = readSafeAreaInsets(document.getElementById('safe-area-probe'));
     const renderViewport = getLogicalViewportFromBacking(
       this.scale.width,
@@ -375,6 +383,7 @@ export class Foundation extends Scene {
         this.directorPanel?.observeEncounter,
       );
       // Resolve parameters before movement, without aging or admitting new content.
+      const generatedBeforeMotionAdvance = this.hazardStream.spawns;
       this.hazardStream = advanceGeneratedHazardStream(
         this.hazardStream,
         this.runState.motion.distance,
@@ -383,12 +392,14 @@ export class Foundation extends Scene {
         0,
         false,
       );
+      this.reconcileRetainedGeneratedTelegraphedHazards(generatedBeforeMotionAdvance);
       const appliedScrollSpeed = this.hazardStream.schedulingWindow.scrollSpeed;
       const runMotionTuning = Object.freeze({ baseScrollSpeed: appliedScrollSpeed });
       const activeFlightTuning = this.hazardStream.policy?.flightTuning ?? flightTuning;
       const thrustHeld = this.services.input.isThrustHeld();
       const initialFlight = this.runState.flight;
       const initialMotion = this.runState.motion;
+      const playerScreenX = getPrototypePlayerX(viewport);
       const resolvePlayerTargetAtDelta = (deltaSeconds: number): TelegraphedHazardTarget => {
         const subFlight = stepVerticalFlight(
           initialFlight,
@@ -413,6 +424,12 @@ export class Foundation extends Scene {
           runDistance: this.runState.motion.distance,
         },
         resolvePlayerTargetAtDelta,
+        {
+          playerRunDistance: initialMotion.distance,
+          playerScreenX,
+          viewportLeft: 0,
+          viewportRight: viewport.width,
+        },
       );
       const result = stepPrototypeRun(this.runState, simulationDeltaSeconds, {
         collectibles: this.collectibleSpawns,
@@ -421,6 +438,13 @@ export class Foundation extends Scene {
         hazards: getCollisionHazardsForTelegraphedSimulation(
           this.telegraphedHazardState,
           activeHazards,
+          {
+            playerRunDistance: initialMotion.distance,
+            playerScreenX,
+            scrollSpeed: appliedScrollSpeed,
+            viewportLeft: 0,
+            viewportRight: viewport.width,
+          },
         ),
         runMotionTuning,
         thrustHeld,
@@ -441,6 +465,7 @@ export class Foundation extends Scene {
         this.enterRunFailState(finalResult);
       } else {
         // Age existing reservations by the completed frame, then commit new content at t=0.
+        const generatedBeforeCommit = this.hazardStream.spawns;
         this.hazardStream = advanceGeneratedHazardStream(
           this.hazardStream,
           this.runState.motion.distance,
@@ -449,6 +474,7 @@ export class Foundation extends Scene {
           simulationDeltaSeconds,
           this.directorAutoHazardsEnabled,
         );
+        this.reconcileRetainedGeneratedTelegraphedHazards(generatedBeforeCommit);
         this.pruneDirectorManualHazards();
         this.collectibleSpawns = this.directorAutoHazardsEnabled
           ? reconcileGeneratedCollectibles(
@@ -590,6 +616,7 @@ export class Foundation extends Scene {
   };
 
   private readonly clearDirectorHazards = (): void => {
+    this.retainedGeneratedTelegraphedHazards = Object.freeze([]);
     this.directorManualHazards = Object.freeze([]);
     this.collectibleSpawns = Object.freeze([]);
     this.telegraphedHazardState = createTelegraphedHazardSimulationState();
@@ -651,13 +678,57 @@ export class Foundation extends Scene {
     this.renderRun(viewport);
   }
 
+  private reconcileRetainedGeneratedTelegraphedHazards(
+    previousGenerated: ReadonlyArray<Readonly<LogicalHazardSpawnInstance>>,
+  ): void {
+    if (!this.directorAutoHazardsEnabled) {
+      this.retainedGeneratedTelegraphedHazards = Object.freeze([]);
+      return;
+    }
+
+    const currentGenerated = this.hazardStream?.spawns ?? [];
+    const currentIdentities = new Set(currentGenerated.map(getLogicalHazardSpawnIdentity));
+    const retainedByIdentity = new Map(
+      this.retainedGeneratedTelegraphedHazards.map(
+        (spawn) => [getLogicalHazardSpawnIdentity(spawn), spawn] as const,
+      ),
+    );
+
+    for (const spawn of previousGenerated) {
+      if (!isTelegraphedHazardBehavior(spawn.behavior)) {
+        continue;
+      }
+      const identity = getLogicalHazardSpawnIdentity(spawn);
+      if (!currentIdentities.has(identity)) {
+        retainedByIdentity.set(identity, spawn);
+      }
+    }
+
+    for (const identity of currentIdentities) {
+      retainedByIdentity.delete(identity);
+    }
+
+    this.retainedGeneratedTelegraphedHazards = Object.freeze(
+      [...retainedByIdentity.values()].filter((spawn) => {
+        const lifecycle = getTelegraphedHazardLifecycle(this.telegraphedHazardState, spawn);
+        return lifecycle !== null && lifecycle.phase !== 'expired';
+      }),
+    );
+  }
+
   private pruneDirectorManualHazards(): void {
     if (this.directorManualHazards.length === 0) {
       return;
     }
 
     const cutoff = this.runState.motion.distance - 160;
-    const retained = this.directorManualHazards.filter((spawn) => spawn.hitbox.right >= cutoff);
+    const retained = this.directorManualHazards.filter((spawn) => {
+      const lifecycle = getTelegraphedHazardLifecycle(this.telegraphedHazardState, spawn);
+      if (lifecycle && lifecycle.phase !== 'expired') {
+        return true;
+      }
+      return spawn.hitbox.right >= cutoff;
+    });
     if (retained.length !== this.directorManualHazards.length) {
       this.directorManualHazards = Object.freeze(retained);
     }
@@ -665,10 +736,13 @@ export class Foundation extends Scene {
 
   private getActiveHazardSpawns(): ReadonlyArray<Readonly<LogicalHazardSpawnInstance>> {
     const generated = this.directorAutoHazardsEnabled ? (this.hazardStream?.spawns ?? []) : [];
-    if (this.directorManualHazards.length === 0) {
+    const retainedGenerated = this.directorAutoHazardsEnabled
+      ? this.retainedGeneratedTelegraphedHazards
+      : [];
+    if (retainedGenerated.length === 0 && this.directorManualHazards.length === 0) {
       return generated;
     }
-    return Object.freeze([...generated, ...this.directorManualHazards]);
+    return Object.freeze([...generated, ...retainedGenerated, ...this.directorManualHazards]);
   }
 
   private readonly handleDirectorDeath = (): void => {
@@ -719,6 +793,7 @@ export class Foundation extends Scene {
     seed: Parameters<typeof createGeneratedHazardStream>[0] = PROTOTYPE_LIVE_RUN_SEED,
   ): void {
     this.directorPanel?.reset();
+    this.retainedGeneratedTelegraphedHazards = Object.freeze([]);
     this.directorManualHazards = Object.freeze([]);
     this.directorHazardSerial = 0;
     const flightBounds = createPrototypeFlightBounds(viewport);
@@ -820,6 +895,7 @@ export class Foundation extends Scene {
     this.generatedHazardPresentation?.destroy();
     this.generatedHazardPresentation = undefined;
     this.collectibleSpawns = Object.freeze([]);
+    this.retainedGeneratedTelegraphedHazards = Object.freeze([]);
     this.directorManualHazards = Object.freeze([]);
     this.hazardStream = undefined;
     this.telegraphedHazardState = createTelegraphedHazardSimulationState();

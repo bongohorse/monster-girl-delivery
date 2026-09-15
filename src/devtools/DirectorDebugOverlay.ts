@@ -21,6 +21,12 @@ import {
 } from '../hazards/HazardArchetype';
 import { projectHazardHitboxToScreen } from '../hazards/PrototypeHazard';
 import {
+  isPrototypeMissileBehavior,
+  PROTOTYPE_MISSILE_WARNING_EDGE_MARGIN,
+  resolvePrototypeMissileTravelHitbox,
+} from '../hazards/PrototypeMissileHazard';
+import {
+  getPrototypeMissileLaunchRelativeLeft,
   getTelegraphedHazardLifecycle,
   type TelegraphedHazardSimulationState,
 } from '../hazards/TelegraphedHazardSimulation';
@@ -114,6 +120,8 @@ const resolveCurrentHazardHitbox = (
   spawn: Readonly<LogicalHazardSpawnInstance>,
   runDistance: number,
   telegraphedHazards: Readonly<TelegraphedHazardSimulationState>,
+  playerScreenX: number,
+  viewport: Readonly<ViewportSnapshot>,
 ): Readonly<LogicalHitbox> | null => {
   const lifecycle = getTelegraphedHazardLifecycle(telegraphedHazards, spawn);
   if (lifecycle?.phase === 'expired') {
@@ -122,7 +130,41 @@ const resolveCurrentHazardHitbox = (
 
   if (isTargetLockStrikeHazardBehavior(spawn.behavior) && lifecycle) {
     const target = lifecycle.lockedTarget ?? lifecycle.latestObservedTarget;
-    return resolveTargetLockStrikeHitbox(spawn, target.positionY);
+    const targetHitbox = resolveTargetLockStrikeHitbox(spawn, target.positionY);
+
+    if (isPrototypeMissileBehavior(spawn.behavior)) {
+      if (lifecycle.phase === 'active') {
+        return resolvePrototypeMissileTravelHitbox(
+          spawn,
+          target,
+          lifecycle.elapsedPhaseSeconds,
+          {
+            playerRunDistance: runDistance,
+            playerScreenX,
+            viewportLeft: 0,
+            viewportRight: viewport.width,
+          },
+          getPrototypeMissileLaunchRelativeLeft(telegraphedHazards, spawn),
+        );
+      }
+
+      const geometry = spawn.behavior.lifecycle.warningGeometry;
+      const warningWidth = geometry.rightOffset - geometry.leftOffset;
+      const targetCenterY = (targetHitbox.top + targetHitbox.bottom) / 2;
+      const screenLeft =
+        spawn.behavior.missile.launchSide === 'right'
+          ? viewport.width - PROTOTYPE_MISSILE_WARNING_EDGE_MARGIN - warningWidth
+          : PROTOTYPE_MISSILE_WARNING_EDGE_MARGIN;
+      const worldLeft = runDistance + screenLeft - playerScreenX;
+      return Object.freeze({
+        left: worldLeft,
+        right: worldLeft + warningWidth,
+        top: targetCenterY + geometry.topOffset,
+        bottom: targetCenterY + geometry.bottomOffset,
+      });
+    }
+
+    return targetHitbox;
   }
 
   return resolveHazardHitboxAtRunDistance(spawn, runDistance);
@@ -193,6 +235,8 @@ export const createDirectorDebugGeometry = (
       spawn,
       frame.motion.distance,
       frame.telegraphedHazards,
+      playerScreenX,
+      frame.viewport,
     );
     if (!hitbox) {
       continue;

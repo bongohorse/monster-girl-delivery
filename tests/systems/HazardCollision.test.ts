@@ -172,6 +172,25 @@ describe('hazard collision', () => {
     expect(testContinuousCollision({ positionY: 0, velocityY: 0 }, 0.2, hazard)).toBe(true);
   });
 
+  it('detects independently moving hazards approaching from either horizontal side', () => {
+    const fromRight = {
+      hitbox: { left: 40, right: 50, top: -5, bottom: 5 },
+      horizontalVelocity: -100,
+    };
+    const fromLeft = {
+      hitbox: { left: -50, right: -40, top: -5, bottom: 5 },
+      horizontalVelocity: 100,
+    };
+    const movingAway = {
+      hitbox: { left: 40, right: 50, top: -5, bottom: 5 },
+      horizontalVelocity: 100,
+    };
+
+    expect(testContinuousCollision({ positionY: 0, velocityY: 0 }, 0.5, fromRight, 0)).toBe(true);
+    expect(testContinuousCollision({ positionY: 0, velocityY: 0 }, 0.5, fromLeft, 0)).toBe(true);
+    expect(testContinuousCollision({ positionY: 0, velocityY: 0 }, 0.5, movingAway, 0)).toBe(false);
+  });
+
   it('keeps a diagonal near-corner pass and edge-only contact non-lethal', () => {
     const nearCorner = { hitbox: { left: 40, right: 50, top: 40, bottom: 50 } };
     const verticalEdgeOnly = { hitbox: { left: 40, right: 50, top: 1, bottom: 10 } };

@@ -8,8 +8,14 @@ import {
 } from '../../src/devtools/DirectorDebugOverlay';
 import type { LogicalCollectibleSpawnInstance } from '../../src/generation/GeneratedCollectibles';
 import type { LogicalHazardSpawnInstance } from '../../src/generation/PatternSpawnScheduler';
+import { scheduleNextPattern } from '../../src/generation/PatternSpawnScheduler';
+import { PROTOTYPE_MISSILE_PATTERN } from '../../src/generation/PrototypeHazardPatternFixtures';
+import { createRunGenerationState } from '../../src/generation/RunGenerationState';
 import { STATIC_GEOMETRIC_HAZARD_BEHAVIOR } from '../../src/hazards/HazardArchetype';
-import { createTelegraphedHazardSimulationState } from '../../src/hazards/TelegraphedHazardSimulation';
+import {
+  createTelegraphedHazardSimulationState,
+  stepTelegraphedHazardSimulation,
+} from '../../src/hazards/TelegraphedHazardSimulation';
 
 const HAZARD: Readonly<LogicalHazardSpawnInstance> = Object.freeze({
   behavior: STATIC_GEOMETRIC_HAZARD_BEHAVIOR,
@@ -42,6 +48,18 @@ const createFrame = (consumedCollectibleIds: readonly string[] = []) => ({
   telegraphedHazards: createTelegraphedHazardSimulationState(),
   viewport: new ViewportService(400, 800).getSnapshot(),
 });
+
+const createMissileSpawn = () => {
+  const schedule = scheduleNextPattern({
+    catalog: [PROTOTYPE_MISSILE_PATTERN],
+    patternStartDistance: 0,
+    state: createRunGenerationState('missile-debug-overlay'),
+  });
+  if (schedule.status !== 'accepted' || !schedule.spawns[0]) {
+    throw new Error('Expected M5 Missile spawn.');
+  }
+  return schedule.spawns[0];
+};
 
 describe('DirectorDebugOverlay geometry', () => {
   it('projects authoritative player, Graze, hazard, collectible, and gameplay boundaries', () => {
@@ -81,6 +99,48 @@ describe('DirectorDebugOverlay geometry', () => {
       },
     ]);
     expect(lineByKind.get('scheduling-boundary')).toMatchObject({ x1: 250, x2: 250 });
+  });
+
+  it('tracks the authoritative active Missile travel hitbox instead of its old spawn box', () => {
+    const missile = createMissileSpawn();
+    let telegraphedHazards = stepTelegraphedHazardSimulation(
+      createTelegraphedHazardSimulationState(),
+      [missile],
+      0,
+      { positionY: 100, runDistance: 0 },
+    );
+    telegraphedHazards = stepTelegraphedHazardSimulation(
+      telegraphedHazards,
+      [missile],
+      1.4,
+      { positionY: 100, runDistance: 0 },
+      (delta) => ({ positionY: 100 + 50 * delta, runDistance: 350 * delta }),
+    );
+    telegraphedHazards = stepTelegraphedHazardSimulation(telegraphedHazards, [missile], 0.4, {
+      positionY: 72,
+      runDistance: 630,
+    });
+    telegraphedHazards = stepTelegraphedHazardSimulation(telegraphedHazards, [missile], 0.5, {
+      positionY: 60,
+      runDistance: 805,
+    });
+
+    const geometry = createDirectorDebugGeometry({
+      collectibles: [],
+      consumedCollectibleIds: [],
+      flight: { positionY: 60, velocityY: 0 },
+      hazards: [missile],
+      motion: { distance: 805 },
+      nextPatternStartDistance: null,
+      telegraphedHazards,
+      viewport: new ViewportService(400, 800).getSnapshot(),
+    });
+    const missileBox = geometry.rectangles.find((rectangle) => rectangle.kind === 'hazard-lethal');
+
+    expect(missileBox).toMatchObject({
+      color: DIRECTOR_DEBUG_COLORS.hazardLethal,
+      hitbox: { left: 98, right: 162, top: 556, bottom: 604 },
+    });
   });
 
   it('does not draw already consumed collectible hitboxes', () => {

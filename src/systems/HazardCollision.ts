@@ -23,6 +23,8 @@ export interface LogicalHazard {
   collisionInterval?: Readonly<LogicalHazardCollisionInterval>;
   /** True only when this interval ends the occurrence's final Active phase, not just the frame. */
   collisionEndsAtIntervalEnd?: boolean;
+  /** Optional world-space horizontal velocity for hazards that move independently of run scroll. */
+  horizontalVelocity?: number;
   hitbox: Readonly<LogicalHitbox>;
 }
 
@@ -147,23 +149,24 @@ const getHorizontalOverlapRange = (
   playerExtents: Readonly<PrototypePlayerCollisionExtents>,
   interval: Readonly<LogicalHazardCollisionInterval>,
 ): Readonly<LogicalHazardCollisionInterval> | null => {
+  const hazardVelocity = hazard.horizontalVelocity ?? 0;
+  if (!Number.isFinite(hazardVelocity)) {
+    throw new RangeError('Hazard horizontalVelocity must be finite when provided.');
+  }
+  const relativeScrollSpeed = scrollSpeed - hazardVelocity;
   const minimumPlayerDistance = hazard.hitbox.left - playerExtents.right;
   const maximumPlayerDistance = hazard.hitbox.right + playerExtents.left;
 
-  if (scrollSpeed === 0) {
+  if (relativeScrollSpeed === 0) {
     return initialDistance > minimumPlayerDistance && initialDistance < maximumPlayerDistance
       ? interval
       : null;
   }
 
-  const startSeconds = Math.max(
-    interval.startSeconds,
-    (minimumPlayerDistance - initialDistance) / scrollSpeed,
-  );
-  const endSeconds = Math.min(
-    interval.endSeconds,
-    (maximumPlayerDistance - initialDistance) / scrollSpeed,
-  );
+  const firstCrossing = (minimumPlayerDistance - initialDistance) / relativeScrollSpeed;
+  const secondCrossing = (maximumPlayerDistance - initialDistance) / relativeScrollSpeed;
+  const startSeconds = Math.max(interval.startSeconds, Math.min(firstCrossing, secondCrossing));
+  const endSeconds = Math.min(interval.endSeconds, Math.max(firstCrossing, secondCrossing));
   return endSeconds > startSeconds ? { startSeconds, endSeconds } : null;
 };
 
@@ -309,12 +312,10 @@ const getRelativeVerticalRange = (
 };
 
 /**
- * Tests continuous positive-area overlap during one authoritative run step. Horizontal motion is
- * linear. Flight is the exact bounded polynomial trajectory produced by VerticalFlightSimulation;
- * vertical patrol is an exact triangle wave. Each relative-motion segment is checked at its
- * endpoints and derivative zero, with patrol turns reduced to a constant extrema set. At most 12
- * candidates are evaluated for each of the trajectory's at most five segments: 60 position checks
- * per hazard per run step, independent of elapsed time, patrol cycles, or run distance.
+ * Tests continuous positive-area overlap during one authoritative run step. Horizontal relative
+ * motion is linear and may include an independently moving hazard. Flight is the exact bounded
+ * polynomial trajectory produced by VerticalFlightSimulation; vertical patrol is an exact triangle
+ * wave. Each relative-motion segment is checked at its endpoints and derivative zero.
  */
 export const isPlayerCollidingWithHazardDuringStep = (
   initialRunState: Readonly<RunMotionState>,
