@@ -86,8 +86,7 @@ describe('M5 Missile mid-frame launch collision', () => {
     // At the exact Active boundary the Missile must be at its frozen offscreen launch offset,
     // not 0.4s farther along its path as the old clamp-to-zero representation would imply.
     const launchBoundarySeconds = collision.collisionInterval.startSeconds;
-    const playerDistanceAtLaunch =
-      MISSILE_LAYOUT.playerRunDistance + 350 * launchBoundarySeconds;
+    const playerDistanceAtLaunch = MISSILE_LAYOUT.playerRunDistance + 350 * launchBoundarySeconds;
     const missileLeftAtLaunch =
       collision.hitbox.left + collision.horizontalVelocity * launchBoundarySeconds;
     expect(missileLeftAtLaunch - playerDistanceAtLaunch).toBeCloseTo(348, 9);
