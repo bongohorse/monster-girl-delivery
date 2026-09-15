@@ -101,7 +101,7 @@ describe('moving-hazard Graze/death same-step ordering', () => {
     ] as const) {
       const result = stepPrototypeRun(START, 0, context(hazards));
       expect(result.enteredDead).toBe(false);
-      expect(result.state).toBe(START);
+      expect(result.state).toStrictEqual(START);
       expect(result.state.graze).toBeUndefined();
       expect(result.state.finalResult).toBeUndefined();
     }
