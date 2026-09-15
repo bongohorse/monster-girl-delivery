@@ -3,8 +3,8 @@ import { createAppServices } from '../../../src/core/AppServices';
 import { Foundation } from '../../../src/game/scenes/Foundation';
 import {
   getLogicalHazardSpawnIdentity,
-  scheduleNextPattern,
   type LogicalHazardSpawnInstance,
+  scheduleNextPattern,
 } from '../../../src/generation/PatternSpawnScheduler';
 import { PROTOTYPE_MISSILE_PATTERN } from '../../../src/generation/PrototypeHazardPatternFixtures';
 import { createRunGenerationState } from '../../../src/generation/RunGenerationState';
@@ -63,10 +63,9 @@ describe('Foundation generated telegraph retention', () => {
     Reflect.set(foundation, 'hazardStream', { spawns: Object.freeze([]) });
     Reflect.set(foundation, 'telegraphedHazardState', telegraphedState);
 
-    const reconcile = Reflect.get(
-      foundation,
-      'reconcileRetainedGeneratedTelegraphedHazards',
-    ) as (previous: ReadonlyArray<Readonly<LogicalHazardSpawnInstance>>) => void;
+    const reconcile = Reflect.get(foundation, 'reconcileRetainedGeneratedTelegraphedHazards') as (
+      previous: ReadonlyArray<Readonly<LogicalHazardSpawnInstance>>,
+    ) => void;
     reconcile.call(foundation, [missile]);
 
     const retained = Reflect.get(
