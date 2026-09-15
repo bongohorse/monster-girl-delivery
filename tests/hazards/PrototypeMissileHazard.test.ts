@@ -10,7 +10,7 @@ import {
 import {
   createTelegraphedHazardSimulationState,
   getLethalHazardsForTelegraphedSimulation,
-  getPrototypeMissileLaunchScreenLeft,
+  getPrototypeMissileLaunchRelativeLeft,
   getTelegraphedHazardLifecycle,
   stepTelegraphedHazardSimulation,
 } from '../../src/hazards/TelegraphedHazardSimulation';
@@ -131,7 +131,7 @@ describe('M5 bait-and-dodge Missile', () => {
     ).toBe(false);
   });
 
-  it('freezes the Active launch X so resize cannot jump or retarget an in-flight Missile', () => {
+  it('freezes the Active launch offset so resize cannot change an in-flight Missile trajectory', () => {
     const spawn = createMissileSpawn();
     let state = stepTelegraphedHazardSimulation(
       createTelegraphedHazardSimulationState(),
@@ -155,7 +155,7 @@ describe('M5 bait-and-dodge Missile', () => {
       MISSILE_LAYOUT,
     );
 
-    expect(getPrototypeMissileLaunchScreenLeft(state, spawn)).toBe(448);
+    expect(getPrototypeMissileLaunchRelativeLeft(state, spawn)).toBe(348);
 
     state = stepTelegraphedHazardSimulation(state, [spawn], 0.5, {
       positionY: 60,
@@ -175,13 +175,14 @@ describe('M5 bait-and-dodge Missile', () => {
       throw new Error('Expected active Missile before and after resize.');
     }
 
+    expect(wide.hitbox).toEqual(narrow.hitbox);
+    expect(wide.hitbox).toEqual({ left: 803, right: 867, top: 118, bottom: 166 });
     const narrowScreenLeft =
       narrow.hitbox.left - narrowLayout.playerRunDistance + narrowLayout.playerScreenX;
     const wideScreenLeft =
       wide.hitbox.left - wideLayout.playerRunDistance + wideLayout.playerScreenX;
-    expect(narrowScreenLeft).toBe(98);
-    expect(wideScreenLeft).toBe(98);
-    expect(wide.hitbox).toEqual({ left: 743, right: 807, top: 118, bottom: 166 });
+    expect(narrowScreenLeft - narrowLayout.playerScreenX).toBe(-2);
+    expect(wideScreenLeft - wideLayout.playerScreenX).toBe(-2);
     expect(getLifecycle(state, spawn).lockedTarget?.positionY).toBeCloseTo(142, 9);
   });
 
