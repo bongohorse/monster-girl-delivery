@@ -25,6 +25,7 @@ import {
   PROTOTYPE_MISSILE_WARNING_EDGE_MARGIN,
   resolvePrototypeMissileTravelHitbox,
 } from '../hazards/PrototypeMissileHazard';
+import { resolvePrototypeZapperGeometry } from '../hazards/PrototypeZapperHazard';
 import {
   getPrototypeMissileLaunchRelativeLeft,
   getTelegraphedHazardLifecycle,
@@ -69,6 +70,8 @@ export type DirectorDebugLineKind =
   | 'flight-floor'
   | 'scheduling-boundary';
 
+export type DirectorDebugPathKind = 'hazard-lethal' | 'hazard-preview';
+
 export interface DirectorDebugRectangle {
   readonly color: number;
   readonly hitbox: Readonly<LogicalHitbox>;
@@ -84,6 +87,17 @@ export interface DirectorDebugLine {
   readonly y2: number;
 }
 
+export interface DirectorDebugPoint {
+  readonly x: number;
+  readonly y: number;
+}
+
+export interface DirectorDebugPath {
+  readonly color: number;
+  readonly kind: DirectorDebugPathKind;
+  readonly points: ReadonlyArray<Readonly<DirectorDebugPoint>>;
+}
+
 export interface DirectorDebugLabel {
   readonly color: number;
   readonly text: string;
@@ -94,6 +108,7 @@ export interface DirectorDebugLabel {
 export interface DirectorDebugGeometry {
   readonly labels: ReadonlyArray<Readonly<DirectorDebugLabel>>;
   readonly lines: ReadonlyArray<Readonly<DirectorDebugLine>>;
+  readonly paths: ReadonlyArray<Readonly<DirectorDebugPath>>;
   readonly rectangles: ReadonlyArray<Readonly<DirectorDebugRectangle>>;
 }
 
@@ -115,6 +130,101 @@ const projectLogicalHitbox = (
   projection: Readonly<PrototypeVerticalProjection>,
 ): Readonly<LogicalHitbox> =>
   projectHazardHitboxToScreen({ hitbox }, motion, playerScreenX, projection);
+
+const projectLogicalPoint = (
+  point: Readonly<DirectorDebugPoint>,
+  motion: Readonly<RunMotionState>,
+  playerScreenX: number,
+  projection: Readonly<PrototypeVerticalProjection>,
+): Readonly<DirectorDebugPoint> =>
+  Object.freeze({
+    x: playerScreenX + point.x - motion.distance,
+    y: projectLogicalYToScreen(point.y, projection),
+  });
+
+const createProjectedCirclePath = (
+  center: Readonly<DirectorDebugPoint>,
+  radius: number,
+  color: number,
+  kind: DirectorDebugPathKind,
+  motion: Readonly<RunMotionState>,
+  playerScreenX: number,
+  projection: Readonly<PrototypeVerticalProjection>,
+): Readonly<DirectorDebugPath> => {
+  const points: DirectorDebugPoint[] = [];
+  const segmentCount = 24;
+  for (let index = 0; index < segmentCount; index += 1) {
+    const radians = (index / segmentCount) * Math.PI * 2;
+    points.push(
+      projectLogicalPoint(
+        {
+          x: center.x + Math.cos(radians) * radius,
+          y: center.y + Math.sin(radians) * radius,
+        },
+        motion,
+        playerScreenX,
+        projection,
+      ),
+    );
+  }
+  return Object.freeze({ color, kind, points: Object.freeze(points) });
+};
+
+const createProjectedCapsulePath = (
+  start: Readonly<DirectorDebugPoint>,
+  end: Readonly<DirectorDebugPoint>,
+  radius: number,
+  color: number,
+  kind: DirectorDebugPathKind,
+  motion: Readonly<RunMotionState>,
+  playerScreenX: number,
+  projection: Readonly<PrototypeVerticalProjection>,
+): Readonly<DirectorDebugPath> => {
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  const length = Math.hypot(dx, dy);
+  if (length === 0) {
+    return createProjectedCirclePath(
+      start,
+      radius,
+      color,
+      kind,
+      motion,
+      playerScreenX,
+      projection,
+    );
+  }
+
+  const tangentAngle = Math.atan2(dy, dx);
+  const normalAngle = tangentAngle + Math.PI / 2;
+  const points: DirectorDebugPoint[] = [];
+  const pushPoint = (center: Readonly<DirectorDebugPoint>, radians: number) => {
+    points.push(
+      projectLogicalPoint(
+        {
+          x: center.x + Math.cos(radians) * radius,
+          y: center.y + Math.sin(radians) * radius,
+        },
+        motion,
+        playerScreenX,
+        projection,
+      ),
+    );
+  };
+
+  pushPoint(start, normalAngle);
+  pushPoint(end, normalAngle);
+  const capSegments = 8;
+  for (let index = 1; index <= capSegments; index += 1) {
+    pushPoint(end, normalAngle - (Math.PI * index) / capSegments);
+  }
+  pushPoint(start, normalAngle - Math.PI);
+  for (let index = 1; index <= capSegments; index += 1) {
+    pushPoint(start, normalAngle - Math.PI - (Math.PI * index) / capSegments);
+  }
+
+  return Object.freeze({ color, kind, points: Object.freeze(points) });
+};
 
 const resolveCurrentHazardHitbox = (
   spawn: Readonly<LogicalHazardSpawnInstance>,
@@ -229,8 +339,47 @@ export const createDirectorDebugGeometry = (
       ),
     },
   ];
+  const paths: DirectorDebugPath[] = [];
 
   for (const spawn of frame.hazards) {
+    const lethal = isHazardCurrentlyLethal(spawn, frame.telegraphedHazards);
+    const kind = lethal ? 'hazard-lethal' : 'hazard-preview';
+    const color = lethal ? DIRECTOR_DEBUG_COLORS.hazardLethal : DIRECTOR_DEBUG_COLORS.hazardPreview;
+    const zapper = resolvePrototypeZapperGeometry(spawn);
+    if (zapper) {
+      paths.push(
+        createProjectedCapsulePath(
+          zapper.beam.start,
+          zapper.beam.end,
+          zapper.beam.radius,
+          color,
+          kind,
+          frame.motion,
+          playerScreenX,
+          projection,
+        ),
+        createProjectedCirclePath(
+          zapper.endpointA.center,
+          zapper.endpointA.radius,
+          color,
+          kind,
+          frame.motion,
+          playerScreenX,
+          projection,
+        ),
+        createProjectedCirclePath(
+          zapper.endpointB.center,
+          zapper.endpointB.radius,
+          color,
+          kind,
+          frame.motion,
+          playerScreenX,
+          projection,
+        ),
+      );
+      continue;
+    }
+
     const hitbox = resolveCurrentHazardHitbox(
       spawn,
       frame.motion.distance,
@@ -242,10 +391,9 @@ export const createDirectorDebugGeometry = (
       continue;
     }
 
-    const lethal = isHazardCurrentlyLethal(spawn, frame.telegraphedHazards);
     rectangles.push({
-      kind: lethal ? 'hazard-lethal' : 'hazard-preview',
-      color: lethal ? DIRECTOR_DEBUG_COLORS.hazardLethal : DIRECTOR_DEBUG_COLORS.hazardPreview,
+      kind,
+      color,
       hitbox: projectLogicalHitbox(hitbox, frame.motion, playerScreenX, projection),
     });
   }
@@ -337,6 +485,7 @@ export const createDirectorDebugGeometry = (
   return Object.freeze({
     labels: Object.freeze(labels),
     lines: Object.freeze(lines),
+    paths: Object.freeze(paths),
     rectangles: Object.freeze(rectangles),
   });
 };
@@ -405,6 +554,21 @@ export class DirectorDebugOverlay {
         hitbox.right - hitbox.left,
         hitbox.bottom - hitbox.top,
       );
+    }
+
+    for (const path of geometry.paths) {
+      const first = path.points[0];
+      if (!first) {
+        continue;
+      }
+      graphics.lineStyle(1, path.color, 1);
+      graphics.beginPath();
+      graphics.moveTo(first.x, first.y);
+      for (const point of path.points.slice(1)) {
+        graphics.lineTo(point.x, point.y);
+      }
+      graphics.lineTo(first.x, first.y);
+      graphics.strokePath();
     }
 
     for (const line of geometry.lines) {
