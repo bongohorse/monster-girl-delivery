@@ -3,6 +3,10 @@ import { scheduleNextPattern } from '../../src/generation/PatternSpawnScheduler'
 import { PROTOTYPE_MISSILE_PATTERN } from '../../src/generation/PrototypeHazardPatternFixtures';
 import { createRunGenerationState } from '../../src/generation/RunGenerationState';
 import {
+  isPrototypeMissileBehavior,
+  resolvePrototypeMissileTravelHitbox,
+} from '../../src/hazards/PrototypeMissileHazard';
+import {
   createTelegraphedHazardSimulationState,
   getLethalHazardsForTelegraphedSimulation,
   getTelegraphedHazardLifecycle,
@@ -10,6 +14,13 @@ import {
 } from '../../src/hazards/TelegraphedHazardSimulation';
 import { isPlayerCollidingWithHazard } from '../../src/systems/HazardCollision';
 import { STANDARD_FRAME_SCHEDULES } from '../support/FramePartitionHarness';
+
+const MISSILE_LAYOUT = Object.freeze({
+  playerRunDistance: 630,
+  playerScreenX: 100,
+  viewportLeft: 0,
+  viewportRight: 400,
+});
 
 const createMissileSpawn = () => {
   const schedule = scheduleNextPattern({
@@ -58,7 +69,7 @@ describe('M5 bait-and-dodge Missile', () => {
     });
   });
 
-  it('commits the lagged marker at the exact lock boundary and cannot retarget afterward', () => {
+  it('commits the lagged marker, launches offscreen, and cannot retarget afterward', () => {
     const spawn = createMissileSpawn();
     let state = stepTelegraphedHazardSimulation(
       createTelegraphedHazardSimulationState(),
@@ -92,26 +103,52 @@ describe('M5 bait-and-dodge Missile', () => {
 
     const active = getLifecycle(state, spawn);
     expect(active.phase).toBe('active');
+    expect(active.elapsedPhaseSeconds).toBeCloseTo(0, 9);
     expect(active.latestObservedTarget.positionY).toBeCloseTo(142, 9);
-    expect(active.latestObservedTarget.runDistance).toBeCloseTo(490, 9);
     expect(active.lockedTarget?.positionY).toBeCloseTo(142, 9);
-    expect(active.lockedTarget?.runDistance).toBeCloseTo(490, 9);
 
-    const missile = getLethalHazardsForTelegraphedSimulation(state, [spawn])[0];
-    expect(missile?.hitbox.left).toBeCloseTo(930, 9);
-    expect(missile?.hitbox.right).toBeCloseTo(994, 9);
-    expect(missile?.hitbox.top).toBeCloseTo(118, 9);
-    expect(missile?.hitbox.bottom).toBeCloseTo(166, 9);
-    if (!missile) {
-      throw new Error('Expected active Missile.');
+    const launched = getLethalHazardsForTelegraphedSimulation(state, [spawn], MISSILE_LAYOUT)[0];
+    expect(launched?.hitbox).toEqual({ left: 978, right: 1042, top: 118, bottom: 166 });
+
+    state = stepTelegraphedHazardSimulation(state, [spawn], 0.5, {
+      positionY: 60,
+      runDistance: 805,
+    });
+    const crossingLayout = { ...MISSILE_LAYOUT, playerRunDistance: 805 };
+    const crossing = getLethalHazardsForTelegraphedSimulation(state, [spawn], crossingLayout)[0];
+    expect(crossing?.hitbox).toEqual({ left: 803, right: 867, top: 118, bottom: 166 });
+    if (!crossing) {
+      throw new Error('Expected active Missile crossing the player lane.');
     }
 
     expect(
-      isPlayerCollidingWithHazard({ distance: 962 }, { positionY: 142, velocityY: 0 }, missile),
+      isPlayerCollidingWithHazard({ distance: 805 }, { positionY: 142, velocityY: 0 }, crossing),
     ).toBe(true);
     expect(
-      isPlayerCollidingWithHazard({ distance: 962 }, { positionY: 60, velocityY: 0 }, missile),
+      isPlayerCollidingWithHazard({ distance: 805 }, { positionY: 60, velocityY: 0 }, crossing),
     ).toBe(false);
+  });
+
+  it('models launch side as data so a left-side Missile travels right', () => {
+    const spawn = createMissileSpawn();
+    if (!isPrototypeMissileBehavior(spawn.behavior)) {
+      throw new Error('Expected M5 Missile behavior.');
+    }
+
+    const target = Object.freeze({ positionY: 142, runDistance: 490 });
+    const leftLaunch = Object.freeze({
+      ...spawn,
+      behavior: Object.freeze({
+        ...spawn.behavior,
+        missile: Object.freeze({ ...spawn.behavior.missile, launchSide: 'left' as const }),
+      }),
+    });
+    const launch = resolvePrototypeMissileTravelHitbox(leftLaunch, target, 0, MISSILE_LAYOUT);
+    const later = resolvePrototypeMissileTravelHitbox(leftLaunch, target, 0.5, MISSILE_LAYOUT);
+
+    expect(launch.left - MISSILE_LAYOUT.playerRunDistance + MISSILE_LAYOUT.playerScreenX).toBe(-112);
+    expect(later.left - MISSILE_LAYOUT.playerRunDistance + MISSILE_LAYOUT.playerScreenX).toBe(238);
+    expect(later.left).toBeGreaterThan(launch.left);
   });
 
   it('does not advance targeting or lifecycle on zero delta', () => {
@@ -130,7 +167,7 @@ describe('M5 bait-and-dodge Missile', () => {
     expect(unchanged).toBe(state);
   });
 
-  it('locks to the same target and strike across all supported frame partitions', () => {
+  it('locks to the same target and travel position across all supported frame partitions', () => {
     const spawn = createMissileSpawn();
     const results = Object.fromEntries(
       Object.entries(STANDARD_FRAME_SCHEDULES).map(([name, schedule]) => {
@@ -165,7 +202,10 @@ describe('M5 bait-and-dodge Missile', () => {
         }
 
         const lifecycle = getLifecycle(state, spawn);
-        const missile = getLethalHazardsForTelegraphedSimulation(state, [spawn])[0];
+        const missile = getLethalHazardsForTelegraphedSimulation(state, [spawn], {
+          ...MISSILE_LAYOUT,
+          playerRunDistance: 700,
+        })[0];
         return [name, { lifecycle, hitbox: missile?.hitbox }];
       }),
     );
@@ -174,8 +214,8 @@ describe('M5 bait-and-dodge Missile', () => {
       expect(result.lifecycle.phase).toBe('active');
       expect(result.lifecycle.lockedTarget?.positionY).toBeCloseTo(142, 9);
       expect(result.lifecycle.lockedTarget?.runDistance).toBeCloseTo(490, 9);
-      expect(result.hitbox?.left).toBeCloseTo(930, 9);
-      expect(result.hitbox?.right).toBeCloseTo(994, 9);
+      expect(result.hitbox?.left).toBeCloseTo(908, 9);
+      expect(result.hitbox?.right).toBeCloseTo(972, 9);
       expect(result.hitbox?.top).toBeCloseTo(118, 9);
       expect(result.hitbox?.bottom).toBeCloseTo(166, 9);
     }
