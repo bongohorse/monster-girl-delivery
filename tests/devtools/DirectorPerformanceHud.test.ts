@@ -92,50 +92,101 @@ const createHarness = () => {
   const sampler = new PerformanceSampler({ sampleWindowSize: 8 });
   const setFpsLimit = vi.fn();
   const setWireframesEnabled = vi.fn();
+  const setGodModeEnabled = vi.fn();
+  const setAutoHazardsEnabled = vi.fn();
+  const spawnMissile = vi.fn();
+  const spawnZapper = vi.fn();
+  const spawnLaser = vi.fn();
+  const clearHazards = vi.fn();
+  const setSimulationFrozen = vi.fn();
+  const triggerDeath = vi.fn();
   const hud = new DirectorPerformanceHud(container as unknown as HTMLElement, input, sampler, {
     setFpsLimit,
     setWireframesEnabled,
+    setGodModeEnabled,
+    setAutoHazardsEnabled,
+    spawnMissile,
+    spawnZapper,
+    spawnLaser,
+    clearHazards,
+    setSimulationFrozen,
+    triggerDeath,
   });
   const root = container.children[0];
   const visibilityButton = root?.children[0];
   const values = root?.children[1];
   const wireframeLabel = root?.children[2];
-  const resetButton = root?.children[3];
+  const playgroundControls = root?.children[3];
+  const resetButton = root?.children[4];
   const fpsButton = values?.children[0];
   const wireframeCheckbox = wireframeLabel?.children[0];
+  const godModeButton = playgroundControls?.children[0];
+  const autoHazardsButton = playgroundControls?.children[1];
+  const missileButton = playgroundControls?.children[2];
+  const zapperButton = playgroundControls?.children[3];
+  const laserButton = playgroundControls?.children[4];
+  const clearButton = playgroundControls?.children[5];
+  const freezeButton = playgroundControls?.children[6];
+  const deathButton = playgroundControls?.children[7];
 
   if (
     !root ||
     !visibilityButton ||
     !values ||
     !wireframeLabel ||
+    !playgroundControls ||
     !resetButton ||
     !fpsButton ||
-    !wireframeCheckbox
+    !wireframeCheckbox ||
+    !godModeButton ||
+    !autoHazardsButton ||
+    !missileButton ||
+    !zapperButton ||
+    !laserButton ||
+    !clearButton ||
+    !freezeButton ||
+    !deathButton
   ) {
-    throw new Error('Expected the performance HUD structure.');
+    throw new Error('Expected the Director HUD structure.');
   }
 
   return {
+    autoHazardsButton,
+    clearButton,
+    clearHazards,
     container,
+    deathButton,
     fpsButton,
+    freezeButton,
+    godModeButton,
     hud,
     input,
+    laserButton,
+    missileButton,
+    playgroundControls,
     resetButton,
     root,
     sampler,
+    setAutoHazardsEnabled,
     setFpsLimit,
+    setGodModeEnabled,
+    setSimulationFrozen,
     setWireframesEnabled,
+    spawnLaser,
+    spawnMissile,
+    spawnZapper,
+    triggerDeath,
     values,
     visibilityButton,
     wireframeCheckbox,
     wireframeLabel,
+    zapperButton,
   };
 };
 
 describe('DirectorPerformanceHud', () => {
   it('creates one compact DOM row and lays it out inside safe-area bounds', () => {
-    const { container, hud, root, values, wireframeLabel } = createHarness();
+    const { container, hud, playgroundControls, root, values, wireframeLabel } = createHarness();
     const viewport = new ViewportService(844, 390, {
       top: 12,
       right: 44,
@@ -150,6 +201,7 @@ describe('DirectorPerformanceHud', () => {
     expect(root.style).toMatchObject({ left: '52px', top: '20px', maxWidth: '740px' });
     expect(values.children).toHaveLength(3);
     expect(wireframeLabel.children).toHaveLength(2);
+    expect(playgroundControls.children).toHaveLength(8);
   });
 
   it('samples every frame but refreshes formatted values at most every 250 ms', () => {
@@ -203,8 +255,16 @@ describe('DirectorPerformanceHud', () => {
     expect(values.children[1]?.dataset.health).toBe('severe');
   });
 
-  it('hides visual metric work while sampling continues, then restores current values', () => {
-    const { hud, resetButton, sampler, values, visibilityButton } = createHarness();
+  it('hides values and playground controls together while sampling continues', () => {
+    const {
+      hud,
+      playgroundControls,
+      resetButton,
+      sampler,
+      values,
+      visibilityButton,
+      wireframeLabel,
+    } = createHarness();
     hud.update(16, 60, false);
     const writesBeforeHide = values.children.reduce(
       (total, child) => total + child.textWriteCount,
@@ -218,6 +278,8 @@ describe('DirectorPerformanceHud', () => {
 
     expect(values.hidden).toBe(true);
     expect(values.style.display).toBe('none');
+    expect(wireframeLabel.hidden).toBe(true);
+    expect(playgroundControls.hidden).toBe(true);
     expect(resetButton.hidden).toBe(true);
     expect(sampler.createSnapshot().sampleCount).toBe(8);
     expect(values.children.reduce((total, child) => total + child.textWriteCount, 0)).toBe(
@@ -227,29 +289,78 @@ describe('DirectorPerformanceHud', () => {
     visibilityButton.dispatch('click');
     expect(values.hidden).toBe(false);
     expect(values.style.display).toBe('');
+    expect(wireframeLabel.hidden).toBe(false);
+    expect(playgroundControls.hidden).toBe(false);
     expect(resetButton.hidden).toBe(false);
     expect(values.children[1]?.textContent).toBe(' | 30.0 ms');
     expect(values.children[2]?.textContent).toContain('S 20');
   });
 
-  it('toggles authoritative wireframe rendering without hiding the checkbox with metrics', () => {
-    const { setWireframesEnabled, visibilityButton, wireframeCheckbox, wireframeLabel } =
-      createHarness();
+  it('toggles authoritative wireframe rendering from the compact HB control', () => {
+    const { setWireframesEnabled, wireframeCheckbox } = createHarness();
 
     wireframeCheckbox.checked = true;
     wireframeCheckbox.dispatch('change');
     expect(setWireframesEnabled).toHaveBeenLastCalledWith(true);
-
-    visibilityButton.dispatch('click');
-    expect(wireframeLabel.hidden).toBe(false);
 
     wireframeCheckbox.checked = false;
     wireframeCheckbox.dispatch('change');
     expect(setWireframesEnabled).toHaveBeenLastCalledWith(false);
   });
 
+  it('dispatches compact playground toggles and hazard actions', () => {
+    const {
+      autoHazardsButton,
+      clearButton,
+      clearHazards,
+      deathButton,
+      freezeButton,
+      godModeButton,
+      laserButton,
+      missileButton,
+      setAutoHazardsEnabled,
+      setGodModeEnabled,
+      setSimulationFrozen,
+      spawnLaser,
+      spawnMissile,
+      spawnZapper,
+      triggerDeath,
+      zapperButton,
+    } = createHarness();
+
+    expect(autoHazardsButton.getAttribute('aria-pressed')).toBe('true');
+    expect(autoHazardsButton.dataset.active).toBe('true');
+
+    godModeButton.dispatch('click');
+    expect(setGodModeEnabled).toHaveBeenLastCalledWith(true);
+    expect(godModeButton.getAttribute('aria-pressed')).toBe('true');
+
+    autoHazardsButton.dispatch('click');
+    expect(setAutoHazardsEnabled).toHaveBeenLastCalledWith(false);
+    expect(autoHazardsButton.getAttribute('aria-pressed')).toBe('false');
+
+    missileButton.dispatch('click');
+    zapperButton.dispatch('click');
+    laserButton.dispatch('click');
+    clearButton.dispatch('click');
+    expect(spawnMissile).toHaveBeenCalledOnce();
+    expect(spawnZapper).toHaveBeenCalledOnce();
+    expect(spawnLaser).toHaveBeenCalledOnce();
+    expect(clearHazards).toHaveBeenCalledOnce();
+
+    freezeButton.dispatch('click');
+    expect(setSimulationFrozen).toHaveBeenLastCalledWith(true);
+    expect(freezeButton.textContent).toBe('▶');
+    freezeButton.dispatch('click');
+    expect(setSimulationFrozen).toHaveBeenLastCalledWith(false);
+    expect(freezeButton.textContent).toBe('⏸');
+
+    deathButton.dispatch('click');
+    expect(triggerDeath).toHaveBeenCalledOnce();
+  });
+
   it('blocks gameplay and suppresses DOM control events without queuing thrust', () => {
-    const { input, visibilityButton, wireframeLabel } = createHarness();
+    const { godModeButton, input, visibilityButton, wireframeLabel } = createHarness();
     input.pressPointer(7, 'touch');
 
     const down = visibilityButton.dispatch('pointerdown');
@@ -273,6 +384,11 @@ describe('DirectorPerformanceHud', () => {
     expect(input.getSnapshot().gameplayBlocked).toBe(true);
     wireframeLabel.dispatch('pointerup');
     expect(input.getSnapshot().gameplayBlocked).toBe(false);
+
+    godModeButton.dispatch('pointerdown');
+    expect(input.getSnapshot().gameplayBlocked).toBe(true);
+    godModeButton.dispatch('pointerup');
+    expect(input.getSnapshot().gameplayBlocked).toBe(false);
   });
 
   it('resets visible metrics without restarting or replacing the sampler', () => {
@@ -287,29 +403,28 @@ describe('DirectorPerformanceHud', () => {
   });
 
   it('removes its DOM and listeners idempotently on shutdown', () => {
-    const {
-      fpsButton,
-      hud,
-      input,
-      resetButton,
-      root,
-      visibilityButton,
-      wireframeCheckbox,
-      wireframeLabel,
-    } = createHarness();
-    visibilityButton.dispatch('pointerdown');
+    const harness = createHarness();
+    harness.visibilityButton.dispatch('pointerdown');
 
-    hud.destroy();
-    hud.destroy();
+    harness.hud.destroy();
+    harness.hud.destroy();
 
-    expect(root.removed).toBe(true);
-    expect(input.getSnapshot().gameplayBlocked).toBe(false);
+    expect(harness.root.removed).toBe(true);
+    expect(harness.input.getSnapshot().gameplayBlocked).toBe(false);
     for (const element of [
-      visibilityButton,
-      fpsButton,
-      resetButton,
-      wireframeLabel,
-      wireframeCheckbox,
+      harness.visibilityButton,
+      harness.fpsButton,
+      harness.resetButton,
+      harness.wireframeLabel,
+      harness.wireframeCheckbox,
+      harness.godModeButton,
+      harness.autoHazardsButton,
+      harness.missileButton,
+      harness.zapperButton,
+      harness.laserButton,
+      harness.clearButton,
+      harness.freezeButton,
+      harness.deathButton,
     ]) {
       expect([...element.listeners.values()].every((listeners) => listeners.size === 0)).toBe(true);
     }

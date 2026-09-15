@@ -70,9 +70,14 @@ body {
   display: none;
 }
 
-.director-performance-hud__values {
+.director-performance-hud__values,
+.director-performance-hud__playground {
   display: inline-flex;
   align-items: center;
+}
+
+.director-performance-hud__playground {
+  gap: 3px;
 }
 
 .director-performance-hud__button {
@@ -88,6 +93,12 @@ body {
   pointer-events: auto;
   touch-action: manipulation;
   cursor: pointer;
+}
+
+.director-performance-hud__button[data-active="true"] {
+  background: #3d5b78;
+  box-shadow: inset 0 0 0 1px #6fffe9;
+  color: #eafffb;
 }
 
 .director-performance-hud__fps {

@@ -25,7 +25,9 @@ import {
   type GeneratedHazardStreamState,
   PROTOTYPE_LIVE_RUN_SEED,
 } from '../../generation/GeneratedHazardStream';
+import type { HazardPattern } from '../../generation/HazardPattern';
 import { PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG } from '../../generation/LiveEncounterPolicy';
+import type { LogicalHazardSpawnInstance } from '../../generation/PatternSpawnScheduler';
 import {
   createPrototypeHazardVerticalDomain,
   type PrototypeHazardVerticalDomain,
@@ -38,6 +40,10 @@ import {
   type TelegraphedHazardSimulationState,
 } from '../../hazards/TelegraphedHazardSimulation';
 import { PhaserInputAdapter } from '../../input/PhaserInputAdapter';
+import {
+  createPrototypePlayerHitbox,
+  PROTOTYPE_PLAYER_COLLISION_EXTENTS,
+} from '../../systems/HazardCollision';
 import {
   createPrototypeDeathRetryState,
   enterPrototypeFailState,
@@ -111,6 +117,46 @@ const createLiveHazardStreamContext = (
     }),
   });
 
+type DirectorHazardKind = 'laser' | 'missile' | 'zapper';
+
+const DIRECTOR_HAZARD_PATTERN_IDS: Readonly<Record<DirectorHazardKind, string>> = Object.freeze({
+  missile: 'prototype-target-lock-strike',
+  zapper: 'prototype-vertical-patrol',
+  laser: 'prototype-timed-pulse',
+});
+
+const createDirectorManualSpawn = (
+  pattern: Readonly<HazardPattern>,
+  patternStartDistance: number,
+  serial: number,
+): Readonly<LogicalHazardSpawnInstance> => {
+  const entry = pattern.entries[0];
+  if (!entry || pattern.entries.length !== 1) {
+    throw new TypeError(`Director hazard pattern must contain exactly one entry: ${pattern.id}`);
+  }
+
+  const left = patternStartDistance + entry.hitbox.left;
+  const right = patternStartDistance + entry.hitbox.right;
+  if (!Number.isFinite(left) || !Number.isFinite(right)) {
+    throw new RangeError('Director hazard spawn distance must remain finite.');
+  }
+
+  return Object.freeze({
+    behavior: entry.behavior,
+    entryId: entry.id,
+    hitbox: Object.freeze({
+      left,
+      right,
+      top: entry.hitbox.top,
+      bottom: entry.hitbox.bottom,
+    }),
+    patternEntryIndex: 0,
+    patternId: `${pattern.id}:director-${serial}`,
+    runDistance: left,
+    type: entry.type,
+  });
+};
+
 export class Foundation extends Scene {
   private title?: Phaser.GameObjects.Text;
   private instructions?: Phaser.GameObjects.Text;
@@ -138,6 +184,12 @@ export class Foundation extends Scene {
     flight: { positionY: 0, velocityY: 0 },
   };
   private deathRetryState: Readonly<PrototypeDeathRetryState> = createPrototypeDeathRetryState();
+  private directorManualHazards: ReadonlyArray<Readonly<LogicalHazardSpawnInstance>> =
+    Object.freeze([]);
+  private directorGodModeEnabled = false;
+  private directorAutoHazardsEnabled = true;
+  private directorSimulationFrozen = false;
+  private directorHazardSerial = 0;
   private shutdownHandled = false;
 
   constructor(
@@ -180,6 +232,14 @@ export class Foundation extends Scene {
         {
           setFpsLimit: (limit) => this.game.loop.setFPSLimit(limit),
           setWireframesEnabled: (enabled) => this.directorDebugOverlay?.setEnabled(enabled),
+          setGodModeEnabled: this.handleDirectorGodMode,
+          setAutoHazardsEnabled: this.handleDirectorAutoHazards,
+          spawnMissile: () => this.spawnDirectorHazard('missile'),
+          spawnZapper: () => this.spawnDirectorHazard('zapper'),
+          spawnLaser: () => this.spawnDirectorHazard('laser'),
+          clearHazards: this.clearDirectorHazards,
+          setSimulationFrozen: this.handleDirectorFreeze,
+          triggerDeath: this.handleDirectorDeath,
         },
       );
       this.directorPanel = new DirectorPanel(this, this.services.input);
@@ -218,7 +278,7 @@ export class Foundation extends Scene {
     );
     this.telegraphedHazardState = stepTelegraphedHazardSimulation(
       createTelegraphedHazardSimulationState(),
-      this.hazardStream.spawns,
+      this.getActiveHazardSpawns(),
       0,
       {
         positionY: this.runState.flight.positionY,
@@ -267,7 +327,10 @@ export class Foundation extends Scene {
       return;
     }
 
-    const simulationDeltaSeconds = this.services.time.update(delta);
+    const normalizedSimulationDeltaSeconds = this.services.time.update(delta);
+    const simulationDeltaSeconds = this.directorSimulationFrozen
+      ? 0
+      : normalizedSimulationDeltaSeconds;
     const viewport = this.viewportService.getSnapshot();
     const directorLifecycle =
       this.directorPerformanceHud || this.directorPanel
@@ -280,7 +343,9 @@ export class Foundation extends Scene {
         rawFrameTimeMilliseconds,
         this.game.loop.actualFps,
         directorLifecycle.paused,
-        !directorLifecycle.paused && rawFrameTimeMilliseconds > 0 && simulationDeltaSeconds === 0,
+        !directorLifecycle.paused &&
+          rawFrameTimeMilliseconds > 0 &&
+          normalizedSimulationDeltaSeconds === 0,
       );
     }
 
@@ -347,9 +412,10 @@ export class Foundation extends Scene {
           runDistance: subMotion.distance,
         };
       };
+      const activeHazards = this.getActiveHazardSpawns();
       this.telegraphedHazardState = stepTelegraphedHazardSimulation(
         this.telegraphedHazardState,
-        this.hazardStream.spawns,
+        activeHazards,
         simulationDeltaSeconds,
         {
           positionY: this.runState.flight.positionY,
@@ -363,21 +429,25 @@ export class Foundation extends Scene {
         flightTuning: activeFlightTuning,
         hazards: getCollisionHazardsForTelegraphedSimulation(
           this.telegraphedHazardState,
-          this.hazardStream.spawns,
+          activeHazards,
         ),
         runMotionTuning,
         thrustHeld,
       });
-      this.runState = result.state;
+      const godModePreventedDeath = result.enteredDead && this.directorGodModeEnabled;
+      if (godModePreventedDeath) {
+        const { finalResult: _ignoredFinalResult, ...survivingState } = result.state;
+        this.runState = { ...survivingState, phase: 'running' };
+      } else {
+        this.runState = result.state;
+      }
 
-      if (result.enteredDead) {
+      if (result.enteredDead && !godModePreventedDeath) {
         const finalResult = this.runState.finalResult;
         if (!finalResult) {
           throw new TypeError('Authoritative run end must provide a final result snapshot.');
         }
-        this.deathRetryState = enterPrototypeFailState(finalResult);
-        this.services.input.releaseAll();
-        this.instructions?.setText(formatDeadInstructions(finalResult, false));
+        this.enterRunFailState(finalResult);
       } else {
         // Age existing reservations by the completed frame, then commit new content at t=0.
         this.hazardStream = advanceGeneratedHazardStream(
@@ -386,16 +456,20 @@ export class Foundation extends Scene {
           hazardStreamContext,
           requestedRunMotion,
           simulationDeltaSeconds,
+          this.directorAutoHazardsEnabled,
         );
-        this.collectibleSpawns = reconcileGeneratedCollectibles(
-          this.collectibleSpawns,
-          this.hazardStream.spawns,
-          this.hazardVerticalDomain.catalog,
-          this.runState.motion.distance,
-        );
+        this.pruneDirectorManualHazards();
+        this.collectibleSpawns = this.directorAutoHazardsEnabled
+          ? reconcileGeneratedCollectibles(
+              this.collectibleSpawns,
+              this.hazardStream.spawns,
+              this.hazardVerticalDomain.catalog,
+              this.runState.motion.distance,
+            )
+          : Object.freeze([]);
         this.telegraphedHazardState = stepTelegraphedHazardSimulation(
           this.telegraphedHazardState,
-          this.hazardStream.spawns,
+          this.getActiveHazardSpawns(),
           0,
           { positionY: this.runState.flight.positionY, runDistance: this.runState.motion.distance },
         );
@@ -517,11 +591,152 @@ export class Foundation extends Scene {
     this.restartRun(this.viewportService.getSnapshot(), seed);
   };
 
+  private readonly handleDirectorGodMode = (enabled: boolean): void => {
+    this.directorGodModeEnabled = enabled;
+  };
+
+  private readonly handleDirectorAutoHazards = (enabled: boolean): void => {
+    this.directorAutoHazardsEnabled = enabled;
+    this.clearDirectorHazards();
+  };
+
+  private readonly handleDirectorFreeze = (frozen: boolean): void => {
+    this.directorSimulationFrozen = frozen;
+    this.services.input.releaseAll();
+  };
+
+  private readonly clearDirectorHazards = (): void => {
+    this.directorManualHazards = Object.freeze([]);
+    this.collectibleSpawns = Object.freeze([]);
+    this.telegraphedHazardState = createTelegraphedHazardSimulationState();
+
+    if (this.hazardStream) {
+      const runDistance = this.runState.motion.distance;
+      this.hazardStream = Object.freeze({
+        ...this.hazardStream,
+        runDistance,
+        nextPatternStartDistance:
+          runDistance +
+          this.hazardStream.schedulingWindow.minimumReactionDistance +
+          PROTOTYPE_PLAYER_COLLISION_EXTENTS.right,
+        spawns: Object.freeze([]),
+      });
+    }
+
+    if (this.viewportService) {
+      this.renderRun(this.viewportService.getSnapshot());
+    }
+  };
+
+  private spawnDirectorHazard(kind: DirectorHazardKind): void {
+    if (!this.viewportService || this.runState.phase !== 'running') {
+      return;
+    }
+
+    const patternId = DIRECTOR_HAZARD_PATTERN_IDS[kind];
+    const pattern = this.hazardVerticalDomain.catalog.find(
+      (candidate) => candidate.id === patternId,
+    );
+    if (!pattern) {
+      throw new TypeError(`Director hazard pattern is unavailable: ${patternId}`);
+    }
+    const entry = pattern.entries[0];
+    if (!entry) {
+      throw new TypeError(`Director hazard pattern has no entry: ${pattern.id}`);
+    }
+
+    const viewport = this.viewportService.getSnapshot();
+    const playerScreenX = getPrototypePlayerX(viewport);
+    const safeRightEdge = viewport.width - Math.min(viewport.width, viewport.safeArea.right);
+    const desiredScreenLeft = Math.max(playerScreenX + 160, safeRightEdge - 96);
+    const worldLeft = this.runState.motion.distance + desiredScreenLeft - playerScreenX;
+    const patternStartDistance = Math.max(0, worldLeft - entry.hitbox.left);
+    this.directorHazardSerial += 1;
+    const spawn = createDirectorManualSpawn(
+      pattern,
+      patternStartDistance,
+      this.directorHazardSerial,
+    );
+    this.directorManualHazards = Object.freeze([...this.directorManualHazards, spawn]);
+    this.telegraphedHazardState = stepTelegraphedHazardSimulation(
+      this.telegraphedHazardState,
+      this.getActiveHazardSpawns(),
+      0,
+      { positionY: this.runState.flight.positionY, runDistance: this.runState.motion.distance },
+    );
+    this.renderRun(viewport);
+  }
+
+  private pruneDirectorManualHazards(): void {
+    if (this.directorManualHazards.length === 0) {
+      return;
+    }
+
+    const cutoff = this.runState.motion.distance - 160;
+    const retained = this.directorManualHazards.filter((spawn) => spawn.hitbox.right >= cutoff);
+    if (retained.length !== this.directorManualHazards.length) {
+      this.directorManualHazards = Object.freeze(retained);
+    }
+  }
+
+  private getActiveHazardSpawns(): ReadonlyArray<Readonly<LogicalHazardSpawnInstance>> {
+    const generated = this.directorAutoHazardsEnabled ? (this.hazardStream?.spawns ?? []) : [];
+    if (this.directorManualHazards.length === 0) {
+      return generated;
+    }
+    return Object.freeze([...generated, ...this.directorManualHazards]);
+  }
+
+  private readonly handleDirectorDeath = (): void => {
+    if (!this.viewportService || this.runState.phase !== 'running') {
+      return;
+    }
+
+    const viewport = this.viewportService.getSnapshot();
+    const flightTuning =
+      this.hazardStream?.policy?.flightTuning ?? this.services.flightTuning.getSnapshot();
+    const runMotionTuning = Object.freeze({
+      baseScrollSpeed:
+        this.hazardStream?.schedulingWindow.scrollSpeed ??
+        this.services.runMotion.getSnapshot().baseScrollSpeed,
+    });
+    const forcedDeath = stepPrototypeRun(this.runState, 0, {
+      collectibles: this.collectibleSpawns,
+      flightBounds: createPrototypeFlightBounds(viewport),
+      flightTuning,
+      hazards: [
+        Object.freeze({
+          hitbox: Object.freeze(
+            createPrototypePlayerHitbox(this.runState.motion, this.runState.flight),
+          ),
+        }),
+      ],
+      runMotionTuning,
+      thrustHeld: false,
+    });
+
+    if (!forcedDeath.enteredDead || !forcedDeath.state.finalResult) {
+      throw new TypeError('Director death trigger must enter the authoritative fail state.');
+    }
+
+    this.runState = forcedDeath.state;
+    this.enterRunFailState(forcedDeath.state.finalResult);
+    this.renderRun(viewport);
+  };
+
+  private enterRunFailState(finalResult: Readonly<PrototypeRunResultSnapshot>): void {
+    this.deathRetryState = enterPrototypeFailState(finalResult);
+    this.services.input.releaseAll();
+    this.instructions?.setText(formatDeadInstructions(finalResult, false));
+  }
+
   private restartRun(
     viewport: ReturnType<ViewportService['getSnapshot']>,
     seed: Parameters<typeof createGeneratedHazardStream>[0] = PROTOTYPE_LIVE_RUN_SEED,
   ): void {
     this.directorPanel?.reset();
+    this.directorManualHazards = Object.freeze([]);
+    this.directorHazardSerial = 0;
     const flightBounds = createPrototypeFlightBounds(viewport);
     this.runState = createPrototypeRunState(flightBounds);
     this.deathRetryState = createPrototypeDeathRetryState();
@@ -534,21 +749,25 @@ export class Foundation extends Scene {
       ),
       this.services.runMotion.getSnapshot(),
     );
-    this.collectibleSpawns = reconcileGeneratedCollectibles(
-      [],
-      this.hazardStream.spawns,
-      this.hazardVerticalDomain.catalog,
-      this.runState.motion.distance,
-    );
-    this.telegraphedHazardState = stepTelegraphedHazardSimulation(
-      createTelegraphedHazardSimulationState(),
-      this.hazardStream.spawns,
-      0,
-      {
-        positionY: this.runState.flight.positionY,
-        runDistance: this.runState.motion.distance,
-      },
-    );
+    if (this.directorAutoHazardsEnabled) {
+      this.collectibleSpawns = reconcileGeneratedCollectibles(
+        [],
+        this.hazardStream.spawns,
+        this.hazardVerticalDomain.catalog,
+        this.runState.motion.distance,
+      );
+      this.telegraphedHazardState = stepTelegraphedHazardSimulation(
+        createTelegraphedHazardSimulationState(),
+        this.hazardStream.spawns,
+        0,
+        {
+          positionY: this.runState.flight.positionY,
+          runDistance: this.runState.motion.distance,
+        },
+      );
+    } else {
+      this.clearDirectorHazards();
+    }
     this.services.input.releaseAll();
     this.instructions?.setText(RUNNING_INSTRUCTIONS);
   }
@@ -556,10 +775,11 @@ export class Foundation extends Scene {
   private renderRun(viewport: ReturnType<ViewportService['getSnapshot']>): void {
     const playerScreenX = getPrototypePlayerX(viewport);
     const projection = getPrototypeVerticalProjection(viewport);
+    const activeHazards = this.getActiveHazardSpawns();
 
     this.scrollingWorldPresentation?.render(this.runState.motion.distance, viewport);
     this.generatedHazardPresentation?.sync(
-      this.hazardStream?.spawns ?? [],
+      activeHazards,
       this.runState.motion,
       playerScreenX,
       this.telegraphedHazardState,
@@ -584,7 +804,7 @@ export class Foundation extends Scene {
       collectibles: this.collectibleSpawns,
       consumedCollectibleIds: this.runState.collectibles?.consumedCollectibleIds ?? [],
       flight: this.runState.flight,
-      hazards: this.hazardStream?.spawns ?? [],
+      hazards: activeHazards,
       motion: this.runState.motion,
       nextPatternStartDistance: this.hazardStream?.nextPatternStartDistance ?? null,
       telegraphedHazards: this.telegraphedHazardState,
@@ -616,6 +836,7 @@ export class Foundation extends Scene {
     this.generatedHazardPresentation?.destroy();
     this.generatedHazardPresentation = undefined;
     this.collectibleSpawns = Object.freeze([]);
+    this.directorManualHazards = Object.freeze([]);
     this.hazardStream = undefined;
     this.telegraphedHazardState = createTelegraphedHazardSimulationState();
     this.playerPresentation?.destroy();

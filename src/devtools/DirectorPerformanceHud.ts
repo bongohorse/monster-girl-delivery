@@ -9,6 +9,14 @@ export const DIRECTOR_FPS_LIMIT_OPTIONS = Object.freeze([0, 30, 60, 90, 120, 144
 export interface DirectorPerformanceHudControls {
   readonly setFpsLimit: (limit: number) => void;
   readonly setWireframesEnabled: (enabled: boolean) => void;
+  readonly setGodModeEnabled?: (enabled: boolean) => void;
+  readonly setAutoHazardsEnabled?: (enabled: boolean) => void;
+  readonly spawnMissile?: () => void;
+  readonly spawnZapper?: () => void;
+  readonly spawnLaser?: () => void;
+  readonly clearHazards?: () => void;
+  readonly setSimulationFrozen?: (frozen: boolean) => void;
+  readonly triggerDeath?: () => void;
 }
 
 type PerformanceHealth = 'good' | 'mild' | 'noticeable' | 'severe' | 'unknown';
@@ -62,7 +70,7 @@ const setHealthIfChanged = (element: HTMLElement, health: PerformanceHealth): vo
   }
 };
 
-/** Low-frequency DOM presentation for the pure raw frame-time sampler. */
+/** Low-frequency DOM presentation for the pure raw frame-time sampler and Director playground. */
 export class DirectorPerformanceHud {
   private readonly root: HTMLDivElement;
   private readonly visibilityButton: HTMLButtonElement;
@@ -72,12 +80,24 @@ export class DirectorPerformanceHud {
   private readonly statisticsValue: HTMLSpanElement;
   private readonly wireframeLabel: HTMLLabelElement;
   private readonly wireframeCheckbox: HTMLInputElement;
+  private readonly playgroundControls: HTMLSpanElement;
+  private readonly godModeButton: HTMLButtonElement;
+  private readonly autoHazardsButton: HTMLButtonElement;
+  private readonly missileButton: HTMLButtonElement;
+  private readonly zapperButton: HTMLButtonElement;
+  private readonly laserButton: HTMLButtonElement;
+  private readonly clearButton: HTMLButtonElement;
+  private readonly freezeButton: HTMLButtonElement;
+  private readonly deathButton: HTMLButtonElement;
   private readonly resetButton: HTMLButtonElement;
   private destroyed = false;
   private elapsedSinceRefreshMilliseconds = Number.POSITIVE_INFINITY;
   private fpsLimitIndex = 0;
   private hidden = false;
   private latestFramesPerSecond = 0;
+  private godModeEnabled = false;
+  private autoHazardsEnabled = true;
+  private simulationFrozen = false;
 
   constructor(
     container: HTMLElement,
@@ -89,14 +109,14 @@ export class DirectorPerformanceHud {
     this.root = ownerDocument.createElement('div');
     this.root.className = 'director-performance-hud';
     this.root.setAttribute('role', 'group');
-    this.root.setAttribute('aria-label', 'Director performance monitor');
+    this.root.setAttribute('aria-label', 'Director performance monitor and playground controls');
 
     this.visibilityButton = ownerDocument.createElement('button');
     this.visibilityButton.className = 'director-performance-hud__button';
     this.visibilityButton.type = 'button';
     this.visibilityButton.textContent = '👁';
-    this.visibilityButton.title = 'Hide performance values';
-    this.visibilityButton.setAttribute('aria-label', 'Hide performance values');
+    this.visibilityButton.title = 'Hide Director values and controls';
+    this.visibilityButton.setAttribute('aria-label', 'Hide Director values and controls');
     this.visibilityButton.setAttribute('aria-pressed', 'false');
 
     this.values = ownerDocument.createElement('span');
@@ -110,12 +130,49 @@ export class DirectorPerformanceHud {
 
     this.wireframeLabel = ownerDocument.createElement('label');
     this.wireframeLabel.className = 'director-performance-hud__toggle';
+    this.wireframeLabel.title = 'Show collision and gameplay wireframes';
     this.wireframeCheckbox = ownerDocument.createElement('input');
     this.wireframeCheckbox.type = 'checkbox';
     this.wireframeCheckbox.setAttribute('aria-label', 'Show collision and gameplay wireframes');
     const wireframeText = ownerDocument.createElement('span');
-    wireframeText.textContent = 'Hitboxes';
+    wireframeText.textContent = 'HB';
     this.wireframeLabel.append(this.wireframeCheckbox, wireframeText);
+
+    this.playgroundControls = ownerDocument.createElement('span');
+    this.playgroundControls.className = 'director-performance-hud__playground';
+    this.godModeButton = this.createButton(
+      ownerDocument,
+      'GOD',
+      'Godmode: survive lethal hazard contact',
+    );
+    this.autoHazardsButton = this.createButton(
+      ownerDocument,
+      'AUTO',
+      'Automatic encounter generation',
+    );
+    this.missileButton = this.createButton(ownerDocument, 'M', 'Spawn Missile');
+    this.zapperButton = this.createButton(ownerDocument, 'Z', 'Spawn Zapper / Electro hazard');
+    this.laserButton = this.createButton(ownerDocument, 'L', 'Spawn Timed Laser');
+    this.clearButton = this.createButton(ownerDocument, 'CLR', 'Clear active test hazards');
+    this.freezeButton = this.createButton(ownerDocument, '⏸', 'Freeze gameplay simulation');
+    this.deathButton = this.createButton(
+      ownerDocument,
+      '☠',
+      'Trigger normal death / fail-state flow',
+    );
+    this.playgroundControls.append(
+      this.godModeButton,
+      this.autoHazardsButton,
+      this.missileButton,
+      this.zapperButton,
+      this.laserButton,
+      this.clearButton,
+      this.freezeButton,
+      this.deathButton,
+    );
+    this.setToggleState(this.godModeButton, false);
+    this.setToggleState(this.autoHazardsButton, true);
+    this.setToggleState(this.freezeButton, false);
 
     this.resetButton = ownerDocument.createElement('button');
     this.resetButton.className = 'director-performance-hud__button';
@@ -124,11 +181,25 @@ export class DirectorPerformanceHud {
     this.resetButton.title = 'Reset performance statistics';
     this.resetButton.setAttribute('aria-label', 'Reset performance statistics');
 
-    this.root.append(this.visibilityButton, this.values, this.wireframeLabel, this.resetButton);
+    this.root.append(
+      this.visibilityButton,
+      this.values,
+      this.wireframeLabel,
+      this.playgroundControls,
+      this.resetButton,
+    );
     container.append(this.root);
 
     this.addControlListeners(this.visibilityButton, this.handleVisibilityClick);
     this.addControlListeners(this.fpsValue, this.handleFpsLimitClick);
+    this.addControlListeners(this.godModeButton, this.handleGodModeClick);
+    this.addControlListeners(this.autoHazardsButton, this.handleAutoHazardsClick);
+    this.addControlListeners(this.missileButton, this.handleMissileClick);
+    this.addControlListeners(this.zapperButton, this.handleZapperClick);
+    this.addControlListeners(this.laserButton, this.handleLaserClick);
+    this.addControlListeners(this.clearButton, this.handleClearClick);
+    this.addControlListeners(this.freezeButton, this.handleFreezeClick);
+    this.addControlListeners(this.deathButton, this.handleDeathClick);
     this.addControlListeners(this.resetButton, this.handleResetClick);
     this.addTogglePointerListeners(this.wireframeLabel);
     this.wireframeCheckbox.addEventListener('change', this.handleWireframeChange);
@@ -187,10 +258,33 @@ export class DirectorPerformanceHud {
     this.inputService.setGameplayBlocked(false);
     this.removeControlListeners(this.visibilityButton, this.handleVisibilityClick);
     this.removeControlListeners(this.fpsValue, this.handleFpsLimitClick);
+    this.removeControlListeners(this.godModeButton, this.handleGodModeClick);
+    this.removeControlListeners(this.autoHazardsButton, this.handleAutoHazardsClick);
+    this.removeControlListeners(this.missileButton, this.handleMissileClick);
+    this.removeControlListeners(this.zapperButton, this.handleZapperClick);
+    this.removeControlListeners(this.laserButton, this.handleLaserClick);
+    this.removeControlListeners(this.clearButton, this.handleClearClick);
+    this.removeControlListeners(this.freezeButton, this.handleFreezeClick);
+    this.removeControlListeners(this.deathButton, this.handleDeathClick);
     this.removeControlListeners(this.resetButton, this.handleResetClick);
     this.removeTogglePointerListeners(this.wireframeLabel);
     this.wireframeCheckbox.removeEventListener('change', this.handleWireframeChange);
     this.root.remove();
+  }
+
+  private createButton(document: Document, label: string, title: string): HTMLButtonElement {
+    const button = document.createElement('button');
+    button.className = 'director-performance-hud__button';
+    button.type = 'button';
+    button.textContent = label;
+    button.title = title;
+    button.setAttribute('aria-label', title);
+    return button;
+  }
+
+  private setToggleState(button: HTMLButtonElement, active: boolean): void {
+    button.dataset.active = String(active);
+    button.setAttribute('aria-pressed', String(active));
   }
 
   private readonly handlePointerDown = (event: Event): void => {
@@ -218,10 +312,12 @@ export class DirectorPerformanceHud {
     this.hidden = !this.hidden;
     this.values.hidden = this.hidden;
     this.values.style.display = this.hidden ? 'none' : '';
+    this.wireframeLabel.hidden = this.hidden;
+    this.playgroundControls.hidden = this.hidden;
     this.resetButton.hidden = this.hidden;
     this.visibilityButton.title = this.hidden
-      ? 'Show performance values'
-      : 'Hide performance values';
+      ? 'Show Director values and controls'
+      : 'Hide Director values and controls';
     this.visibilityButton.setAttribute('aria-label', this.visibilityButton.title);
     this.visibilityButton.setAttribute('aria-pressed', String(this.hidden));
     this.root.dataset.collapsed = String(this.hidden);
@@ -244,6 +340,57 @@ export class DirectorPerformanceHud {
   private readonly handleWireframeChange = (event: Event): void => {
     event.stopPropagation();
     this.controls?.setWireframesEnabled(this.wireframeCheckbox.checked);
+  };
+
+  private readonly handleGodModeClick = (event: Event): void => {
+    this.stopControlEvent(event);
+    this.godModeEnabled = !this.godModeEnabled;
+    this.setToggleState(this.godModeButton, this.godModeEnabled);
+    this.controls?.setGodModeEnabled?.(this.godModeEnabled);
+  };
+
+  private readonly handleAutoHazardsClick = (event: Event): void => {
+    this.stopControlEvent(event);
+    this.autoHazardsEnabled = !this.autoHazardsEnabled;
+    this.setToggleState(this.autoHazardsButton, this.autoHazardsEnabled);
+    this.controls?.setAutoHazardsEnabled?.(this.autoHazardsEnabled);
+  };
+
+  private readonly handleMissileClick = (event: Event): void => {
+    this.stopControlEvent(event);
+    this.controls?.spawnMissile?.();
+  };
+
+  private readonly handleZapperClick = (event: Event): void => {
+    this.stopControlEvent(event);
+    this.controls?.spawnZapper?.();
+  };
+
+  private readonly handleLaserClick = (event: Event): void => {
+    this.stopControlEvent(event);
+    this.controls?.spawnLaser?.();
+  };
+
+  private readonly handleClearClick = (event: Event): void => {
+    this.stopControlEvent(event);
+    this.controls?.clearHazards?.();
+  };
+
+  private readonly handleFreezeClick = (event: Event): void => {
+    this.stopControlEvent(event);
+    this.simulationFrozen = !this.simulationFrozen;
+    this.setToggleState(this.freezeButton, this.simulationFrozen);
+    this.freezeButton.textContent = this.simulationFrozen ? '▶' : '⏸';
+    this.freezeButton.title = this.simulationFrozen
+      ? 'Resume gameplay simulation'
+      : 'Freeze gameplay simulation';
+    this.freezeButton.setAttribute('aria-label', this.freezeButton.title);
+    this.controls?.setSimulationFrozen?.(this.simulationFrozen);
+  };
+
+  private readonly handleDeathClick = (event: Event): void => {
+    this.stopControlEvent(event);
+    this.controls?.triggerDeath?.();
   };
 
   private readonly handleResetClick = (event: Event): void => {
