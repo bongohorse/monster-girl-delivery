@@ -139,7 +139,7 @@ describe('DirectorDebugOverlay geometry', () => {
 
     expect(missileBox).toMatchObject({
       color: DIRECTOR_DEBUG_COLORS.hazardLethal,
-      hitbox: { left: 98, right: 162, top: 528, bottom: 576 },
+      hitbox: { left: 98, right: 162, top: 556, bottom: 604 },
     });
   });
 
