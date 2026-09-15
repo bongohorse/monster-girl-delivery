@@ -6,7 +6,7 @@ import { PROTOTYPE_MISSILE_PATTERN } from '../../src/generation/PrototypeHazardP
 import { createRunGenerationState } from '../../src/generation/RunGenerationState';
 import {
   createTelegraphedHazardSimulationState,
-  getPrototypeMissileLaunchScreenLeft,
+  getPrototypeMissileLaunchRelativeLeft,
   getTelegraphedHazardLifecycle,
   stepTelegraphedHazardSimulation,
 } from '../../src/hazards/TelegraphedHazardSimulation';
@@ -146,7 +146,7 @@ describe('M5 Missile presentation', () => {
     expect(active?.lockedTarget?.positionY).toBeCloseTo(142, 9);
   });
 
-  it('does not move an already Active Missile when the viewport is resized', () => {
+  it('keeps an Active Missile on the same logical trajectory when resize moves the player anchor', () => {
     const spawn = createMissileSpawn();
     const { camera, graphics, scene } = createSceneFake();
     const presentation = new PrototypeHazardPresentation(scene, spawn);
@@ -177,15 +177,15 @@ describe('M5 Missile presentation', () => {
     });
 
     const active = getTelegraphedHazardLifecycle(state, spawn);
-    const launchScreenLeft = getPrototypeMissileLaunchScreenLeft(state, spawn);
+    const launchRelativeLeft = getPrototypeMissileLaunchRelativeLeft(state, spawn);
     expect(active?.phase).toBe('active');
-    expect(launchScreenLeft).toBe(448);
+    expect(launchRelativeLeft).toBe(348);
 
-    presentation.render({ distance: 805 }, 100, active, 0, launchScreenLeft);
+    presentation.render({ distance: 805 }, 100, active, 0, launchRelativeLeft);
     expect(graphics.setPosition).toHaveBeenLastCalledWith(98, 118);
 
     camera.width = 640;
-    presentation.render({ distance: 805 }, 160, active, 0, launchScreenLeft);
-    expect(graphics.setPosition).toHaveBeenLastCalledWith(98, 118);
+    presentation.render({ distance: 805 }, 160, active, 0, launchRelativeLeft);
+    expect(graphics.setPosition).toHaveBeenLastCalledWith(158, 118);
   });
 });
