@@ -186,13 +186,9 @@ describe('hazard collision', () => {
       horizontalVelocity: 100,
     };
 
-    expect(testContinuousCollision({ positionY: 0, velocityY: 0 }, 0.5, fromRight, 0)).toBe(
-      true,
-    );
+    expect(testContinuousCollision({ positionY: 0, velocityY: 0 }, 0.5, fromRight, 0)).toBe(true);
     expect(testContinuousCollision({ positionY: 0, velocityY: 0 }, 0.5, fromLeft, 0)).toBe(true);
-    expect(testContinuousCollision({ positionY: 0, velocityY: 0 }, 0.5, movingAway, 0)).toBe(
-      false,
-    );
+    expect(testContinuousCollision({ positionY: 0, velocityY: 0 }, 0.5, movingAway, 0)).toBe(false);
   });
 
   it('keeps a diagonal near-corner pass and edge-only contact non-lethal', () => {
