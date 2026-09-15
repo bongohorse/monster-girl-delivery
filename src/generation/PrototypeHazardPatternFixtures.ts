@@ -182,7 +182,7 @@ export const PROTOTYPE_TIMED_PULSE_PATTERN = createHazardPattern({
   ],
 });
 
-/** PROTOTYPE reactive target-lock strike; timing, target band, and graphics are not final. */
+/** Legacy M4 target-lock fixture retained for authority/replay evidence. */
 export const PROTOTYPE_TARGET_LOCK_STRIKE_PATTERN = createHazardPattern({
   id: 'prototype-target-lock-strike',
   runLength: 600,
@@ -223,16 +223,67 @@ export const PROTOTYPE_TARGET_LOCK_STRIKE_PATTERN = createHazardPattern({
   ],
 });
 
+/** M5 bait-and-dodge Missile: lagged edge marker, committed lock, then right-to-left strike. */
+export const PROTOTYPE_MISSILE_PATTERN = createHazardPattern({
+  id: 'prototype-target-lock-strike',
+  runLength: 600,
+  profile: {
+    behaviorTags: ['target-lock-strike'],
+    difficultyTierRange: { minimumTierIndex: 1, maximumTierIndex: null },
+    pacingIntensities: ['low', 'medium', 'high', 'peak'],
+    pressureCost: 2,
+    readabilityCost: 3,
+    varietyFamilyId: 'target-lock-strike',
+  },
+  entries: [
+    {
+      behavior: {
+        archetype: 'reactive',
+        kind: 'target-lock-strike',
+        lifecycle: {
+          durations: {
+            warningSeconds: 1.4,
+            lockSeconds: 0.4,
+            activeSeconds: 1,
+          },
+          warningGeometry: {
+            leftOffset: -18,
+            rightOffset: 18,
+            topOffset: -22,
+            bottomOffset: 22,
+          },
+        },
+        minimumTargetY: 72,
+        maximumTargetY: 222,
+        strikeHeight: 48,
+        trackingResponsiveness: 0.6,
+        minimumLaunchLeadDistance: 440,
+      },
+      id: 'target-lock-strike-1',
+      type: 'placeholder-barrier',
+      hitbox: { left: 120, right: 184, top: 171, bottom: 219 },
+    },
+  ],
+});
+
 export const PROTOTYPE_HAZARD_PATTERN_FIXTURES = Object.freeze([
   PROTOTYPE_LINE_PATTERN,
   PROTOTYPE_CORRIDOR_PATTERN,
   PROTOTYPE_OFFSET_PAIR_PATTERN,
 ]);
 
-/** M4 live prototype catalog. The M3 fixture catalog remains stable for replay evidence. */
+/** M4 catalog retained unchanged for M4 deterministic evidence. */
 export const PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES = Object.freeze([
   ...PROTOTYPE_HAZARD_PATTERN_FIXTURES,
   PROTOTYPE_VERTICAL_PATROL_PATTERN,
   PROTOTYPE_TIMED_PULSE_PATTERN,
   PROTOTYPE_TARGET_LOCK_STRIKE_PATTERN,
+]);
+
+/** M5 live catalog swaps only the legacy target-lock prototype for the bait-and-dodge Missile. */
+export const PROTOTYPE_M5_HAZARD_PATTERN_FIXTURES = Object.freeze([
+  ...PROTOTYPE_HAZARD_PATTERN_FIXTURES,
+  PROTOTYPE_VERTICAL_PATROL_PATTERN,
+  PROTOTYPE_TIMED_PULSE_PATTERN,
+  PROTOTYPE_MISSILE_PATTERN,
 ]);
