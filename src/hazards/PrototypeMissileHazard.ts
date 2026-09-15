@@ -21,6 +21,7 @@ export interface PrototypeMissileHorizontalLayout {
 
 /** Presentation-only blink cadence. Gameplay timing remains owned by the lifecycle. */
 export const PROTOTYPE_MISSILE_WARNING_BLINK_SECONDS = 0.16;
+export const PROTOTYPE_MISSILE_WARNING_EDGE_MARGIN = 10;
 
 export const isPrototypeMissileBehavior = (
   behavior: Readonly<TargetLockStrikeHazardBehavior>,
