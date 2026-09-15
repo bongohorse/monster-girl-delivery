@@ -73,11 +73,12 @@ const assertValidHorizontalLayout = (layout: Readonly<PrototypeMissileHorizontal
 };
 
 /**
- * Resolves the immutable screen-space launch origin at the Active boundary. Warning/Lock may follow
- * a resized viewport, but once the Missile launches this X coordinate must not be recomputed from a
- * later viewport or the projectile would jump horizontally after resize.
+ * Resolves the immutable logical launch offset from the player at the Active boundary. Warning/Lock
+ * may follow a resized viewport, but once the Missile launches this relative X must not be recomputed
+ * from a later viewport. Keeping the offset player-relative preserves gameplay geometry when resize
+ * moves the player's screen anchor and the rest of the world presentation together.
  */
-export const resolvePrototypeMissileLaunchScreenLeft = (
+export const resolvePrototypeMissileLaunchRelativeLeft = (
   hazard: Readonly<BehavioralLogicalHazard>,
   layout: Readonly<PrototypeMissileHorizontalLayout>,
 ): number => {
@@ -86,28 +87,29 @@ export const resolvePrototypeMissileLaunchScreenLeft = (
     !isTargetLockStrikeHazardBehavior(hazard.behavior) ||
     !isPrototypeMissileBehavior(hazard.behavior)
   ) {
-    return layout.playerScreenX + hazard.hitbox.left - layout.playerRunDistance;
+    return hazard.hitbox.left - layout.playerRunDistance;
   }
 
   const width = hazard.hitbox.right - hazard.hitbox.left;
   const motion = hazard.behavior.missile;
   return motion.launchSide === 'right'
-    ? layout.viewportRight + motion.offscreenPadding
-    : layout.viewportLeft - motion.offscreenPadding - width;
+    ? layout.viewportRight - layout.playerScreenX + motion.offscreenPadding
+    : layout.viewportLeft - layout.playerScreenX - motion.offscreenPadding - width;
 };
 
 /**
  * Resolves the Missile's current authoritative world hitbox from a player-relative horizontal
- * trajectory. The launch screen X is frozen at the Active boundary, while current player/world
- * coordinates are used only to convert that immutable screen trajectory back into world space.
- * The present M5 content launches from the right, and the same rule supports a left-side launch.
+ * trajectory. The launch offset is frozen at the Active boundary, so a later viewport resize cannot
+ * change the Missile's logical distance from the player. Presentation still follows the normal world
+ * projection and therefore adapts with the player's resized screen anchor. The present M5 content
+ * launches from the right, and the same rule supports a left-side launch.
  */
 export const resolvePrototypeMissileTravelHitbox = (
   hazard: Readonly<BehavioralLogicalHazard>,
   target: Readonly<TelegraphedHazardTarget>,
   activeElapsedSeconds: number,
   layout: Readonly<PrototypeMissileHorizontalLayout>,
-  launchScreenLeft?: number | null,
+  launchRelativeLeft?: number | null,
 ): Readonly<LogicalHitbox> => {
   const baseHitbox = resolveTargetLockStrikeHitbox(hazard, target.positionY);
 
@@ -122,20 +124,20 @@ export const resolvePrototypeMissileTravelHitbox = (
   }
   assertValidHorizontalLayout(layout);
   if (
-    launchScreenLeft !== undefined &&
-    launchScreenLeft !== null &&
-    !Number.isFinite(launchScreenLeft)
+    launchRelativeLeft !== undefined &&
+    launchRelativeLeft !== null &&
+    !Number.isFinite(launchRelativeLeft)
   ) {
-    throw new RangeError('Missile launch screen position must be finite when provided.');
+    throw new RangeError('Missile launch relative position must be finite when provided.');
   }
 
   const width = baseHitbox.right - baseHitbox.left;
-  const frozenLaunchScreenLeft =
-    launchScreenLeft ?? resolvePrototypeMissileLaunchScreenLeft(hazard, layout);
-  const currentScreenLeft =
-    frozenLaunchScreenLeft +
+  const frozenLaunchRelativeLeft =
+    launchRelativeLeft ?? resolvePrototypeMissileLaunchRelativeLeft(hazard, layout);
+  const currentRelativeLeft =
+    frozenLaunchRelativeLeft +
     getPrototypeMissileRelativeVelocityX(hazard.behavior) * activeElapsedSeconds;
-  const left = layout.playerRunDistance + currentScreenLeft - layout.playerScreenX;
+  const left = layout.playerRunDistance + currentRelativeLeft;
 
   return Object.freeze({
     left,
