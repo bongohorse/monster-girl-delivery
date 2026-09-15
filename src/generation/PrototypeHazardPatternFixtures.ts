@@ -223,7 +223,7 @@ export const PROTOTYPE_TARGET_LOCK_STRIKE_PATTERN = createHazardPattern({
   ],
 });
 
-/** M5 bait-and-dodge Missile: lagged edge marker, committed lock, then directional travel. */
+/** M5 bait-and-dodge Missile: rate-limited edge marker, committed lock, then directional travel. */
 export const PROTOTYPE_MISSILE_PATTERN = createHazardPattern({
   id: 'prototype-target-lock-strike',
   runLength: 600,
@@ -259,7 +259,7 @@ export const PROTOTYPE_MISSILE_PATTERN = createHazardPattern({
         missile: {
           launchSide: 'right',
           offscreenPadding: 48,
-          trackingResponsiveness: 0.6,
+          trackingSpeed: 120,
           travelSpeed: 700,
         },
       },
