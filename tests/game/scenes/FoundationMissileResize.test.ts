@@ -162,10 +162,8 @@ describe('Foundation M5 Missile resize integration', () => {
     }
 
     expect(after.hitbox).toEqual(before.hitbox);
-    const beforeRelativeScreenLeft =
-      before.hitbox.left - motion.distance;
-    const afterRelativeScreenLeft =
-      after.hitbox.left - motion.distance;
+    const beforeRelativeScreenLeft = before.hitbox.left - motion.distance;
+    const afterRelativeScreenLeft = after.hitbox.left - motion.distance;
     expect(afterRelativeScreenLeft).toBe(beforeRelativeScreenLeft);
     expect(afterPlayerX).toBe(160);
   });
