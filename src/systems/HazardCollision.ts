@@ -116,7 +116,7 @@ export const isPlayerCollidingWithHazard = (
   playerExtents: Readonly<PrototypePlayerCollisionExtents> = PROTOTYPE_PLAYER_COLLISION_EXTENTS,
 ): boolean => {
   const playerHitbox = createPrototypePlayerHitbox(runState, flightState, playerExtents);
-  const zapperGeometry = resolvePrototypeZapperGeometry(hazard);
+  const zapperGeometry = resolvePrototypeZapperGeometry(hazard, runState.simulationSeconds ?? 0);
   return zapperGeometry
     ? doesHitboxOverlapPrototypeZapper(playerHitbox, zapperGeometry)
     : doLogicalHitboxesOverlap(playerHitbox, hazard.hitbox);
@@ -341,9 +341,14 @@ const ZAPPER_MAX_COLLISION_SAMPLE_SECONDS = 1 / 720;
 const createZapperCollisionSampleTimes = (
   trajectory: Readonly<VerticalFlightTrajectory>,
   initialDistance: number,
+  initialSimulationSeconds: number,
   scrollSpeed: number,
   interval: Readonly<LogicalHazardCollisionInterval>,
 ): number[] => {
+  if (!Number.isFinite(initialSimulationSeconds) || initialSimulationSeconds < 0) {
+    throw new RangeError('Zapper initial simulation time must be non-negative and finite.');
+  }
+
   const candidates = [interval.startSeconds, interval.endSeconds];
   for (const segment of trajectory.segments) {
     addCandidate(candidates, segment.startSeconds, interval.startSeconds, interval.endSeconds);
@@ -359,44 +364,42 @@ const createZapperCollisionSampleTimes = (
   }
 
   if (scrollSpeed !== 0) {
-    // Keep the absolute-distance lattice partition-stable, but also cap temporal spacing so a
-    // near-stationary world cannot let fast vertical player motion tunnel between sparse samples.
-    const sampleDistance = Math.min(
-      ZAPPER_MAX_COLLISION_SAMPLE_DISTANCE,
-      Math.abs(scrollSpeed) * ZAPPER_MAX_COLLISION_SAMPLE_SECONDS,
-    );
     const firstDistance = initialDistance + scrollSpeed * interval.startSeconds;
     const lastDistance = initialDistance + scrollSpeed * interval.endSeconds;
     const minimumDistance = Math.min(firstDistance, lastDistance);
     const maximumDistance = Math.max(firstDistance, lastDistance);
-    const firstIndex = Math.ceil(minimumDistance / sampleDistance);
-    const lastIndex = Math.floor(maximumDistance / sampleDistance);
+    const firstIndex = Math.ceil(minimumDistance / ZAPPER_MAX_COLLISION_SAMPLE_DISTANCE);
+    const lastIndex = Math.floor(maximumDistance / ZAPPER_MAX_COLLISION_SAMPLE_DISTANCE);
     for (let index = firstIndex; index <= lastIndex; index += 1) {
-      const distance = index * sampleDistance;
+      const distance = index * ZAPPER_MAX_COLLISION_SAMPLE_DISTANCE;
       const seconds = (distance - initialDistance) / scrollSpeed;
       addCandidate(candidates, seconds, interval.startSeconds, interval.endSeconds);
     }
-  } else {
-    const firstIndex = Math.ceil(interval.startSeconds / ZAPPER_MAX_COLLISION_SAMPLE_SECONDS);
-    const lastIndex = Math.floor(interval.endSeconds / ZAPPER_MAX_COLLISION_SAMPLE_SECONDS);
-    for (let index = firstIndex; index <= lastIndex; index += 1) {
-      addCandidate(
-        candidates,
-        index * ZAPPER_MAX_COLLISION_SAMPLE_SECONDS,
-        interval.startSeconds,
-        interval.endSeconds,
-      );
-    }
+  }
+
+  // A global simulation-time lattice makes angular sweep sampling partition-stable even when the
+  // world scroll is zero or changes independently of Zapper rotation.
+  const absoluteStartSeconds = initialSimulationSeconds + interval.startSeconds;
+  const absoluteEndSeconds = initialSimulationSeconds + interval.endSeconds;
+  const firstTimeIndex = Math.ceil(absoluteStartSeconds / ZAPPER_MAX_COLLISION_SAMPLE_SECONDS);
+  const lastTimeIndex = Math.floor(absoluteEndSeconds / ZAPPER_MAX_COLLISION_SAMPLE_SECONDS);
+  for (let index = firstTimeIndex; index <= lastTimeIndex; index += 1) {
+    addCandidate(
+      candidates,
+      index * ZAPPER_MAX_COLLISION_SAMPLE_SECONDS - initialSimulationSeconds,
+      interval.startSeconds,
+      interval.endSeconds,
+    );
   }
 
   return [...new Set(candidates)].sort((first, second) => first - second);
 };
 
 /**
- * Continuous-step authority for a static Zapper. Samples are anchored to an absolute world-distance
- * lattice capped at 0.5 logical px and 1/720 second spacing, so standard frame partitions observe
- * the same path locations without allowing near-zero scroll speed to create vertical tunneling.
- * Each sample uses the exact AABB-vs-capsule/circle test.
+ * Continuous-step authority for static and rotating Zappers. Samples are anchored to absolute world
+ * distance plus an authoritative 1/720-second simulation-time lattice. Every sample resolves the
+ * current beam/node pose from the same simulation clock used by presentation and Director HB, so a
+ * rotating beam cannot tunnel between endpoint poses and remains deterministic across partitions.
  */
 export const isPlayerCollidingWithPrototypeZapperDuringStep = (
   initialRunState: Readonly<RunMotionState>,
@@ -410,16 +413,16 @@ export const isPlayerCollidingWithPrototypeZapperDuringStep = (
   if (!isPrototypeZapperHazard(hazard)) {
     return false;
   }
-  const geometry = resolvePrototypeZapperGeometry(hazard);
-  if (!geometry) {
-    return false;
-  }
+  const initialSimulationSeconds = initialRunState.simulationSeconds ?? 0;
   if (elapsedSeconds === 0) {
-    return doesHitboxOverlapPrototypeZapper(
-      createPrototypePlayerHitbox(initialRunState, trajectory.finalState, playerExtents),
-      geometry,
-      padding,
-    );
+    const geometry = resolvePrototypeZapperGeometry(hazard, initialSimulationSeconds);
+    return geometry
+      ? doesHitboxOverlapPrototypeZapper(
+          createPrototypePlayerHitbox(initialRunState, trajectory.finalState, playerExtents),
+          geometry,
+          padding,
+        )
+      : false;
   }
 
   const interval = getCollisionTimeRange(hazard, elapsedSeconds);
@@ -429,6 +432,7 @@ export const isPlayerCollidingWithPrototypeZapperDuringStep = (
   const sampleTimes = createZapperCollisionSampleTimes(
     trajectory,
     initialRunState.distance,
+    initialSimulationSeconds,
     runMotionTuning.baseScrollSpeed,
     interval,
   );
@@ -438,7 +442,11 @@ export const isPlayerCollidingWithPrototypeZapperDuringStep = (
       { positionY: evaluateFlightTrajectoryPosition(trajectory, seconds), velocityY: 0 },
       playerExtents,
     );
-    return doesHitboxOverlapPrototypeZapper(playerHitbox, geometry, padding);
+    const geometry = resolvePrototypeZapperGeometry(
+      hazard,
+      initialSimulationSeconds + seconds,
+    );
+    return geometry ? doesHitboxOverlapPrototypeZapper(playerHitbox, geometry, padding) : false;
   });
 };
 
@@ -446,8 +454,8 @@ export const isPlayerCollidingWithPrototypeZapperDuringStep = (
  * Tests continuous positive-area overlap during one authoritative run step. Horizontal relative
  * motion is linear and may include an independently moving hazard. Flight is the exact bounded
  * polynomial trajectory produced by VerticalFlightSimulation; vertical patrol is an exact triangle
- * wave. Static Zappers use their compound capsule/circle geometry instead of their conservative
- * scheduling AABB.
+ * wave. Zappers use their compound capsule/circle geometry and authoritative simulation-time pose
+ * instead of their conservative scheduling AABB.
  */
 export const isPlayerCollidingWithHazardDuringStep = (
   initialRunState: Readonly<RunMotionState>,
