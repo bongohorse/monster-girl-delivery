@@ -78,6 +78,7 @@ import { getLogicalViewportFromBacking } from '../RenderResolution';
 const RUNNING_INSTRUCTIONS =
   'M5 in progress — hazards, Graze + collectibles\nHold touch, mouse, or Space to thrust.';
 const RETRY_READY_INSTRUCTIONS = 'Tap, click, or press Space to retry.';
+const DIRECTOR_ZAPPER_OFFSCREEN_PADDING = 24;
 const formatDeadInstructions = (
   result: Readonly<PrototypeRunResultSnapshot>,
   retryReady: boolean,
@@ -157,6 +158,7 @@ const createDirectorManualSpawn = (
     }),
     patternEntryIndex: 0,
     patternId: `${pattern.id}:director-${serial}`,
+    ...(entry.reactionPolicy === undefined ? {} : { reactionPolicy: entry.reactionPolicy }),
     runDistance: left,
     type: entry.type,
   });
@@ -659,7 +661,10 @@ export class Foundation extends Scene {
     const viewport = this.viewportService.getSnapshot();
     const playerScreenX = getPrototypePlayerX(viewport);
     const safeRightEdge = viewport.width - Math.min(viewport.width, viewport.safeArea.right);
-    const desiredScreenLeft = Math.max(playerScreenX + 160, safeRightEdge - 96);
+    const desiredScreenLeft =
+      kind === 'zapper'
+        ? viewport.width + DIRECTOR_ZAPPER_OFFSCREEN_PADDING
+        : Math.max(playerScreenX + 160, safeRightEdge - 96);
     const worldLeft = this.runState.motion.distance + desiredScreenLeft - playerScreenX;
     const patternStartDistance = Math.max(0, worldLeft - entry.hitbox.left);
     this.directorHazardSerial += 1;
