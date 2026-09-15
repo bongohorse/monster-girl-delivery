@@ -155,12 +155,7 @@ export const stepTelegraphedHazardSimulation = (
     );
     const resolveTargetAtDelta = resolvePlayerTargetAtDelta
       ? (delta: number): Readonly<TelegraphedHazardTarget> =>
-          getLifecycleTarget(
-            spawn,
-            trackingOriginTarget,
-            delta,
-            resolvePlayerTargetAtDelta(delta),
-          )
+          getLifecycleTarget(spawn, trackingOriginTarget, delta, resolvePlayerTargetAtDelta(delta))
       : undefined;
     const lifecycleStep = stepTelegraphedHazardLifecycle(
       existing?.lifecycle ?? createTelegraphedHazardLifecycle(warningOriginTarget),
