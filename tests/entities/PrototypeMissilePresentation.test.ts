@@ -60,7 +60,7 @@ const createSceneFake = () => {
 };
 
 describe('M5 Missile presentation', () => {
-  it('pins the warning to the right edge, makes lock obvious, then launches the committed strike', () => {
+  it('pins warning to the edge, shows lock, launches offscreen, then crosses the player lane', () => {
     const spawn = createMissileSpawn();
     const { graphics, scene } = createSceneFake();
     const presentation = new PrototypeHazardPresentation(scene, spawn);
@@ -92,6 +92,13 @@ describe('M5 Missile presentation', () => {
       runDistance: 630,
     });
     presentation.render({ distance: 630 }, 100, getTelegraphedHazardLifecycle(state, spawn));
-    expect(graphics.setPosition).toHaveBeenLastCalledWith(400, 118);
+    expect(graphics.setPosition).toHaveBeenLastCalledWith(448, 118);
+
+    state = stepTelegraphedHazardSimulation(state, [spawn], 0.5, {
+      positionY: 60,
+      runDistance: 805,
+    });
+    presentation.render({ distance: 805 }, 100, getTelegraphedHazardLifecycle(state, spawn));
+    expect(graphics.setPosition).toHaveBeenLastCalledWith(98, 118);
   });
 });
