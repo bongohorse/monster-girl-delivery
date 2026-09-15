@@ -36,6 +36,7 @@ import type { TelegraphedHazardTarget } from '../../hazards/TelegraphedHazardLif
 import {
   createTelegraphedHazardSimulationState,
   getCollisionHazardsForTelegraphedSimulation,
+  getTelegraphedHazardLifecycle,
   stepTelegraphedHazardSimulation,
   type TelegraphedHazardSimulationState,
 } from '../../hazards/TelegraphedHazardSimulation';
@@ -398,6 +399,7 @@ export class Foundation extends Scene {
       const thrustHeld = this.services.input.isThrustHeld();
       const initialFlight = this.runState.flight;
       const initialMotion = this.runState.motion;
+      const playerScreenX = getPrototypePlayerX(viewport);
       const resolvePlayerTargetAtDelta = (deltaSeconds: number): TelegraphedHazardTarget => {
         const subFlight = stepVerticalFlight(
           initialFlight,
@@ -430,6 +432,13 @@ export class Foundation extends Scene {
         hazards: getCollisionHazardsForTelegraphedSimulation(
           this.telegraphedHazardState,
           activeHazards,
+          {
+            playerRunDistance: initialMotion.distance,
+            playerScreenX,
+            scrollSpeed: appliedScrollSpeed,
+            viewportLeft: 0,
+            viewportRight: viewport.width,
+          },
         ),
         runMotionTuning,
         thrustHeld,
@@ -673,7 +682,13 @@ export class Foundation extends Scene {
     }
 
     const cutoff = this.runState.motion.distance - 160;
-    const retained = this.directorManualHazards.filter((spawn) => spawn.hitbox.right >= cutoff);
+    const retained = this.directorManualHazards.filter((spawn) => {
+      const lifecycle = getTelegraphedHazardLifecycle(this.telegraphedHazardState, spawn);
+      if (lifecycle && lifecycle.phase !== 'expired') {
+        return true;
+      }
+      return spawn.hitbox.right >= cutoff;
+    });
     if (retained.length !== this.directorManualHazards.length) {
       this.directorManualHazards = Object.freeze(retained);
     }
