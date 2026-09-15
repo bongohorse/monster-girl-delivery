@@ -158,7 +158,6 @@ const createDirectorManualSpawn = (
 };
 
 export class Foundation extends Scene {
-  private title?: Phaser.GameObjects.Text;
   private instructions?: Phaser.GameObjects.Text;
   private viewportService?: ViewportService;
   private directorDebugOverlay?: DirectorDebugOverlay;
@@ -298,14 +297,6 @@ export class Foundation extends Scene {
     this.playerPresentation?.setScale?.(1, initialProjection.scaleY);
 
     this.cameras.main.setBackgroundColor(0x121426);
-    this.title = this.add
-      .text(0, 0, 'Monster Girl Delivery', {
-        color: '#ffffff',
-        fontFamily: 'Arial, sans-serif',
-        fontStyle: 'bold',
-      })
-      .setResolution(renderViewport.renderScale)
-      .setOrigin(0.5);
     this.instructions = this.add
       .text(0, 0, RUNNING_INSTRUCTIONS, {
         align: 'center',
@@ -502,7 +493,6 @@ export class Foundation extends Scene {
     );
     this.cameras.resize(gameSize.width, gameSize.height);
     this.cameras.main.setOrigin(0, 0).setZoom(renderViewport.renderScale);
-    this.title?.setResolution(renderViewport.renderScale);
     this.instructions?.setResolution(renderViewport.renderScale);
     this.viewportService.resize(
       renderViewport.width,
@@ -538,7 +528,6 @@ export class Foundation extends Scene {
     const safeBottom = viewport.height - safeBottomInset;
     const safeWidth = Math.max(0, safeRightEdge - safeLeft);
     const centerX = safeLeft + safeWidth / 2;
-    const titleSize = Math.round(Math.max(24, Math.min(42, safeWidth * 0.065)));
     let contentTop = safeTop;
 
     if (this.directorPanel && this.directorTuningControls) {
@@ -551,16 +540,11 @@ export class Foundation extends Scene {
     }
 
     const contentHeight = Math.max(0, safeBottom - contentTop);
-    const titleY =
-      contentHeight >= 100
-        ? contentTop + contentHeight * 0.32
-        : Math.max(safeTop + 24, safeBottom - 72);
     const instructionsY =
       contentHeight >= 100
         ? contentTop + contentHeight * 0.72
         : Math.max(safeTop + 56, safeBottom - 30);
 
-    this.title?.setFontSize(titleSize).setPosition(centerX, titleY);
     this.instructions
       ?.setPosition(centerX, instructionsY)
       .setWordWrapWidth(Math.max(120, safeWidth - 32));
