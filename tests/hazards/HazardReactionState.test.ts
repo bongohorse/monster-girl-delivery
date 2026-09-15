@@ -117,7 +117,11 @@ describe('shared hazard reaction state', () => {
   });
 
   it('filters disabled and destroyed hazards from shared collision input', () => {
-    const hazards = Object.freeze([
+    type TestHazard = Readonly<{
+      hitbox: Readonly<{ bottom: number; left: number; right: number; top: number }>;
+      id: string;
+    }>;
+    const hazards: ReadonlyArray<TestHazard> = Object.freeze([
       Object.freeze({ id: 'active', hitbox: { left: 0, right: 1, top: 0, bottom: 1 } }),
       Object.freeze({ id: 'disabled', hitbox: { left: 1, right: 2, top: 0, bottom: 1 } }),
       Object.freeze({ id: 'destroyed', hitbox: { left: 2, right: 3, top: 0, bottom: 1 } }),
