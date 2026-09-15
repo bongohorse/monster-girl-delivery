@@ -87,10 +87,7 @@ describe('prototype hazard vertical domain', () => {
         },
       ],
     });
-    const domain = createPrototypeHazardVerticalDomain(
-      { ceilingY: -272, floorY: 362 },
-      [pattern],
-    );
+    const domain = createPrototypeHazardVerticalDomain({ ceilingY: -272, floorY: 362 }, [pattern]);
 
     expect(domain.catalog[0]?.entries[0]?.reactionPolicy).toEqual({
       disable: 'destroy',
