@@ -152,8 +152,8 @@ vi.mock('../../../src/devtools/DirectorRunControls', () => ({
   },
 }));
 
-import { Foundation } from '../../../src/game/scenes/Foundation';
 import { getPrototypePlayerX } from '../../../src/game/PrototypeFlightLayout';
+import { Foundation } from '../../../src/game/scenes/Foundation';
 
 beforeEach(() => {
   directorPanelConstructed.mockClear();
@@ -283,8 +283,7 @@ describe('Foundation Director mode boundary', () => {
     if (!spawn) {
       throw new Error('Expected Director Zapper spawn.');
     }
-    const screenLeft =
-      getPrototypePlayerX(viewport) + spawn.hitbox.left - runState.motion.distance;
+    const screenLeft = getPrototypePlayerX(viewport) + spawn.hitbox.left - runState.motion.distance;
     expect(screenLeft).toBeGreaterThan(viewport.width);
     expect(screenLeft).toBeCloseTo(viewport.width + 24, 9);
   });
