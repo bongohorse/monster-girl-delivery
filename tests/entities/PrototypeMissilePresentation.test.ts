@@ -6,6 +6,7 @@ import { PROTOTYPE_MISSILE_PATTERN } from '../../src/generation/PrototypeHazardP
 import { createRunGenerationState } from '../../src/generation/RunGenerationState';
 import {
   createTelegraphedHazardSimulationState,
+  getPrototypeMissileLaunchScreenLeft,
   getTelegraphedHazardLifecycle,
   stepTelegraphedHazardSimulation,
 } from '../../src/hazards/TelegraphedHazardSimulation';
@@ -143,5 +144,48 @@ describe('M5 Missile presentation', () => {
     const active = getTelegraphedHazardLifecycle(state, spawn);
     expect(active?.lockedTarget).toBe(committedTarget);
     expect(active?.lockedTarget?.positionY).toBeCloseTo(142, 9);
+  });
+
+  it('does not move an already Active Missile when the viewport is resized', () => {
+    const spawn = createMissileSpawn();
+    const { camera, graphics, scene } = createSceneFake();
+    const presentation = new PrototypeHazardPresentation(scene, spawn);
+    let state = stepTelegraphedHazardSimulation(
+      createTelegraphedHazardSimulationState(),
+      [spawn],
+      0,
+      { positionY: 100, runDistance: 0 },
+    );
+    state = stepTelegraphedHazardSimulation(
+      state,
+      [spawn],
+      1.4,
+      { positionY: 100, runDistance: 0 },
+      (delta) => ({ positionY: 100 + 50 * delta, runDistance: 350 * delta }),
+    );
+    state = stepTelegraphedHazardSimulation(
+      state,
+      [spawn],
+      0.4,
+      { positionY: 72, runDistance: 630 },
+      undefined,
+      { playerRunDistance: 630, playerScreenX: 100, viewportLeft: 0, viewportRight: 400 },
+    );
+    state = stepTelegraphedHazardSimulation(state, [spawn], 0.5, {
+      positionY: 60,
+      runDistance: 805,
+    });
+
+    const active = getTelegraphedHazardLifecycle(state, spawn);
+    const launchScreenLeft = getPrototypeMissileLaunchScreenLeft(state, spawn);
+    expect(active?.phase).toBe('active');
+    expect(launchScreenLeft).toBe(448);
+
+    presentation.render({ distance: 805 }, 100, active, 0, launchScreenLeft);
+    expect(graphics.setPosition).toHaveBeenLastCalledWith(98, 118);
+
+    camera.width = 640;
+    presentation.render({ distance: 805 }, 160, active, 0, launchScreenLeft);
+    expect(graphics.setPosition).toHaveBeenLastCalledWith(98, 118);
   });
 });
