@@ -9,8 +9,11 @@ import {
   resolveTargetLockStrikeHitbox,
 } from './HazardArchetype';
 import {
-  resolvePrototypeMissileStrikeHitbox,
+  getPrototypeMissileRelativeVelocityX,
+  isPrototypeMissileBehavior,
+  type PrototypeMissileHorizontalLayout,
   resolvePrototypeMissileTrackingTarget,
+  resolvePrototypeMissileTravelHitbox,
 } from './PrototypeMissileHazard';
 import {
   createTelegraphedHazardLifecycle,
@@ -32,6 +35,10 @@ export interface TelegraphedHazardLifecycleInstance {
 
 export interface TelegraphedHazardSimulationState {
   readonly instances: ReadonlyArray<Readonly<TelegraphedHazardLifecycleInstance>>;
+}
+
+export interface PrototypeMissileCollisionContext extends PrototypeMissileHorizontalLayout {
+  readonly scrollSpeed: number;
 }
 
 const EMPTY_TELEGRAPHED_HAZARD_SIMULATION_STATE: Readonly<TelegraphedHazardSimulationState> =
@@ -168,6 +175,22 @@ export const stepTelegraphedHazardSimulation = (
   return Object.freeze({ instances: Object.freeze(instances) });
 };
 
+const getMissileActiveElapsedAtStepStart = (
+  spawn: Readonly<LogicalHazardSpawnInstance>,
+  instance: Readonly<TelegraphedHazardLifecycleInstance>,
+): number => {
+  const interval = instance.activeInterval;
+  if (!interval || !isTargetLockStrikeHazardBehavior(spawn.behavior)) {
+    return 0;
+  }
+
+  if (instance.lifecycle.phase === 'expired') {
+    return spawn.behavior.lifecycle.durations.activeSeconds - interval.endSeconds;
+  }
+
+  return instance.lifecycle.elapsedPhaseSeconds - interval.endSeconds;
+};
+
 /**
  * Supplies collision with each persistent hazard and only the true Active slice of telegraphed
  * hazards from the most recent lifecycle step. The interval is relative to that run step.
@@ -175,6 +198,7 @@ export const stepTelegraphedHazardSimulation = (
 export const getCollisionHazardsForTelegraphedSimulation = (
   state: Readonly<TelegraphedHazardSimulationState>,
   spawns: ReadonlyArray<Readonly<LogicalHazardSpawnInstance>>,
+  missileContext?: Readonly<PrototypeMissileCollisionContext>,
 ): ReadonlyArray<Readonly<LogicalHazardSpawnInstance>> => {
   const collisionHazards: Array<Readonly<LogicalHazardSpawnInstance>> = [];
 
@@ -191,14 +215,30 @@ export const getCollisionHazardsForTelegraphedSimulation = (
     }
 
     const target = instance.lifecycle.lockedTarget ?? instance.lifecycle.latestObservedTarget;
-    const hitbox = isTargetLockStrikeHazardBehavior(spawn.behavior)
-      ? resolvePrototypeMissileStrikeHitbox(spawn, target)
-      : spawn.hitbox;
+    const missile =
+      isTargetLockStrikeHazardBehavior(spawn.behavior) && isPrototypeMissileBehavior(spawn.behavior);
+    const hitbox =
+      missile && missileContext
+        ? resolvePrototypeMissileTravelHitbox(
+            spawn,
+            target,
+            getMissileActiveElapsedAtStepStart(spawn, instance),
+            missileContext,
+          )
+        : isTargetLockStrikeHazardBehavior(spawn.behavior)
+          ? resolveTargetLockStrikeHitbox(spawn, target.positionY)
+          : spawn.hitbox;
+    const horizontalVelocity =
+      missile && missileContext
+        ? missileContext.scrollSpeed + getPrototypeMissileRelativeVelocityX(spawn.behavior)
+        : undefined;
+
     collisionHazards.push(
       Object.freeze({
         ...spawn,
         collisionInterval: instance.activeInterval,
         collisionEndsAtIntervalEnd: instance.lifecycle.phase === 'expired',
+        ...(horizontalVelocity === undefined ? {} : { horizontalVelocity }),
         hitbox,
       }),
     );
@@ -221,11 +261,12 @@ export const getTelegraphedHazardLifecycle = (
 
 /**
  * Supplies the existing collision authority with persistent hazards plus active telegraphed ones.
- * Reactive strikes resolve a new immutable hitbox from their locked target; spawn data stays fixed.
+ * Reactive strikes resolve immutable hitboxes from their committed target and current travel state.
  */
 export const getLethalHazardsForTelegraphedSimulation = (
   state: Readonly<TelegraphedHazardSimulationState>,
   spawns: ReadonlyArray<Readonly<LogicalHazardSpawnInstance>>,
+  missileLayout?: Readonly<PrototypeMissileHorizontalLayout>,
 ): ReadonlyArray<Readonly<LogicalHazardSpawnInstance>> => {
   const lethalHazards: Array<Readonly<LogicalHazardSpawnInstance>> = [];
 
@@ -242,12 +283,16 @@ export const getLethalHazardsForTelegraphedSimulation = (
 
     if (isTargetLockStrikeHazardBehavior(spawn.behavior)) {
       const target = lifecycle.lockedTarget ?? lifecycle.latestObservedTarget;
-      lethalHazards.push(
-        Object.freeze({
-          ...spawn,
-          hitbox: resolvePrototypeMissileStrikeHitbox(spawn, target),
-        }),
-      );
+      const hitbox =
+        isPrototypeMissileBehavior(spawn.behavior) && missileLayout
+          ? resolvePrototypeMissileTravelHitbox(
+              spawn,
+              target,
+              lifecycle.elapsedPhaseSeconds,
+              missileLayout,
+            )
+          : resolveTargetLockStrikeHitbox(spawn, target.positionY);
+      lethalHazards.push(Object.freeze({ ...spawn, hitbox }));
       continue;
     }
 
