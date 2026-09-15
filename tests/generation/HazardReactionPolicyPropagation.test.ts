@@ -7,7 +7,10 @@ import { TEST_ENCOUNTER_PROFILE } from '../support/TestEncounterProfile';
 
 describe('hazard reaction policy propagation', () => {
   it('snapshots an authored policy and carries it into the logical spawn', () => {
-    const sourcePolicy = { disable: 'destroy' as const, destroy: 'immune' as const };
+    const sourcePolicy: { disable: 'destroy' | 'immune'; destroy: 'immune' } = {
+      disable: 'destroy',
+      destroy: 'immune',
+    };
     const pattern = createHazardPattern({
       id: 'reaction-policy-pattern',
       runLength: 600,
@@ -22,7 +25,7 @@ describe('hazard reaction policy propagation', () => {
       ],
     });
 
-    sourcePolicy.disable = 'destroy';
+    sourcePolicy.disable = 'immune';
     expect(pattern.entries[0]?.reactionPolicy).toEqual({ disable: 'destroy', destroy: 'immune' });
     expect(Object.isFrozen(pattern.entries[0]?.reactionPolicy)).toBe(true);
 
