@@ -82,9 +82,7 @@ const addBoundaryRoots = (
     if (localSeconds < localStart - epsilon || localSeconds > localEnd + epsilon) {
       return;
     }
-    candidates.push(
-      segment.startSeconds + Math.min(localEnd, Math.max(localStart, localSeconds)),
-    );
+    candidates.push(segment.startSeconds + Math.min(localEnd, Math.max(localStart, localSeconds)));
   };
 
   if (Math.abs(a) <= epsilon) {
@@ -128,13 +126,18 @@ const getFirstVerticalOverlapSeconds = (
     addBoundaryRoots(candidates, segment, maximumCenterY, segmentStart, segmentEnd);
     candidates.sort((first, second) => first - second);
 
-    const uniqueCandidates = candidates.filter(
-      (candidate, index) => index === 0 || Math.abs(candidate - candidates[index - 1]!) > 1e-10,
-    );
+    const uniqueCandidates: number[] = [];
+    for (const candidate of candidates) {
+      const previous = uniqueCandidates.at(-1);
+      if (previous === undefined || Math.abs(candidate - previous) > 1e-10) {
+        uniqueCandidates.push(candidate);
+      }
+    }
+
     for (let index = 0; index < uniqueCandidates.length - 1; index += 1) {
-      const intervalStart = uniqueCandidates[index]!;
-      const intervalEnd = uniqueCandidates[index + 1]!;
-      if (intervalEnd <= intervalStart) {
+      const intervalStart = uniqueCandidates[index];
+      const intervalEnd = uniqueCandidates[index + 1];
+      if (intervalStart === undefined || intervalEnd === undefined || intervalEnd <= intervalStart) {
         continue;
       }
       const midpoint = intervalStart + (intervalEnd - intervalStart) / 2;
