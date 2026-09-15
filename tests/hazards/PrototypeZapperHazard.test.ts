@@ -106,9 +106,9 @@ describe('M5 static Zapper geometry', () => {
 
     const nearBeam = { left: 270, right: 290, top: 211, bottom: 219 };
     expect(doesHitboxOverlapPrototypeZapper(nearBeam, geometry)).toBe(false);
-    expect(doesHitboxOverlapPrototypeZapper(nearBeam, geometry, PROTOTYPE_ZAPPER_GRAZE_PADDING)).toBe(
-      true,
-    );
+    expect(
+      doesHitboxOverlapPrototypeZapper(nearBeam, geometry, PROTOTYPE_ZAPPER_GRAZE_PADDING),
+    ).toBe(true);
   });
 
   it('produces the same pass-through collision result across standard frame schedules', () => {
