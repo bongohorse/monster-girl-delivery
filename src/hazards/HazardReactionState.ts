@@ -102,7 +102,8 @@ export const getHazardGameplayState = (
 ): HazardGameplayState => {
   assertHazardIdentity(hazardIdentity);
   return (
-    state.instances.find((instance) => instance.hazardIdentity === hazardIdentity)?.state ?? 'active'
+    state.instances.find((instance) => instance.hazardIdentity === hazardIdentity)?.state ??
+    'active'
   );
 };
 
