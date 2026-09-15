@@ -17,8 +17,7 @@ export const PROTOTYPE_MISSILE_WARNING_BLINK_SECONDS = 0.16;
 export const isPrototypeMissileBehavior = (
   behavior: Readonly<TargetLockStrikeHazardBehavior>,
 ): behavior is Readonly<PrototypeMissileBehavior> =>
-  behavior.trackingResponsiveness !== undefined &&
-  behavior.minimumLaunchLeadDistance !== undefined;
+  behavior.trackingResponsiveness !== undefined && behavior.minimumLaunchLeadDistance !== undefined;
 
 /**
  * Keeps the marker behind player movement without integrating frame-by-frame chase state.
