@@ -66,7 +66,7 @@ describe('M5 rotating Zapper', () => {
 
       expect(resolvePrototypeZapperAngleDegrees(clockwise, 1)).toBe(15 + speed);
       expect(resolvePrototypeZapperAngleDegrees(counterclockwise, 1)).toBe(
-        ((15 - speed) % 360 + 360) % 360,
+        (((15 - speed) % 360) + 360) % 360,
       );
     }
   });
