@@ -32,7 +32,7 @@ export interface TelegraphedHazardLifecycleInstance {
   /** Immutable logical X offset from the player captured when a Missile enters Active. */
   readonly missileLaunchRelativeLeft: number | null;
   readonly spawnIdentity: string;
-  /** Immutable first warning observation used by the M5 Missile lag response. */
+  /** Immutable first warning observation used to initialize the M5 Missile warning marker. */
   readonly warningOriginTarget: Readonly<TelegraphedHazardTarget>;
 }
 
@@ -79,13 +79,15 @@ const getObservedTarget = (
 
 const getLifecycleTarget = (
   spawn: Readonly<LogicalHazardSpawnInstance>,
-  warningOriginTarget: Readonly<TelegraphedHazardTarget>,
+  trackingOriginTarget: Readonly<TelegraphedHazardTarget>,
+  elapsedSeconds: number,
   playerTarget: Readonly<TelegraphedHazardTarget>,
 ): Readonly<TelegraphedHazardTarget> =>
   resolvePrototypeMissileTrackingTarget(
     spawn,
-    warningOriginTarget,
+    trackingOriginTarget,
     getObservedTarget(spawn, playerTarget),
+    elapsedSeconds,
   );
 
 const freezeInstance = (
@@ -106,11 +108,11 @@ const freezeInstance = (
 /**
  * Synchronizes all telegraphed lifecycles to the generated spawn window. Timed pulses observe their
  * fixed authored center; legacy reactive strikes sample the logical player directly. The M5 Missile
- * instead resolves a deterministic lagged marker from its immutable warning origin, then freezes
- * that marker at the same authoritative warning → lock boundary. Its horizontal launch offset from
- * the player is captured once at lock → active so later viewport changes cannot alter gameplay
- * geometry. All timing still advances only from TimeService-normalized simulation delta through the
- * generic lifecycle.
+ * advances a rate-limited warning marker from its prior authoritative marker position toward the
+ * player, then freezes that marker at the same authoritative warning → lock boundary. Its horizontal
+ * launch offset from the player is captured once at lock → active so later viewport changes cannot
+ * alter gameplay geometry. All timing still advances only from TimeService-normalized simulation
+ * delta through the generic lifecycle.
  */
 export const stepTelegraphedHazardSimulation = (
   state: Readonly<TelegraphedHazardSimulationState>,
@@ -144,14 +146,21 @@ export const stepTelegraphedHazardSimulation = (
     const existing = existingByIdentity.get(spawnIdentity);
     const rawObservedTarget = getObservedTarget(spawn, playerTarget);
     const warningOriginTarget = existing?.warningOriginTarget ?? rawObservedTarget;
+    const trackingOriginTarget = existing?.lifecycle.latestObservedTarget ?? warningOriginTarget;
     const observedTarget = resolvePrototypeMissileTrackingTarget(
       spawn,
-      warningOriginTarget,
+      trackingOriginTarget,
       rawObservedTarget,
+      elapsedSeconds,
     );
     const resolveTargetAtDelta = resolvePlayerTargetAtDelta
       ? (delta: number): Readonly<TelegraphedHazardTarget> =>
-          getLifecycleTarget(spawn, warningOriginTarget, resolvePlayerTargetAtDelta(delta))
+          getLifecycleTarget(
+            spawn,
+            trackingOriginTarget,
+            delta,
+            resolvePlayerTargetAtDelta(delta),
+          )
       : undefined;
     const lifecycleStep = stepTelegraphedHazardLifecycle(
       existing?.lifecycle ?? createTelegraphedHazardLifecycle(warningOriginTarget),
