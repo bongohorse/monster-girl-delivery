@@ -3,6 +3,7 @@ import {
   isBehavioralLogicalHazard,
   isZapperHazardBehavior,
   type ZapperHazardBehavior,
+  type ZapperRotationMotion,
 } from './HazardArchetype';
 
 export const PROTOTYPE_ZAPPER_BEAM_THICKNESS = 14;
@@ -14,6 +15,12 @@ export const PROTOTYPE_ZAPPER_LENGTHS = Object.freeze({
   short: 80,
   medium: 140,
   long: 200,
+});
+
+export const PROTOTYPE_ZAPPER_ROTATION_SPEEDS = Object.freeze({
+  slow: 30,
+  medium: 60,
+  fast: 90,
 });
 
 export const PROTOTYPE_ZAPPER_DIAGONAL_ANGLES = Object.freeze([-60, -45, -30, 30, 45, 60]);
@@ -35,6 +42,7 @@ export interface LogicalCapsule {
 }
 
 export interface PrototypeZapperGeometry {
+  readonly angleDegrees: number;
   readonly beam: Readonly<LogicalCapsule>;
   readonly bounds: Readonly<LogicalHitbox>;
   readonly endpointA: Readonly<LogicalCircle>;
@@ -56,6 +64,8 @@ export const PROTOTYPE_ZAPPER_GRAZE_PADDING: Readonly<PrototypeZapperGeometryPad
   });
 
 const degreesToRadians = (degrees: number): number => (degrees * Math.PI) / 180;
+const positiveModulo = (value: number, modulus: number): number =>
+  ((value % modulus) + modulus) % modulus;
 
 const assertFinitePoint = (point: Readonly<LogicalPoint>, name: string): void => {
   if (!Number.isFinite(point.x) || !Number.isFinite(point.y)) {
@@ -77,6 +87,7 @@ const assertPadding = (padding: Readonly<PrototypeZapperGeometryPadding>): void 
 export const createPrototypeZapperBehavior = (
   angleDegrees: number,
   length: number,
+  rotation?: Readonly<ZapperRotationMotion>,
 ): Readonly<ZapperHazardBehavior> =>
   Object.freeze({
     angleDegrees,
@@ -87,14 +98,36 @@ export const createPrototypeZapperBehavior = (
     grazeEndpointPadding: PROTOTYPE_ZAPPER_GRAZE_ENDPOINT_PADDING,
     kind: 'zapper',
     length,
+    ...(rotation ? { rotation: Object.freeze({ ...rotation }) } : {}),
   });
+
+export const resolvePrototypeZapperAngleDegrees = (
+  behavior: Readonly<ZapperHazardBehavior>,
+  simulationSeconds = 0,
+): number => {
+  if (!Number.isFinite(simulationSeconds) || simulationSeconds < 0) {
+    throw new RangeError('Zapper simulationSeconds must be non-negative and finite.');
+  }
+  const rotation = behavior.rotation;
+  if (!rotation) {
+    return behavior.angleDegrees;
+  }
+
+  const direction = rotation.direction === 'clockwise' ? 1 : -1;
+  return positiveModulo(
+    behavior.angleDegrees + direction * rotation.speedDegreesPerSecond * simulationSeconds,
+    360,
+  );
+};
 
 const resolveGeometryFromCenter = (
   center: Readonly<LogicalPoint>,
   behavior: Readonly<ZapperHazardBehavior>,
+  simulationSeconds = 0,
 ): Readonly<PrototypeZapperGeometry> => {
   assertFinitePoint(center, 'Zapper center');
-  const radians = degreesToRadians(behavior.angleDegrees);
+  const angleDegrees = resolvePrototypeZapperAngleDegrees(behavior, simulationSeconds);
+  const radians = degreesToRadians(angleDegrees);
   const halfLength = behavior.length / 2;
   const dx = Math.cos(radians) * halfLength;
   const dy = Math.sin(radians) * halfLength;
@@ -111,6 +144,7 @@ const resolveGeometryFromCenter = (
   });
 
   return Object.freeze({
+    angleDegrees,
     beam: Object.freeze({ end: endpointB, radius: beamRadius, start: endpointA }),
     bounds,
     endpointA: Object.freeze({ center: endpointA, radius: endpointRadius }),
@@ -118,13 +152,25 @@ const resolveGeometryFromCenter = (
   });
 };
 
-/** Creates the exact authored bounding box used by scheduling/fairness around one static Zapper. */
+/** Creates the authored scheduling box around one Zapper. Rotating Zappers reserve their full sweep. */
 export const createPrototypeZapperHitbox = (
   centerX: number,
   centerY: number,
   behavior: Readonly<ZapperHazardBehavior>,
-): Readonly<LogicalHitbox> =>
-  resolveGeometryFromCenter({ x: centerX, y: centerY }, behavior).bounds;
+): Readonly<LogicalHitbox> => {
+  if (!behavior.rotation) {
+    return resolveGeometryFromCenter({ x: centerX, y: centerY }, behavior).bounds;
+  }
+
+  const radius =
+    behavior.length / 2 + Math.max(behavior.beamThickness / 2, behavior.endpointDiameter / 2);
+  return Object.freeze({
+    left: centerX - radius,
+    right: centerX + radius,
+    top: centerY - radius,
+    bottom: centerY + radius,
+  });
+};
 
 export const isPrototypeZapperHazard = (
   hazard: Readonly<LogicalHazard>,
@@ -136,11 +182,13 @@ export const isPrototypeZapperHazard = (
 > => isBehavioralLogicalHazard(hazard) && isZapperHazardBehavior(hazard.behavior);
 
 /**
- * Resolves beam and node primitives from the immutable authored hitbox center. The same function is
- * consumed by collision, Graze, Director HB, and presentation so those systems cannot drift apart.
+ * Resolves beam and node primitives from the immutable authored hitbox center. Collision, Graze,
+ * Director HB, and presentation pass the same authoritative simulation time so rotating geometry
+ * cannot drift between systems.
  */
 export const resolvePrototypeZapperGeometry = (
   hazard: Readonly<LogicalHazard>,
+  simulationSeconds = 0,
 ): Readonly<PrototypeZapperGeometry> | null => {
   if (!isPrototypeZapperHazard(hazard)) {
     return null;
@@ -150,7 +198,7 @@ export const resolvePrototypeZapperGeometry = (
     x: (hazard.hitbox.left + hazard.hitbox.right) / 2,
     y: (hazard.hitbox.top + hazard.hitbox.bottom) / 2,
   };
-  return resolveGeometryFromCenter(center, hazard.behavior);
+  return resolveGeometryFromCenter(center, hazard.behavior, simulationSeconds);
 };
 
 const pointToHitboxDistanceSquared = (
@@ -248,7 +296,7 @@ const segmentToHitboxDistanceSquared = (
   );
 };
 
-/** Exact instantaneous AABB-vs-capsule/circle union test for the static Zapper. */
+/** Exact instantaneous AABB-vs-capsule/circle union test for one Zapper pose. */
 export const doesHitboxOverlapPrototypeZapper = (
   hitbox: Readonly<LogicalHitbox>,
   geometry: Readonly<PrototypeZapperGeometry>,
