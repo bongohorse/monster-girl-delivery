@@ -4,6 +4,13 @@ import {
   resolveHazardHitboxAtRunDistance,
   resolveVerticalPatrolOffsetAtRunDistance,
 } from '../hazards/HazardArchetype';
+import {
+  doesHitboxOverlapPrototypeZapper,
+  isPrototypeZapperHazard,
+  PROTOTYPE_ZAPPER_LETHAL_PADDING,
+  resolvePrototypeZapperGeometry,
+  type PrototypeZapperGeometryPadding,
+} from '../hazards/PrototypeZapperHazard';
 import type { RunMotionState } from './RunMotionSimulation';
 import type {
   VerticalFlightState,
@@ -107,11 +114,13 @@ export const isPlayerCollidingWithHazard = (
   flightState: Readonly<VerticalFlightState>,
   hazard: Readonly<LogicalHazard>,
   playerExtents: Readonly<PrototypePlayerCollisionExtents> = PROTOTYPE_PLAYER_COLLISION_EXTENTS,
-): boolean =>
-  doLogicalHitboxesOverlap(
-    createPrototypePlayerHitbox(runState, flightState, playerExtents),
-    hazard.hitbox,
-  );
+): boolean => {
+  const playerHitbox = createPrototypePlayerHitbox(runState, flightState, playerExtents);
+  const zapperGeometry = resolvePrototypeZapperGeometry(hazard);
+  return zapperGeometry
+    ? doesHitboxOverlapPrototypeZapper(playerHitbox, zapperGeometry)
+    : doLogicalHitboxesOverlap(playerHitbox, hazard.hitbox);
+};
 
 const evaluateFlightSegmentPosition = (
   segment: Readonly<VerticalFlightTrajectorySegment>,
@@ -123,6 +132,21 @@ const evaluateFlightSegmentPosition = (
     segment.velocityY * localSeconds +
     0.5 * segment.accelerationY * localSeconds * localSeconds
   );
+};
+
+const evaluateFlightTrajectoryPosition = (
+  trajectory: Readonly<VerticalFlightTrajectory>,
+  elapsedSeconds: number,
+): number => {
+  const segment =
+    trajectory.segments.find(
+      (candidate) =>
+        elapsedSeconds >= candidate.startSeconds && elapsedSeconds <= candidate.endSeconds,
+    ) ?? trajectory.segments.at(-1);
+  if (!segment) {
+    return trajectory.finalState.positionY;
+  }
+  return evaluateFlightSegmentPosition(segment, elapsedSeconds);
 };
 
 const getCollisionTimeRange = (
@@ -311,11 +335,112 @@ const getRelativeVerticalRange = (
   return { maximum, minimum };
 };
 
+const ZAPPER_COLLISION_SAMPLE_DISTANCE = 0.5;
+const ZAPPER_STATIONARY_SAMPLE_SECONDS = 1 / 720;
+
+const createZapperCollisionSampleTimes = (
+  trajectory: Readonly<VerticalFlightTrajectory>,
+  initialDistance: number,
+  scrollSpeed: number,
+  interval: Readonly<LogicalHazardCollisionInterval>,
+): number[] => {
+  const candidates = [interval.startSeconds, interval.endSeconds];
+  for (const segment of trajectory.segments) {
+    addCandidate(candidates, segment.startSeconds, interval.startSeconds, interval.endSeconds);
+    addCandidate(candidates, segment.endSeconds, interval.startSeconds, interval.endSeconds);
+    if (segment.accelerationY !== 0) {
+      addCandidate(
+        candidates,
+        segment.startSeconds - segment.velocityY / segment.accelerationY,
+        interval.startSeconds,
+        interval.endSeconds,
+      );
+    }
+  }
+
+  if (scrollSpeed !== 0) {
+    const firstDistance = initialDistance + scrollSpeed * interval.startSeconds;
+    const lastDistance = initialDistance + scrollSpeed * interval.endSeconds;
+    const minimumDistance = Math.min(firstDistance, lastDistance);
+    const maximumDistance = Math.max(firstDistance, lastDistance);
+    const firstIndex = Math.ceil(minimumDistance / ZAPPER_COLLISION_SAMPLE_DISTANCE);
+    const lastIndex = Math.floor(maximumDistance / ZAPPER_COLLISION_SAMPLE_DISTANCE);
+    for (let index = firstIndex; index <= lastIndex; index += 1) {
+      const distance = index * ZAPPER_COLLISION_SAMPLE_DISTANCE;
+      const seconds = (distance - initialDistance) / scrollSpeed;
+      addCandidate(candidates, seconds, interval.startSeconds, interval.endSeconds);
+    }
+  } else {
+    const firstIndex = Math.ceil(interval.startSeconds / ZAPPER_STATIONARY_SAMPLE_SECONDS);
+    const lastIndex = Math.floor(interval.endSeconds / ZAPPER_STATIONARY_SAMPLE_SECONDS);
+    for (let index = firstIndex; index <= lastIndex; index += 1) {
+      addCandidate(
+        candidates,
+        index * ZAPPER_STATIONARY_SAMPLE_SECONDS,
+        interval.startSeconds,
+        interval.endSeconds,
+      );
+    }
+  }
+
+  return [...new Set(candidates)].sort((first, second) => first - second);
+};
+
+/**
+ * Continuous-step authority for a static Zapper. Samples are anchored to an absolute world-distance
+ * lattice (0.5 logical px), so standard frame partitions observe the same path locations instead of
+ * restarting a frame-local sample grid. Each sample uses the exact AABB-vs-capsule/circle test.
+ */
+export const isPlayerCollidingWithPrototypeZapperDuringStep = (
+  initialRunState: Readonly<RunMotionState>,
+  trajectory: Readonly<VerticalFlightTrajectory>,
+  elapsedSeconds: number,
+  runMotionTuning: Readonly<RunMotionValues>,
+  hazard: Readonly<LogicalHazard>,
+  playerExtents: Readonly<PrototypePlayerCollisionExtents> = PROTOTYPE_PLAYER_COLLISION_EXTENTS,
+  padding: Readonly<PrototypeZapperGeometryPadding> = PROTOTYPE_ZAPPER_LETHAL_PADDING,
+): boolean => {
+  if (!isPrototypeZapperHazard(hazard)) {
+    return false;
+  }
+  const geometry = resolvePrototypeZapperGeometry(hazard);
+  if (!geometry) {
+    return false;
+  }
+  if (elapsedSeconds === 0) {
+    return doesHitboxOverlapPrototypeZapper(
+      createPrototypePlayerHitbox(initialRunState, trajectory.finalState, playerExtents),
+      geometry,
+      padding,
+    );
+  }
+
+  const interval = getCollisionTimeRange(hazard, elapsedSeconds);
+  if (!interval) {
+    return false;
+  }
+  const sampleTimes = createZapperCollisionSampleTimes(
+    trajectory,
+    initialRunState.distance,
+    runMotionTuning.baseScrollSpeed,
+    interval,
+  );
+  return sampleTimes.some((seconds) => {
+    const playerHitbox = createPrototypePlayerHitbox(
+      { distance: initialRunState.distance + runMotionTuning.baseScrollSpeed * seconds },
+      { positionY: evaluateFlightTrajectoryPosition(trajectory, seconds), velocityY: 0 },
+      playerExtents,
+    );
+    return doesHitboxOverlapPrototypeZapper(playerHitbox, geometry, padding);
+  });
+};
+
 /**
  * Tests continuous positive-area overlap during one authoritative run step. Horizontal relative
  * motion is linear and may include an independently moving hazard. Flight is the exact bounded
  * polynomial trajectory produced by VerticalFlightSimulation; vertical patrol is an exact triangle
- * wave. Each relative-motion segment is checked at its endpoints and derivative zero.
+ * wave. Static Zappers use their compound capsule/circle geometry instead of their conservative
+ * scheduling AABB.
  */
 export const isPlayerCollidingWithHazardDuringStep = (
   initialRunState: Readonly<RunMotionState>,
@@ -329,6 +454,17 @@ export const isPlayerCollidingWithHazardDuringStep = (
     throw new RangeError('elapsedSeconds must be a non-negative finite number.');
   }
   assertValidPlayerCollisionExtents(playerExtents);
+
+  if (isPrototypeZapperHazard(hazard)) {
+    return isPlayerCollidingWithPrototypeZapperDuringStep(
+      initialRunState,
+      trajectory,
+      elapsedSeconds,
+      runMotionTuning,
+      hazard,
+      playerExtents,
+    );
+  }
 
   if (elapsedSeconds === 0) {
     return isPlayerCollidingWithHazard(
