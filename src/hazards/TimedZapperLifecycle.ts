@@ -134,14 +134,14 @@ export const stepTimedZapperLifecycle = (
   let complete = false;
   const lethalIntervals: TimedZapperLethalInterval[] = [];
 
-  while (remainingSeconds > TIMED_ZAPPER_BOUNDARY_EPSILON_SECONDS && !complete) {
+  while (remainingSeconds > 0 && !complete) {
     const duration = getPhaseDuration(phase, snapshotConfig);
     const availableSeconds = duration - elapsedPhaseSeconds;
     const reachesBoundary =
       remainingSeconds + TIMED_ZAPPER_BOUNDARY_EPSILON_SECONDS >= availableSeconds;
     const consumedSeconds = reachesBoundary ? availableSeconds : remainingSeconds;
 
-    if (phase === 'on' && consumedSeconds > TIMED_ZAPPER_BOUNDARY_EPSILON_SECONDS) {
+    if (phase === 'on' && consumedSeconds > 0) {
       lethalIntervals.push(
         Object.freeze({
           startSeconds: cursorSeconds,
