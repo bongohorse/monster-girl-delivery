@@ -4,7 +4,6 @@ import {
   DIRECTOR_ZAPPER_VARIANTS,
 } from '../../src/generation/DirectorZapperCatalog';
 import { validatePattern } from '../../src/generation/PatternValidator';
-import { isPrototypeZapperHazard } from '../../src/hazards/PrototypeZapperHazard';
 
 describe('Director Zapper catalog', () => {
   it('keeps the approved deterministic single-variant cycle order', () => {
@@ -23,7 +22,7 @@ describe('Director Zapper catalog', () => {
   it('uses real Zapper behavior for every single variant and explicit test group', () => {
     for (const selection of [...DIRECTOR_ZAPPER_VARIANTS, ...DIRECTOR_ZAPPER_GROUPS]) {
       for (const entry of selection.pattern.entries) {
-        expect(isPrototypeZapperHazard({ ...entry, runDistance: entry.hitbox.left })).toBe(true);
+        expect(entry.behavior.kind, selection.label).toBe('zapper');
       }
     }
   });
