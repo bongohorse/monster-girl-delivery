@@ -63,19 +63,10 @@ const simulateSweepGraze = (getDelta: DeltaSource): Readonly<PrototypeRunState> 
 
   while (elapsedSeconds < simulationEndSeconds - 1e-12) {
     const deltaSeconds = Math.min(getDelta(stepIndex), simulationEndSeconds - elapsedSeconds);
-    lifecycle = stepTelegraphedHazardSimulation(
-      lifecycle,
-      spawns,
-      deltaSeconds,
-      playerTarget,
-    );
+    lifecycle = stepTelegraphedHazardSimulation(lifecycle, spawns, deltaSeconds, playerTarget);
     runState = stepPrototypeRun(runState, deltaSeconds, {
       ...runOptions,
-      hazards: getCollisionHazardsForTelegraphedSimulation(
-        lifecycle,
-        spawns,
-        collisionContext,
-      ),
+      hazards: getCollisionHazardsForTelegraphedSimulation(lifecycle, spawns, collisionContext),
     }).state;
 
     elapsedSeconds += deltaSeconds;
@@ -101,7 +92,9 @@ describe('Timed Laser group Graze ordering', () => {
   it('preserves the same Graze result under deterministic frame jitter', () => {
     const jitteredDeltas = [1 / 45, 1 / 120, 1 / 60, 1 / 90, 1 / 30, 1 / 144];
     expectOneMiddleBeamGraze(
-      simulateSweepGraze((stepIndex) => jitteredDeltas[stepIndex % jitteredDeltas.length] ?? 1 / 60),
+      simulateSweepGraze(
+        (stepIndex) => jitteredDeltas[stepIndex % jitteredDeltas.length] ?? 1 / 60,
+      ),
     );
   });
 });
