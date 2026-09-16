@@ -89,8 +89,7 @@ describe('PrototypeLaserLaneCatalog', () => {
       [294, 96],
     ]);
     expect(charges(PROTOTYPE_LASER_GROUP_PATTERNS[5] as Readonly<HazardPattern>)).toEqual([
-      0.55,
-      1.25,
+      0.55, 1.25,
     ]);
 
     for (const index of [0, 1, 2, 5]) {
