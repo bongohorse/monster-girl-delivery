@@ -13,6 +13,7 @@ export interface DirectorPerformanceHudControls {
   readonly setAutoHazardsEnabled?: (enabled: boolean) => void;
   readonly spawnMissile?: () => void;
   readonly spawnZapper?: () => void;
+  readonly spawnZapperGroup?: () => void;
   readonly spawnLaser?: () => void;
   readonly clearHazards?: () => void;
   readonly setSimulationFrozen?: (frozen: boolean) => void;
@@ -85,6 +86,7 @@ export class DirectorPerformanceHud {
   private readonly autoHazardsButton: HTMLButtonElement;
   private readonly missileButton: HTMLButtonElement;
   private readonly zapperButton: HTMLButtonElement;
+  private readonly zapperGroupButton: HTMLButtonElement;
   private readonly laserButton: HTMLButtonElement;
   private readonly clearButton: HTMLButtonElement;
   private readonly freezeButton: HTMLButtonElement;
@@ -151,7 +153,16 @@ export class DirectorPerformanceHud {
       'Automatic encounter generation',
     );
     this.missileButton = this.createButton(ownerDocument, 'M', 'Spawn Missile');
-    this.zapperButton = this.createButton(ownerDocument, 'Z', 'Spawn Zapper / Electro hazard');
+    this.zapperButton = this.createButton(
+      ownerDocument,
+      'Z',
+      'Spawn next deterministic Zapper variant',
+    );
+    this.zapperGroupButton = this.createButton(
+      ownerDocument,
+      'ZG',
+      'Spawn next deterministic Zapper test group',
+    );
     this.laserButton = this.createButton(ownerDocument, 'L', 'Spawn Timed Laser');
     this.clearButton = this.createButton(ownerDocument, 'CLR', 'Clear active test hazards');
     this.freezeButton = this.createButton(ownerDocument, '⏸', 'Freeze gameplay simulation');
@@ -165,6 +176,7 @@ export class DirectorPerformanceHud {
       this.autoHazardsButton,
       this.missileButton,
       this.zapperButton,
+      this.zapperGroupButton,
       this.laserButton,
       this.clearButton,
       this.freezeButton,
@@ -196,6 +208,7 @@ export class DirectorPerformanceHud {
     this.addControlListeners(this.autoHazardsButton, this.handleAutoHazardsClick);
     this.addControlListeners(this.missileButton, this.handleMissileClick);
     this.addControlListeners(this.zapperButton, this.handleZapperClick);
+    this.addControlListeners(this.zapperGroupButton, this.handleZapperGroupClick);
     this.addControlListeners(this.laserButton, this.handleLaserClick);
     this.addControlListeners(this.clearButton, this.handleClearClick);
     this.addControlListeners(this.freezeButton, this.handleFreezeClick);
@@ -262,6 +275,7 @@ export class DirectorPerformanceHud {
     this.removeControlListeners(this.autoHazardsButton, this.handleAutoHazardsClick);
     this.removeControlListeners(this.missileButton, this.handleMissileClick);
     this.removeControlListeners(this.zapperButton, this.handleZapperClick);
+    this.removeControlListeners(this.zapperGroupButton, this.handleZapperGroupClick);
     this.removeControlListeners(this.laserButton, this.handleLaserClick);
     this.removeControlListeners(this.clearButton, this.handleClearClick);
     this.removeControlListeners(this.freezeButton, this.handleFreezeClick);
@@ -364,6 +378,11 @@ export class DirectorPerformanceHud {
   private readonly handleZapperClick = (event: Event): void => {
     this.stopControlEvent(event);
     this.controls?.spawnZapper?.();
+  };
+
+  private readonly handleZapperGroupClick = (event: Event): void => {
+    this.stopControlEvent(event);
+    this.controls?.spawnZapperGroup?.();
   };
 
   private readonly handleLaserClick = (event: Event): void => {
