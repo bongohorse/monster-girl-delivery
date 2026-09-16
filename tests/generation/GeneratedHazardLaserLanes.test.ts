@@ -29,7 +29,7 @@ const getCenters = (seed: string): ReadonlyArray<number> => {
 
   for (let patternIndex = 1; patternIndex < 6; patternIndex += 1) {
     const previousSpawnCount = stream.spawns.length;
-    const previousPatternCount = stream.scheduledPatternCount;
+    const previousPatternCount: number = stream.scheduledPatternCount;
     stream = advanceGeneratedHazardStream(
       stream,
       stream.nextPatternStartDistance -
