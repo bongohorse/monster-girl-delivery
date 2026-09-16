@@ -163,7 +163,11 @@ const createGroupPattern = (
   template: Readonly<HazardPattern> = PROTOTYPE_LASER_PATTERN,
 ): Readonly<HazardPattern> => {
   const templateEntry = template.entries[0];
-  if (templateEntry?.behavior.kind !== 'laser') {
+  if (!templateEntry) {
+    throw new Error('Prototype Laser group template must contain one Laser entry.');
+  }
+  const templateBehavior = templateEntry.behavior;
+  if (templateBehavior.kind !== 'laser') {
     throw new Error('Prototype Laser group template must contain one Laser entry.');
   }
   const halfHeight = (templateEntry.hitbox.bottom - templateEntry.hitbox.top) / 2;
@@ -181,16 +185,16 @@ const createGroupPattern = (
       const centerY = getPrototypeLaserLaneCenterY(lane, constraints);
       const behavior =
         member.chargeSeconds === undefined
-          ? templateEntry.behavior
+          ? templateBehavior
           : {
-              ...templateEntry.behavior,
+              ...templateBehavior,
               lifecycle: createTimedLaserLifecycleConfig({
                 chargeSeconds: member.chargeSeconds,
-                mode: templateEntry.behavior.lifecycle.mode,
-                offSeconds: templateEntry.behavior.lifecycle.offSeconds,
-                onSeconds: templateEntry.behavior.lifecycle.onSeconds,
-                recoverySeconds: templateEntry.behavior.lifecycle.recoverySeconds,
-                telegraphSeconds: templateEntry.behavior.lifecycle.telegraphSeconds,
+                mode: templateBehavior.lifecycle.mode,
+                offSeconds: templateBehavior.lifecycle.offSeconds,
+                onSeconds: templateBehavior.lifecycle.onSeconds,
+                recoverySeconds: templateBehavior.lifecycle.recoverySeconds,
+                telegraphSeconds: templateBehavior.lifecycle.telegraphSeconds,
               }),
             };
 
