@@ -1,9 +1,9 @@
 import { createHazardPattern, type HazardPattern } from './HazardPattern';
-import { PROTOTYPE_LASER_PATTERN } from './PrototypeHazardPatternFixtures';
 import {
   type PatternValidationConstraints,
   PROTOTYPE_PATTERN_VALIDATION_CONSTRAINTS,
 } from './PatternValidator';
+import { PROTOTYPE_LASER_PATTERN } from './PrototypeHazardPatternFixtures';
 
 export type PrototypeLaserLaneId = 'low' | 'mid-low' | 'middle' | 'mid-high' | 'high';
 
@@ -14,28 +14,33 @@ export interface PrototypeLaserLaneDefinition {
 }
 
 /**
- * Authored M5 Laser lanes. Extreme lanes still leave a usable safe side for the current player core,
- * while the middle lanes support deliberate above/below choices during the accepted warning window.
+ * Authored M5 Laser lanes ordered from low to high on screen. Extreme lanes still leave a usable
+ * safe side for the current player core, while the middle lanes support deliberate above/below
+ * choices during the accepted warning window.
  */
 export const PROTOTYPE_LASER_LANES: ReadonlyArray<Readonly<PrototypeLaserLaneDefinition>> =
   Object.freeze([
-    Object.freeze({ authoredCenterY: 96, id: 'low', label: 'LOW' }),
-    Object.freeze({ authoredCenterY: 146, id: 'mid-low', label: 'ML' }),
+    Object.freeze({ authoredCenterY: 294, id: 'low', label: 'LOW' }),
+    Object.freeze({ authoredCenterY: 244, id: 'mid-low', label: 'ML' }),
     Object.freeze({ authoredCenterY: 195, id: 'middle', label: 'MID' }),
-    Object.freeze({ authoredCenterY: 244, id: 'mid-high', label: 'MH' }),
-    Object.freeze({ authoredCenterY: 294, id: 'high', label: 'HIGH' }),
+    Object.freeze({ authoredCenterY: 146, id: 'mid-high', label: 'MH' }),
+    Object.freeze({ authoredCenterY: 96, id: 'high', label: 'HIGH' }),
   ]);
 
 const getLaneRatio = (lane: Readonly<PrototypeLaserLaneDefinition>): number => {
   const authored = PROTOTYPE_PATTERN_VALIDATION_CONSTRAINTS;
-  return (lane.authoredCenterY - authored.playableTop) / (authored.playableBottom - authored.playableTop);
+  return (
+    (lane.authoredCenterY - authored.playableTop) /
+    (authored.playableBottom - authored.playableTop)
+  );
 };
 
 export const getPrototypeLaserLaneCenterY = (
   lane: Readonly<PrototypeLaserLaneDefinition>,
   constraints: Readonly<PatternValidationConstraints> = PROTOTYPE_PATTERN_VALIDATION_CONSTRAINTS,
 ): number =>
-  constraints.playableTop + getLaneRatio(lane) * (constraints.playableBottom - constraints.playableTop);
+  constraints.playableTop +
+  getLaneRatio(lane) * (constraints.playableBottom - constraints.playableTop);
 
 const createLanePattern = (
   lane: Readonly<PrototypeLaserLaneDefinition>,
@@ -75,10 +80,11 @@ export const getPrototypeLaserLanePattern = (laneIndex: number): Readonly<Hazard
   if (!Number.isSafeInteger(laneIndex)) {
     throw new RangeError('Laser lane index must be a safe integer.');
   }
-  const pattern = PROTOTYPE_LASER_LANE_PATTERNS[
-    ((laneIndex % PROTOTYPE_LASER_LANE_PATTERNS.length) + PROTOTYPE_LASER_LANE_PATTERNS.length) %
-      PROTOTYPE_LASER_LANE_PATTERNS.length
-  ];
+  const pattern =
+    PROTOTYPE_LASER_LANE_PATTERNS[
+      ((laneIndex % PROTOTYPE_LASER_LANE_PATTERNS.length) + PROTOTYPE_LASER_LANE_PATTERNS.length) %
+        PROTOTYPE_LASER_LANE_PATTERNS.length
+    ];
   if (!pattern) {
     throw new RangeError('Laser lane catalog must not be empty.');
   }
