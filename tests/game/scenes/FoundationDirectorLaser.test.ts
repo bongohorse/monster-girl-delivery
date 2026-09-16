@@ -45,7 +45,7 @@ describe('Foundation Director Laser cycle', () => {
 
     const hazards = getManualHazards(foundation);
     expect(hazards).toHaveLength(6);
-    expect(hazards.map(centerY)).toEqual([96, 146, 195, 244, 294, 96]);
+    expect(hazards.map(centerY)).toEqual([294, 244, 195, 146, 96, 294]);
     expect(hazards.map((hazard) => hazard.behavior)).toEqual(
       Array.from({ length: 6 }, () =>
         expect.objectContaining({ kind: 'laser', orientation: 'horizontal', span: 'screen' }),
@@ -75,8 +75,12 @@ describe('Foundation Director Laser cycle', () => {
     spawnLaser();
     const hazards = getManualHazards(foundation);
     expect(hazards).toHaveLength(1);
-    expect(centerY(hazards[0]!)).toBe(96);
-    expect(hazards[0]?.behavior).toMatchObject({
+    const first = hazards[0];
+    if (!first) {
+      throw new Error('Expected Director LOW Laser after clear.');
+    }
+    expect(centerY(first)).toBe(294);
+    expect(first.behavior).toMatchObject({
       kind: 'laser',
       orientation: 'horizontal',
       span: 'screen',
