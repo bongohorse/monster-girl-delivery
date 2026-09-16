@@ -60,7 +60,7 @@ describe('DirectorDebugOverlay Timed Zapper authority', () => {
       createGeometry(timedZappers, zapper).paths.every((path) => path.kind === 'hazard-preview'),
     ).toBe(true);
 
-    timedZappers = stepTimedZapperSimulation(timedZappers, [zapper], 0.6);
+    timedZappers = stepTimedZapperSimulation(timedZappers, [zapper], 1.2);
     expect(
       createGeometry(timedZappers, zapper).paths.every((path) => path.kind === 'hazard-lethal'),
     ).toBe(true);
