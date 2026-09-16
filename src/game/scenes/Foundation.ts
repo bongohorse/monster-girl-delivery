@@ -690,31 +690,37 @@ export class Foundation extends Scene {
   };
 
   private readonly spawnDirectorZapperVariant = (): void => {
+    if (!this.viewportService || this.runState.phase !== 'running') {
+      return;
+    }
     const selection = DIRECTOR_ZAPPER_VARIANTS[this.directorZapperVariantIndex];
     if (!selection) {
       throw new RangeError('Director Zapper variant cycle is empty or out of range.');
     }
-    this.directorZapperVariantIndex =
-      (this.directorZapperVariantIndex + 1) % DIRECTOR_ZAPPER_VARIANTS.length;
     this.spawnDirectorPattern(
       selection.pattern,
       true,
       this.hazardVerticalDomain.mapAuthoredCenterY,
     );
+    this.directorZapperVariantIndex =
+      (this.directorZapperVariantIndex + 1) % DIRECTOR_ZAPPER_VARIANTS.length;
   };
 
   private readonly spawnDirectorZapperGroup = (): void => {
+    if (!this.viewportService || this.runState.phase !== 'running') {
+      return;
+    }
     const selection = DIRECTOR_ZAPPER_GROUPS[this.directorZapperGroupIndex];
     if (!selection) {
       throw new RangeError('Director Zapper group cycle is empty or out of range.');
     }
-    this.directorZapperGroupIndex =
-      (this.directorZapperGroupIndex + 1) % DIRECTOR_ZAPPER_GROUPS.length;
     this.spawnDirectorPattern(
       selection.pattern,
       true,
       this.hazardVerticalDomain.mapAuthoredCenterY,
     );
+    this.directorZapperGroupIndex =
+      (this.directorZapperGroupIndex + 1) % DIRECTOR_ZAPPER_GROUPS.length;
   };
 
   private spawnDirectorHazard(kind: DirectorHazardKind): void {
@@ -934,14 +940,24 @@ export class Foundation extends Scene {
     const activeHazards = this.getActiveHazardSpawns();
 
     this.scrollingWorldPresentation?.render(this.runState.motion.distance, viewport);
-    this.generatedHazardPresentation?.sync(
-      activeHazards,
-      this.runState.motion,
-      playerScreenX,
-      this.telegraphedHazardState,
-      projection,
-      { timedZappers: this.timedZapperState },
-    );
+    if (this.timedZapperState.instances.length > 0) {
+      this.generatedHazardPresentation?.sync(
+        activeHazards,
+        this.runState.motion,
+        playerScreenX,
+        this.telegraphedHazardState,
+        projection,
+        { timedZappers: this.timedZapperState },
+      );
+    } else {
+      this.generatedHazardPresentation?.sync(
+        activeHazards,
+        this.runState.motion,
+        playerScreenX,
+        this.telegraphedHazardState,
+        projection,
+      );
+    }
     this.generatedCollectiblePresentation?.sync(
       this.collectibleSpawns,
       this.runState.collectibles?.consumedCollectibleIds ?? [],
