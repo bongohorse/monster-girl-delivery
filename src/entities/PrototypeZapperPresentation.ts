@@ -425,7 +425,7 @@ export class PrototypeZapperPresentation {
         {
           name: 'mgd-zapper-shared-beam',
           fragmentSource: PROTOTYPE_ZAPPER_SHARED_FRAGMENT_SHADER,
-          setupUniforms: (setUniform) => {
+          setupUniforms: (setUniform: (name: string, value: unknown) => void) => {
             setUniform('uCount', this.shaderCount);
             setUniform('uTime', this.shaderTime);
             setUniform('uQuadOrigin', [this.shaderQuadLeft, this.shaderQuadTop]);
