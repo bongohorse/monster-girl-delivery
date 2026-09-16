@@ -132,41 +132,42 @@ export const DIRECTOR_ZAPPER_VARIANTS: ReadonlyArray<Readonly<DirectorZapperSele
     ),
   ]);
 
-export const DIRECTOR_ZAPPER_GROUPS: ReadonlyArray<Readonly<DirectorZapperSelection>> = Object.freeze([
-  Object.freeze({
-    label: 'H-pair',
-    pattern: createHazardPattern({
-      id: 'director-zapper-group-horizontal-pair',
-      runLength: 820,
-      profile: createProfile('director-zapper-group', 3),
-      entries: [
-        createZapperEntry('pair-high', 280, 100, 0, PROTOTYPE_ZAPPER_LENGTHS.medium),
-        createZapperEntry('pair-low', 560, 285, 0, PROTOTYPE_ZAPPER_LENGTHS.medium),
-      ],
+export const DIRECTOR_ZAPPER_GROUPS: ReadonlyArray<Readonly<DirectorZapperSelection>> =
+  Object.freeze([
+    Object.freeze({
+      label: 'H-pair',
+      pattern: createHazardPattern({
+        id: 'director-zapper-group-horizontal-pair',
+        runLength: 820,
+        profile: createProfile('director-zapper-group', 3),
+        entries: [
+          createZapperEntry('pair-high', 280, 100, 0, PROTOTYPE_ZAPPER_LENGTHS.medium),
+          createZapperEntry('pair-low', 560, 285, 0, PROTOTYPE_ZAPPER_LENGTHS.medium),
+        ],
+      }),
     }),
-  }),
-  Object.freeze({
-    label: 'H+D',
-    pattern: createHazardPattern({
-      id: 'director-zapper-group-horizontal-diagonal',
-      runLength: 760,
-      profile: createProfile('director-zapper-group', 3),
-      entries: [
-        createZapperEntry('horizontal-high', 280, 100, 0, PROTOTYPE_ZAPPER_LENGTHS.short),
-        createZapperEntry('diagonal-low', 500, 280, -45, PROTOTYPE_ZAPPER_LENGTHS.short),
-      ],
+    Object.freeze({
+      label: 'H+D',
+      pattern: createHazardPattern({
+        id: 'director-zapper-group-horizontal-diagonal',
+        runLength: 760,
+        profile: createProfile('director-zapper-group', 3),
+        entries: [
+          createZapperEntry('horizontal-high', 280, 100, 0, PROTOTYPE_ZAPPER_LENGTHS.short),
+          createZapperEntry('diagonal-low', 500, 280, -45, PROTOTYPE_ZAPPER_LENGTHS.short),
+        ],
+      }),
     }),
-  }),
-  Object.freeze({
-    label: 'D-corridor',
-    pattern: createHazardPattern({
-      id: 'director-zapper-group-diagonal-corridor',
-      runLength: 640,
-      profile: createProfile('director-zapper-group', 3),
-      entries: [
-        createZapperEntry('corridor-top', 300, 95, 45, PROTOTYPE_ZAPPER_LENGTHS.short),
-        createZapperEntry('corridor-bottom', 300, 295, -45, PROTOTYPE_ZAPPER_LENGTHS.short),
-      ],
+    Object.freeze({
+      label: 'D-corridor',
+      pattern: createHazardPattern({
+        id: 'director-zapper-group-diagonal-corridor',
+        runLength: 640,
+        profile: createProfile('director-zapper-group', 3),
+        entries: [
+          createZapperEntry('corridor-top', 300, 95, 45, PROTOTYPE_ZAPPER_LENGTHS.short),
+          createZapperEntry('corridor-bottom', 300, 295, -45, PROTOTYPE_ZAPPER_LENGTHS.short),
+        ],
+      }),
     }),
-  }),
-]);
+  ]);
