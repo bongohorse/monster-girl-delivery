@@ -127,7 +127,8 @@ export class PrototypeLaserPresentation {
       }
     }
 
-    const chargePulse = state.phase === 'charge' ? 0.55 + 0.45 * Math.sin(progress * Math.PI * 8) ** 2 : 1;
+    const chargePulse =
+      state.phase === 'charge' ? 0.55 + 0.45 * Math.sin(progress * Math.PI * 8) ** 2 : 1;
     const emitterAlpha =
       state.phase === 'off'
         ? 0.32
