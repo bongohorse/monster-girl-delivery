@@ -764,11 +764,7 @@ export class Foundation extends Scene {
       0,
       { positionY: this.runState.flight.positionY, runDistance: this.runState.motion.distance },
     );
-    this.timedZapperState = stepTimedZapperSimulation(
-      this.timedZapperState,
-      activeHazards,
-      0,
-    );
+    this.timedZapperState = stepTimedZapperSimulation(this.timedZapperState, activeHazards, 0);
     this.renderRun(viewport);
   }
 
