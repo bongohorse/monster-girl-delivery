@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { PROTOTYPE_PATTERN_REACHABILITY_CONTEXT } from '../../src/generation/FlightReachability';
+import type { HazardPattern } from '../../src/generation/HazardPattern';
 import { PROTOTYPE_LASER_PATTERN } from '../../src/generation/PrototypeHazardPatternFixtures';
 import {
   getPrototypeLaserLaneCenterY,
@@ -12,7 +13,7 @@ import {
   validatePattern,
 } from '../../src/generation/PatternValidator';
 
-const centerY = (pattern: (typeof PROTOTYPE_LASER_LANE_PATTERNS)[number]): number => {
+const centerY = (pattern: Readonly<HazardPattern>): number => {
   const hitbox = pattern.entries[0]?.hitbox;
   if (!hitbox) {
     throw new Error('Expected Laser lane pattern entry.');
@@ -69,12 +70,8 @@ describe('PrototypeLaserLaneCatalog', () => {
 
     expect(first).toHaveLength(catalog.length);
     expect(first.map((pattern) => pattern.id)).toEqual(catalog.map((pattern) => pattern.id));
-    expect(centerY([first[0]!] as unknown as typeof PROTOTYPE_LASER_LANE_PATTERNS)).toBe(
-      centerY([replay[0]!] as unknown as typeof PROTOTYPE_LASER_LANE_PATTERNS),
-    );
-    expect(centerY([first[0]!] as unknown as typeof PROTOTYPE_LASER_LANE_PATTERNS)).not.toBe(
-      centerY([other[0]!] as unknown as typeof PROTOTYPE_LASER_LANE_PATTERNS),
-    );
+    expect(centerY(first[0]!)).toBe(centerY(replay[0]!));
+    expect(centerY(first[0]!)).not.toBe(centerY(other[0]!));
     expect(first[1]).toBe(catalog[1]);
   });
 
