@@ -1,3 +1,4 @@
+import { createPrototypeLaserBehavior } from '../hazards/PrototypeLaserHazard';
 import {
   createPrototypeZapperBehavior,
   createPrototypeZapperHitbox,
@@ -215,7 +216,7 @@ export const PROTOTYPE_ROTATING_ZAPPER_PATTERN = createHazardPattern({
 /** Compatibility name for the one live Zapper slot used by existing M5/Director callers. */
 export const PROTOTYPE_ZAPPER_PATTERN = PROTOTYPE_ROTATING_ZAPPER_PATTERN;
 
-/** PROTOTYPE one-shot timed pulse; lifecycle tuning and presentation are not production content. */
+/** Legacy M4 one-shot timed pulse retained unchanged for M4 deterministic evidence. */
 export const PROTOTYPE_TIMED_PULSE_PATTERN = createHazardPattern({
   id: 'prototype-timed-pulse',
   runLength: 600,
@@ -249,6 +250,50 @@ export const PROTOTYPE_TIMED_PULSE_PATTERN = createHazardPattern({
       id: 'timed-pulse-1',
       type: 'placeholder-barrier',
       hitbox: { left: 120, right: 184, top: 155, bottom: 219 },
+    },
+  ],
+});
+
+/** M5 full-span horizontal Laser occupying the historical timed-pulse live catalog slot. */
+export const PROTOTYPE_LASER_PATTERN = createHazardPattern({
+  id: 'prototype-timed-pulse',
+  runLength: 600,
+  profile: {
+    behaviorTags: ['timed-pulse'],
+    difficultyTierRange: { minimumTierIndex: 1, maximumTierIndex: null },
+    pacingIntensities: ['low', 'medium', 'high', 'peak'],
+    pressureCost: 1,
+    readabilityCost: 3,
+    varietyFamilyId: 'timed-pulse',
+  },
+  entries: [
+    {
+      behavior: createPrototypeLaserBehavior('horizontal', 'screen'),
+      id: 'timed-pulse-1',
+      type: 'placeholder-barrier',
+      hitbox: { left: 120, right: 184, top: 183, bottom: 207 },
+    },
+  ],
+});
+
+/** Director-only vertical baseline proving the same lifecycle and screen-event geometry. */
+export const PROTOTYPE_VERTICAL_LASER_PATTERN = createHazardPattern({
+  id: 'prototype-laser-vertical',
+  runLength: 600,
+  profile: {
+    behaviorTags: ['timed-pulse'],
+    difficultyTierRange: { minimumTierIndex: 1, maximumTierIndex: null },
+    pacingIntensities: ['low', 'medium', 'high', 'peak'],
+    pressureCost: 1,
+    readabilityCost: 3,
+    varietyFamilyId: 'timed-pulse',
+  },
+  entries: [
+    {
+      behavior: createPrototypeLaserBehavior('vertical', 'screen'),
+      id: 'laser-vertical-1',
+      type: 'placeholder-barrier',
+      hitbox: { left: 120, right: 144, top: 120, bottom: 270 },
     },
   ],
 });
@@ -356,12 +401,12 @@ export const PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES = Object.freeze([
 ]);
 
 /**
- * M5 keeps the historical live catalog slot count/order while replacing the old moving proxy with
- * the slow rotating Zapper and the legacy target-lock prototype with the bait-and-dodge Missile.
+ * M5 keeps the historical live catalog slot count/order while replacing M4 proxies with the Zapper,
+ * full-span timed Laser, and bait-and-dodge Missile implementations.
  */
 export const PROTOTYPE_M5_HAZARD_PATTERN_FIXTURES = Object.freeze([
   ...PROTOTYPE_HAZARD_PATTERN_FIXTURES,
   PROTOTYPE_ZAPPER_PATTERN,
-  PROTOTYPE_TIMED_PULSE_PATTERN,
+  PROTOTYPE_LASER_PATTERN,
   PROTOTYPE_MISSILE_PATTERN,
 ]);

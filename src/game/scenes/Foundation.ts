@@ -12,6 +12,7 @@ import { GeneratedCollectiblePresentation } from '../../entities/GeneratedCollec
 import { GeneratedHazardPresentation } from '../../entities/GeneratedHazardPresentation';
 import { PrototypePlayerPresentation } from '../../entities/PrototypePlayerPresentation';
 import { PrototypeScrollingWorldPresentation } from '../../entities/PrototypeScrollingWorldPresentation';
+import { DIRECTOR_LASER_VARIANTS } from '../../generation/DirectorLaserCatalog';
 import {
   DIRECTOR_ZAPPER_GROUPS,
   DIRECTOR_ZAPPER_VARIANTS,
@@ -133,11 +134,10 @@ const createLiveHazardStreamContext = (
     }),
   });
 
-type DirectorHazardKind = 'laser' | 'missile';
+type DirectorHazardKind = 'missile';
 
 const DIRECTOR_HAZARD_PATTERN_IDS: Readonly<Record<DirectorHazardKind, string>> = Object.freeze({
   missile: 'prototype-target-lock-strike',
-  laser: 'prototype-timed-pulse',
 });
 
 const identityCenterMapper = (centerY: number): number => centerY;
@@ -218,6 +218,7 @@ export class Foundation extends Scene {
   private directorAutoHazardsEnabled = true;
   private directorSimulationFrozen = false;
   private directorHazardSerial = 0;
+  private directorLaserVariantIndex = 0;
   private directorZapperVariantIndex = 0;
   private directorZapperGroupIndex = 0;
   private shutdownHandled = false;
@@ -269,7 +270,7 @@ export class Foundation extends Scene {
           spawnMissile: () => this.spawnDirectorHazard('missile'),
           spawnZapper: this.spawnDirectorZapperVariant,
           spawnZapperGroup: this.spawnDirectorZapperGroup,
-          spawnLaser: () => this.spawnDirectorHazard('laser'),
+          spawnLaser: this.spawnDirectorLaserVariant,
           clearHazards: this.clearDirectorHazards,
           setSimulationFrozen: this.handleDirectorFreeze,
           triggerDeath: this.handleDirectorDeath,
@@ -497,7 +498,6 @@ export class Foundation extends Scene {
       } else {
         this.runState = result.state;
       }
-
       if (result.enteredDead && !godModePreventedDeath) {
         const finalResult = this.runState.finalResult;
         if (!finalResult) {
@@ -668,6 +668,7 @@ export class Foundation extends Scene {
     this.collectibleSpawns = Object.freeze([]);
     this.telegraphedHazardState = createTelegraphedHazardSimulationState();
     this.timedZapperState = createTimedZapperSimulationState();
+    this.directorLaserVariantIndex = 0;
     this.directorZapperVariantIndex = 0;
     this.directorZapperGroupIndex = 0;
 
@@ -687,6 +688,23 @@ export class Foundation extends Scene {
     if (this.viewportService) {
       this.renderRun(this.viewportService.getSnapshot());
     }
+  };
+
+  private readonly spawnDirectorLaserVariant = (): void => {
+    if (!this.viewportService || this.runState.phase !== 'running') {
+      return;
+    }
+    const selection = DIRECTOR_LASER_VARIANTS[this.directorLaserVariantIndex];
+    if (!selection) {
+      throw new RangeError('Director Laser variant cycle is empty or out of range.');
+    }
+    this.spawnDirectorPattern(
+      selection.pattern,
+      false,
+      this.hazardVerticalDomain.mapAuthoredCenterY,
+    );
+    this.directorLaserVariantIndex =
+      (this.directorLaserVariantIndex + 1) % DIRECTOR_LASER_VARIANTS.length;
   };
 
   private readonly spawnDirectorZapperVariant = (): void => {
@@ -892,6 +910,7 @@ export class Foundation extends Scene {
     this.retainedGeneratedTelegraphedHazards = Object.freeze([]);
     this.directorManualHazards = Object.freeze([]);
     this.directorHazardSerial = 0;
+    this.directorLaserVariantIndex = 0;
     this.directorZapperVariantIndex = 0;
     this.directorZapperGroupIndex = 0;
     const flightBounds = createPrototypeFlightBounds(viewport);
@@ -1015,6 +1034,7 @@ export class Foundation extends Scene {
     this.hazardStream = undefined;
     this.telegraphedHazardState = createTelegraphedHazardSimulationState();
     this.timedZapperState = createTimedZapperSimulationState();
+    this.directorLaserVariantIndex = 0;
     this.directorZapperVariantIndex = 0;
     this.directorZapperGroupIndex = 0;
     this.playerPresentation?.destroy();

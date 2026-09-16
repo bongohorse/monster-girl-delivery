@@ -41,7 +41,11 @@ export class PrototypeHazardPresentation {
 
     this.graphics = graphics;
 
-    if (isBehavioralLogicalHazard(hazard) && isTelegraphedHazardBehavior(hazard.behavior)) {
+    if (
+      isBehavioralLogicalHazard(hazard) &&
+      isTelegraphedHazardBehavior(hazard.behavior) &&
+      hazard.behavior.kind !== 'laser'
+    ) {
       this.drawTelegraphedPhase('warning');
       return;
     }
@@ -84,7 +88,8 @@ export class PrototypeHazardPresentation {
 
     if (
       isBehavioralLogicalHazard(this.hazard) &&
-      isTelegraphedHazardBehavior(this.hazard.behavior)
+      isTelegraphedHazardBehavior(this.hazard.behavior) &&
+      this.hazard.behavior.kind !== 'laser'
     ) {
       const phase = lifecycle?.phase ?? 'warning';
       this.drawTelegraphedPhase(phase);
@@ -179,7 +184,8 @@ export class PrototypeHazardPresentation {
       !graphics ||
       this.telegraphedPhase === phase ||
       !isBehavioralLogicalHazard(this.hazard) ||
-      !isTelegraphedHazardBehavior(this.hazard.behavior)
+      !isTelegraphedHazardBehavior(this.hazard.behavior) ||
+      this.hazard.behavior.kind === 'laser'
     ) {
       return;
     }

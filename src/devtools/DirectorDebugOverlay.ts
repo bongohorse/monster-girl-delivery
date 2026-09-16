@@ -20,6 +20,7 @@ import {
   resolveTargetLockStrikeHitbox,
 } from '../hazards/HazardArchetype';
 import { projectHazardHitboxToScreen } from '../hazards/PrototypeHazard';
+import { isPrototypeLaserHazard } from '../hazards/PrototypeLaserHazard';
 import {
   isPrototypeMissileBehavior,
   PROTOTYPE_MISSILE_WARNING_EDGE_MARGIN,
@@ -29,6 +30,7 @@ import { resolvePrototypeZapperGeometry } from '../hazards/PrototypeZapperHazard
 import {
   getPrototypeMissileLaunchRelativeLeft,
   getTelegraphedHazardLifecycle,
+  getTimedLaserLifecycle,
   type TelegraphedHazardSimulationState,
 } from '../hazards/TelegraphedHazardSimulation';
 import {
@@ -287,11 +289,47 @@ const isHazardCurrentlyLethal = (
     return timedLifecycle?.phase === 'on' && !timedLifecycle.complete;
   }
 
+  if (isPrototypeLaserHazard(spawn)) {
+    const laserLifecycle = getTimedLaserLifecycle(telegraphedHazards, spawn);
+    return laserLifecycle?.phase === 'on' && !laserLifecycle.complete;
+  }
+
   if (!isTelegraphedHazardBehavior(spawn.behavior)) {
     return true;
   }
 
   return getTelegraphedHazardLifecycle(telegraphedHazards, spawn)?.phase === 'active';
+};
+
+const createLaserDebugScreenHitbox = (
+  spawn: Readonly<LogicalHazardSpawnInstance>,
+  viewport: Readonly<ViewportSnapshot>,
+  projection: Readonly<PrototypeVerticalProjection>,
+): Readonly<LogicalHitbox> | null => {
+  if (!isPrototypeLaserHazard(spawn) || spawn.behavior.span !== 'screen') {
+    return null;
+  }
+  const halfThickness = spawn.behavior.lethalThickness / 2;
+  if (spawn.behavior.orientation === 'horizontal') {
+    const centerY = projectLogicalYToScreen(
+      (spawn.hitbox.top + spawn.hitbox.bottom) / 2,
+      projection,
+    );
+    return Object.freeze({
+      left: 0,
+      right: viewport.width,
+      top: centerY - halfThickness * projection.scaleY,
+      bottom: centerY + halfThickness * projection.scaleY,
+    });
+  }
+
+  const centerX = viewport.width * (spawn.behavior.screenPositionRatio ?? 0.5);
+  return Object.freeze({
+    left: centerX - halfThickness,
+    right: centerX + halfThickness,
+    top: 0,
+    bottom: viewport.height,
+  });
 };
 
 const createSafeAreaHitbox = (viewport: Readonly<ViewportSnapshot>): Readonly<LogicalHitbox> => {
@@ -348,6 +386,15 @@ export const createDirectorDebugGeometry = (
     const lethal = isHazardCurrentlyLethal(spawn, frame.telegraphedHazards, frame.timedZappers);
     const kind = lethal ? 'hazard-lethal' : 'hazard-preview';
     const color = lethal ? DIRECTOR_DEBUG_COLORS.hazardLethal : DIRECTOR_DEBUG_COLORS.hazardPreview;
+    const laserHitbox = createLaserDebugScreenHitbox(spawn, frame.viewport, projection);
+    if (laserHitbox) {
+      const lifecycle = getTimedLaserLifecycle(frame.telegraphedHazards, spawn);
+      if (!lifecycle?.complete) {
+        rectangles.push({ kind, color, hitbox: laserHitbox });
+      }
+      continue;
+    }
+
     const zapper = resolvePrototypeZapperGeometry(spawn, frame.motion.simulationSeconds ?? 0);
     if (zapper) {
       paths.push(

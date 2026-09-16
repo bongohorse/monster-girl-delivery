@@ -3,11 +3,13 @@ import {
   type LogicalHazardSpawnInstance,
 } from '../generation/PatternSpawnScheduler';
 import {
+  isLaserHazardBehavior,
   isTargetLockStrikeHazardBehavior,
   isTelegraphedHazardBehavior,
   isTimedPulseHazardBehavior,
   resolveTargetLockStrikeHitbox,
 } from './HazardArchetype';
+import { isPrototypeLaserHazard, resolvePrototypeLaserHitbox } from './PrototypeLaserHazard';
 import {
   getPrototypeMissileRelativeVelocityX,
   isPrototypeMissileBehavior,
@@ -25,9 +27,18 @@ import {
   type TelegraphedHazardTarget,
   type TelegraphedHazardTargetResolver,
 } from './TelegraphedHazardLifecycle';
+import {
+  createTimedLaserLifecycleState,
+  isTimedLaserLethal,
+  stepTimedLaserLifecycle,
+  type TimedLaserLethalInterval,
+  type TimedLaserLifecycleState,
+} from './TimedLaserLifecycle';
 
 export interface TelegraphedHazardLifecycleInstance {
   readonly activeInterval: Readonly<TelegraphedHazardActiveInterval> | null;
+  readonly laserLethalIntervals: ReadonlyArray<Readonly<TimedLaserLethalInterval>>;
+  readonly laserLifecycle: Readonly<TimedLaserLifecycleState> | null;
   readonly lifecycle: Readonly<TelegraphedHazardLifecycleState>;
   /** Immutable logical X offset from the player captured when a Missile enters Active. */
   readonly missileLaunchRelativeLeft: number | null;
@@ -46,6 +57,8 @@ export interface PrototypeMissileCollisionContext extends PrototypeMissileHorizo
 
 const EMPTY_TELEGRAPHED_HAZARD_SIMULATION_STATE: Readonly<TelegraphedHazardSimulationState> =
   Object.freeze({ instances: Object.freeze([]) });
+const EMPTY_LASER_INTERVALS: ReadonlyArray<Readonly<TimedLaserLethalInterval>> = Object.freeze([]);
+const LASER_VERTICAL_COLLISION_EXTENT = 1_000_000;
 
 export const createTelegraphedHazardSimulationState =
   (): Readonly<TelegraphedHazardSimulationState> => EMPTY_TELEGRAPHED_HAZARD_SIMULATION_STATE;
@@ -62,7 +75,7 @@ const getObservedTarget = (
   spawn: Readonly<LogicalHazardSpawnInstance>,
   playerTarget: Readonly<TelegraphedHazardTarget>,
 ): Readonly<TelegraphedHazardTarget> => {
-  if (isTimedPulseHazardBehavior(spawn.behavior)) {
+  if (isTimedPulseHazardBehavior(spawn.behavior) || isLaserHazardBehavior(spawn.behavior)) {
     return createFixedHazardTarget(spawn);
   }
 
@@ -90,15 +103,38 @@ const getLifecycleTarget = (
     elapsedSeconds,
   );
 
+const createLaserCompatibilityLifecycle = (
+  laserLifecycle: Readonly<TimedLaserLifecycleState>,
+  target: Readonly<TelegraphedHazardTarget>,
+): Readonly<TelegraphedHazardLifecycleState> => {
+  const phase = laserLifecycle.complete
+    ? 'expired'
+    : laserLifecycle.phase === 'on'
+      ? 'active'
+      : laserLifecycle.phase === 'charge'
+        ? 'lock'
+        : 'warning';
+  return Object.freeze({
+    elapsedPhaseSeconds: laserLifecycle.complete ? 0 : laserLifecycle.elapsedPhaseSeconds,
+    latestObservedTarget: target,
+    lockedTarget: null,
+    phase,
+  });
+};
+
 const freezeInstance = (
   spawnIdentity: string,
   lifecycle: Readonly<TelegraphedHazardLifecycleState>,
   activeInterval: Readonly<TelegraphedHazardActiveInterval> | null,
   warningOriginTarget: Readonly<TelegraphedHazardTarget>,
   missileLaunchRelativeLeft: number | null,
+  laserLifecycle: Readonly<TimedLaserLifecycleState> | null = null,
+  laserLethalIntervals: ReadonlyArray<Readonly<TimedLaserLethalInterval>> = EMPTY_LASER_INTERVALS,
 ): Readonly<TelegraphedHazardLifecycleInstance> =>
   Object.freeze({
     activeInterval,
+    laserLethalIntervals,
+    laserLifecycle,
     lifecycle,
     missileLaunchRelativeLeft,
     spawnIdentity,
@@ -106,13 +142,9 @@ const freezeInstance = (
   });
 
 /**
- * Synchronizes all telegraphed lifecycles to the generated spawn window. Timed pulses observe their
- * fixed authored center; legacy reactive strikes sample the logical player directly. The M5 Missile
- * advances a rate-limited warning marker from its prior authoritative marker position toward the
- * player, then freezes that marker at the same authoritative warning → lock boundary. Its horizontal
- * launch offset from the player is captured once at lock → active so later viewport changes cannot
- * alter gameplay geometry. All timing still advances only from TimeService-normalized simulation
- * delta through the generic lifecycle.
+ * Synchronizes all lifecycle-owned hazards to the generated spawn window. The M5 Laser uses its own
+ * five-phase lifecycle inside this existing retention authority; Missile/pulse behavior keeps the
+ * established telegraphed lifecycle. All timing advances only from normalized simulation delta.
  */
 export const stepTelegraphedHazardSimulation = (
   state: Readonly<TelegraphedHazardSimulationState>,
@@ -146,6 +178,32 @@ export const stepTelegraphedHazardSimulation = (
     const existing = existingByIdentity.get(spawnIdentity);
     const rawObservedTarget = getObservedTarget(spawn, playerTarget);
     const warningOriginTarget = existing?.warningOriginTarget ?? rawObservedTarget;
+
+    if (isLaserHazardBehavior(spawn.behavior)) {
+      const laserStep = stepTimedLaserLifecycle(
+        existing?.laserLifecycle ?? createTimedLaserLifecycleState(),
+        elapsedSeconds,
+        spawn.behavior.lifecycle,
+      );
+      const compatibilityLifecycle = createLaserCompatibilityLifecycle(
+        laserStep.state,
+        warningOriginTarget,
+      );
+      const firstLethalInterval = laserStep.lethalIntervals[0] ?? null;
+      instances.push(
+        freezeInstance(
+          spawnIdentity,
+          compatibilityLifecycle,
+          firstLethalInterval,
+          warningOriginTarget,
+          null,
+          laserStep.state,
+          laserStep.lethalIntervals,
+        ),
+      );
+      continue;
+    }
+
     const trackingOriginTarget = existing?.lifecycle.latestObservedTarget ?? warningOriginTarget;
     const observedTarget = resolvePrototypeMissileTrackingTarget(
       spawn,
@@ -227,9 +285,33 @@ const getMissileTrajectoryElapsedAtStepStart = (
   return instance.lifecycle.elapsedPhaseSeconds - interval.endSeconds;
 };
 
+const resolveLaserCollisionHitbox = (
+  spawn: Readonly<LogicalHazardSpawnInstance>,
+  context: Readonly<PrototypeMissileCollisionContext>,
+) => {
+  const hitbox = resolvePrototypeLaserHitbox(spawn, {
+    playerRunDistance: context.playerRunDistance,
+    playerScreenX: context.playerScreenX,
+    viewportHeight: 1,
+    viewportWidth: context.viewportRight - context.viewportLeft,
+  });
+  if (!hitbox || !isPrototypeLaserHazard(spawn)) {
+    return spawn.hitbox;
+  }
+  if (spawn.behavior.orientation === 'vertical' && spawn.behavior.span === 'screen') {
+    return Object.freeze({
+      ...hitbox,
+      top: -LASER_VERTICAL_COLLISION_EXTENT,
+      bottom: LASER_VERTICAL_COLLISION_EXTENT,
+    });
+  }
+  return hitbox;
+};
+
 /**
- * Supplies collision with each persistent hazard and only the true Active slice of telegraphed
- * hazards from the most recent lifecycle step. The interval is relative to that run step.
+ * Supplies collision with persistent hazards and only true lethal lifecycle slices. Laser ON can
+ * yield multiple exact slices for unusually large deltas; TELEGRAPH/CHARGE/RECOVERY never enter the
+ * collision stream, so they cannot accidentally award Graze or kill the player.
  */
 export const getCollisionHazardsForTelegraphedSimulation = (
   state: Readonly<TelegraphedHazardSimulationState>,
@@ -246,6 +328,35 @@ export const getCollisionHazardsForTelegraphedSimulation = (
 
     const identity = getLogicalHazardSpawnIdentity(spawn);
     const instance = state.instances.find((candidate) => candidate.spawnIdentity === identity);
+
+    if (isLaserHazardBehavior(spawn.behavior)) {
+      if (
+        !instance?.laserLifecycle ||
+        instance.laserLethalIntervals.length === 0 ||
+        !missileContext
+      ) {
+        continue;
+      }
+      const hitbox = resolveLaserCollisionHitbox(spawn, missileContext);
+      for (const interval of instance.laserLethalIntervals) {
+        collisionHazards.push(
+          Object.freeze({
+            ...spawn,
+            collisionInterval: Object.freeze({
+              startSeconds: interval.startSeconds,
+              endSeconds: interval.endSeconds,
+            }),
+            collisionEndsAtIntervalEnd: interval.endsPhase,
+            ...(spawn.behavior.span === 'screen'
+              ? { horizontalVelocity: missileContext.scrollSpeed }
+              : {}),
+            hitbox,
+          }),
+        );
+      }
+      continue;
+    }
+
     if (!instance?.activeInterval) {
       continue;
     }
@@ -297,6 +408,19 @@ export const getTelegraphedHazardLifecycle = (
   return state.instances.find((instance) => instance.spawnIdentity === identity)?.lifecycle ?? null;
 };
 
+export const getTimedLaserLifecycle = (
+  state: Readonly<TelegraphedHazardSimulationState>,
+  spawn: Readonly<LogicalHazardSpawnInstance>,
+): Readonly<TimedLaserLifecycleState> | null => {
+  if (!isLaserHazardBehavior(spawn.behavior)) {
+    return null;
+  }
+  const identity = getLogicalHazardSpawnIdentity(spawn);
+  return (
+    state.instances.find((instance) => instance.spawnIdentity === identity)?.laserLifecycle ?? null
+  );
+};
+
 export const getPrototypeMissileLaunchRelativeLeft = (
   state: Readonly<TelegraphedHazardSimulationState>,
   spawn: Readonly<LogicalHazardSpawnInstance>,
@@ -316,8 +440,9 @@ export const getPrototypeMissileLaunchRelativeLeft = (
 };
 
 /**
- * Supplies the existing collision authority with persistent hazards plus active telegraphed ones.
- * Reactive strikes resolve immutable hitboxes from their committed target and current travel state.
+ * Supplies the existing instantaneous lethal snapshot authority. Laser callers use exact lifecycle
+ * ON state plus the current screen-event layout when available; the run-step path above remains the
+ * authoritative continuous collision source.
  */
 export const getLethalHazardsForTelegraphedSimulation = (
   state: Readonly<TelegraphedHazardSimulationState>,
@@ -334,6 +459,20 @@ export const getLethalHazardsForTelegraphedSimulation = (
 
     const identity = getLogicalHazardSpawnIdentity(spawn);
     const instance = state.instances.find((candidate) => candidate.spawnIdentity === identity);
+
+    if (isLaserHazardBehavior(spawn.behavior)) {
+      if (!instance?.laserLifecycle || !isTimedLaserLethal(instance.laserLifecycle)) {
+        continue;
+      }
+      if (!missileLayout) {
+        lethalHazards.push(spawn);
+        continue;
+      }
+      const hitbox = resolveLaserCollisionHitbox(spawn, { ...missileLayout, scrollSpeed: 0 });
+      lethalHazards.push(Object.freeze({ ...spawn, hitbox }));
+      continue;
+    }
+
     const lifecycle = instance?.lifecycle;
     if (!lifecycle || !isTelegraphedHazardLethal(lifecycle)) {
       continue;
