@@ -64,7 +64,9 @@ describe('Timed Laser telegraph integration', () => {
       elapsedPhaseSeconds: 0.5,
       complete: false,
     });
-    expect(getCollisionHazardsForTelegraphedSimulation(state, [spawn], collisionContext)).toEqual([]);
+    expect(getCollisionHazardsForTelegraphedSimulation(state, [spawn], collisionContext)).toEqual(
+      [],
+    );
   });
 
   it('pins a full-width horizontal Laser to the screen and clips exact ON collision timing', () => {
@@ -109,7 +111,9 @@ describe('Timed Laser telegraph integration', () => {
       playerTarget,
     );
     expect(getTimedLaserLifecycle(state, spawn)?.phase).toBe('recovery');
-    expect(getCollisionHazardsForTelegraphedSimulation(state, [spawn], collisionContext)).toEqual([]);
+    expect(getCollisionHazardsForTelegraphedSimulation(state, [spawn], collisionContext)).toEqual(
+      [],
+    );
 
     state = stepTelegraphedHazardSimulation(state, [spawn], 0.35, playerTarget);
     expect(getTimedLaserLifecycle(state, spawn)).toEqual({
