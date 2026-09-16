@@ -4,6 +4,10 @@ import {
   type TelegraphedHazardLifecycleConfig,
 } from './TelegraphedHazardLifecycle';
 import {
+  createTimedLaserLifecycleConfig,
+  type TimedLaserLifecycleConfig,
+} from './TimedLaserLifecycle';
+import {
   createTimedZapperLifecycleConfig,
   type TimedZapperLifecycleConfig,
 } from './TimedZapperLifecycle';
@@ -56,6 +60,28 @@ export interface TimedPulseHazardBehavior {
   readonly lifecycle: Readonly<TelegraphedHazardLifecycleConfig>;
 }
 
+export type LaserOrientation = 'horizontal' | 'vertical';
+export type LaserSpan = 'finite' | 'screen';
+
+/**
+ * M5 timing hazard. The authored hitbox supplies the logical axis anchor while authoritative laser
+ * simulation resolves screen-attached full-span geometry or a finite beam from this serializable data.
+ */
+export interface LaserHazardBehavior {
+  readonly archetype: 'timed';
+  readonly finiteLength?: number;
+  readonly grazePadding: number;
+  readonly kind: 'laser';
+  readonly lethalThickness: number;
+  readonly lifecycle: Readonly<TimedLaserLifecycleConfig>;
+  readonly orientation: LaserOrientation;
+  /** Optional normalized screen-axis position for screen-attached vertical beams. */
+  readonly screenPositionRatio?: number;
+  readonly span: LaserSpan;
+  readonly telegraphThickness: number;
+  readonly visualGlowThickness: number;
+}
+
 /**
  * Optional M5 Missile motion layered onto the generic target-lock interaction. The current authored
  * Missile launches from the right and travels left, but launch side is data so later content is not
@@ -81,6 +107,7 @@ export interface TargetLockStrikeHazardBehavior {
 }
 
 export type HazardBehavior =
+  | LaserHazardBehavior
   | StaticGeometricHazardBehavior
   | TargetLockStrikeHazardBehavior
   | TimedPulseHazardBehavior
@@ -118,7 +145,8 @@ const assertValidHazardBehavior = (definition: Readonly<HazardBehavior>): void =
       (rawDefinition.kind === 'static' ||
         rawDefinition.kind === 'vertical-patrol' ||
         rawDefinition.kind === 'zapper')) ||
-    (rawDefinition.archetype === 'timed' && rawDefinition.kind === 'pulse') ||
+    (rawDefinition.archetype === 'timed' &&
+      (rawDefinition.kind === 'pulse' || rawDefinition.kind === 'laser')) ||
     (rawDefinition.archetype === 'reactive' && rawDefinition.kind === 'target-lock-strike');
   if (!supportedPair) {
     throw new TypeError(
@@ -173,6 +201,35 @@ const assertValidHazardBehavior = (definition: Readonly<HazardBehavior>): void =
       return;
     case 'pulse':
       createTelegraphedHazardLifecycleConfig(definition.lifecycle);
+      return;
+    case 'laser':
+      if (definition.orientation !== 'horizontal' && definition.orientation !== 'vertical') {
+        throw new TypeError('Hazard Laser orientation must be horizontal or vertical.');
+      }
+      if (definition.span !== 'screen' && definition.span !== 'finite') {
+        throw new TypeError('Hazard Laser span must be screen or finite.');
+      }
+      assertPositiveFinite(definition.lethalThickness, 'Hazard Laser lethalThickness');
+      assertPositiveFinite(definition.telegraphThickness, 'Hazard Laser telegraphThickness');
+      assertPositiveFinite(definition.visualGlowThickness, 'Hazard Laser visualGlowThickness');
+      assertNonNegativeFinite(definition.grazePadding, 'Hazard Laser grazePadding');
+      if (definition.span === 'finite') {
+        if (definition.finiteLength === undefined) {
+          throw new TypeError('Finite Laser span requires finiteLength.');
+        }
+        assertPositiveFinite(definition.finiteLength, 'Hazard Laser finiteLength');
+      } else if (definition.finiteLength !== undefined) {
+        assertPositiveFinite(definition.finiteLength, 'Hazard Laser finiteLength');
+      }
+      if (
+        definition.screenPositionRatio !== undefined &&
+        (!Number.isFinite(definition.screenPositionRatio) ||
+          definition.screenPositionRatio < 0 ||
+          definition.screenPositionRatio > 1)
+      ) {
+        throw new RangeError('Hazard Laser screenPositionRatio must be in [0, 1].');
+      }
+      createTimedLaserLifecycleConfig(definition.lifecycle);
       return;
     case 'target-lock-strike': {
       createTelegraphedHazardLifecycleConfig(definition.lifecycle);
@@ -232,6 +289,11 @@ export const createHazardBehavior = (
         ...definition,
         lifecycle: createTelegraphedHazardLifecycleConfig(definition.lifecycle),
       });
+    case 'laser':
+      return Object.freeze({
+        ...definition,
+        lifecycle: createTimedLaserLifecycleConfig(definition.lifecycle),
+      });
     case 'target-lock-strike':
       return Object.freeze({
         ...definition,
@@ -245,6 +307,11 @@ export const isTimedPulseHazardBehavior = (
   behavior: Readonly<HazardBehavior>,
 ): behavior is Readonly<TimedPulseHazardBehavior> =>
   behavior.archetype === 'timed' && behavior.kind === 'pulse';
+
+export const isLaserHazardBehavior = (
+  behavior: Readonly<HazardBehavior>,
+): behavior is Readonly<LaserHazardBehavior> =>
+  behavior.archetype === 'timed' && behavior.kind === 'laser';
 
 export const isTargetLockStrikeHazardBehavior = (
   behavior: Readonly<HazardBehavior>,
