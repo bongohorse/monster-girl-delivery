@@ -34,6 +34,7 @@ const createSpawn = (orientation: 'horizontal' | 'vertical'): LogicalHazardSpawn
   if (!entry) throw new Error('Expected Laser test entry.');
   return Object.freeze({
     ...entry,
+    entryId: entry.id,
     patternEntryIndex: 0,
     patternId: pattern.id,
     runDistance: entry.hitbox.left,
