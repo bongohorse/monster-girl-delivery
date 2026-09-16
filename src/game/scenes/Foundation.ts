@@ -981,6 +981,7 @@ export class Foundation extends Scene {
       motion: this.runState.motion,
       nextPatternStartDistance: this.hazardStream?.nextPatternStartDistance ?? null,
       telegraphedHazards: this.telegraphedHazardState,
+      timedZappers: this.timedZapperState,
       viewport,
     });
   }
