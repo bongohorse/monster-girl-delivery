@@ -1,40 +1,26 @@
-import { createPrototypeLaserBehavior } from '../hazards/PrototypeLaserHazard';
 import {
   createPrototypeZapperBehavior,
   createPrototypeZapperHitbox,
   PROTOTYPE_ZAPPER_LENGTHS,
 } from '../hazards/PrototypeZapperHazard';
 import { createHazardPattern, type HazardPattern } from './HazardPattern';
-import { PROTOTYPE_M5_HAZARD_PATTERN_FIXTURES } from './PrototypeHazardPatternFixtures';
+import {
+  PROTOTYPE_LASER_PATTERN,
+  PROTOTYPE_M5_HAZARD_PATTERN_FIXTURES,
+  PROTOTYPE_MISSILE_PATTERN,
+} from './PrototypeHazardPatternFixtures';
 
-const PROTOTYPE_MISSILE_BEHAVIOR = Object.freeze({
-  archetype: 'reactive' as const,
-  kind: 'target-lock-strike' as const,
-  lifecycle: Object.freeze({
-    durations: Object.freeze({
-      warningSeconds: 1.4,
-      lockSeconds: 0.4,
-      activeSeconds: 3.2,
-    }),
-    warningGeometry: Object.freeze({
-      leftOffset: -18,
-      rightOffset: 18,
-      topOffset: -22,
-      bottomOffset: 22,
-    }),
-  }),
-  minimumTargetY: 72,
-  maximumTargetY: 222,
-  strikeHeight: 48,
-  missile: Object.freeze({
-    launchSide: 'right' as const,
-    offscreenPadding: 48,
-    trackingSpeed: 120,
-    travelSpeed: 700,
-  }),
-});
+const getBaselineEntry = (pattern: Readonly<HazardPattern>, name: string) => {
+  const entry = pattern.entries[0];
+  if (!entry) {
+    throw new Error(`${name} baseline must contain one hazard entry.`);
+  }
+  return entry;
+};
 
-const HIGH_LASER_BEHAVIOR = createPrototypeLaserBehavior('horizontal', 'screen');
+const PROTOTYPE_MISSILE_ENTRY = getBaselineEntry(PROTOTYPE_MISSILE_PATTERN, 'Missile');
+const PROTOTYPE_LASER_ENTRY = getBaselineEntry(PROTOTYPE_LASER_PATTERN, 'Laser');
+
 const HIGH_LASER_HITBOX = Object.freeze({ left: 120, right: 184, top: 84, bottom: 108 });
 
 const UPPER_DIAGONAL_ZAPPER_BEHAVIOR = createPrototypeZapperBehavior(
@@ -76,10 +62,13 @@ export const M5_MISSILE_ZAPPER_PATTERN: Readonly<HazardPattern> = createHazardPa
       hitbox: createPrototypeZapperHitbox(180, 105, UPPER_DIAGONAL_ZAPPER_BEHAVIOR),
     },
     {
-      behavior: PROTOTYPE_MISSILE_BEHAVIOR,
+      behavior: PROTOTYPE_MISSILE_ENTRY.behavior,
       id: 'bait-missile',
-      type: 'placeholder-barrier',
+      type: PROTOTYPE_MISSILE_ENTRY.type,
       hitbox: { left: 420, right: 484, top: 171, bottom: 219 },
+      ...(PROTOTYPE_MISSILE_ENTRY.reactionPolicy === undefined
+        ? {}
+        : { reactionPolicy: PROTOTYPE_MISSILE_ENTRY.reactionPolicy }),
     },
   ],
 });
@@ -95,16 +84,22 @@ export const M5_MISSILE_LASER_PATTERN: Readonly<HazardPattern> = createHazardPat
   profile: createComboProfile(['target-lock-strike', 'timed-pulse'], 4, 5),
   entries: [
     {
-      behavior: HIGH_LASER_BEHAVIOR,
+      behavior: PROTOTYPE_LASER_ENTRY.behavior,
       id: 'high-laser',
-      type: 'placeholder-barrier',
+      type: PROTOTYPE_LASER_ENTRY.type,
       hitbox: HIGH_LASER_HITBOX,
+      ...(PROTOTYPE_LASER_ENTRY.reactionPolicy === undefined
+        ? {}
+        : { reactionPolicy: PROTOTYPE_LASER_ENTRY.reactionPolicy }),
     },
     {
-      behavior: PROTOTYPE_MISSILE_BEHAVIOR,
+      behavior: PROTOTYPE_MISSILE_ENTRY.behavior,
       id: 'bait-missile',
-      type: 'placeholder-barrier',
+      type: PROTOTYPE_MISSILE_ENTRY.type,
       hitbox: { left: 360, right: 424, top: 171, bottom: 219 },
+      ...(PROTOTYPE_MISSILE_ENTRY.reactionPolicy === undefined
+        ? {}
+        : { reactionPolicy: PROTOTYPE_MISSILE_ENTRY.reactionPolicy }),
     },
   ],
 });
@@ -120,10 +115,13 @@ export const M5_LASER_ZAPPER_PATTERN: Readonly<HazardPattern> = createHazardPatt
   profile: createComboProfile(['static-barrier', 'timed-pulse'], 3, 5),
   entries: [
     {
-      behavior: HIGH_LASER_BEHAVIOR,
+      behavior: PROTOTYPE_LASER_ENTRY.behavior,
       id: 'high-laser',
-      type: 'placeholder-barrier',
+      type: PROTOTYPE_LASER_ENTRY.type,
       hitbox: HIGH_LASER_HITBOX,
+      ...(PROTOTYPE_LASER_ENTRY.reactionPolicy === undefined
+        ? {}
+        : { reactionPolicy: PROTOTYPE_LASER_ENTRY.reactionPolicy }),
     },
     {
       behavior: LOWER_DIAGONAL_ZAPPER_BEHAVIOR,
