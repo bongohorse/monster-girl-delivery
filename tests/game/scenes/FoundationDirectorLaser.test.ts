@@ -9,11 +9,11 @@ vi.mock('phaser', () => ({
 import { createAppServices } from '../../../src/core/AppServices';
 import { ViewportService } from '../../../src/core/ViewportService';
 import { Foundation } from '../../../src/game/scenes/Foundation';
+import type { LogicalHazardSpawnInstance } from '../../../src/generation/PatternSpawnScheduler';
 import {
   getTimedLaserLifecycle,
   type TelegraphedHazardSimulationState,
 } from '../../../src/hazards/TelegraphedHazardSimulation';
-import type { LogicalHazardSpawnInstance } from '../../../src/generation/PatternSpawnScheduler';
 
 const getManualHazards = (
   foundation: Foundation,
@@ -22,10 +22,7 @@ const getManualHazards = (
     Readonly<LogicalHazardSpawnInstance>
   >;
 
-const getLaserLifecycle = (
-  foundation: Foundation,
-  spawn: Readonly<LogicalHazardSpawnInstance>,
-) =>
+const getLaserLifecycle = (foundation: Foundation, spawn: Readonly<LogicalHazardSpawnInstance>) =>
   getTimedLaserLifecycle(
     Reflect.get(foundation, 'telegraphedHazardState') as Readonly<TelegraphedHazardSimulationState>,
     spawn,
@@ -55,12 +52,17 @@ describe('Foundation Director Laser cycle', () => {
       }),
       expect.objectContaining({ kind: 'laser', orientation: 'horizontal', span: 'screen' }),
     ]);
-    expect(getLaserLifecycle(foundation, hazards[0]!)).toMatchObject({
+    const horizontal = hazards[0];
+    const vertical = hazards[1];
+    if (!horizontal || !vertical) {
+      throw new Error('Expected Director H and V Laser spawns.');
+    }
+    expect(getLaserLifecycle(foundation, horizontal)).toMatchObject({
       complete: false,
       elapsedPhaseSeconds: 0,
       phase: 'off',
     });
-    expect(getLaserLifecycle(foundation, hazards[1]!)).toMatchObject({
+    expect(getLaserLifecycle(foundation, vertical)).toMatchObject({
       complete: false,
       elapsedPhaseSeconds: 0,
       phase: 'off',
