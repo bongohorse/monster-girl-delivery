@@ -77,10 +77,7 @@ export const PROTOTYPE_LASER_GROUPS: ReadonlyArray<Readonly<PrototypeLaserGroupD
       generatorEligible: true,
       id: 'center-corridor',
       label: 'G-MID',
-      members: Object.freeze([
-        Object.freeze({ laneId: 'low' }),
-        Object.freeze({ laneId: 'high' }),
-      ]),
+      members: Object.freeze([Object.freeze({ laneId: 'low' }), Object.freeze({ laneId: 'high' })]),
     }),
     Object.freeze({
       generatorEligible: false,
@@ -166,7 +163,7 @@ const createGroupPattern = (
   template: Readonly<HazardPattern> = PROTOTYPE_LASER_PATTERN,
 ): Readonly<HazardPattern> => {
   const templateEntry = template.entries[0];
-  if (!templateEntry || templateEntry.behavior.kind !== 'laser') {
+  if (templateEntry?.behavior.kind !== 'laser') {
     throw new Error('Prototype Laser group template must contain one Laser entry.');
   }
   const halfHeight = (templateEntry.hitbox.bottom - templateEntry.hitbox.top) / 2;
@@ -240,7 +237,9 @@ const replacePrototypeLaserPattern = (
   catalog: ReadonlyArray<Readonly<HazardPattern>>,
   replacement: (pattern: Readonly<HazardPattern>) => Readonly<HazardPattern>,
 ): ReadonlyArray<Readonly<HazardPattern>> =>
-  Object.freeze(catalog.map((pattern) => (isPrototypeLaserPattern(pattern) ? replacement(pattern) : pattern)));
+  Object.freeze(
+    catalog.map((pattern) => (isPrototypeLaserPattern(pattern) ? replacement(pattern) : pattern)),
+  );
 
 const selectSingleLaneCatalog = (
   catalog: ReadonlyArray<Readonly<HazardPattern>>,
