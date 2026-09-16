@@ -325,8 +325,10 @@ export const isZapperHazardBehavior = (
 
 export const isTelegraphedHazardBehavior = (
   behavior: Readonly<HazardBehavior>,
-): behavior is Readonly<TargetLockStrikeHazardBehavior | TimedPulseHazardBehavior> =>
-  isTimedPulseHazardBehavior(behavior) || isTargetLockStrikeHazardBehavior(behavior);
+): behavior is Readonly<LaserHazardBehavior | TargetLockStrikeHazardBehavior | TimedPulseHazardBehavior> =>
+  isLaserHazardBehavior(behavior) ||
+  isTimedPulseHazardBehavior(behavior) ||
+  isTargetLockStrikeHazardBehavior(behavior);
 
 export const isBehavioralLogicalHazard = (
   hazard: Readonly<LogicalHazard>,
