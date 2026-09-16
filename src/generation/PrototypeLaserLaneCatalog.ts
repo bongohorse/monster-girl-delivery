@@ -171,7 +171,11 @@ const createGroupPattern = (
   return createHazardPattern({
     id: template.id,
     runLength: template.runLength,
-    profile: template.profile,
+    profile: {
+      ...template.profile,
+      pressureCost: Math.min(10, template.profile.pressureCost + definition.members.length - 1),
+      readabilityCost: Math.min(10, template.profile.readabilityCost + 1),
+    },
     entries: definition.members.map((member, memberIndex) => {
       const lane = getLaneById(member.laneId);
       const centerY = getPrototypeLaserLaneCenterY(lane, constraints);
