@@ -28,6 +28,7 @@ export interface TimedZapperLifecycleStep {
 }
 
 const TIMED_ZAPPER_PHASES: ReadonlyArray<TimedZapperPhase> = Object.freeze(['off', 'charge', 'on']);
+const TIMED_ZAPPER_BOUNDARY_EPSILON_SECONDS = 1e-12;
 
 const assertPositiveFinite = (value: number, name: string): void => {
   if (!Number.isFinite(value) || value <= 0) {
@@ -133,13 +134,14 @@ export const stepTimedZapperLifecycle = (
   let complete = false;
   const lethalIntervals: TimedZapperLethalInterval[] = [];
 
-  while (remainingSeconds > 0 && !complete) {
+  while (remainingSeconds > TIMED_ZAPPER_BOUNDARY_EPSILON_SECONDS && !complete) {
     const duration = getPhaseDuration(phase, snapshotConfig);
     const availableSeconds = duration - elapsedPhaseSeconds;
-    const consumedSeconds = Math.min(remainingSeconds, availableSeconds);
-    const reachesBoundary = consumedSeconds === availableSeconds;
+    const reachesBoundary =
+      remainingSeconds + TIMED_ZAPPER_BOUNDARY_EPSILON_SECONDS >= availableSeconds;
+    const consumedSeconds = reachesBoundary ? availableSeconds : remainingSeconds;
 
-    if (phase === 'on' && consumedSeconds > 0) {
+    if (phase === 'on' && consumedSeconds > TIMED_ZAPPER_BOUNDARY_EPSILON_SECONDS) {
       lethalIntervals.push(
         Object.freeze({
           startSeconds: cursorSeconds,
@@ -150,7 +152,10 @@ export const stepTimedZapperLifecycle = (
     }
 
     cursorSeconds += consumedSeconds;
-    remainingSeconds -= consumedSeconds;
+    remainingSeconds = Math.max(0, remainingSeconds - consumedSeconds);
+    if (remainingSeconds <= TIMED_ZAPPER_BOUNDARY_EPSILON_SECONDS) {
+      remainingSeconds = 0;
+    }
     elapsedPhaseSeconds += consumedSeconds;
 
     if (!reachesBoundary) {
