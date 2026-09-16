@@ -48,25 +48,21 @@ const createGeometry = (
 describe('DirectorDebugOverlay Timed Zapper authority', () => {
   it('shows OFF and CHARGE as preview geometry and only ON as lethal geometry', () => {
     const zapper = createTimedZapperSpawn();
-    let timedZappers = stepTimedZapperSimulation(
-      createTimedZapperSimulationState(),
-      [zapper],
-      0,
-    );
+    let timedZappers = stepTimedZapperSimulation(createTimedZapperSimulationState(), [zapper], 0);
 
     expect(createGeometry(timedZappers, zapper).paths).toHaveLength(3);
-    expect(createGeometry(timedZappers, zapper).paths.every((path) => path.kind === 'hazard-preview')).toBe(
-      true,
-    );
+    expect(
+      createGeometry(timedZappers, zapper).paths.every((path) => path.kind === 'hazard-preview'),
+    ).toBe(true);
 
     timedZappers = stepTimedZapperSimulation(timedZappers, [zapper], 0.8);
-    expect(createGeometry(timedZappers, zapper).paths.every((path) => path.kind === 'hazard-preview')).toBe(
-      true,
-    );
+    expect(
+      createGeometry(timedZappers, zapper).paths.every((path) => path.kind === 'hazard-preview'),
+    ).toBe(true);
 
     timedZappers = stepTimedZapperSimulation(timedZappers, [zapper], 0.6);
-    expect(createGeometry(timedZappers, zapper).paths.every((path) => path.kind === 'hazard-lethal')).toBe(
-      true,
-    );
+    expect(
+      createGeometry(timedZappers, zapper).paths.every((path) => path.kind === 'hazard-lethal'),
+    ).toBe(true);
   });
 });
