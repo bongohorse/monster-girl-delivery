@@ -20,11 +20,7 @@ const LASER_ONLY_CONTEXT = Object.freeze({
 const centerY = (top: number, bottom: number): number => (top + bottom) / 2;
 
 const getCenters = (seed: string): ReadonlyArray<number> => {
-  let stream = createGeneratedHazardStream(
-    seed,
-    LASER_ONLY_CONTEXT,
-    PROTOTYPE_RUN_MOTION_DEFAULTS,
-  );
+  let stream = createGeneratedHazardStream(seed, LASER_ONLY_CONTEXT, PROTOTYPE_RUN_MOTION_DEFAULTS);
   const centers = stream.spawns.map((spawn) => centerY(spawn.hitbox.top, spawn.hitbox.bottom));
 
   if (stream.scheduledPatternCount !== 1 || centers.length !== 1) {
