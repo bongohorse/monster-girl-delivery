@@ -10,6 +10,17 @@ import { STANDARD_FRAME_SCHEDULES } from '../support/FramePartitionHarness';
 const advance = (state: Readonly<TimedZapperLifecycleState>, elapsedSeconds: number) =>
   stepTimedZapperLifecycle(state, elapsedSeconds, PROTOTYPE_TIMED_ZAPPER_CONFIG);
 
+const expectInterval = (
+  interval: Readonly<{ startSeconds: number; endSeconds: number; endsPhase: boolean }> | undefined,
+  startSeconds: number,
+  endSeconds: number,
+  endsPhase: boolean,
+): void => {
+  expect(interval?.startSeconds).toBeCloseTo(startSeconds, 12);
+  expect(interval?.endSeconds).toBeCloseTo(endSeconds, 12);
+  expect(interval?.endsPhase).toBe(endsPhase);
+};
+
 describe('Timed Zapper lifecycle', () => {
   it('uses the approved OFF -> CHARGE -> ON -> OFF cyclic timings', () => {
     let state = createTimedZapperLifecycleState();
@@ -28,9 +39,8 @@ describe('Timed Zapper lifecycle', () => {
     const charge = advance(createTimedZapperLifecycleState(), 1.2).state;
     const result = advance(charge, 0.4);
 
-    expect(result.lethalIntervals).toEqual([
-      { startSeconds: 0.2, endSeconds: 0.4, endsPhase: false },
-    ]);
+    expect(result.lethalIntervals).toHaveLength(1);
+    expectInterval(result.lethalIntervals[0], 0.2, 0.4, false);
     expect(result.state.phase).toBe('on');
     expect(result.state.elapsedPhaseSeconds).toBeCloseTo(0.2, 12);
   });
@@ -40,9 +50,7 @@ describe('Timed Zapper lifecycle', () => {
     const result = advance(on, 0.4);
 
     expect(result.lethalIntervals).toHaveLength(1);
-    expect(result.lethalIntervals[0]?.startSeconds).toBe(0);
-    expect(result.lethalIntervals[0]?.endSeconds).toBeCloseTo(0.2, 12);
-    expect(result.lethalIntervals[0]?.endsPhase).toBe(true);
+    expectInterval(result.lethalIntervals[0], 0, 0.2, true);
     expect(result.state.phase).toBe('off');
     expect(result.state.elapsedPhaseSeconds).toBeCloseTo(0.2, 12);
   });
@@ -51,16 +59,8 @@ describe('Timed Zapper lifecycle', () => {
     const result = advance(createTimedZapperLifecycleState(), 6.6);
 
     expect(result.lethalIntervals).toHaveLength(2);
-    expect(result.lethalIntervals[0]).toEqual({
-      startSeconds: 1.4,
-      endSeconds: 2.6,
-      endsPhase: true,
-    });
-    expect(result.lethalIntervals[1]).toEqual({
-      startSeconds: 4,
-      endSeconds: 5.2,
-      endsPhase: true,
-    });
+    expectInterval(result.lethalIntervals[0], 1.4, 2.6, true);
+    expectInterval(result.lethalIntervals[1], 4, 5.2, true);
     expect(result.state.phase).toBe('on');
     expect(result.state.elapsedPhaseSeconds).toBeCloseTo(0, 12);
   });
@@ -78,9 +78,8 @@ describe('Timed Zapper lifecycle', () => {
     const completed = stepTimedZapperLifecycle(createTimedZapperLifecycleState(), 2.6, config);
 
     expect(completed.state).toEqual({ phase: 'off', elapsedPhaseSeconds: 0, complete: true });
-    expect(completed.lethalIntervals).toEqual([
-      { startSeconds: 1.4, endSeconds: 2.6, endsPhase: true },
-    ]);
+    expect(completed.lethalIntervals).toHaveLength(1);
+    expectInterval(completed.lethalIntervals[0], 1.4, 2.6, true);
     expect(stepTimedZapperLifecycle(completed.state, 10, config).lethalIntervals).toEqual([]);
   });
 
