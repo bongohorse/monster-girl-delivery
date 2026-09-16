@@ -4,7 +4,12 @@ import {
   getLogicalHazardSpawnIdentity,
   type LogicalHazardSpawnInstance,
 } from '../generation/PatternSpawnScheduler';
+import { isPrototypeLaserHazard } from '../hazards/PrototypeLaserHazard';
 import { isPrototypeZapperHazard } from '../hazards/PrototypeZapperHazard';
+import {
+  getTimedLaserLifecycle,
+  type TimedLaserSimulationState,
+} from '../hazards/TimedLaserSimulation';
 import {
   getPrototypeMissileLaunchRelativeLeft,
   getTelegraphedHazardLifecycle,
@@ -12,6 +17,7 @@ import {
 } from '../hazards/TelegraphedHazardSimulation';
 import type { RunMotionState } from '../systems/RunMotionSimulation';
 import { PrototypeHazardPresentation } from './PrototypeHazardPresentation';
+import { PrototypeLaserPresentation } from './PrototypeLaserPresentation';
 import {
   PrototypeZapperPresentation,
   type PrototypeZapperPresentationStateSources,
@@ -24,6 +30,7 @@ interface ActiveHazardPresentation {
 /** Synchronizes temporary Phaser graphics to the authoritative logical generated-spawn window. */
 export class GeneratedHazardPresentation {
   private readonly active = new Map<string, ActiveHazardPresentation>();
+  private readonly laserActive = new Map<string, PrototypeLaserPresentation>();
   private readonly zapperPresentation: PrototypeZapperPresentation;
   private readonly zapperSpawns: LogicalHazardSpawnInstance[] = [];
   private destroyed = false;
@@ -39,12 +46,14 @@ export class GeneratedHazardPresentation {
     telegraphedHazards: Readonly<TelegraphedHazardSimulationState>,
     verticalProjection: PrototypeVerticalOffsetOrProjection = 0,
     zapperStateSources?: Readonly<PrototypeZapperPresentationStateSources>,
+    timedLasers?: Readonly<TimedLaserSimulationState>,
   ): void {
     if (this.destroyed) {
       return;
     }
 
     const retainedIdentities = new Set<string>();
+    const retainedLaserIdentities = new Set<string>();
     this.zapperSpawns.length = 0;
 
     for (const spawn of spawns) {
@@ -54,6 +63,22 @@ export class GeneratedHazardPresentation {
       }
 
       const identity = getLogicalHazardSpawnIdentity(spawn);
+      if (isPrototypeLaserHazard(spawn)) {
+        retainedLaserIdentities.add(identity);
+        let presentation = this.laserActive.get(identity);
+        if (!presentation) {
+          presentation = new PrototypeLaserPresentation(this.scene, spawn);
+          this.laserActive.set(identity, presentation);
+        }
+        presentation.render(
+          runState,
+          playerScreenX,
+          timedLasers ? getTimedLaserLifecycle(timedLasers, spawn) : null,
+          verticalProjection,
+        );
+        continue;
+      }
+
       retainedIdentities.add(identity);
       let active = this.active.get(identity);
 
@@ -87,6 +112,14 @@ export class GeneratedHazardPresentation {
       active.presentation.destroy();
       this.active.delete(identity);
     }
+
+    for (const [identity, presentation] of this.laserActive) {
+      if (retainedLaserIdentities.has(identity)) {
+        continue;
+      }
+      presentation.destroy();
+      this.laserActive.delete(identity);
+    }
   }
 
   destroy(): void {
@@ -99,8 +132,12 @@ export class GeneratedHazardPresentation {
     for (const active of this.active.values()) {
       active.presentation.destroy();
     }
+    for (const presentation of this.laserActive.values()) {
+      presentation.destroy();
+    }
 
     this.active.clear();
+    this.laserActive.clear();
     this.zapperSpawns.length = 0;
     this.zapperPresentation.destroy();
   }
