@@ -2,8 +2,8 @@ import type { Scene } from 'phaser';
 import { describe, expect, it, vi } from 'vitest';
 import { PrototypeLaserPresentation } from '../../src/entities/PrototypeLaserPresentation';
 import type { LogicalHazardSpawnInstance } from '../../src/generation/PatternSpawnScheduler';
-import { createPrototypeLaserBehavior } from '../../src/hazards/PrototypeLaserHazard';
 import type { LaserOrientation, LaserSpan } from '../../src/hazards/HazardArchetype';
+import { createPrototypeLaserBehavior } from '../../src/hazards/PrototypeLaserHazard';
 
 const createGraphicsMock = () => {
   const graphics = {
@@ -96,10 +96,7 @@ describe('PrototypeLaserPresentation', () => {
 
   it('renders finite beams from authored world geometry instead of stretching them across the screen', () => {
     const { graphics, scene } = createSceneFake();
-    const presentation = new PrototypeLaserPresentation(
-      scene,
-      createSpawn('horizontal', 'finite'),
-    );
+    const presentation = new PrototypeLaserPresentation(scene, createSpawn('horizontal', 'finite'));
 
     presentation.render({ distance: 100 }, 100, ON_STATE);
 
@@ -112,11 +109,11 @@ describe('PrototypeLaserPresentation', () => {
     const { graphics, scene } = createSceneFake();
     const presentation = new PrototypeLaserPresentation(scene, createSpawn('horizontal'));
 
-    presentation.render(
-      { distance: 0 },
-      100,
-      { complete: true, elapsedPhaseSeconds: 0, phase: 'off' },
-    );
+    presentation.render({ distance: 0 }, 100, {
+      complete: true,
+      elapsedPhaseSeconds: 0,
+      phase: 'off',
+    });
     expect(graphics.setVisible).toHaveBeenLastCalledWith(false);
 
     presentation.destroy();
