@@ -10,10 +10,7 @@ import {
   isPrototypeZapperHazard,
   resolvePrototypeZapperGeometry,
 } from '../hazards/PrototypeZapperHazard';
-import type {
-  TimedZapperLifecycleState,
-  TimedZapperPhase,
-} from '../hazards/TimedZapperLifecycle';
+import type { TimedZapperLifecycleState, TimedZapperPhase } from '../hazards/TimedZapperLifecycle';
 import {
   getTimedZapperLifecycle,
   type TimedZapperGameplayStateResolver,
@@ -23,12 +20,7 @@ import type { RunMotionState } from '../systems/RunMotionSimulation';
 
 export const PROTOTYPE_ZAPPER_SHARED_SHADER_CAPACITY = 12;
 
-export type PrototypeZapperPresentationState =
-  | 'on'
-  | 'charge'
-  | 'off'
-  | 'disabled'
-  | 'destroyed';
+export type PrototypeZapperPresentationState = 'on' | 'charge' | 'off' | 'disabled' | 'destroyed';
 
 export interface PrototypeZapperPresentationStateSources {
   readonly resolveGameplayState?: TimedZapperGameplayStateResolver;
@@ -42,13 +34,15 @@ interface PrototypeZapperPresentationSample {
 
 const EMPTY_STATE_SOURCES: Readonly<PrototypeZapperPresentationStateSources> = Object.freeze({});
 
-const ZAPPER_STATE_CODE: Readonly<Record<PrototypeZapperPresentationState, number>> = Object.freeze({
-  off: 0,
-  charge: 1,
-  on: 2,
-  disabled: 3,
-  destroyed: 4,
-});
+const ZAPPER_STATE_CODE: Readonly<Record<PrototypeZapperPresentationState, number>> = Object.freeze(
+  {
+    off: 0,
+    charge: 1,
+    on: 2,
+    disabled: 3,
+    destroyed: 4,
+  },
+);
 
 const ZAPPER_COLORS = Object.freeze({
   body: 0xffd166,
@@ -232,13 +226,7 @@ const drawDashedLine = (
   for (let index = 0; index < segmentCount; index += 2) {
     const start = index / segmentCount;
     const end = Math.min(1, (index + 1) / segmentCount);
-    drawLine(
-      graphics,
-      ax + dx * start,
-      ay + dy * start,
-      ax + dx * end,
-      ay + dy * end,
-    );
+    drawLine(graphics, ax + dx * start, ay + dy * start, ax + dx * end, ay + dy * end);
   }
 };
 
@@ -335,7 +323,11 @@ export class PrototypeZapperPresentation {
       const beamWidth = geometry.beam.radius * 2;
       const endpointRadius = geometry.endpointA.radius;
       const padding = getPrototypeZapperGrazePadding(spawn);
-      const visualPadding = Math.max(endpointRadius + padding.endpoints, beamWidth + padding.beam, 18);
+      const visualPadding = Math.max(
+        endpointRadius + padding.endpoints,
+        beamWidth + padding.beam,
+        18,
+      );
 
       unionLeft = Math.min(unionLeft, ax - visualPadding, bx - visualPadding);
       unionRight = Math.max(unionRight, ax + visualPadding, bx + visualPadding);
@@ -348,7 +340,17 @@ export class PrototypeZapperPresentation {
         projection.offsetY + (Math.max(ay, by) + visualPadding) * projection.scaleY,
       );
 
-      this.drawFallback(graphics, ax, ay, bx, by, beamWidth, endpointRadius, sample, simulationSeconds);
+      this.drawFallback(
+        graphics,
+        ax,
+        ay,
+        bx,
+        by,
+        beamWidth,
+        endpointRadius,
+        sample,
+        simulationSeconds,
+      );
 
       if (shaderCount < PROTOTYPE_ZAPPER_SHARED_SHADER_CAPACITY) {
         const base = shaderCount * 4;
@@ -475,7 +477,11 @@ export class PrototypeZapperPresentation {
         const width = Math.max(2, beamWidth * (0.25 + sample.chargeProgress * 0.5));
         graphics.lineStyle(width + 5, ZAPPER_COLORS.glow, 0.12 * pulse);
         drawDashedLine(graphics, ax, ay, bx, by);
-        graphics.lineStyle(width, ZAPPER_COLORS.charge, (0.34 + sample.chargeProgress * 0.38) * pulse);
+        graphics.lineStyle(
+          width,
+          ZAPPER_COLORS.charge,
+          (0.34 + sample.chargeProgress * 0.38) * pulse,
+        );
         drawDashedLine(graphics, ax, ay, bx, by);
         graphics.lineStyle(2, ZAPPER_COLORS.body, 0.65 + sample.chargeProgress * 0.25);
         graphics.strokeCircle(ax, ay, endpointRadius + sample.chargeProgress * 3);
