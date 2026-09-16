@@ -43,16 +43,18 @@ const getEncounters = (seed: string): ReadonlyArray<ReadonlyArray<number>> => {
     );
 
     if (stream.scheduledPatternCount !== previousPatternCount + 1) {
-      throw new Error('Laser encounter validation must advance exactly one accepted pattern at a time.');
+      throw new Error(
+        'Laser encounter validation must advance exactly one accepted pattern at a time.',
+      );
     }
 
     const addedSpawns = stream.spawns.slice(previousSpawnCount);
     if (addedSpawns.length === 0) {
-      throw new Error('Laser encounter validation expected at least one spawn per accepted pattern.');
+      throw new Error(
+        'Laser encounter validation expected at least one spawn per accepted pattern.',
+      );
     }
-    encounters.push(
-      addedSpawns.map((spawn) => centerY(spawn.hitbox.top, spawn.hitbox.bottom)),
-    );
+    encounters.push(addedSpawns.map((spawn) => centerY(spawn.hitbox.top, spawn.hitbox.bottom)));
   }
 
   return encounters;
