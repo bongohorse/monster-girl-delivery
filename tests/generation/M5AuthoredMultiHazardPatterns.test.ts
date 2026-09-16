@@ -1,24 +1,24 @@
 import { describe, expect, it } from 'vitest';
 import { PROTOTYPE_PATTERN_REACHABILITY_CONTEXT } from '../../src/generation/FlightReachability';
 import {
+  createLiveEncounterPolicyState,
+  evaluateLiveEncounterReadability,
+  selectLiveEncounterCandidates,
+} from '../../src/generation/LiveEncounterPolicy';
+import {
   M5_AUTHORED_MULTI_HAZARD_PATTERNS,
   M5_LASER_ZAPPER_PATTERN,
   M5_MISSILE_LASER_PATTERN,
   M5_MISSILE_ZAPPER_PATTERN,
   PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG,
 } from '../../src/generation/M5AuthoredMultiHazardPatterns';
-import {
-  createLiveEncounterPolicyState,
-  evaluateLiveEncounterReadability,
-  selectLiveEncounterCandidates,
-} from '../../src/generation/LiveEncounterPolicy';
+import { scheduleNextPattern } from '../../src/generation/PatternSpawnScheduler';
 import {
   PROTOTYPE_PATTERN_VALIDATION_CONSTRAINTS,
   validatePattern,
 } from '../../src/generation/PatternValidator';
 import { PROTOTYPE_M5_HAZARD_PATTERN_FIXTURES } from '../../src/generation/PrototypeHazardPatternFixtures';
 import { createRunGenerationState } from '../../src/generation/RunGenerationState';
-import { scheduleNextPattern } from '../../src/generation/PatternSpawnScheduler';
 
 const REACHABILITY = Object.freeze({
   flightState: PROTOTYPE_PATTERN_REACHABILITY_CONTEXT.flightState,
@@ -29,9 +29,7 @@ const REACHABILITY = Object.freeze({
 const getKinds = (pattern: (typeof M5_AUTHORED_MULTI_HAZARD_PATTERNS)[number]) =>
   pattern.entries.map((entry) => entry.behavior.kind);
 
-const evaluateUnderLivePolicy = (
-  pattern: (typeof M5_AUTHORED_MULTI_HAZARD_PATTERNS)[number],
-) => {
+const evaluateUnderLivePolicy = (pattern: (typeof M5_AUTHORED_MULTI_HAZARD_PATTERNS)[number]) => {
   // First production high-pressure window: tier 1 and high pacing, so these combinations cannot
   // pollute the opening/low/medium run but are evaluated by the real live policy once eligible.
   const runDistance = 5_200;
