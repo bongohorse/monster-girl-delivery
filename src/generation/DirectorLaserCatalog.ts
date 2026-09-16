@@ -20,7 +20,8 @@ export interface DirectorLaserSelection {
     | 'G-HIGH'
     | 'G-MID'
     | 'SW-DN'
-    | 'SW-UP';
+    | 'SW-UP'
+    | 'ALT';
   readonly laneId?: PrototypeLaserLaneId;
   readonly pattern: Readonly<HazardPattern>;
 }
