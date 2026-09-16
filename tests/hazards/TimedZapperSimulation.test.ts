@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   getLogicalHazardSpawnIdentity,
-  scheduleNextPattern,
   type LogicalHazardSpawnInstance,
+  scheduleNextPattern,
 } from '../../src/generation/PatternSpawnScheduler';
 import {
   PROTOTYPE_M5_HAZARD_PATTERN_FIXTURES,
@@ -52,6 +52,16 @@ const createTimedSpawn = (): Readonly<LogicalHazardSpawnInstance> => {
     throw new Error('Expected Timed Zapper fixture to schedule.');
   }
   return schedule.spawns[0];
+};
+
+const requireSingleHazard = (
+  hazards: ReadonlyArray<Readonly<LogicalHazard>>,
+): Readonly<LogicalHazard> => {
+  const hazard = hazards[0];
+  if (hazards.length !== 1 || !hazard) {
+    throw new Error(`Expected exactly one collision hazard, received ${hazards.length}.`);
+  }
+  return hazard;
 };
 
 const createStationaryTrajectory = (positionY: number, elapsedSeconds: number) =>
@@ -115,7 +125,7 @@ describe('Timed Zapper simulation', () => {
     expect(hazards[0]?.collisionInterval?.endSeconds).toBeCloseTo(0.4, 12);
 
     expect(
-      collides(hazards[0]!, { distance: 100, simulationSeconds: 1.2 }, 0.4, 350),
+      collides(requireSingleHazard(hazards), { distance: 100, simulationSeconds: 1.2 }, 0.4, 350),
     ).toBe(true);
   });
 
@@ -131,7 +141,7 @@ describe('Timed Zapper simulation', () => {
     expect(hazards[0]?.collisionEndsAtIntervalEnd).toBe(true);
 
     expect(
-      collides(hazards[0]!, { distance: 100, simulationSeconds: 2.4 }, 0.4, 350),
+      collides(requireSingleHazard(hazards), { distance: 100, simulationSeconds: 2.4 }, 0.4, 350),
     ).toBe(false);
   });
 
@@ -146,30 +156,36 @@ describe('Timed Zapper simulation', () => {
 
     timedState = stepTimedZapperSimulation(timedState, [spawn], 1.4);
     reactionState = applyHazardExternalEffect(reactionState, identity, { kind: 'disable' });
-    const disabledHazards = getCollisionHazardsForTimedZapperSimulation(
-      timedState,
-      [spawn],
-      () => getHazardGameplayState(reactionState, identity),
+    const disabledHazards = getCollisionHazardsForTimedZapperSimulation(timedState, [spawn], () =>
+      getHazardGameplayState(reactionState, identity),
     );
     expect(getTimedZapperLifecycle(timedState, spawn)?.phase).toBe('on');
     expect(getHazardGameplayState(reactionState, identity)).toBe('disabled');
-    expect(collides(disabledHazards[0]!, { distance: 280, simulationSeconds: 0.2 }, 1.4, 0)).toBe(
-      false,
-    );
+    expect(
+      collides(
+        requireSingleHazard(disabledHazards),
+        { distance: 280, simulationSeconds: 0.2 },
+        1.4,
+        0,
+      ),
+    ).toBe(false);
 
     reactionState = applyHazardExternalEffect(reactionState, identity, { kind: 'destroy' });
     timedState = stepTimedZapperSimulation(timedState, [spawn], 5.2);
-    const destroyedHazards = getCollisionHazardsForTimedZapperSimulation(
-      timedState,
-      [spawn],
-      () => getHazardGameplayState(reactionState, identity),
+    const destroyedHazards = getCollisionHazardsForTimedZapperSimulation(timedState, [spawn], () =>
+      getHazardGameplayState(reactionState, identity),
     );
     expect(getHazardGameplayState(reactionState, identity)).toBe('destroyed');
     expect(destroyedHazards).toHaveLength(1);
     expect(destroyedHazards[0]?.collisionInterval).toEqual({ startSeconds: 0, endSeconds: 0 });
-    expect(collides(destroyedHazards[0]!, { distance: 280, simulationSeconds: 1.6 }, 5.2, 0)).toBe(
-      false,
-    );
+    expect(
+      collides(
+        requireSingleHazard(destroyedHazards),
+        { distance: 280, simulationSeconds: 1.6 },
+        5.2,
+        0,
+      ),
+    ).toBe(false);
   });
 
   it('does not advance phase or expose collision candidates on zero-delta pause/resize updates', () => {
