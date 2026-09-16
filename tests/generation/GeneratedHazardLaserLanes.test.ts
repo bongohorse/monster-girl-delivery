@@ -72,14 +72,14 @@ describe('generated horizontal Laser encounters', () => {
     expect(flattened.every((center) => AUTHORED_CENTERS.includes(center))).toBe(true);
   });
 
-  it('limits generated groups to the authored simultaneous safe-corridor formations', () => {
+  it('keeps Director-only three-beam stacks out of generated encounters', () => {
     const groupEncounters = getEncounters('laser-lane-variation').filter(
       (encounter) => encounter.length > 1,
     );
-    const allowedGroups = new Set(['294,244,195', '195,146,96', '294,96']);
 
     expect(groupEncounters.length).toBeGreaterThan(0);
-    expect(groupEncounters.every((encounter) => allowedGroups.has(encounter.join(',')))).toBe(true);
+    expect(groupEncounters.every((encounter) => encounter.join(',') === '294,96')).toBe(true);
+    expect(groupEncounters.every((encounter) => encounter.length === 2)).toBe(true);
   });
 
   it('replays the exact same single/group sequence from the same seed', () => {
