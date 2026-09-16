@@ -123,8 +123,9 @@ const createSceneFake = (withShader: boolean) => {
 };
 
 const readUniforms = (config: unknown) => {
-  const setupUniforms = (config as { setupUniforms?: (set: (name: string, value: unknown) => void) => void })
-    .setupUniforms;
+  const setupUniforms = (
+    config as { setupUniforms?: (set: (name: string, value: unknown) => void) => void }
+  ).setupUniforms;
   if (!setupUniforms) {
     throw new Error('Expected shared Zapper shader setupUniforms callback.');
   }
@@ -169,7 +170,11 @@ describe('PrototypeZapperPresentation', () => {
     const { graphics, scene } = createSceneFake(false);
     const presentation = new PrototypeZapperPresentation(scene);
 
-    presentation.render([createSpawn('fallback', 0, 280)], { distance: 0, simulationSeconds: 0 }, 100);
+    presentation.render(
+      [createSpawn('fallback', 0, 280)],
+      { distance: 0, simulationSeconds: 0 },
+      100,
+    );
 
     expect(scene.add.graphics).toHaveBeenCalledOnce();
     expect(graphics.strokePath).toHaveBeenCalled();
@@ -248,24 +253,18 @@ describe('PrototypeZapperPresentation', () => {
 
     const chargeFake = createSceneFake(false);
     const chargePresentation = new PrototypeZapperPresentation(chargeFake.scene);
-    chargePresentation.render(
-      [timed],
-      { distance: 0, simulationSeconds: 0.3 },
-      100,
-      0,
-      {
-        timedZappers: {
-          stepElapsedSeconds: 0.3,
-          instances: [
-            {
-              spawnIdentity: `${timed.patternId}:${timed.patternEntryIndex}:${timed.entryId}:${timed.runDistance}`,
-              lethalIntervals: [],
-              lifecycle: { complete: false, elapsedPhaseSeconds: 0.3, phase: 'charge' },
-            },
-          ],
-        },
+    chargePresentation.render([timed], { distance: 0, simulationSeconds: 0.3 }, 100, 0, {
+      timedZappers: {
+        stepElapsedSeconds: 0.3,
+        instances: [
+          {
+            spawnIdentity: `${timed.patternId}:${timed.patternEntryIndex}:${timed.entryId}:${timed.runDistance}`,
+            lethalIntervals: [],
+            lifecycle: { complete: false, elapsedPhaseSeconds: 0.3, phase: 'charge' },
+          },
+        ],
       },
-    );
+    });
     expect(chargeFake.graphics.strokePath.mock.calls.length).toBeGreaterThan(2);
 
     const offFake = createSceneFake(false);
@@ -276,24 +275,18 @@ describe('PrototypeZapperPresentation', () => {
 
     const onFake = createSceneFake(false);
     const onPresentation = new PrototypeZapperPresentation(onFake.scene);
-    onPresentation.render(
-      [timed],
-      { distance: 0, simulationSeconds: 1.6 },
-      100,
-      0,
-      {
-        timedZappers: {
-          stepElapsedSeconds: 0.2,
-          instances: [
-            {
-              spawnIdentity: `${timed.patternId}:${timed.patternEntryIndex}:${timed.entryId}:${timed.runDistance}`,
-              lethalIntervals: [],
-              lifecycle: { complete: false, elapsedPhaseSeconds: 0.2, phase: 'on' },
-            },
-          ],
-        },
+    onPresentation.render([timed], { distance: 0, simulationSeconds: 1.6 }, 100, 0, {
+      timedZappers: {
+        stepElapsedSeconds: 0.2,
+        instances: [
+          {
+            spawnIdentity: `${timed.patternId}:${timed.patternEntryIndex}:${timed.entryId}:${timed.runDistance}`,
+            lethalIntervals: [],
+            lifecycle: { complete: false, elapsedPhaseSeconds: 0.2, phase: 'on' },
+          },
+        ],
       },
-    );
+    });
     expect(onFake.graphics.fillCircle).toHaveBeenCalled();
     expect(onFake.graphics.strokePath).toHaveBeenCalledTimes(3);
   });
