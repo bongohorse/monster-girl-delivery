@@ -1,14 +1,28 @@
 export type TimedLaserPhase = 'off' | 'telegraph' | 'charge' | 'on' | 'recovery';
 export type TimedLaserMode = 'cyclic' | 'one-shot';
 
+export interface TimedLaserCompatibilityDurations {
+  readonly activeSeconds: number;
+  readonly lockSeconds: number;
+  readonly warningSeconds: number;
+}
+
 export interface TimedLaserLifecycleConfig {
   readonly chargeSeconds: number;
+  /**
+   * Compatibility projection for the existing encounter readability authority. OFF + TELEGRAPH are
+   * represented as warning, CHARGE as lock, and ON as active. Laser simulation still owns the real
+   * five-phase lifecycle including RECOVERY.
+   */
+  readonly durations: Readonly<TimedLaserCompatibilityDurations>;
   readonly mode: TimedLaserMode;
   readonly offSeconds: number;
   readonly onSeconds: number;
   readonly recoverySeconds: number;
   readonly telegraphSeconds: number;
 }
+
+export type TimedLaserLifecycleConfigDefinition = Omit<TimedLaserLifecycleConfig, 'durations'>;
 
 export interface TimedLaserLifecycleState {
   readonly complete: boolean;
@@ -45,7 +59,7 @@ const assertPositiveFinite = (value: number, name: string): void => {
 };
 
 export const createTimedLaserLifecycleConfig = (
-  definition: Readonly<TimedLaserLifecycleConfig>,
+  definition: Readonly<TimedLaserLifecycleConfigDefinition | TimedLaserLifecycleConfig>,
 ): Readonly<TimedLaserLifecycleConfig> => {
   assertPositiveFinite(definition.offSeconds, 'Timed Laser offSeconds');
   assertPositiveFinite(definition.telegraphSeconds, 'Timed Laser telegraphSeconds');
@@ -56,7 +70,19 @@ export const createTimedLaserLifecycleConfig = (
     throw new TypeError('Timed Laser mode must be cyclic or one-shot.');
   }
 
-  return Object.freeze({ ...definition });
+  return Object.freeze({
+    chargeSeconds: definition.chargeSeconds,
+    durations: Object.freeze({
+      activeSeconds: definition.onSeconds,
+      lockSeconds: definition.chargeSeconds,
+      warningSeconds: definition.offSeconds + definition.telegraphSeconds,
+    }),
+    mode: definition.mode,
+    offSeconds: definition.offSeconds,
+    onSeconds: definition.onSeconds,
+    recoverySeconds: definition.recoverySeconds,
+    telegraphSeconds: definition.telegraphSeconds,
+  });
 };
 
 export const PROTOTYPE_TIMED_LASER_CONFIG = createTimedLaserLifecycleConfig({
