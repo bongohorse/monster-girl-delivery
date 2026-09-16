@@ -1,15 +1,27 @@
 import type { HazardPattern } from './HazardPattern';
-import { PROTOTYPE_LASER_PATTERN } from './PrototypeHazardPatternFixtures';
+import {
+  PROTOTYPE_LASER_LANE_PATTERNS,
+  PROTOTYPE_LASER_LANES,
+  type PrototypeLaserLaneId,
+} from './PrototypeLaserLaneCatalog';
 
 export interface DirectorLaserSelection {
-  readonly label: 'H';
+  readonly label: 'LOW' | 'ML' | 'MID' | 'MH' | 'HIGH';
+  readonly laneId: PrototypeLaserLaneId;
   readonly pattern: Readonly<HazardPattern>;
 }
 
 /**
- * M5 Director playtesting currently exposes only the horizontal screen-spanning Laser. The vertical
- * data/presentation support remains available for future encounter designs that can actually route
- * the player through its lane, but it is intentionally not selectable yet.
+ * Director `L` walks the reachable horizontal lane set deterministically. Vertical screen-span
+ * support remains data-only until an encounter can make it meaningful for the player's route.
  */
 export const DIRECTOR_LASER_VARIANTS: ReadonlyArray<Readonly<DirectorLaserSelection>> =
-  Object.freeze([Object.freeze({ label: 'H', pattern: PROTOTYPE_LASER_PATTERN })]);
+  Object.freeze(
+    PROTOTYPE_LASER_LANES.map((lane, index) => {
+      const pattern = PROTOTYPE_LASER_LANE_PATTERNS[index];
+      if (!pattern) {
+        throw new RangeError('Director Laser lane catalog is incomplete.');
+      }
+      return Object.freeze({ label: lane.label, laneId: lane.id, pattern });
+    }),
+  );
