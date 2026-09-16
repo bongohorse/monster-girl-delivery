@@ -147,7 +147,7 @@ describe('prototype run simulation', () => {
 
     expect(first).toEqual({
       phase: 'running',
-      motion: { distance: 0 },
+      motion: { distance: 0, simulationSeconds: 0 },
       flight: { positionY: 195, velocityY: 0 },
     });
     expect(repeated).toEqual(first);

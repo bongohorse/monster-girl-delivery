@@ -1,8 +1,6 @@
 import type { GameObjects, Scene } from 'phaser';
-import {
-  type PrototypeVerticalOffsetOrProjection,
-  resolveVerticalProjection,
-} from '../game/PrototypeFlightLayout';
+import type { PrototypeVerticalOffsetOrProjection } from '../game/PrototypeFlightLayout';
+import { resolveVerticalProjection } from '../game/PrototypeFlightLayout';
 import { projectHazardHitboxToScreen } from '../hazards/PrototypeHazard';
 import {
   type PrototypeZapperGeometry,
@@ -17,23 +15,30 @@ import type { RunMotionState } from '../systems/RunMotionSimulation';
  */
 export class PrototypeZapperPresentation {
   private graphics?: GameObjects.Graphics;
-  private readonly geometry: Readonly<PrototypeZapperGeometry>;
 
-  constructor(scene: Scene, hazard: Readonly<LogicalHazard>) {
-    const geometry = resolvePrototypeZapperGeometry(hazard);
-    if (!geometry) {
+  constructor(
+    scene: Scene,
+    private readonly hazard: Readonly<LogicalHazard>,
+  ) {
+    if (!resolvePrototypeZapperGeometry(hazard)) {
       throw new TypeError('PrototypeZapperPresentation requires a Zapper hazard.');
     }
-    this.geometry = geometry;
+    this.graphics = scene.add.graphics().setDepth(-50);
+  }
 
-    const graphics = scene.add.graphics().setDepth(-50);
-    this.graphics = graphics;
+  private drawGeometry(geometry: Readonly<PrototypeZapperGeometry>): void {
+    const graphics = this.graphics;
+    if (!graphics) {
+      return;
+    }
+
     const localAX = geometry.endpointA.center.x - geometry.bounds.left;
     const localAY = geometry.endpointA.center.y - geometry.bounds.top;
     const localBX = geometry.endpointB.center.x - geometry.bounds.left;
     const localBY = geometry.endpointB.center.y - geometry.bounds.top;
     const beamWidth = geometry.beam.radius * 2;
 
+    graphics.clear();
     graphics.lineStyle(beamWidth + 8, 0xffd166, 0.22);
     graphics.beginPath();
     graphics.moveTo(localAX, localAY);
@@ -67,9 +72,15 @@ export class PrototypeZapperPresentation {
       return;
     }
 
+    const geometry = resolvePrototypeZapperGeometry(this.hazard, runState.simulationSeconds ?? 0);
+    if (!geometry) {
+      return;
+    }
+    this.drawGeometry(geometry);
+
     const projection = resolveVerticalProjection(verticalProjection);
     const screenBounds = projectHazardHitboxToScreen(
-      { hitbox: this.geometry.bounds },
+      { hitbox: geometry.bounds },
       runState,
       playerScreenX,
       projection,
