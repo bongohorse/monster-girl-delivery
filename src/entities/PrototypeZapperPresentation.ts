@@ -263,7 +263,9 @@ export class PrototypeZapperPresentation {
   private shaderTime = 0;
   private destroyed = false;
 
-  constructor(private readonly scene: Scene) {}
+  constructor(private readonly scene: Scene) {
+    this.ensureShader();
+  }
 
   render(
     spawns: ReadonlyArray<Readonly<LogicalHazardSpawnInstance>>,
@@ -411,6 +413,10 @@ export class PrototypeZapperPresentation {
     if (!this.graphics) {
       this.graphics = this.scene.add.graphics().setDepth(-50);
     }
+    this.ensureShader();
+  }
+
+  private ensureShader(): void {
     if (this.shaderCreationAttempted) {
       return;
     }
