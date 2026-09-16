@@ -28,7 +28,7 @@ describe('Timed Zapper lifecycle', () => {
     state = advance(state, 0.8).state;
     expect(state).toEqual({ phase: 'charge', elapsedPhaseSeconds: 0, complete: false });
 
-    state = advance(state, 0.6).state;
+    state = advance(state, 1.2).state;
     expect(state).toEqual({ phase: 'on', elapsedPhaseSeconds: 0, complete: false });
 
     state = advance(state, 1.2).state;
@@ -36,7 +36,7 @@ describe('Timed Zapper lifecycle', () => {
   });
 
   it('exposes only the ON portion when one coarse step crosses CHARGE -> ON', () => {
-    const charge = advance(createTimedZapperLifecycleState(), 1.2).state;
+    const charge = advance(createTimedZapperLifecycleState(), 1.8).state;
     const result = advance(charge, 0.4);
 
     expect(result.lethalIntervals).toHaveLength(1);
@@ -46,7 +46,7 @@ describe('Timed Zapper lifecycle', () => {
   });
 
   it('cuts lethality exactly at ON -> OFF instead of extending it to the frame end', () => {
-    const on = advance(createTimedZapperLifecycleState(), 2.4).state;
+    const on = advance(createTimedZapperLifecycleState(), 3).state;
     const result = advance(on, 0.4);
 
     expect(result.lethalIntervals).toHaveLength(1);
@@ -56,17 +56,17 @@ describe('Timed Zapper lifecycle', () => {
   });
 
   it('can carry multiple exact ON slices through an unexpectedly large delta without a fixed step', () => {
-    const result = advance(createTimedZapperLifecycleState(), 6.6);
+    const result = advance(createTimedZapperLifecycleState(), 8.4);
 
     expect(result.lethalIntervals).toHaveLength(2);
-    expectInterval(result.lethalIntervals[0], 1.4, 2.6, true);
-    expectInterval(result.lethalIntervals[1], 4, 5.2, true);
+    expectInterval(result.lethalIntervals[0], 2, 3.2, true);
+    expectInterval(result.lethalIntervals[1], 5.2, 6.4, true);
     expect(result.state.phase).toBe('on');
     expect(result.state.elapsedPhaseSeconds).toBeCloseTo(0, 12);
   });
 
   it('does not advance or become newly lethal on zero simulation delta', () => {
-    const on = advance(createTimedZapperLifecycleState(), 1.6).state;
+    const on = advance(createTimedZapperLifecycleState(), 2.2).state;
     const result = advance(on, 0);
 
     expect(result.state).toBe(on);
@@ -84,11 +84,11 @@ describe('Timed Zapper lifecycle', () => {
 
   it('supports one-shot data that cannot reactivate after its first ON phase', () => {
     const config = { ...PROTOTYPE_TIMED_ZAPPER_CONFIG, mode: 'one-shot' as const };
-    const completed = stepTimedZapperLifecycle(createTimedZapperLifecycleState(), 2.6, config);
+    const completed = stepTimedZapperLifecycle(createTimedZapperLifecycleState(), 3.2, config);
 
     expect(completed.state).toEqual({ phase: 'off', elapsedPhaseSeconds: 0, complete: true });
     expect(completed.lethalIntervals).toHaveLength(1);
-    expectInterval(completed.lethalIntervals[0], 1.4, 2.6, true);
+    expectInterval(completed.lethalIntervals[0], 2, 3.2, true);
     expect(stepTimedZapperLifecycle(completed.state, 10, config).lethalIntervals).toEqual([]);
   });
 
@@ -98,8 +98,8 @@ describe('Timed Zapper lifecycle', () => {
       let elapsed = 0;
       let stepIndex = 0;
 
-      while (elapsed < 3) {
-        const delta = Math.min(schedule.getNextDelta(elapsed, stepIndex), 3 - elapsed);
+      while (elapsed < 3.6) {
+        const delta = Math.min(schedule.getNextDelta(elapsed, stepIndex), 3.6 - elapsed);
         state = advance(state, delta).state;
         elapsed += delta;
         stepIndex += 1;
