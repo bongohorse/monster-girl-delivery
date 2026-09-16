@@ -9,10 +9,7 @@ import {
   isTimedPulseHazardBehavior,
   resolveTargetLockStrikeHitbox,
 } from './HazardArchetype';
-import {
-  isPrototypeLaserHazard,
-  resolvePrototypeLaserHitbox,
-} from './PrototypeLaserHazard';
+import { isPrototypeLaserHazard, resolvePrototypeLaserHitbox } from './PrototypeLaserHazard';
 import {
   getPrototypeMissileRelativeVelocityX,
   isPrototypeMissileBehavior,
@@ -333,7 +330,11 @@ export const getCollisionHazardsForTelegraphedSimulation = (
     const instance = state.instances.find((candidate) => candidate.spawnIdentity === identity);
 
     if (isLaserHazardBehavior(spawn.behavior)) {
-      if (!instance?.laserLifecycle || instance.laserLethalIntervals.length === 0 || !missileContext) {
+      if (
+        !instance?.laserLifecycle ||
+        instance.laserLethalIntervals.length === 0 ||
+        !missileContext
+      ) {
         continue;
       }
       const hitbox = resolveLaserCollisionHitbox(spawn, missileContext);
@@ -415,7 +416,9 @@ export const getTimedLaserLifecycle = (
     return null;
   }
   const identity = getLogicalHazardSpawnIdentity(spawn);
-  return state.instances.find((instance) => instance.spawnIdentity === identity)?.laserLifecycle ?? null;
+  return (
+    state.instances.find((instance) => instance.spawnIdentity === identity)?.laserLifecycle ?? null
+  );
 };
 
 export const getPrototypeMissileLaunchRelativeLeft = (
