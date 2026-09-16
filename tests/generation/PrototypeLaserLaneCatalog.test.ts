@@ -28,6 +28,11 @@ const centerY = (pattern: Readonly<HazardPattern>): number => {
 const centers = (pattern: Readonly<HazardPattern>): ReadonlyArray<number> =>
   pattern.entries.map((entry) => (entry.hitbox.top + entry.hitbox.bottom) / 2);
 
+const charges = (pattern: Readonly<HazardPattern>): ReadonlyArray<number | null> =>
+  pattern.entries.map((entry) =>
+    entry.behavior.kind === 'laser' ? entry.behavior.lifecycle.chargeSeconds : null,
+  );
+
 const generatedCenterY = (seed: number): number => {
   const stream = createGeneratedHazardStream(
     seed,
@@ -66,13 +71,14 @@ describe('PrototypeLaserLaneCatalog', () => {
     }
   });
 
-  it('authors simultaneous safe-corridor groups plus Director-only directional sweeps', () => {
+  it('authors simultaneous corridors, directional sweeps, and an alternating pair', () => {
     expect(PROTOTYPE_LASER_GROUPS.map((group) => group.id)).toEqual([
       'bottom-stack',
       'top-stack',
       'center-corridor',
       'sweep-down',
       'sweep-up',
+      'alternating-pair',
     ]);
     expect(PROTOTYPE_LASER_GROUP_PATTERNS.map(centers)).toEqual([
       [294, 244, 195],
@@ -80,18 +86,26 @@ describe('PrototypeLaserLaneCatalog', () => {
       [294, 96],
       [96, 195, 294],
       [294, 195, 96],
+      [294, 96],
+    ]);
+    expect(charges(PROTOTYPE_LASER_GROUP_PATTERNS[5] as Readonly<HazardPattern>)).toEqual([
+      0.55,
+      1.25,
     ]);
 
-    for (let index = 0; index < 3; index += 1) {
+    for (const index of [0, 1, 2, 5]) {
       const pattern = PROTOTYPE_LASER_GROUP_PATTERNS[index];
       if (!pattern) {
-        throw new Error('Expected generator-safe Laser group pattern.');
+        throw new Error('Expected geometry-safe Laser group pattern.');
       }
       expect(validatePattern(pattern, PROTOTYPE_PATTERN_VALIDATION_CONSTRAINTS)).toMatchObject({
         valid: true,
       });
     }
-    expect(PROTOTYPE_LASER_GROUPS.slice(3).every((group) => !group.generatorEligible)).toBe(true);
+
+    expect(
+      PROTOTYPE_LASER_GROUPS.filter((group) => group.generatorEligible).map((group) => group.id),
+    ).toEqual(['center-corridor', 'alternating-pair']);
   });
 
   it('selects lanes deterministically without changing the live catalog slot count or order', () => {
@@ -130,17 +144,21 @@ describe('PrototypeLaserLaneCatalog', () => {
     expect(first[1]).toBe(catalog[1]);
   });
 
-  it('replaces the same live Laser slot with bounded generator-safe groups', () => {
+  it('replaces the same live Laser slot only with groups allowed by current live policy', () => {
     const catalog = Object.freeze([PROTOTYPE_LASER_PATTERN]);
-    const selected = [25, 30, 35].map((prngState) =>
+    const selected = [25, 30].map((prngState) =>
       selectPrototypeLaserLaneCatalog(catalog, PROTOTYPE_PATTERN_VALIDATION_CONSTRAINTS, prngState),
     );
+    const selectedPatterns = selected.map((candidate) => candidate[0] as Readonly<HazardPattern>);
 
-    expect(selected.map((candidate) => candidate.length)).toEqual([1, 1, 1]);
-    expect(selected.map((candidate) => centers(candidate[0] as Readonly<HazardPattern>))).toEqual([
-      [294, 244, 195],
-      [195, 146, 96],
+    expect(selected.map((candidate) => candidate.length)).toEqual([1, 1]);
+    expect(selectedPatterns.map(centers)).toEqual([
       [294, 96],
+      [294, 96],
+    ]);
+    expect(selectedPatterns.map(charges)).toEqual([
+      [0.8, 0.8],
+      [0.55, 1.25],
     ]);
     expect(selected.every((candidate) => candidate[0]?.id === PROTOTYPE_LASER_PATTERN.id)).toBe(
       true,
