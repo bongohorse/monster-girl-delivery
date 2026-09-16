@@ -58,7 +58,7 @@ describe('Director Zapper catalog', () => {
     expect(counterclockwise.behavior.rotation?.speedDegreesPerSecond).toBe(30);
     expect(timed.behavior.timing).toEqual({
       offSeconds: 0.8,
-      chargeSeconds: 0.6,
+      chargeSeconds: 1.2,
       onSeconds: 1.2,
       mode: 'cyclic',
     });
