@@ -335,7 +335,7 @@ describe('Foundation Director mode boundary', () => {
     });
     expect(hazards[7]?.behavior.timing).toMatchObject({
       offSeconds: 0.8,
-      chargeSeconds: 0.6,
+      chargeSeconds: 1.2,
       onSeconds: 1.2,
     });
 
