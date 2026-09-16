@@ -27,11 +27,7 @@ export interface TimedZapperLifecycleStep {
   readonly state: Readonly<TimedZapperLifecycleState>;
 }
 
-const TIMED_ZAPPER_PHASES: ReadonlyArray<TimedZapperPhase> = Object.freeze([
-  'off',
-  'charge',
-  'on',
-]);
+const TIMED_ZAPPER_PHASES: ReadonlyArray<TimedZapperPhase> = Object.freeze(['off', 'charge', 'on']);
 
 const assertPositiveFinite = (value: number, name: string): void => {
   if (!Number.isFinite(value) || value <= 0) {
@@ -99,7 +95,9 @@ const assertValidState = (
   }
   if (state.complete) {
     if (state.phase !== 'off' || state.elapsedPhaseSeconds !== 0) {
-      throw new RangeError('Completed one-shot Timed Zapper state must be OFF at zero elapsed time.');
+      throw new RangeError(
+        'Completed one-shot Timed Zapper state must be OFF at zero elapsed time.',
+      );
     }
     return;
   }
@@ -177,6 +175,5 @@ export const stepTimedZapperLifecycle = (
 };
 
 /** Presentation/debug consumers may read lethality, but collision still owns the actual overlap test. */
-export const isTimedZapperLethal = (
-  state: Readonly<TimedZapperLifecycleState>,
-): boolean => !state.complete && state.phase === 'on';
+export const isTimedZapperLethal = (state: Readonly<TimedZapperLifecycleState>): boolean =>
+  !state.complete && state.phase === 'on';
