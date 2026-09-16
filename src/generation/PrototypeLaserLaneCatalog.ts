@@ -33,7 +33,8 @@ export type PrototypeLaserGroupId =
   | 'top-stack'
   | 'center-corridor'
   | 'sweep-down'
-  | 'sweep-up';
+  | 'sweep-up'
+  | 'alternating-pair';
 
 export interface PrototypeLaserGroupMember {
   readonly chargeSeconds?: number;
@@ -43,18 +44,21 @@ export interface PrototypeLaserGroupMember {
 export interface PrototypeLaserGroupDefinition {
   readonly generatorEligible: boolean;
   readonly id: PrototypeLaserGroupId;
-  readonly label: 'G-LOW' | 'G-HIGH' | 'G-MID' | 'SW-DN' | 'SW-UP';
+  readonly label: 'G-LOW' | 'G-HIGH' | 'G-MID' | 'SW-DN' | 'SW-UP' | 'ALT';
   readonly members: ReadonlyArray<Readonly<PrototypeLaserGroupMember>>;
 }
 
 /**
- * M5 Laser formations. Simultaneous groups expose one obvious safe corridor while the directional
- * sweeps keep every beam visible from TELEGRAPH onward and stagger ON by extending CHARGE only.
+ * M5 Laser formations. Simultaneous groups expose one obvious safe corridor while staggered groups
+ * keep every beam visible from TELEGRAPH onward and author ON order by extending CHARGE only.
+ * Generator eligibility is deliberately stricter than Director availability: three-beam stacks
+ * exceed the current live warning/lethal concurrency budget, while full sweeps still need a
+ * timing-aware route validator before they can enter normal generation.
  */
 export const PROTOTYPE_LASER_GROUPS: ReadonlyArray<Readonly<PrototypeLaserGroupDefinition>> =
   Object.freeze([
     Object.freeze({
-      generatorEligible: true,
+      generatorEligible: false,
       id: 'bottom-stack',
       label: 'G-LOW',
       members: Object.freeze([
@@ -64,7 +68,7 @@ export const PROTOTYPE_LASER_GROUPS: ReadonlyArray<Readonly<PrototypeLaserGroupD
       ]),
     }),
     Object.freeze({
-      generatorEligible: true,
+      generatorEligible: false,
       id: 'top-stack',
       label: 'G-HIGH',
       members: Object.freeze([
@@ -97,6 +101,15 @@ export const PROTOTYPE_LASER_GROUPS: ReadonlyArray<Readonly<PrototypeLaserGroupD
         Object.freeze({ chargeSeconds: 0.55, laneId: 'low' }),
         Object.freeze({ chargeSeconds: 1.25, laneId: 'middle' }),
         Object.freeze({ chargeSeconds: 1.95, laneId: 'high' }),
+      ]),
+    }),
+    Object.freeze({
+      generatorEligible: true,
+      id: 'alternating-pair',
+      label: 'ALT',
+      members: Object.freeze([
+        Object.freeze({ chargeSeconds: 0.55, laneId: 'low' }),
+        Object.freeze({ chargeSeconds: 1.25, laneId: 'high' }),
       ]),
     }),
   ]);
@@ -291,9 +304,11 @@ const selectSingleLaneCatalog = (
 
 /**
  * Keeps the live catalog's Laser probability and slot order unchanged. Most scheduling calls resolve
- * the existing slot to one lane; a bounded subset resolves it to one of the three simultaneously
- * safe group formations. Directional sweeps stay Director-only until timing-aware route validation
- * can reason about their non-overlapping ON windows. The PRNG state is observed but not advanced.
+ * the existing slot to one lane; a bounded subset resolves it to a group already admitted by both
+ * geometry validation and the current live readability concurrency budget. Three-beam stacks stay
+ * Director-only until group-aware budget semantics are explicitly introduced, while the full sweeps
+ * stay Director-only until timing-aware route validation can reason about their ON windows. The PRNG
+ * state is observed but not advanced.
  */
 export const selectPrototypeLaserLaneCatalog = (
   catalog: ReadonlyArray<Readonly<HazardPattern>>,
@@ -305,12 +320,13 @@ export const selectPrototypeLaserLaneCatalog = (
   }
 
   const generatorGroups = PROTOTYPE_LASER_GROUPS.filter((group) => group.generatorEligible);
-  const selector = Math.floor(prngState / PROTOTYPE_LASER_LANES.length) % 8;
+  const variantCount = PROTOTYPE_LASER_LANES.length + generatorGroups.length;
+  const selector = Math.floor(prngState / PROTOTYPE_LASER_LANES.length) % variantCount;
   if (selector < PROTOTYPE_LASER_LANES.length || generatorGroups.length === 0) {
     return selectSingleLaneCatalog(catalog, constraints, prngState);
   }
 
-  const group = generatorGroups[(selector - PROTOTYPE_LASER_LANES.length) % generatorGroups.length];
+  const group = generatorGroups[selector - PROTOTYPE_LASER_LANES.length];
   if (!group) {
     throw new RangeError('Generator Laser group catalog must not be empty.');
   }
