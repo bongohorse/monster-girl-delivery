@@ -17,17 +17,20 @@ const LASER_ONLY_CONTEXT = Object.freeze({
   }),
 });
 
+const AUTHORED_CENTERS = Object.freeze([294, 244, 195, 146, 96]);
 const centerY = (top: number, bottom: number): number => (top + bottom) / 2;
 
-const getCenters = (seed: string): ReadonlyArray<number> => {
+const getEncounters = (seed: string): ReadonlyArray<ReadonlyArray<number>> => {
   let stream = createGeneratedHazardStream(seed, LASER_ONLY_CONTEXT, PROTOTYPE_RUN_MOTION_DEFAULTS);
-  const centers = stream.spawns.map((spawn) => centerY(spawn.hitbox.top, spawn.hitbox.bottom));
+  const encounters: number[][] = [
+    stream.spawns.map((spawn) => centerY(spawn.hitbox.top, spawn.hitbox.bottom)),
+  ];
 
-  if (stream.scheduledPatternCount !== 1 || centers.length !== 1) {
-    throw new Error('Laser lane validation must start with exactly one accepted Laser pattern.');
+  if (stream.scheduledPatternCount !== 1 || encounters[0]?.length === 0) {
+    throw new Error('Laser encounter validation must start with one accepted non-empty pattern.');
   }
 
-  for (let patternIndex = 1; patternIndex < 6; patternIndex += 1) {
+  for (let patternIndex = 1; patternIndex < 8; patternIndex += 1) {
     const previousSpawnCount = stream.spawns.length;
     const previousPatternCount: number = stream.scheduledPatternCount;
     stream = advanceGeneratedHazardStream(
@@ -40,33 +43,46 @@ const getCenters = (seed: string): ReadonlyArray<number> => {
     );
 
     if (stream.scheduledPatternCount !== previousPatternCount + 1) {
-      throw new Error('Laser lane validation must advance exactly one accepted pattern at a time.');
+      throw new Error(
+        'Laser encounter validation must advance exactly one accepted pattern at a time.',
+      );
     }
 
     const addedSpawns = stream.spawns.slice(previousSpawnCount);
-    if (addedSpawns.length !== 1) {
-      throw new Error('Laser lane validation expected one spawn for the accepted Laser pattern.');
+    if (addedSpawns.length === 0) {
+      throw new Error(
+        'Laser encounter validation expected at least one spawn per accepted pattern.',
+      );
     }
-    const spawn = addedSpawns[0];
-    if (!spawn) {
-      throw new Error('Laser lane validation expected an accepted Laser spawn.');
-    }
-    centers.push(centerY(spawn.hitbox.top, spawn.hitbox.bottom));
+    encounters.push(addedSpawns.map((spawn) => centerY(spawn.hitbox.top, spawn.hitbox.bottom)));
   }
 
-  return centers;
+  return encounters;
 };
 
-describe('generated horizontal Laser lanes', () => {
-  it('uses multiple authored heights across successive scheduling windows', () => {
-    const centers = getCenters('laser-lane-variation');
+describe('generated horizontal Laser encounters', () => {
+  it('mixes single lanes with bounded authored groups instead of repeating one fixed Y', () => {
+    const encounters = getEncounters('laser-lane-variation');
+    const flattened = encounters.flat();
 
-    expect(centers).toHaveLength(6);
-    expect(new Set(centers).size).toBeGreaterThan(1);
-    expect(centers.every((center) => [294, 244, 195, 146, 96].includes(center))).toBe(true);
+    expect(encounters).toHaveLength(8);
+    expect(encounters.some((encounter) => encounter.length === 1)).toBe(true);
+    expect(encounters.some((encounter) => encounter.length > 1)).toBe(true);
+    expect(new Set(flattened).size).toBeGreaterThan(1);
+    expect(flattened.every((center) => AUTHORED_CENTERS.includes(center))).toBe(true);
   });
 
-  it('replays the exact same lane sequence from the same seed', () => {
-    expect(getCenters('laser-lane-replay')).toEqual(getCenters('laser-lane-replay'));
+  it('keeps Director-only three-beam stacks out of generated encounters', () => {
+    const groupEncounters = getEncounters('laser-lane-variation').filter(
+      (encounter) => encounter.length > 1,
+    );
+
+    expect(groupEncounters.length).toBeGreaterThan(0);
+    expect(groupEncounters.every((encounter) => encounter.join(',') === '294,96')).toBe(true);
+    expect(groupEncounters.every((encounter) => encounter.length === 2)).toBe(true);
+  });
+
+  it('replays the exact same single/group sequence from the same seed', () => {
+    expect(getEncounters('laser-lane-replay')).toEqual(getEncounters('laser-lane-replay'));
   });
 });

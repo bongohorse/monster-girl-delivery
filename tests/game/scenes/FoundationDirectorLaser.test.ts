@@ -32,7 +32,7 @@ const centerY = (spawn: Readonly<LogicalHazardSpawnInstance>): number =>
   (spawn.hitbox.top + spawn.hitbox.bottom) / 2;
 
 describe('Foundation Director Laser cycle', () => {
-  it('cycles L through five reachable horizontal lanes and registers the real lifecycle', () => {
+  it('cycles from single lanes into multi-Laser groups and registers every lifecycle', () => {
     const foundation = new Foundation(createAppServices(), true);
     Reflect.set(foundation, 'viewportService', new ViewportService(800, 450));
 
@@ -44,10 +44,10 @@ describe('Foundation Director Laser cycle', () => {
     }
 
     const hazards = getManualHazards(foundation);
-    expect(hazards).toHaveLength(6);
-    expect(hazards.map(centerY)).toEqual([294, 244, 195, 146, 96, 294]);
+    expect(hazards).toHaveLength(8);
+    expect(hazards.map(centerY)).toEqual([294, 244, 195, 146, 96, 294, 244, 195]);
     expect(hazards.map((hazard) => hazard.behavior)).toEqual(
-      Array.from({ length: 6 }, () =>
+      Array.from({ length: 8 }, () =>
         expect.objectContaining({ kind: 'laser', orientation: 'horizontal', span: 'screen' }),
       ),
     );
@@ -60,15 +60,16 @@ describe('Foundation Director Laser cycle', () => {
     }
   });
 
-  it('resets the Laser lane cycle to LOW when Director hazards are cleared', () => {
+  it('resets the Laser lane/group cycle to LOW when Director hazards are cleared', () => {
     const foundation = new Foundation(createAppServices(), true);
     Reflect.set(foundation, 'viewportService', new ViewportService(800, 450));
 
     const spawnLaser = Reflect.get(foundation, 'spawnDirectorLaserVariant') as () => void;
     const clearHazards = Reflect.get(foundation, 'clearDirectorHazards') as () => void;
 
-    spawnLaser();
-    spawnLaser();
+    for (let index = 0; index < 7; index += 1) {
+      spawnLaser();
+    }
     clearHazards();
     expect(getManualHazards(foundation)).toEqual([]);
 
