@@ -10,6 +10,8 @@ import {
 import { PROTOTYPE_LASER_PATTERN } from '../../src/generation/PrototypeHazardPatternFixtures';
 import {
   getPrototypeLaserLaneCenterY,
+  PROTOTYPE_LASER_GROUP_PATTERNS,
+  PROTOTYPE_LASER_GROUPS,
   PROTOTYPE_LASER_LANE_PATTERNS,
   PROTOTYPE_LASER_LANES,
   selectPrototypeLaserLaneCatalog,
@@ -22,6 +24,9 @@ const centerY = (pattern: Readonly<HazardPattern>): number => {
   }
   return (hitbox.top + hitbox.bottom) / 2;
 };
+
+const centers = (pattern: Readonly<HazardPattern>): ReadonlyArray<number> =>
+  pattern.entries.map((entry) => (entry.hitbox.top + entry.hitbox.bottom) / 2);
 
 const generatedCenterY = (seed: number): number => {
   const stream = createGeneratedHazardStream(
@@ -61,6 +66,34 @@ describe('PrototypeLaserLaneCatalog', () => {
     }
   });
 
+  it('authors simultaneous safe-corridor groups plus Director-only directional sweeps', () => {
+    expect(PROTOTYPE_LASER_GROUPS.map((group) => group.id)).toEqual([
+      'bottom-stack',
+      'top-stack',
+      'center-corridor',
+      'sweep-down',
+      'sweep-up',
+    ]);
+    expect(PROTOTYPE_LASER_GROUP_PATTERNS.map(centers)).toEqual([
+      [294, 244, 195],
+      [195, 146, 96],
+      [294, 96],
+      [96, 195, 294],
+      [294, 195, 96],
+    ]);
+
+    for (let index = 0; index < 3; index += 1) {
+      const pattern = PROTOTYPE_LASER_GROUP_PATTERNS[index];
+      if (!pattern) {
+        throw new Error('Expected generator-safe Laser group pattern.');
+      }
+      expect(validatePattern(pattern, PROTOTYPE_PATTERN_VALIDATION_CONSTRAINTS)).toMatchObject({
+        valid: true,
+      });
+    }
+    expect(PROTOTYPE_LASER_GROUPS.slice(3).every((group) => !group.generatorEligible)).toBe(true);
+  });
+
   it('selects lanes deterministically without changing the live catalog slot count or order', () => {
     const comparisonPattern = PROTOTYPE_LASER_LANE_PATTERNS[0];
     if (!comparisonPattern) {
@@ -97,6 +130,27 @@ describe('PrototypeLaserLaneCatalog', () => {
     expect(first[1]).toBe(catalog[1]);
   });
 
+  it('replaces the same live Laser slot with bounded generator-safe groups', () => {
+    const catalog = Object.freeze([PROTOTYPE_LASER_PATTERN]);
+    const selected = [25, 30, 35].map((prngState) =>
+      selectPrototypeLaserLaneCatalog(
+        catalog,
+        PROTOTYPE_PATTERN_VALIDATION_CONSTRAINTS,
+        prngState,
+      ),
+    );
+
+    expect(selected.map((candidate) => candidate.length)).toEqual([1, 1, 1]);
+    expect(selected.map((candidate) => centers(candidate[0] as Readonly<HazardPattern>))).toEqual([
+      [294, 244, 195],
+      [195, 146, 96],
+      [294, 96],
+    ]);
+    expect(
+      selected.every((candidate) => candidate[0]?.id === PROTOTYPE_LASER_PATTERN.id),
+    ).toBe(true);
+  });
+
   it('varies the real generated Laser lane by seed while replaying the same seed exactly', () => {
     expect(generatedCenterY(0)).toBe(294);
     expect(generatedCenterY(1)).toBe(244);
@@ -110,12 +164,12 @@ describe('PrototypeLaserLaneCatalog', () => {
       playableBottom: 342,
     });
 
-    const centers = PROTOTYPE_LASER_LANES.map((lane) =>
+    const mappedCenters = PROTOTYPE_LASER_LANES.map((lane) =>
       getPrototypeLaserLaneCenterY(lane, expanded),
     );
-    expect(centers[0]).toBeLessThan(294);
-    expect(centers[2]).toBeCloseTo(145, 10);
-    expect(centers[4]).toBeLessThan(96);
-    expect(centers).toEqual([...centers].sort((a, b) => b - a));
+    expect(mappedCenters[0]).toBeLessThan(294);
+    expect(mappedCenters[2]).toBeCloseTo(145, 10);
+    expect(mappedCenters[4]).toBeLessThan(96);
+    expect(mappedCenters).toEqual([...mappedCenters].sort((a, b) => b - a));
   });
 });
