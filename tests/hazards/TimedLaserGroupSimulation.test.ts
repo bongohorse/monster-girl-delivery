@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { PROTOTYPE_LASER_GROUP_PATTERNS } from '../../src/generation/PrototypeLaserLaneCatalog';
 import type { LogicalHazardSpawnInstance } from '../../src/generation/PatternSpawnScheduler';
+import { PROTOTYPE_LASER_GROUP_PATTERNS } from '../../src/generation/PrototypeLaserLaneCatalog';
 import {
   createTelegraphedHazardSimulationState,
   getCollisionHazardsForTelegraphedSimulation,
@@ -52,12 +52,7 @@ const simulateSweep = (getDelta: DeltaSource): ReadonlyArray<Readonly<AbsoluteLe
 
   while (elapsedSeconds < simulationEndSeconds - 1e-12) {
     const deltaSeconds = Math.min(getDelta(stepIndex), simulationEndSeconds - elapsedSeconds);
-    state = stepTelegraphedHazardSimulation(
-      state,
-      spawns,
-      deltaSeconds,
-      playerTarget,
-    );
+    state = stepTelegraphedHazardSimulation(state, spawns, deltaSeconds, playerTarget);
 
     for (const hazard of getCollisionHazardsForTelegraphedSimulation(
       state,
