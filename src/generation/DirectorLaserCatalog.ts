@@ -2,15 +2,25 @@ import type { HazardPattern } from './HazardPattern';
 import {
   PROTOTYPE_LASER_GROUP_PATTERNS,
   PROTOTYPE_LASER_GROUPS,
-  type PrototypeLaserGroupId,
   PROTOTYPE_LASER_LANE_PATTERNS,
   PROTOTYPE_LASER_LANES,
+  type PrototypeLaserGroupId,
   type PrototypeLaserLaneId,
 } from './PrototypeLaserLaneCatalog';
 
 export interface DirectorLaserSelection {
   readonly groupId?: PrototypeLaserGroupId;
-  readonly label: 'LOW' | 'ML' | 'MID' | 'MH' | 'HIGH' | 'G-LOW' | 'G-HIGH' | 'G-MID' | 'SW-DN' | 'SW-UP';
+  readonly label:
+    | 'LOW'
+    | 'ML'
+    | 'MID'
+    | 'MH'
+    | 'HIGH'
+    | 'G-LOW'
+    | 'G-HIGH'
+    | 'G-MID'
+    | 'SW-DN'
+    | 'SW-UP';
   readonly laneId?: PrototypeLaserLaneId;
   readonly pattern: Readonly<HazardPattern>;
 }
