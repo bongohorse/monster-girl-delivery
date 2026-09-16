@@ -325,7 +325,9 @@ export const isZapperHazardBehavior = (
 
 export const isTelegraphedHazardBehavior = (
   behavior: Readonly<HazardBehavior>,
-): behavior is Readonly<LaserHazardBehavior | TargetLockStrikeHazardBehavior | TimedPulseHazardBehavior> =>
+): behavior is Readonly<
+  LaserHazardBehavior | TargetLockStrikeHazardBehavior | TimedPulseHazardBehavior
+> =>
   isLaserHazardBehavior(behavior) ||
   isTimedPulseHazardBehavior(behavior) ||
   isTargetLockStrikeHazardBehavior(behavior);
