@@ -3,6 +3,10 @@ import {
   createTelegraphedHazardLifecycleConfig,
   type TelegraphedHazardLifecycleConfig,
 } from './TelegraphedHazardLifecycle';
+import {
+  createTimedZapperLifecycleConfig,
+  type TimedZapperLifecycleConfig,
+} from './TimedZapperLifecycle';
 
 export type HazardArchetype = 'geometric' | 'reactive' | 'timed';
 
@@ -31,6 +35,8 @@ export interface ZapperHazardBehavior {
   readonly length: number;
   /** Optional continuous midpoint rotation driven only by authoritative simulation time. */
   readonly rotation?: Readonly<ZapperRotationMotion>;
+  /** Optional OFF -> CHARGE -> ON timing layered on the same beam/node geometry. */
+  readonly timing?: Readonly<TimedZapperLifecycleConfig>;
 }
 
 /** PROTOTYPE triangle-wave movement authored in logical run-distance space. */
@@ -149,6 +155,9 @@ const assertValidHazardBehavior = (definition: Readonly<HazardBehavior>): void =
           'Hazard Zapper rotation speedDegreesPerSecond',
         );
       }
+      if (definition.timing) {
+        createTimedZapperLifecycleConfig(definition.timing);
+      }
       return;
     case 'vertical-patrol':
       assertPositiveFinite(definition.amplitudeY, 'Hazard vertical-patrol amplitudeY');
@@ -212,6 +221,9 @@ export const createHazardBehavior = (
       return Object.freeze({
         ...definition,
         ...(definition.rotation ? { rotation: Object.freeze({ ...definition.rotation }) } : {}),
+        ...(definition.timing
+          ? { timing: createTimedZapperLifecycleConfig(definition.timing) }
+          : {}),
       });
     case 'vertical-patrol':
       return Object.freeze({ ...definition });
