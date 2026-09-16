@@ -5,6 +5,7 @@ import {
   PROTOTYPE_ZAPPER_ROTATION_SPEEDS,
 } from '../hazards/PrototypeZapperHazard';
 import { PROTOTYPE_TIMED_ZAPPER_CONFIG } from '../hazards/TimedZapperLifecycle';
+import type { EncounterBehaviorTag } from './EncounterProfile';
 import { createHazardPattern, type HazardPattern } from './HazardPattern';
 
 export interface DirectorZapperSelection {
@@ -12,7 +13,7 @@ export interface DirectorZapperSelection {
   readonly pattern: Readonly<HazardPattern>;
 }
 
-const createProfile = (behaviorTag: string, readabilityCost = 2) =>
+const createProfile = (behaviorTag: EncounterBehaviorTag, readabilityCost = 2) =>
   Object.freeze({
     behaviorTags: [behaviorTag],
     difficultyTierRange: { minimumTierIndex: 1, maximumTierIndex: null },
@@ -60,7 +61,7 @@ const createSinglePattern = (
   id: string,
   label: string,
   entry: ReturnType<typeof createZapperEntry>,
-  behaviorTag: string,
+  behaviorTag: EncounterBehaviorTag,
   readabilityCost = 2,
 ): Readonly<DirectorZapperSelection> =>
   Object.freeze({
@@ -139,7 +140,7 @@ export const DIRECTOR_ZAPPER_GROUPS: ReadonlyArray<Readonly<DirectorZapperSelect
       pattern: createHazardPattern({
         id: 'director-zapper-group-horizontal-pair',
         runLength: 820,
-        profile: createProfile('director-zapper-group', 3),
+        profile: createProfile('static-barrier', 3),
         entries: [
           createZapperEntry('pair-high', 280, 100, 0, PROTOTYPE_ZAPPER_LENGTHS.medium),
           createZapperEntry('pair-low', 560, 285, 0, PROTOTYPE_ZAPPER_LENGTHS.medium),
@@ -151,7 +152,7 @@ export const DIRECTOR_ZAPPER_GROUPS: ReadonlyArray<Readonly<DirectorZapperSelect
       pattern: createHazardPattern({
         id: 'director-zapper-group-horizontal-diagonal',
         runLength: 760,
-        profile: createProfile('director-zapper-group', 3),
+        profile: createProfile('static-barrier', 3),
         entries: [
           createZapperEntry('horizontal-high', 280, 100, 0, PROTOTYPE_ZAPPER_LENGTHS.short),
           createZapperEntry('diagonal-low', 500, 280, -45, PROTOTYPE_ZAPPER_LENGTHS.short),
@@ -163,7 +164,7 @@ export const DIRECTOR_ZAPPER_GROUPS: ReadonlyArray<Readonly<DirectorZapperSelect
       pattern: createHazardPattern({
         id: 'director-zapper-group-diagonal-corridor',
         runLength: 640,
-        profile: createProfile('director-zapper-group', 3),
+        profile: createProfile('static-barrier', 3),
         entries: [
           createZapperEntry('corridor-top', 300, 95, 45, PROTOTYPE_ZAPPER_LENGTHS.short),
           createZapperEntry('corridor-bottom', 300, 295, -45, PROTOTYPE_ZAPPER_LENGTHS.short),
