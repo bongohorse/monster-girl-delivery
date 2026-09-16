@@ -7,12 +7,9 @@ import {
 import { isPrototypeLaserHazard } from '../hazards/PrototypeLaserHazard';
 import { isPrototypeZapperHazard } from '../hazards/PrototypeZapperHazard';
 import {
-  getTimedLaserLifecycle,
-  type TimedLaserSimulationState,
-} from '../hazards/TimedLaserSimulation';
-import {
   getPrototypeMissileLaunchRelativeLeft,
   getTelegraphedHazardLifecycle,
+  getTimedLaserLifecycle,
   type TelegraphedHazardSimulationState,
 } from '../hazards/TelegraphedHazardSimulation';
 import type { RunMotionState } from '../systems/RunMotionSimulation';
@@ -46,7 +43,6 @@ export class GeneratedHazardPresentation {
     telegraphedHazards: Readonly<TelegraphedHazardSimulationState>,
     verticalProjection: PrototypeVerticalOffsetOrProjection = 0,
     zapperStateSources?: Readonly<PrototypeZapperPresentationStateSources>,
-    timedLasers?: Readonly<TimedLaserSimulationState>,
   ): void {
     if (this.destroyed) {
       return;
@@ -73,7 +69,7 @@ export class GeneratedHazardPresentation {
         presentation.render(
           runState,
           playerScreenX,
-          timedLasers ? getTimedLaserLifecycle(timedLasers, spawn) : null,
+          getTimedLaserLifecycle(telegraphedHazards, spawn),
           verticalProjection,
         );
         continue;
