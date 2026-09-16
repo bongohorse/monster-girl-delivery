@@ -72,9 +72,9 @@ describe('Timed Laser Graze lifecycle', () => {
       2.4,
       target,
     );
-    expect(getCollisionHazardsForTelegraphedSimulation(lifecycle, [spawn], collisionContext)).toEqual(
-      [],
-    );
+    expect(
+      getCollisionHazardsForTelegraphedSimulation(lifecycle, [spawn], collisionContext),
+    ).toEqual([]);
 
     let runState: PrototypeRunState = {
       phase: 'running',
