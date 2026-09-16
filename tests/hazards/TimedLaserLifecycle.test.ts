@@ -95,22 +95,39 @@ describe('TimedLaserLifecycle', () => {
     expect(step.lethalIntervals).toHaveLength(1);
   });
 
-  it('is frame-partition stable across representative fixed rates', () => {
-    const totalSeconds = 3.15;
-    const baseline = stepTimedLaserLifecycle(createTimedLaserLifecycleState(), totalSeconds).state;
+  it('is frame-partition stable across fixed rates and deterministic jitter', () => {
+    const totalSeconds = 3.4;
+    const baseline = stepTimedLaserLifecycle(createTimedLaserLifecycleState(), totalSeconds);
+    const partitions = [
+      ...[30, 60, 90, 120, 144].map((hz) => ({ label: `${hz}hz`, steps: [1 / hz] })),
+      { label: 'jitter', steps: [0.007, 0.011, 0.005, 0.023] },
+    ];
 
-    for (const hz of [30, 60, 90, 120, 144]) {
+    for (const partition of partitions) {
       let state = createTimedLaserLifecycleState();
-      const delta = 1 / hz;
       let elapsed = 0;
-      while (elapsed + delta < totalSeconds) {
-        state = stepTimedLaserLifecycle(state, delta).state;
+      let lethalSeconds = 0;
+      let stepIndex = 0;
+      while (elapsed < totalSeconds) {
+        const requested = partition.steps[stepIndex % partition.steps.length] ?? 0;
+        const delta = Math.min(requested, totalSeconds - elapsed);
+        const step = stepTimedLaserLifecycle(state, delta);
+        state = step.state;
+        lethalSeconds += step.lethalIntervals.reduce(
+          (sum, interval) => sum + interval.endSeconds - interval.startSeconds,
+          0,
+        );
         elapsed += delta;
+        stepIndex += 1;
       }
-      state = stepTimedLaserLifecycle(state, totalSeconds - elapsed).state;
-      expect(state.phase, `${hz}hz`).toBe(baseline.phase);
-      expect(state.elapsedPhaseSeconds, `${hz}hz`).toBeCloseTo(baseline.elapsedPhaseSeconds, 9);
-      expect(state.complete, `${hz}hz`).toBe(baseline.complete);
+
+      expect(state.phase, partition.label).toBe(baseline.state.phase);
+      expect(state.elapsedPhaseSeconds, partition.label).toBeCloseTo(
+        baseline.state.elapsedPhaseSeconds,
+        9,
+      );
+      expect(state.complete, partition.label).toBe(baseline.state.complete);
+      expect(lethalSeconds, partition.label).toBeCloseTo(PROTOTYPE_TIMED_LASER_CONFIG.onSeconds, 9);
     }
   });
 });
