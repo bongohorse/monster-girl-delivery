@@ -36,7 +36,8 @@ describe('TimedLaserLifecycle', () => {
     state = stepTimedLaserLifecycle(state, 1.2).state;
     expect(state).toMatchObject({ phase: 'charge', elapsedPhaseSeconds: 0 });
     const step = stepTimedLaserLifecycle(state, 0.6);
-    expect(step.state).toMatchObject({ phase: 'charge', elapsedPhaseSeconds: 0.6 });
+    expect(step.state).toMatchObject({ phase: 'charge' });
+    expect(step.state.elapsedPhaseSeconds).toBeCloseTo(0.6, 12);
     expect(step.lethalIntervals).toEqual([]);
   });
 
@@ -44,9 +45,10 @@ describe('TimedLaserLifecycle', () => {
     const charge = stepTimedLaserLifecycle(stepToCharge(), 0.6).state;
     const step = stepTimedLaserLifecycle(charge, 0.5);
 
-    expect(step.lethalIntervals).toEqual([
-      { startSeconds: 0.2, endSeconds: 0.5, endsPhase: false },
-    ]);
+    expect(step.lethalIntervals).toHaveLength(1);
+    expect(step.lethalIntervals[0]?.startSeconds).toBeCloseTo(0.2, 12);
+    expect(step.lethalIntervals[0]?.endSeconds).toBeCloseTo(0.5, 12);
+    expect(step.lethalIntervals[0]?.endsPhase).toBe(false);
     expect(step.state.phase).toBe('on');
     expect(step.state.elapsedPhaseSeconds).toBeCloseTo(0.3, 12);
   });
@@ -57,7 +59,10 @@ describe('TimedLaserLifecycle', () => {
     expect(on.elapsedPhaseSeconds).toBeCloseTo(0.2, 12);
 
     const step = stepTimedLaserLifecycle(on, 0.8);
-    expect(step.lethalIntervals).toEqual([{ startSeconds: 0, endSeconds: 0.5, endsPhase: true }]);
+    expect(step.lethalIntervals).toHaveLength(1);
+    expect(step.lethalIntervals[0]?.startSeconds).toBe(0);
+    expect(step.lethalIntervals[0]?.endSeconds).toBeCloseTo(0.5, 12);
+    expect(step.lethalIntervals[0]?.endsPhase).toBe(true);
     expect(step.state.phase).toBe('off');
     expect(step.state.complete).toBe(true);
   });
@@ -84,7 +89,8 @@ describe('TimedLaserLifecycle', () => {
       cycleSeconds + 0.25,
       cyclic,
     );
-    expect(step.state).toMatchObject({ complete: false, phase: 'off', elapsedPhaseSeconds: 0.25 });
+    expect(step.state).toMatchObject({ complete: false, phase: 'off' });
+    expect(step.state.elapsedPhaseSeconds).toBeCloseTo(0.25, 12);
     expect(step.lethalIntervals).toHaveLength(1);
   });
 
