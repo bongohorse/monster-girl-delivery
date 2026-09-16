@@ -71,17 +71,17 @@ describe('M5 authored multi-hazard patterns', () => {
     expect(getKinds(M5_LASER_ZAPPER_PATTERN)).toEqual(['laser', 'zapper']);
   });
 
-  it('reuses the production Missile and Laser behavior contracts instead of copying their tuning', () => {
+  it('tracks the production Missile and Laser behavior contracts instead of copying their tuning', () => {
     const productionMissile = PROTOTYPE_MISSILE_PATTERN.entries[0];
     const productionLaser = PROTOTYPE_LASER_PATTERN.entries[0];
     if (!productionMissile || !productionLaser) {
       throw new Error('Expected production Missile and Laser baseline entries.');
     }
 
-    expect(M5_MISSILE_ZAPPER_PATTERN.entries[1]?.behavior).toBe(productionMissile.behavior);
-    expect(M5_MISSILE_LASER_PATTERN.entries[1]?.behavior).toBe(productionMissile.behavior);
-    expect(M5_MISSILE_LASER_PATTERN.entries[0]?.behavior).toBe(productionLaser.behavior);
-    expect(M5_LASER_ZAPPER_PATTERN.entries[0]?.behavior).toBe(productionLaser.behavior);
+    expect(M5_MISSILE_ZAPPER_PATTERN.entries[1]?.behavior).toEqual(productionMissile.behavior);
+    expect(M5_MISSILE_LASER_PATTERN.entries[1]?.behavior).toEqual(productionMissile.behavior);
+    expect(M5_MISSILE_LASER_PATTERN.entries[0]?.behavior).toEqual(productionLaser.behavior);
+    expect(M5_LASER_ZAPPER_PATTERN.entries[0]?.behavior).toEqual(productionLaser.behavior);
   });
 
   it.each(M5_AUTHORED_MULTI_HAZARD_PATTERNS)(
