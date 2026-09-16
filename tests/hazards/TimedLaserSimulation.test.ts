@@ -60,11 +60,9 @@ describe('Timed Laser telegraph integration', () => {
       playerTarget,
     );
 
-    expect(getTimedLaserLifecycle(state, spawn)).toMatchObject({
-      phase: 'charge',
-      elapsedPhaseSeconds: 0.5,
-      complete: false,
-    });
+    const lifecycle = getTimedLaserLifecycle(state, spawn);
+    expect(lifecycle).toMatchObject({ phase: 'charge', complete: false });
+    expect(lifecycle?.elapsedPhaseSeconds).toBeCloseTo(0.5, 12);
     expect(getCollisionHazardsForTelegraphedSimulation(state, [spawn], collisionContext)).toEqual(
       [],
     );
@@ -82,7 +80,8 @@ describe('Timed Laser telegraph integration', () => {
     const hazards = getCollisionHazardsForTelegraphedSimulation(state, [spawn], collisionContext);
 
     expect(hazards).toHaveLength(1);
-    expect(hazards[0]?.collisionInterval).toEqual({ startSeconds: 0.2, endSeconds: 0.5 });
+    expect(hazards[0]?.collisionInterval?.startSeconds).toBeCloseTo(0.2, 12);
+    expect(hazards[0]?.collisionInterval?.endSeconds).toBeCloseTo(0.5, 12);
     expect(hazards[0]?.horizontalVelocity).toBe(240);
     expect(hazards[0]?.hitbox).toMatchObject({ left: 20, right: 820, top: 183, bottom: 207 });
   });
@@ -103,7 +102,7 @@ describe('Timed Laser telegraph integration', () => {
     expect(hazards[0]?.hitbox.right - hazards[0]?.hitbox.left).toBe(24);
   });
 
-  it('becomes immediately safe in RECOVERY and completes after the one-shot tail', () => {
+  it('ends lethality at the exact ON boundary and stays safe through RECOVERY', () => {
     const spawn = createSpawn('horizontal');
     let state = stepTelegraphedHazardSimulation(
       createTelegraphedHazardSimulationState(),
@@ -112,11 +111,23 @@ describe('Timed Laser telegraph integration', () => {
       playerTarget,
     );
     expect(getTimedLaserLifecycle(state, spawn)?.phase).toBe('recovery');
+    const crossingHazards = getCollisionHazardsForTelegraphedSimulation(
+      state,
+      [spawn],
+      collisionContext,
+    );
+    expect(crossingHazards).toHaveLength(1);
+    expect(crossingHazards[0]?.collisionInterval?.startSeconds).toBeCloseTo(2.5, 12);
+    expect(crossingHazards[0]?.collisionInterval?.endSeconds).toBeCloseTo(3.2, 12);
+    expect(crossingHazards[0]?.collisionEndsAtIntervalEnd).toBe(true);
+
+    state = stepTelegraphedHazardSimulation(state, [spawn], 0.2, playerTarget);
+    expect(getTimedLaserLifecycle(state, spawn)?.phase).toBe('recovery');
     expect(getCollisionHazardsForTelegraphedSimulation(state, [spawn], collisionContext)).toEqual(
       [],
     );
 
-    state = stepTelegraphedHazardSimulation(state, [spawn], 0.35, playerTarget);
+    state = stepTelegraphedHazardSimulation(state, [spawn], 0.15, playerTarget);
     expect(getTimedLaserLifecycle(state, spawn)).toEqual({
       complete: true,
       elapsedPhaseSeconds: 0,
