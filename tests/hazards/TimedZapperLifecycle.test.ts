@@ -73,6 +73,15 @@ describe('Timed Zapper lifecycle', () => {
     expect(result.lethalIntervals).toEqual([]);
   });
 
+  it('does not discard a positive delta merely because it is below the boundary tolerance', () => {
+    const tinyDelta = 5e-13;
+    const result = advance(createTimedZapperLifecycleState(), tinyDelta);
+
+    expect(result.state.phase).toBe('off');
+    expect(result.state.elapsedPhaseSeconds).toBe(tinyDelta);
+    expect(result.lethalIntervals).toEqual([]);
+  });
+
   it('supports one-shot data that cannot reactivate after its first ON phase', () => {
     const config = { ...PROTOTYPE_TIMED_ZAPPER_CONFIG, mode: 'one-shot' as const };
     const completed = stepTimedZapperLifecycle(createTimedZapperLifecycleState(), 2.6, config);
