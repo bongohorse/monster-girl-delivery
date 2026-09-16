@@ -46,7 +46,7 @@ export class PrototypeLaserPresentation {
 
   render(
     runState: Readonly<RunMotionState>,
-    _playerScreenX: number,
+    playerScreenX: number,
     lifecycle: Readonly<TimedLaserLifecycleState> | null,
     verticalProjection: PrototypeVerticalOffsetOrProjection = 0,
   ): void {
@@ -66,11 +66,34 @@ export class PrototypeLaserPresentation {
 
     const behavior = this.hazard.behavior;
     const projection = resolveVerticalProjection(verticalProjection);
+    const authoredCenterX = (this.hazard.hitbox.left + this.hazard.hitbox.right) / 2;
     const authoredCenterY = (this.hazard.hitbox.top + this.hazard.hitbox.bottom) / 2;
     const horizontal = behavior.orientation === 'horizontal';
-    const axisPosition = horizontal
-      ? projectLogicalYToScreen(authoredCenterY, projection)
-      : viewport.width * (behavior.screenPositionRatio ?? 0.5);
+    const screenCenterX = playerScreenX + authoredCenterX - runState.distance;
+    const screenCenterY = projectLogicalYToScreen(authoredCenterY, projection);
+    const finiteLength = behavior.finiteLength ?? 1;
+    const beam = horizontal
+      ? behavior.span === 'screen'
+        ? { x1: 0, y1: screenCenterY, x2: viewport.width, y2: screenCenterY }
+        : {
+            x1: screenCenterX - finiteLength / 2,
+            y1: screenCenterY,
+            x2: screenCenterX + finiteLength / 2,
+            y2: screenCenterY,
+          }
+      : behavior.span === 'screen'
+        ? {
+            x1: viewport.width * (behavior.screenPositionRatio ?? 0.5),
+            y1: 0,
+            x2: viewport.width * (behavior.screenPositionRatio ?? 0.5),
+            y2: viewport.height,
+          }
+        : {
+            x1: screenCenterX,
+            y1: screenCenterY - (finiteLength * projection.scaleY) / 2,
+            x2: screenCenterX,
+            y2: screenCenterY + (finiteLength * projection.scaleY) / 2,
+          };
     const phaseDuration =
       state.phase === 'off'
         ? behavior.lifecycle.offSeconds
@@ -106,17 +129,14 @@ export class PrototypeLaserPresentation {
         : state.phase === 'charge'
           ? behavior.telegraphThickness + 2 * progress
           : behavior.telegraphThickness;
+    const thicknessScale = horizontal ? projection.scaleY : 1;
 
     const drawBeam = (thickness: number, color: number, alpha: number): void => {
       if (beamAlpha <= 0 || alpha <= 0) {
         return;
       }
-      graphics.lineStyle(thickness, color, alpha * beamAlpha);
-      if (horizontal) {
-        graphics.lineBetween(0, axisPosition, viewport.width, axisPosition);
-      } else {
-        graphics.lineBetween(axisPosition, 0, axisPosition, viewport.height);
-      }
+      graphics.lineStyle(thickness * thicknessScale, color, alpha * beamAlpha);
+      graphics.lineBetween(beam.x1, beam.y1, beam.x2, beam.y2);
     };
 
     if (state.phase !== 'off') {
@@ -148,18 +168,22 @@ export class PrototypeLaserPresentation {
         .fillCircle(x, y, 7);
     };
 
-    if (horizontal) {
-      drawEmitter(LASER_EMITTER_INSET, axisPosition);
-      drawEmitter(viewport.width - LASER_EMITTER_INSET, axisPosition);
+    if (behavior.span === 'screen') {
+      if (horizontal) {
+        drawEmitter(LASER_EMITTER_INSET, beam.y1);
+        drawEmitter(viewport.width - LASER_EMITTER_INSET, beam.y2);
+      } else {
+        drawEmitter(beam.x1, LASER_EMITTER_INSET);
+        drawEmitter(beam.x2, viewport.height - LASER_EMITTER_INSET);
+      }
     } else {
-      drawEmitter(axisPosition, LASER_EMITTER_INSET);
-      drawEmitter(axisPosition, viewport.height - LASER_EMITTER_INSET);
+      drawEmitter(beam.x1, beam.y1);
+      drawEmitter(beam.x2, beam.y2);
     }
 
-    // Screen-event Lasers are presentation-pinned, so the renderer never follows run-distance scroll.
+    // Coordinates above are resolved directly into logical screen space for both span modes.
     graphics.setPosition(0, 0);
     graphics.setScale?.(1, 1);
-    void runState;
   }
 
   destroy(): void {
