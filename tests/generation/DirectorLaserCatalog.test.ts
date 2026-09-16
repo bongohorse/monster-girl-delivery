@@ -22,6 +22,7 @@ describe('DirectorLaserCatalog', () => {
       'G-MID',
       'SW-DN',
       'SW-UP',
+      'ALT',
     ]);
     expect(DIRECTOR_LASER_VARIANTS.slice(0, 5).map((selection) => selection.laneId)).toEqual([
       'low',
@@ -36,6 +37,7 @@ describe('DirectorLaserCatalog', () => {
       'center-corridor',
       'sweep-down',
       'sweep-up',
+      'alternating-pair',
     ]);
   });
 
@@ -77,5 +79,18 @@ describe('DirectorLaserCatalog', () => {
         ),
       ).toEqual([1.2, 1.2, 1.2]);
     }
+  });
+
+  it('authors a two-height alternating pair with contiguous active handoff', () => {
+    expect(getCenters(10)).toEqual([294, 96]);
+    const variant = DIRECTOR_LASER_VARIANTS[10];
+    if (!variant) {
+      throw new Error('Expected alternating Laser pair variant.');
+    }
+    expect(
+      variant.pattern.entries.map((entry) =>
+        entry.behavior.kind === 'laser' ? entry.behavior.lifecycle.chargeSeconds : null,
+      ),
+    ).toEqual([0.55, 1.25]);
   });
 });
