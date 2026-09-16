@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { DIRECTOR_LASER_VARIANTS } from '../../src/generation/DirectorLaserCatalog';
 
 describe('DirectorLaserCatalog', () => {
-  it('cycles five authored reachable horizontal Laser lanes', () => {
+  it('cycles five authored reachable horizontal Laser lanes from low to high', () => {
     expect(DIRECTOR_LASER_VARIANTS.map((selection) => selection.label)).toEqual([
       'LOW',
       'ML',
@@ -29,6 +29,6 @@ describe('DirectorLaserCatalog', () => {
         const hitbox = selection.pattern.entries[0]?.hitbox;
         return hitbox ? (hitbox.top + hitbox.bottom) / 2 : null;
       }),
-    ).toEqual([96, 146, 195, 244, 294]);
+    ).toEqual([294, 244, 195, 146, 96]);
   });
 });
