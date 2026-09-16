@@ -133,11 +133,7 @@ describe('PrototypeLaserLaneCatalog', () => {
   it('replaces the same live Laser slot with bounded generator-safe groups', () => {
     const catalog = Object.freeze([PROTOTYPE_LASER_PATTERN]);
     const selected = [25, 30, 35].map((prngState) =>
-      selectPrototypeLaserLaneCatalog(
-        catalog,
-        PROTOTYPE_PATTERN_VALIDATION_CONSTRAINTS,
-        prngState,
-      ),
+      selectPrototypeLaserLaneCatalog(catalog, PROTOTYPE_PATTERN_VALIDATION_CONSTRAINTS, prngState),
     );
 
     expect(selected.map((candidate) => candidate.length)).toEqual([1, 1, 1]);
@@ -146,9 +142,9 @@ describe('PrototypeLaserLaneCatalog', () => {
       [195, 146, 96],
       [294, 96],
     ]);
-    expect(
-      selected.every((candidate) => candidate[0]?.id === PROTOTYPE_LASER_PATTERN.id),
-    ).toBe(true);
+    expect(selected.every((candidate) => candidate[0]?.id === PROTOTYPE_LASER_PATTERN.id)).toBe(
+      true,
+    );
   });
 
   it('varies the real generated Laser lane by seed while replaying the same seed exactly', () => {
