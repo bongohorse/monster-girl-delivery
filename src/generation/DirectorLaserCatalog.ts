@@ -1,7 +1,7 @@
 import type { HazardPattern } from './HazardPattern';
 import {
-  PROTOTYPE_LASER_LANES,
   PROTOTYPE_LASER_LANE_PATTERNS,
+  PROTOTYPE_LASER_LANES,
   type PrototypeLaserLaneId,
 } from './PrototypeLaserLaneCatalog';
 
