@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { PROTOTYPE_RUN_MOTION_DEFAULTS } from '../../src/config/RunMotionConfig';
 import { PROTOTYPE_PATTERN_REACHABILITY_CONTEXT } from '../../src/generation/FlightReachability';
+import { createGeneratedHazardStream } from '../../src/generation/GeneratedHazardStream';
 import type { HazardPattern } from '../../src/generation/HazardPattern';
 import {
   PROTOTYPE_PATTERN_VALIDATION_CONSTRAINTS,
@@ -19,6 +21,19 @@ const centerY = (pattern: Readonly<HazardPattern>): number => {
     throw new Error('Expected Laser lane pattern entry.');
   }
   return (hitbox.top + hitbox.bottom) / 2;
+};
+
+const generatedCenterY = (seed: number): number => {
+  const stream = createGeneratedHazardStream(
+    seed,
+    { catalog: [PROTOTYPE_LASER_PATTERN] },
+    PROTOTYPE_RUN_MOTION_DEFAULTS,
+  );
+  const spawn = stream.spawns[0];
+  if (!spawn) {
+    throw new Error('Expected generated Laser spawn.');
+  }
+  return (spawn.hitbox.top + spawn.hitbox.bottom) / 2;
 };
 
 describe('PrototypeLaserLaneCatalog', () => {
@@ -80,6 +95,12 @@ describe('PrototypeLaserLaneCatalog', () => {
     expect(centerY(firstLaser)).toBe(centerY(replayLaser));
     expect(centerY(firstLaser)).not.toBe(centerY(otherLaser));
     expect(first[1]).toBe(catalog[1]);
+  });
+
+  it('varies the real generated Laser lane by seed while replaying the same seed exactly', () => {
+    expect(generatedCenterY(0)).toBe(294);
+    expect(generatedCenterY(1)).toBe(244);
+    expect(generatedCenterY(0)).toBe(generatedCenterY(0));
   });
 
   it('maps authored lane ratios through expanded vertical constraints', () => {
