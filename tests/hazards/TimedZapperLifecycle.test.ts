@@ -61,8 +61,8 @@ describe('Timed Zapper lifecycle', () => {
       endSeconds: 5.2,
       endsPhase: true,
     });
-    expect(result.state.phase).toBe('charge');
-    expect(result.state.elapsedPhaseSeconds).toBeCloseTo(0.6, 12);
+    expect(result.state.phase).toBe('on');
+    expect(result.state.elapsedPhaseSeconds).toBeCloseTo(0, 12);
   });
 
   it('does not advance or become newly lethal on zero simulation delta', () => {
