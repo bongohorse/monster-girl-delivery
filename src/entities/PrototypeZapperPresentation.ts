@@ -326,7 +326,7 @@ export class PrototypeZapperPresentation {
       const visualPadding = Math.max(
         endpointRadius + padding.endpoints,
         beamWidth + padding.beam,
-        18,
+        32,
       );
 
       unionLeft = Math.min(unionLeft, ax - visualPadding, bx - visualPadding);

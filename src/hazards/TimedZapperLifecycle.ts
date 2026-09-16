@@ -50,7 +50,7 @@ export const createTimedZapperLifecycleConfig = (
 };
 
 export const PROTOTYPE_TIMED_ZAPPER_CONFIG = createTimedZapperLifecycleConfig({
-  chargeSeconds: 0.6,
+  chargeSeconds: 1.2,
   mode: 'cyclic',
   offSeconds: 0.8,
   onSeconds: 1.2,

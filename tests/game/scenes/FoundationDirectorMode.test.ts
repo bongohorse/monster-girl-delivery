@@ -155,6 +155,13 @@ vi.mock('../../../src/devtools/DirectorRunControls', () => ({
 import { getPrototypePlayerX } from '../../../src/game/PrototypeFlightLayout';
 import { Foundation } from '../../../src/game/scenes/Foundation';
 
+interface DirectorTestControls {
+  clearHazards?: () => void;
+  setFpsLimit?: (limit: number) => void;
+  spawnZapper?: () => void;
+  spawnZapperGroup?: () => void;
+}
+
 beforeEach(() => {
   directorPanelConstructed.mockClear();
   directorPerformanceHudConstructed.mockClear();
@@ -228,6 +235,8 @@ describe('Foundation Director mode boundary', () => {
       expect.objectContaining({
         setFpsLimit: expect.any(Function),
         setWireframesEnabled: expect.any(Function),
+        spawnZapper: expect.any(Function),
+        spawnZapperGroup: expect.any(Function),
       }),
     );
     expect(directorControlsConstructed).toHaveBeenCalledWith(
@@ -245,7 +254,7 @@ describe('Foundation Director mode boundary', () => {
     expect(directorPerformanceHudLayout).toHaveBeenCalledOnce();
 
     const performanceControls = directorPerformanceHudConstructed.mock.calls[0]?.[3] as
-      | { setFpsLimit?: (limit: number) => void }
+      | DirectorTestControls
       | undefined;
     performanceControls?.setFpsLimit?.(90);
     expect(setFpsLimit).toHaveBeenCalledWith(90);
@@ -254,19 +263,19 @@ describe('Foundation Director mode boundary', () => {
     expect(directorPerformanceHudUpdate).toHaveBeenCalledWith(17, 60, false, false);
   });
 
-  it('uses Director Z to spawn the real Zapper fully beyond the right viewport edge', () => {
+  it('uses Director Z to start the deterministic Zapper cycle fully beyond the right viewport edge', () => {
     const services = createAppServices();
     const foundation = new Foundation(services, true);
     foundation.create();
 
     const performanceControls = directorPerformanceHudConstructed.mock.calls[0]?.[3] as
-      | { spawnZapper?: () => void }
+      | DirectorTestControls
       | undefined;
     expect(performanceControls?.spawnZapper).toBeTypeOf('function');
     performanceControls?.spawnZapper?.();
 
     const manualHazards = Reflect.get(foundation, 'directorManualHazards') as ReadonlyArray<{
-      behavior: { kind: string };
+      behavior: { angleDegrees?: number; kind: string; length?: number };
       hitbox: { left: number };
     }>;
     const viewportService = Reflect.get(foundation, 'viewportService') as {
@@ -279,13 +288,97 @@ describe('Foundation Director mode boundary', () => {
     const spawn = manualHazards[0];
 
     expect(manualHazards).toHaveLength(1);
-    expect(spawn?.behavior.kind).toBe('zapper');
+    expect(spawn?.behavior).toMatchObject({ kind: 'zapper', angleDegrees: 0, length: 80 });
     if (!spawn) {
       throw new Error('Expected Director Zapper spawn.');
     }
     const screenLeft = getPrototypePlayerX(viewport) + spawn.hitbox.left - runState.motion.distance;
     expect(screenLeft).toBeGreaterThan(viewport.width);
     expect(screenLeft).toBeCloseTo(viewport.width + 24, 9);
+  });
+
+  it('cycles all eight real Zapper variants in the approved order and registers TIMED authority', () => {
+    const services = createAppServices();
+    const foundation = new Foundation(services, true);
+    foundation.create();
+    const controls = directorPerformanceHudConstructed.mock.calls[0]?.[3] as
+      | DirectorTestControls
+      | undefined;
+
+    for (let index = 0; index < 8; index += 1) {
+      controls?.spawnZapper?.();
+    }
+
+    const hazards = Reflect.get(foundation, 'directorManualHazards') as ReadonlyArray<{
+      behavior: {
+        angleDegrees?: number;
+        kind: string;
+        length?: number;
+        rotation?: { direction: string; speedDegreesPerSecond: number };
+        timing?: { offSeconds: number; chargeSeconds: number; onSeconds: number };
+      };
+    }>;
+    expect(hazards).toHaveLength(8);
+    expect(hazards.map((hazard) => hazard.behavior.kind)).toEqual(Array(8).fill('zapper'));
+    expect(hazards[0]?.behavior).toMatchObject({ angleDegrees: 0, length: 80 });
+    expect(hazards[1]?.behavior).toMatchObject({ angleDegrees: 0, length: 200 });
+    expect(hazards[2]?.behavior).toMatchObject({ angleDegrees: 90, length: 80 });
+    expect(hazards[3]?.behavior).toMatchObject({ angleDegrees: -45, length: 80 });
+    expect(hazards[4]?.behavior).toMatchObject({ angleDegrees: 45, length: 80 });
+    expect(hazards[5]?.behavior.rotation).toEqual({
+      direction: 'clockwise',
+      speedDegreesPerSecond: 30,
+    });
+    expect(hazards[6]?.behavior.rotation).toEqual({
+      direction: 'counterclockwise',
+      speedDegreesPerSecond: 30,
+    });
+    expect(hazards[7]?.behavior.timing).toMatchObject({
+      offSeconds: 0.8,
+      chargeSeconds: 1.2,
+      onSeconds: 1.2,
+    });
+
+    const timedState = Reflect.get(foundation, 'timedZapperState') as {
+      instances: ReadonlyArray<{ lifecycle: { phase: string } }>;
+    };
+    expect(timedState.instances).toHaveLength(1);
+    expect(timedState.instances[0]?.lifecycle.phase).toBe('off');
+
+    controls?.spawnZapper?.();
+    const wrappedHazards = Reflect.get(foundation, 'directorManualHazards') as typeof hazards;
+    expect(wrappedHazards[8]?.behavior).toMatchObject({ angleDegrees: 0, length: 80 });
+  });
+
+  it('uses ZG for deterministic multi-Zapper groups and CLR resets both cycles', () => {
+    const services = createAppServices();
+    const foundation = new Foundation(services, true);
+    foundation.create();
+    const controls = directorPerformanceHudConstructed.mock.calls[0]?.[3] as
+      | DirectorTestControls
+      | undefined;
+
+    controls?.spawnZapperGroup?.();
+    let hazards = Reflect.get(foundation, 'directorManualHazards') as ReadonlyArray<{
+      behavior: { angleDegrees?: number; length?: number };
+      hitbox: { left: number; top: number; bottom: number };
+    }>;
+    expect(hazards).toHaveLength(2);
+    expect(hazards[0]?.behavior).toMatchObject({ angleDegrees: 0, length: 140 });
+    expect(hazards[1]?.behavior).toMatchObject({ angleDegrees: 0, length: 140 });
+    expect((hazards[0]?.hitbox.top ?? 0) + (hazards[0]?.hitbox.bottom ?? 0)).not.toBe(
+      (hazards[1]?.hitbox.top ?? 0) + (hazards[1]?.hitbox.bottom ?? 0),
+    );
+
+    controls?.spawnZapper?.();
+    controls?.spawnZapper?.();
+    controls?.clearHazards?.();
+    expect(Reflect.get(foundation, 'directorManualHazards')).toEqual([]);
+
+    controls?.spawnZapper?.();
+    hazards = Reflect.get(foundation, 'directorManualHazards') as typeof hazards;
+    expect(hazards).toHaveLength(1);
+    expect(hazards[0]?.behavior).toMatchObject({ angleDegrees: 0, length: 80 });
   });
 
   it('starts explicit new seeds and makes each one the same-seed restart authority', () => {

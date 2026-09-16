@@ -166,6 +166,21 @@ describe('PrototypeZapperPresentation', () => {
     expect(graphics.destroy).toHaveBeenCalledOnce();
   });
 
+  it('pads the shared shader quad beyond endpoint glow so Zapper sides are not clipped', () => {
+    const { scene, shader } = createSceneFake(true);
+    const presentation = new PrototypeZapperPresentation(scene);
+
+    presentation.render(
+      [createSpawn('padding', 0, 280)],
+      { distance: 0, simulationSeconds: 0 },
+      100,
+    );
+
+    expect(shader.setPosition).toHaveBeenLastCalledWith(278, 163);
+    expect(shader.setSize).toHaveBeenLastCalledWith(204, 64);
+    expect(shader.setDisplaySize).toHaveBeenLastCalledWith(204, 64);
+  });
+
   it('keeps the vector fallback readable when no Shader factory is available', () => {
     const { graphics, scene } = createSceneFake(false);
     const presentation = new PrototypeZapperPresentation(scene);
@@ -200,7 +215,7 @@ describe('PrototypeZapperPresentation', () => {
         elapsedPhaseSeconds: 0.3,
         phase: 'charge',
       }),
-    ).toEqual({ chargeProgress: 0.5, state: 'charge' });
+    ).toEqual({ chargeProgress: 0.25, state: 'charge' });
     expect(
       resolvePrototypeZapperPresentationSample(timed, {
         complete: false,
@@ -275,7 +290,7 @@ describe('PrototypeZapperPresentation', () => {
 
     const onFake = createSceneFake(false);
     const onPresentation = new PrototypeZapperPresentation(onFake.scene);
-    onPresentation.render([timed], { distance: 0, simulationSeconds: 1.6 }, 100, 0, {
+    onPresentation.render([timed], { distance: 0, simulationSeconds: 2.2 }, 100, 0, {
       timedZappers: {
         stepElapsedSeconds: 0.2,
         instances: [

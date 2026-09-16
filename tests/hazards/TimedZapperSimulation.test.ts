@@ -103,7 +103,7 @@ describe('Timed Zapper simulation', () => {
     if (timedBehavior?.kind === 'zapper') {
       expect(timedBehavior.timing).toEqual({
         offSeconds: 0.8,
-        chargeSeconds: 0.6,
+        chargeSeconds: 1.2,
         onSeconds: 1.2,
         mode: 'cyclic',
       });
@@ -112,7 +112,7 @@ describe('Timed Zapper simulation', () => {
 
   it('uses only the true ON slice when a coarse step crosses CHARGE -> ON', () => {
     const spawn = createTimedSpawn();
-    let state = stepTimedZapperSimulation(createTimedZapperSimulationState(), [spawn], 1.2);
+    let state = stepTimedZapperSimulation(createTimedZapperSimulationState(), [spawn], 1.8);
     state = stepTimedZapperSimulation(state, [spawn], 0.4);
 
     const lifecycle = getTimedZapperLifecycle(state, spawn);
@@ -125,13 +125,13 @@ describe('Timed Zapper simulation', () => {
     expect(hazards[0]?.collisionInterval?.endSeconds).toBeCloseTo(0.4, 12);
 
     expect(
-      collides(requireSingleHazard(hazards), { distance: 100, simulationSeconds: 1.2 }, 0.4, 350),
+      collides(requireSingleHazard(hazards), { distance: 100, simulationSeconds: 1.8 }, 0.4, 350),
     ).toBe(true);
   });
 
   it('cannot remain lethal after an ON -> OFF boundary inside a coarse step', () => {
     const spawn = createTimedSpawn();
-    let state = stepTimedZapperSimulation(createTimedZapperSimulationState(), [spawn], 2.4);
+    let state = stepTimedZapperSimulation(createTimedZapperSimulationState(), [spawn], 3);
     state = stepTimedZapperSimulation(state, [spawn], 0.4);
 
     const hazards = getCollisionHazardsForTimedZapperSimulation(state, [spawn]);
@@ -141,7 +141,7 @@ describe('Timed Zapper simulation', () => {
     expect(hazards[0]?.collisionEndsAtIntervalEnd).toBe(true);
 
     expect(
-      collides(requireSingleHazard(hazards), { distance: 100, simulationSeconds: 2.4 }, 0.4, 350),
+      collides(requireSingleHazard(hazards), { distance: 100, simulationSeconds: 3 }, 0.4, 350),
     ).toBe(false);
   });
 
@@ -154,7 +154,7 @@ describe('Timed Zapper simulation', () => {
     expect(getTimedZapperLifecycle(timedState, spawn)?.phase).toBe('off');
     expect(getHazardGameplayState(reactionState, identity)).toBe('active');
 
-    timedState = stepTimedZapperSimulation(timedState, [spawn], 1.4);
+    timedState = stepTimedZapperSimulation(timedState, [spawn], 2);
     reactionState = applyHazardExternalEffect(reactionState, identity, { kind: 'disable' });
     const disabledHazards = getCollisionHazardsForTimedZapperSimulation(timedState, [spawn], () =>
       getHazardGameplayState(reactionState, identity),
@@ -165,7 +165,7 @@ describe('Timed Zapper simulation', () => {
       collides(
         requireSingleHazard(disabledHazards),
         { distance: 280, simulationSeconds: 0.2 },
-        1.4,
+        2,
         0,
       ),
     ).toBe(false);
@@ -181,7 +181,7 @@ describe('Timed Zapper simulation', () => {
     expect(
       collides(
         requireSingleHazard(destroyedHazards),
-        { distance: 280, simulationSeconds: 1.6 },
+        { distance: 280, simulationSeconds: 2.2 },
         5.2,
         0,
       ),
@@ -190,7 +190,7 @@ describe('Timed Zapper simulation', () => {
 
   it('does not advance phase or expose collision candidates on zero-delta pause/resize updates', () => {
     const spawn = createTimedSpawn();
-    const on = stepTimedZapperSimulation(createTimedZapperSimulationState(), [spawn], 1.6);
+    const on = stepTimedZapperSimulation(createTimedZapperSimulationState(), [spawn], 2.2);
     const before = getTimedZapperLifecycle(on, spawn);
     const paused = stepTimedZapperSimulation(on, [spawn], 0);
 
@@ -223,11 +223,11 @@ describe('Timed Zapper simulation', () => {
       expect(result.lethalCollision).toBe(false);
     };
 
-    evaluate(2.6);
+    evaluate(3.2);
     expect(grazeState.count).toBe(1);
     expect(grazeState.consumedOccurrenceIds).toHaveLength(1);
 
-    evaluate(1.4);
+    evaluate(0.8);
     expect(grazeState.count).toBe(1);
     expect(grazeState.consumedOccurrenceIds).toHaveLength(1);
 
@@ -245,8 +245,8 @@ describe('Timed Zapper simulation', () => {
       let stepIndex = 0;
       let collided = false;
 
-      while (elapsed < 3) {
-        const delta = Math.min(schedule.getNextDelta(elapsed, stepIndex), 3 - elapsed);
+      while (elapsed < 3.6) {
+        const delta = Math.min(schedule.getNextDelta(elapsed, stepIndex), 3.6 - elapsed);
         timedState = stepTimedZapperSimulation(timedState, [spawn], delta);
         const hazards = getCollisionHazardsForTimedZapperSimulation(timedState, [spawn]);
         collided ||= hazards.some((hazard) =>

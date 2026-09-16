@@ -32,6 +32,10 @@ import {
   type TelegraphedHazardSimulationState,
 } from '../hazards/TelegraphedHazardSimulation';
 import {
+  getTimedZapperLifecycle,
+  type TimedZapperSimulationState,
+} from '../hazards/TimedZapperSimulation';
+import {
   createPrototypePlayerHitbox,
   type LogicalHitbox,
   PROTOTYPE_PLAYER_COLLISION_EXTENTS,
@@ -120,6 +124,7 @@ export interface DirectorDebugOverlayFrame {
   readonly motion: Readonly<RunMotionState>;
   readonly nextPatternStartDistance: number | null;
   readonly telegraphedHazards: Readonly<TelegraphedHazardSimulationState>;
+  readonly timedZappers?: Readonly<TimedZapperSimulationState>;
   readonly viewport: Readonly<ViewportSnapshot>;
 }
 
@@ -275,7 +280,13 @@ const resolveCurrentHazardHitbox = (
 const isHazardCurrentlyLethal = (
   spawn: Readonly<LogicalHazardSpawnInstance>,
   telegraphedHazards: Readonly<TelegraphedHazardSimulationState>,
+  timedZappers?: Readonly<TimedZapperSimulationState>,
 ): boolean => {
+  if (spawn.behavior.kind === 'zapper' && spawn.behavior.timing) {
+    const timedLifecycle = timedZappers ? getTimedZapperLifecycle(timedZappers, spawn) : null;
+    return timedLifecycle?.phase === 'on' && !timedLifecycle.complete;
+  }
+
   if (!isTelegraphedHazardBehavior(spawn.behavior)) {
     return true;
   }
@@ -334,7 +345,7 @@ export const createDirectorDebugGeometry = (
   const paths: DirectorDebugPath[] = [];
 
   for (const spawn of frame.hazards) {
-    const lethal = isHazardCurrentlyLethal(spawn, frame.telegraphedHazards);
+    const lethal = isHazardCurrentlyLethal(spawn, frame.telegraphedHazards, frame.timedZappers);
     const kind = lethal ? 'hazard-lethal' : 'hazard-preview';
     const color = lethal ? DIRECTOR_DEBUG_COLORS.hazardLethal : DIRECTOR_DEBUG_COLORS.hazardPreview;
     const zapper = resolvePrototypeZapperGeometry(spawn, frame.motion.simulationSeconds ?? 0);
