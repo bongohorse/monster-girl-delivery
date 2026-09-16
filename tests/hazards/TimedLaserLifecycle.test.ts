@@ -52,9 +52,7 @@ describe('TimedLaserLifecycle', () => {
     expect(on.elapsedPhaseSeconds).toBeCloseTo(0.2, 12);
 
     const step = stepTimedLaserLifecycle(on, 0.8);
-    expect(step.lethalIntervals).toEqual([
-      { startSeconds: 0, endSeconds: 0.5, endsPhase: true },
-    ]);
+    expect(step.lethalIntervals).toEqual([{ startSeconds: 0, endSeconds: 0.5, endsPhase: true }]);
     expect(step.state.phase).toBe('off');
     expect(step.state.complete).toBe(true);
   });
@@ -76,7 +74,11 @@ describe('TimedLaserLifecycle', () => {
       mode: 'cyclic',
     });
     const cycleSeconds = 0.5 + 1.2 + 0.8 + 0.7 + 0.4;
-    const step = stepTimedLaserLifecycle(createTimedLaserLifecycleState(), cycleSeconds + 0.25, cyclic);
+    const step = stepTimedLaserLifecycle(
+      createTimedLaserLifecycleState(),
+      cycleSeconds + 0.25,
+      cyclic,
+    );
     expect(step.state).toMatchObject({ complete: false, phase: 'off', elapsedPhaseSeconds: 0.25 });
     expect(step.lethalIntervals).toHaveLength(1);
   });
