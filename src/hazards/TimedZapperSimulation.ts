@@ -20,6 +20,8 @@ export interface TimedZapperLifecycleInstance {
 
 export interface TimedZapperSimulationState {
   readonly instances: ReadonlyArray<Readonly<TimedZapperLifecycleInstance>>;
+  /** Most recent normalized simulation delta; zero means collision must not be re-evaluated. */
+  readonly stepElapsedSeconds: number;
 }
 
 export type TimedZapperGameplayStateResolver = (
@@ -28,6 +30,7 @@ export type TimedZapperGameplayStateResolver = (
 
 const EMPTY_TIMED_ZAPPER_SIMULATION_STATE: Readonly<TimedZapperSimulationState> = Object.freeze({
   instances: Object.freeze([]),
+  stepElapsedSeconds: 0,
 });
 
 const NO_COLLISION_INTERVAL = Object.freeze({ startSeconds: 0, endSeconds: 0 });
@@ -89,7 +92,10 @@ export const stepTimedZapperSimulation = (
     return EMPTY_TIMED_ZAPPER_SIMULATION_STATE;
   }
 
-  return Object.freeze({ instances: Object.freeze(instances) });
+  return Object.freeze({
+    instances: Object.freeze(instances),
+    stepElapsedSeconds: elapsedSeconds,
+  });
 };
 
 /**
@@ -97,7 +103,8 @@ export const stepTimedZapperSimulation = (
  * externally disabled, and destroyed states remain present with an explicit empty collision interval
  * so Graze occurrence identity/history is retained without becoming lethal. ON slices are emitted as
  * exact collision intervals over the same authored Zapper geometry; multiple slices are allowed for
- * unexpectedly large deltas without introducing a global microstep.
+ * unexpectedly large deltas without introducing a global microstep. A zero-delta update omits timed
+ * collision candidates entirely, matching pause/resize semantics while Graze preserves its state.
  */
 export const getCollisionHazardsForTimedZapperSimulation = (
   state: Readonly<TimedZapperSimulationState>,
@@ -110,6 +117,10 @@ export const getCollisionHazardsForTimedZapperSimulation = (
     const config = getTimedZapperConfig(spawn);
     if (!config) {
       hazards.push(spawn);
+      continue;
+    }
+
+    if (state.stepElapsedSeconds === 0) {
       continue;
     }
 
