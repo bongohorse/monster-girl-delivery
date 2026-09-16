@@ -44,6 +44,7 @@ import {
   type PatternValidationConstraints,
   PROTOTYPE_PATTERN_VALIDATION_CONSTRAINTS,
 } from './PatternValidator';
+import { selectPrototypeLaserLaneCatalog } from './PrototypeLaserLaneCatalog';
 import { createRunGenerationState, type RunGenerationState } from './RunGenerationState';
 import type { SeedInput } from './SeededPrng';
 
@@ -308,8 +309,13 @@ const fillLegacySpawnWindow = (
       throw new RangeError('Hazard stream advance exceeded its bounded pattern scheduling limit.');
     }
 
+    const laneCatalog = selectPrototypeLaserLaneCatalog(
+      context.catalog,
+      constraints,
+      generationState.prngState,
+    );
     const schedule = scheduleNextPattern({
-      catalog: context.catalog,
+      catalog: laneCatalog,
       constraints,
       maxCandidateAttempts: config.maxCandidateAttempts,
       patternStartDistance: nextPatternStartDistance,
@@ -388,8 +394,13 @@ const fillPolicySpawnWindow = (
     }
     policyIterations += 1;
 
-    const selection = selectLiveEncounterCandidates(
+    const laneCatalog = selectPrototypeLaserLaneCatalog(
       context.catalog,
+      baseConstraints,
+      generationState.prngState,
+    );
+    const selection = selectLiveEncounterCandidates(
+      laneCatalog,
       nextPatternStartDistance,
       policyState,
       policyConfig,
