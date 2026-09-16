@@ -14,13 +14,18 @@ const stepToCharge = () =>
 
 describe('TimedLaserLifecycle', () => {
   it('uses the Director-approved prototype timings', () => {
-    expect(PROTOTYPE_TIMED_LASER_CONFIG).toEqual({
+    expect(PROTOTYPE_TIMED_LASER_CONFIG).toMatchObject({
       offSeconds: 0.5,
       telegraphSeconds: 1.2,
       chargeSeconds: 0.8,
       onSeconds: 0.7,
       recoverySeconds: 0.4,
       mode: 'one-shot',
+    });
+    expect(PROTOTYPE_TIMED_LASER_CONFIG.durations).toEqual({
+      warningSeconds: 1.7,
+      lockSeconds: 0.8,
+      activeSeconds: 0.7,
     });
   });
 
