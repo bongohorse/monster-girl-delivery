@@ -29,7 +29,7 @@ const getLaserLifecycle = (foundation: Foundation, spawn: Readonly<LogicalHazard
   );
 
 describe('Foundation Director Laser cycle', () => {
-  it('cycles L through H then V, wraps to H, and registers the real Laser lifecycle', () => {
+  it('keeps L on the reachable horizontal M5 Laser and registers the real lifecycle', () => {
     const foundation = new Foundation(createAppServices(), true);
     Reflect.set(foundation, 'viewportService', new ViewportService(800, 450));
 
@@ -38,45 +38,37 @@ describe('Foundation Director Laser cycle', () => {
 
     spawnLaser();
     spawnLaser();
-    spawnLaser();
 
     const hazards = getManualHazards(foundation);
-    expect(hazards).toHaveLength(3);
+    expect(hazards).toHaveLength(2);
     expect(hazards.map((hazard) => hazard.behavior)).toEqual([
       expect.objectContaining({ kind: 'laser', orientation: 'horizontal', span: 'screen' }),
-      expect.objectContaining({
-        kind: 'laser',
-        orientation: 'vertical',
-        span: 'screen',
-        screenPositionRatio: 0.68,
-      }),
       expect.objectContaining({ kind: 'laser', orientation: 'horizontal', span: 'screen' }),
     ]);
-    const horizontal = hazards[0];
-    const vertical = hazards[1];
-    if (!horizontal || !vertical) {
-      throw new Error('Expected Director H and V Laser spawns.');
+    const first = hazards[0];
+    const second = hazards[1];
+    if (!first || !second) {
+      throw new Error('Expected Director horizontal Laser spawns.');
     }
-    expect(getLaserLifecycle(foundation, horizontal)).toMatchObject({
+    expect(getLaserLifecycle(foundation, first)).toMatchObject({
       complete: false,
       elapsedPhaseSeconds: 0,
       phase: 'off',
     });
-    expect(getLaserLifecycle(foundation, vertical)).toMatchObject({
+    expect(getLaserLifecycle(foundation, second)).toMatchObject({
       complete: false,
       elapsedPhaseSeconds: 0,
       phase: 'off',
     });
   });
 
-  it('resets the Laser cycle to H when Director hazards are cleared', () => {
+  it('continues to spawn H after Director hazards are cleared', () => {
     const foundation = new Foundation(createAppServices(), true);
     Reflect.set(foundation, 'viewportService', new ViewportService(800, 450));
 
     const spawnLaser = Reflect.get(foundation, 'spawnDirectorLaserVariant') as () => void;
     const clearHazards = Reflect.get(foundation, 'clearDirectorHazards') as () => void;
 
-    spawnLaser();
     spawnLaser();
     clearHazards();
     expect(getManualHazards(foundation)).toEqual([]);
