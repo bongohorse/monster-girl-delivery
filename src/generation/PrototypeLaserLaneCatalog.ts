@@ -30,8 +30,7 @@ export const PROTOTYPE_LASER_LANES: ReadonlyArray<Readonly<PrototypeLaserLaneDef
 const getLaneRatio = (lane: Readonly<PrototypeLaserLaneDefinition>): number => {
   const authored = PROTOTYPE_PATTERN_VALIDATION_CONSTRAINTS;
   return (
-    (lane.authoredCenterY - authored.playableTop) /
-    (authored.playableBottom - authored.playableTop)
+    (lane.authoredCenterY - authored.playableTop) / (authored.playableBottom - authored.playableTop)
   );
 };
 
