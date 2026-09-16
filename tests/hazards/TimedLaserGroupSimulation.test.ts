@@ -4,6 +4,7 @@ import { PROTOTYPE_LASER_GROUP_PATTERNS } from '../../src/generation/PrototypeLa
 import {
   createTelegraphedHazardSimulationState,
   getCollisionHazardsForTelegraphedSimulation,
+  getTimedLaserLifecycle,
   stepTelegraphedHazardSimulation,
 } from '../../src/hazards/TelegraphedHazardSimulation';
 
@@ -125,8 +126,14 @@ describe('Timed Laser group simulation', () => {
       2.4,
       playerTarget,
     );
+    const beforeLifecycles = spawns.map((spawn) => getTimedLaserLifecycle(beforePause, spawn));
     const afterPause = stepTelegraphedHazardSimulation(beforePause, spawns, 0, playerTarget);
 
-    expect(afterPause).toEqual(beforePause);
+    expect(spawns.map((spawn) => getTimedLaserLifecycle(afterPause, spawn))).toEqual(
+      beforeLifecycles,
+    );
+    expect(
+      getCollisionHazardsForTelegraphedSimulation(afterPause, spawns, collisionContext),
+    ).toEqual([]);
   });
 });
