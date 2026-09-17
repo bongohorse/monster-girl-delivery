@@ -57,8 +57,12 @@ describe('M5 mobile breathing-room pacing', () => {
     expect(medium.length).toBeGreaterThan(0);
     expect(low.every((pattern) => pattern.entries.length === 1)).toBe(true);
     expect(medium.every((pattern) => pattern.entries.length === 1)).toBe(true);
-    expect(low.some((pattern) => pattern.profile.varietyFamilyId === 'm5-multi-hazard')).toBe(false);
-    expect(medium.some((pattern) => pattern.profile.varietyFamilyId === 'm5-multi-hazard')).toBe(false);
+    expect(low.some((pattern) => pattern.profile.varietyFamilyId === 'm5-multi-hazard')).toBe(
+      false,
+    );
+    expect(medium.some((pattern) => pattern.profile.varietyFamilyId === 'm5-multi-hazard')).toBe(
+      false,
+    );
   });
 
   it('admits authored two-family challenge vocabulary only in high and peak beats', () => {
