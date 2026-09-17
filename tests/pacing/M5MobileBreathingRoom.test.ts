@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { PROTOTYPE_PATTERN_REACHABILITY_CONTEXT } from '../../src/generation/FlightReachability';
 import {
-  M5_AUTHORED_MULTI_HAZARD_PATTERNS,
-  PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG,
-} from '../../src/generation/M5AuthoredMultiHazardPatterns';
-import {
   createLiveEncounterPolicyState,
   selectLiveEncounterCandidates,
 } from '../../src/generation/LiveEncounterPolicy';
+import {
+  M5_AUTHORED_MULTI_HAZARD_PATTERNS,
+  PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG,
+} from '../../src/generation/M5AuthoredMultiHazardPatterns';
 import {
   createPacingPatternRequest,
   evaluatePatternPacingEligibility,
@@ -48,8 +48,12 @@ describe('M5 mobile breathing-room pacing', () => {
     expect(medium.length).toBeGreaterThan(0);
     expect(low.every((pattern) => pattern.entries.length === 1)).toBe(true);
     expect(medium.every((pattern) => pattern.entries.length === 1)).toBe(true);
-    expect(low.some((pattern) => pattern.profile.varietyFamilyId === 'm5-multi-hazard')).toBe(false);
-    expect(medium.some((pattern) => pattern.profile.varietyFamilyId === 'm5-multi-hazard')).toBe(false);
+    expect(low.some((pattern) => pattern.profile.varietyFamilyId === 'm5-multi-hazard')).toBe(
+      false,
+    );
+    expect(medium.some((pattern) => pattern.profile.varietyFamilyId === 'm5-multi-hazard')).toBe(
+      false,
+    );
   });
 
   it('admits authored two-family challenges only in short high/peak windows', () => {
