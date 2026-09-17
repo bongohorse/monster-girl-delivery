@@ -1,8 +1,4 @@
-import type {
-  CollectiblePath,
-  CollectiblePathIntent,
-  CollectiblePathPoint,
-} from './HazardPattern';
+import type { CollectiblePath, CollectiblePathIntent, CollectiblePathPoint } from './HazardPattern';
 
 export const M5_DENSE_COIN_SPACING = 32;
 
@@ -55,9 +51,7 @@ const assertFinite = (value: number, name: string): void => {
   }
 };
 
-const assertMonotonicPoints = (
-  points: ReadonlyArray<Readonly<CollectiblePathPoint>>,
-): void => {
+const assertMonotonicPoints = (points: ReadonlyArray<Readonly<CollectiblePathPoint>>): void => {
   if (points.length < 2) {
     throw new RangeError('Collectible formation source must contain at least two points.');
   }
@@ -88,10 +82,7 @@ const resamplePolyline = (
     if (!previous || !current) {
       continue;
     }
-    totalDistance += Math.hypot(
-      current.runDistance - previous.runDistance,
-      current.y - previous.y,
-    );
+    totalDistance += Math.hypot(current.runDistance - previous.runDistance, current.y - previous.y);
     cumulativeDistances.push(totalDistance);
   }
 
@@ -116,17 +107,13 @@ const resamplePolyline = (
     const segmentStartDistance = cumulativeDistances[segmentIndex - 1];
     const start = points[segmentIndex - 1];
     const end = points[segmentIndex];
-    if (
-      segmentEndDistance === undefined ||
-      segmentStartDistance === undefined ||
-      !start ||
-      !end
-    ) {
+    if (segmentEndDistance === undefined || segmentStartDistance === undefined || !start || !end) {
       throw new Error('Collectible formation resampling lost its source segment.');
     }
 
     const segmentLength = segmentEndDistance - segmentStartDistance;
-    const progress = segmentLength <= 0 ? 0 : (targetDistance - segmentStartDistance) / segmentLength;
+    const progress =
+      segmentLength <= 0 ? 0 : (targetDistance - segmentStartDistance) / segmentLength;
     result.push(
       Object.freeze({
         runDistance: start.runDistance + (end.runDistance - start.runDistance) * progress,
@@ -243,12 +230,16 @@ export const createBitmapCollectiblePaths = (
 
   const paths: Array<Readonly<CollectiblePath>> = [];
   options.bitmap.forEach((row, rowIndex) => {
-    const activeColumns = [...row].flatMap((cell, columnIndex) => (cell === '#' ? [columnIndex] : []));
+    const activeColumns = [...row].flatMap((cell, columnIndex) =>
+      cell === '#' ? [columnIndex] : [],
+    );
     if (activeColumns.length === 0) {
       return;
     }
     if (activeColumns.length < 2) {
-      throw new RangeError('Every non-empty collectible bitmap row must contain at least two coins.');
+      throw new RangeError(
+        'Every non-empty collectible bitmap row must contain at least two coins.',
+      );
     }
 
     paths.push(
