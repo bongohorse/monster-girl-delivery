@@ -92,11 +92,7 @@ describe('live stream recovery regressions', () => {
     while (state.runDistance < 4_800) {
       const speed = state.schedulingWindow.scrollSpeed;
       const boundary =
-        state.runDistance < 2_500
-          ? 2_500
-          : state.runDistance < 3_900
-            ? 3_900
-            : 4_800;
+        state.runDistance < 2_500 ? 2_500 : state.runDistance < 3_900 ? 3_900 : 4_800;
       const distance = Math.min(state.runDistance + speed * 0.05, boundary);
       state = advanceGeneratedHazardStream(
         state,
