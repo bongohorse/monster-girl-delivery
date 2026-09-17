@@ -40,7 +40,12 @@ export interface PacingSnapshot extends PacingPressureLimits {
 const createPhase = (phase: PacingPhaseDefinition): Readonly<PacingPhaseDefinition> =>
   Object.freeze({ ...phase });
 
-/** PROTOTYPE distance windows and pressure ceilings, subject to Director playtesting. */
+/**
+ * Mobile-first M5 rhythm. Every pressure beat is followed by an explicit hazard-free breather.
+ * Low/medium admit only one logical hazard entry; high/peak admit at most one short two-entry
+ * challenge before the next recovery window. This keeps difficulty growth focused on run speed and
+ * execution instead of continuously increasing screen occupancy.
+ */
 export const PROTOTYPE_PACING_CONFIG: Readonly<PacingConfig> = Object.freeze({
   phases: Object.freeze([
     createPhase({
@@ -51,27 +56,45 @@ export const PROTOTYPE_PACING_CONFIG: Readonly<PacingConfig> = Object.freeze({
     }),
     createPhase({
       intensity: 'low',
-      distanceLength: 1_800,
-      maximumPatternEntries: 2,
-      maximumHazardsPer1000Distance: 4,
+      distanceLength: 900,
+      maximumPatternEntries: 1,
+      maximumHazardsPer1000Distance: 2,
+    }),
+    createPhase({
+      intensity: 'breather',
+      distanceLength: 900,
+      maximumPatternEntries: 1,
+      maximumHazardsPer1000Distance: 2,
     }),
     createPhase({
       intensity: 'medium',
-      distanceLength: 1_800,
-      maximumPatternEntries: 3,
-      maximumHazardsPer1000Distance: 5,
+      distanceLength: 900,
+      maximumPatternEntries: 1,
+      maximumHazardsPer1000Distance: 2,
+    }),
+    createPhase({
+      intensity: 'breather',
+      distanceLength: 900,
+      maximumPatternEntries: 1,
+      maximumHazardsPer1000Distance: 2,
     }),
     createPhase({
       intensity: 'high',
-      distanceLength: 1_400,
-      maximumPatternEntries: 5,
-      maximumHazardsPer1000Distance: 7,
+      distanceLength: 1_000,
+      maximumPatternEntries: 2,
+      maximumHazardsPer1000Distance: 5,
+    }),
+    createPhase({
+      intensity: 'breather',
+      distanceLength: 1_000,
+      maximumPatternEntries: 1,
+      maximumHazardsPer1000Distance: 2,
     }),
     createPhase({
       intensity: 'peak',
-      distanceLength: 700,
-      maximumPatternEntries: 6,
-      maximumHazardsPer1000Distance: 8,
+      distanceLength: 900,
+      maximumPatternEntries: 2,
+      maximumHazardsPer1000Distance: 5,
     }),
   ]),
 });
