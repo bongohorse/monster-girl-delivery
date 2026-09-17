@@ -597,7 +597,6 @@ const fillSpawnWindow = (
   state.policy === null
     ? fillLegacySpawnWindow(state, context, runDistance, schedulingWindow)
     : fillPolicySpawnWindow(state, context, runDistance, schedulingWindow);
-
 /** Creates and pre-fills the first deterministic logical spawn window for a run. */
 export const createGeneratedHazardStream = (
   seed: SeedInput,
@@ -785,9 +784,7 @@ const createMotionPlanningContext = (
   });
 };
 
-const getReadabilityClearSeconds = (
-  state: Readonly<GeneratedHazardStreamState>,
-): number | null => {
+const getReadabilityClearSeconds = (state: Readonly<GeneratedHazardStreamState>): number | null => {
   const reservations = state.policy?.readability.reservations ?? [];
   if (reservations.length === 0) {
     return null;
@@ -823,7 +820,9 @@ const getNextMotionDistanceEvent = (
   for (const spawn of state.spawns) {
     const targetDistance = spawn.approachTiming.targetRunDistance;
     if (targetDistance >= currentDistance) {
-      candidates.push(Math.max(targetDistance + MOTION_EVENT_EPSILON, currentDistance + MOTION_EVENT_EPSILON));
+      candidates.push(
+        Math.max(targetDistance + MOTION_EVENT_EPSILON, currentDistance + MOTION_EVENT_EPSILON),
+      );
     }
   }
 
@@ -869,13 +868,11 @@ export const planGeneratedHazardMotion = (
 
     const distanceEvent = getNextMotionDistanceEvent(preview, context);
     const distanceEventSeconds =
-      distanceEvent === null ? Number.POSITIVE_INFINITY : (distanceEvent - preview.runDistance) / scrollSpeed;
+      distanceEvent === null
+        ? Number.POSITIVE_INFINITY
+        : (distanceEvent - preview.runDistance) / scrollSpeed;
     const readabilityClearSeconds = getReadabilityClearSeconds(preview) ?? Number.POSITIVE_INFINITY;
-    let segmentSeconds = Math.min(
-      remainingSeconds,
-      distanceEventSeconds,
-      readabilityClearSeconds,
-    );
+    let segmentSeconds = Math.min(remainingSeconds, distanceEventSeconds, readabilityClearSeconds);
 
     if (!Number.isFinite(segmentSeconds) || segmentSeconds <= 0) {
       segmentSeconds = remainingSeconds;
@@ -947,9 +944,7 @@ export const resolveGeneratedHazardMotionRunDistance = (
       if (elapsedSeconds === segmentEndSeconds) {
         return segment.endRunDistance;
       }
-      return (
-        segment.startRunDistance + segment.scrollSpeed * (elapsedSeconds - consumedSeconds)
-      );
+      return segment.startRunDistance + segment.scrollSpeed * (elapsedSeconds - consumedSeconds);
     }
     consumedSeconds = segmentEndSeconds;
   }
