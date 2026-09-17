@@ -4,6 +4,7 @@ import {
   PROTOTYPE_ZAPPER_LENGTHS,
 } from '../hazards/PrototypeZapperHazard';
 import { createHazardPattern, type HazardPattern } from './HazardPattern';
+import { M5_COLLECTIBLE_MOVEMENT_PATTERNS } from './M5CollectibleMovementPatterns';
 import {
   PROTOTYPE_LASER_PATTERN,
   PROTOTYPE_M5_HAZARD_PATTERN_FIXTURES,
@@ -71,6 +72,19 @@ export const M5_MISSILE_ZAPPER_PATTERN: Readonly<HazardPattern> = createHazardPa
         : { reactionPolicy: PROTOTYPE_MISSILE_ENTRY.reactionPolicy }),
     },
   ],
+  collectiblePaths: [
+    {
+      id: 'missile-zapper-graze-invite',
+      intent: 'risk-reward',
+      points: [
+        { runDistance: 64, y: 220 },
+        { runDistance: 140, y: 210 },
+        { runDistance: 230, y: 210 },
+        { runDistance: 300, y: 240 },
+        { runDistance: 360, y: 265 },
+      ],
+    },
+  ],
 });
 
 /**
@@ -130,11 +144,33 @@ export const M5_LASER_ZAPPER_PATTERN: Readonly<HazardPattern> = createHazardPatt
       hitbox: createPrototypeZapperHitbox(360, 260, LOWER_DIAGONAL_ZAPPER_BEHAVIOR),
     },
   ],
+  collectiblePaths: [
+    {
+      id: 'laser-zapper-center-route',
+      intent: 'safe-guide',
+      points: [
+        { runDistance: 64, y: 180 },
+        { runDistance: 160, y: 180 },
+        { runDistance: 260, y: 175 },
+        { runDistance: 360, y: 170 },
+        { runDistance: 480, y: 175 },
+        { runDistance: 620, y: 185 },
+        { runDistance: 700, y: 195 },
+      ],
+    },
+  ],
 });
 
 export const M5_AUTHORED_MULTI_HAZARD_PATTERNS: ReadonlyArray<Readonly<HazardPattern>> =
   Object.freeze([M5_MISSILE_ZAPPER_PATTERN, M5_MISSILE_LASER_PATTERN, M5_LASER_ZAPPER_PATTERN]);
 
-/** Live M5 catalog: proven baseline vocabulary plus the small authored Phase-2 combination set. */
+/**
+ * Live M5 catalog: proven baseline vocabulary, authored Phase-2 combinations, and the focused
+ * teaching/recovery route patterns that make collectibles part of the encounter language.
+ */
 export const PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG: ReadonlyArray<Readonly<HazardPattern>> =
-  Object.freeze([...PROTOTYPE_M5_HAZARD_PATTERN_FIXTURES, ...M5_AUTHORED_MULTI_HAZARD_PATTERNS]);
+  Object.freeze([
+    ...PROTOTYPE_M5_HAZARD_PATTERN_FIXTURES,
+    ...M5_AUTHORED_MULTI_HAZARD_PATTERNS,
+    ...M5_COLLECTIBLE_MOVEMENT_PATTERNS,
+  ]);
