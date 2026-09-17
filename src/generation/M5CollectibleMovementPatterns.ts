@@ -64,7 +64,7 @@ const enrichPattern = (
 /**
  * Teaching vocabulary layered onto the existing three-barrier live slot. The guide is resampled by
  * actual path length, so the climb/crest/descent no longer produces visibly irregular coin gaps.
- * A compact heart after the last barrier turns successful traversal into an obvious reward beat.
+ * A compact heart begins only after the last barrier's conservative player-expanded clearance.
  */
 export const M5_TEACHING_FLIGHT_ARC_PATTERN: Readonly<HazardPattern> = enrichPattern(
   PROTOTYPE_LINE_PATTERN,
@@ -89,7 +89,7 @@ export const M5_TEACHING_FLIGHT_ARC_PATTERN: Readonly<HazardPattern> = enrichPat
       bitmap: HEART_BITMAP,
       cellSpacingX: 12,
       cellSpacingY: 10,
-      originRunDistance: 496,
+      originRunDistance: 500,
       originY: 160,
     }),
   ],
@@ -115,9 +115,8 @@ export const M5_CORRIDOR_REWARD_PATTERN: Readonly<HazardPattern> = enrichPattern
 );
 
 /**
- * The established optional Graze line is made denser and evenly spaced. After the second barrier a
- * separate star is pure reward space; the risky route remains optional and never becomes survival
- * authority.
+ * The established optional Graze line is made denser and evenly spaced. The star starts after the
+ * second barrier's conservative clearance; tighter 15px cells let the full shape fit in runLength.
  */
 export const M5_OFFSET_RISK_REWARD_PATTERN: Readonly<HazardPattern> = enrichPattern(
   PROTOTYPE_OFFSET_PAIR_PATTERN,
@@ -135,9 +134,9 @@ export const M5_OFFSET_RISK_REWARD_PATTERN: Readonly<HazardPattern> = enrichPatt
       id: 'offset-star-reward',
       intent: 'safe-guide',
       bitmap: STAR_BITMAP,
-      cellSpacingX: 16,
+      cellSpacingX: 15,
       cellSpacingY: 10,
-      originRunDistance: 388,
+      originRunDistance: 400,
       originY: 165,
     }),
   ],
