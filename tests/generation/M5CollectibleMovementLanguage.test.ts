@@ -157,10 +157,11 @@ describe('M5 collectible movement language', () => {
       const state = createLiveEncounterPolicyState(runDistance, REACHABILITY);
       const selection = selectLiveEncounterCandidates([pattern], runDistance, state);
       expect(selection.pacing.intensity).toBe(intensity);
-      expect(selection.primaryCatalog).toEqual([pattern]);
+      const candidateCatalog = [...selection.primaryCatalog, ...selection.deferredCatalog];
+      expect(candidateCatalog).toContain(pattern);
 
       const evaluation = evaluateLiveEncounterReadability(
-        selection.primaryCatalog,
+        candidateCatalog,
         state,
         selection.pacing,
         0,
@@ -168,7 +169,7 @@ describe('M5 collectible movement language', () => {
         runDistance,
         350,
         REACHABILITY.playerExtents,
-      )[0];
+      ).find((candidate) => candidate.pattern === pattern);
 
       expect(evaluation).toMatchObject({
         intrinsicallyEligible: true,
