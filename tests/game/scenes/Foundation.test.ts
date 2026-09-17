@@ -21,9 +21,11 @@ import { scheduleNextPattern } from '../../../src/generation/PatternSpawnSchedul
 import {
   PROTOTYPE_LINE_PATTERN,
   PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES,
-  PROTOTYPE_OFFSET_PAIR_PATTERN,
   PROTOTYPE_TARGET_LOCK_STRIKE_PATTERN,
+  PROTOTYPE_TIMED_PULSE_PATTERN,
+  PROTOTYPE_ZAPPER_PATTERN,
 } from '../../../src/generation/PrototypeHazardPatternFixtures';
+import { createPrototypeHazardVerticalDomain } from '../../../src/generation/PrototypeHazardVerticalDomain';
 import { createRunGenerationState } from '../../../src/generation/RunGenerationState';
 import { resolveHazardHitboxAtRunDistance } from '../../../src/hazards/HazardArchetype';
 import * as TelegraphedHazardSimulation from '../../../src/hazards/TelegraphedHazardSimulation';
@@ -73,7 +75,7 @@ const createTestHazardStreamContext = (
   });
 
 const createLowPhaseHazardStream = (services: ReturnType<typeof createAppServices>) => {
-  const context = createTestHazardStreamContext(services, [PROTOTYPE_OFFSET_PAIR_PATTERN]);
+  const context = createTestHazardStreamContext(services, [PROTOTYPE_ZAPPER_PATTERN]);
   const initial = createGeneratedHazardStream(
     PROTOTYPE_LIVE_RUN_SEED,
     context,
@@ -210,17 +212,57 @@ describe('Foundation scene gameplay orchestration', () => {
   });
 
   it('commits new telegraphs after the frame step and keeps reservation and lifecycle clocks aligned', () => {
-    const { foundation, services } = createFoundationHarness();
-    const initial = createGeneratedHazardStream(
-      1,
-      createTestHazardStreamContext(services),
-      services.runMotion.getSnapshot(),
+    const { foundation, services, viewportService } = createFoundationHarness();
+    const domain = createPrototypeHazardVerticalDomain(
+      createPrototypeFlightBounds(viewportService.getSnapshot()),
+      [PROTOTYPE_TIMED_PULSE_PATTERN],
     );
+    Reflect.set(foundation, 'hazardVerticalDomain', domain);
+    const context = Object.freeze({
+      ...createTestHazardStreamContext(services, domain.catalog),
+      constraints: domain.constraints,
+    });
+    let initial = createGeneratedHazardStream(1, context, services.runMotion.getSnapshot());
+    let distance = 0;
+    let admissionDistance: number | null = null;
+
+    for (let frame = 0; frame < 2_000 && admissionDistance === null; frame += 1) {
+      const resolved = advanceGeneratedHazardStream(
+        initial,
+        distance,
+        context,
+        services.runMotion.getSnapshot(),
+        0,
+        false,
+      );
+      const deltaSeconds = 0.016;
+      const nextDistance = distance + resolved.schedulingWindow.scrollSpeed * deltaSeconds;
+      const committed = advanceGeneratedHazardStream(
+        resolved,
+        nextDistance,
+        context,
+        services.runMotion.getSnapshot(),
+        deltaSeconds,
+        true,
+      );
+      if (committed.spawns.length > resolved.spawns.length) {
+        initial = resolved;
+        admissionDistance = distance;
+        break;
+      }
+      initial = committed;
+      distance = nextDistance;
+    }
+
+    expect(admissionDistance).not.toBeNull();
+    if (admissionDistance === null) {
+      throw new Error('Expected the isolated timed hazard to reach an admission frame.');
+    }
+
     Reflect.set(foundation, 'hazardStream', initial);
-    // Moving the scheduling horizon makes the current M5 timed slot enter the stream.
     Reflect.set(foundation, 'runState', {
       phase: 'running',
-      motion: { distance: 1800 },
+      motion: { distance: admissionDistance },
       flight: { positionY: 400, velocityY: 0 },
     });
     foundation.update(0, 16);
@@ -230,7 +272,9 @@ describe('Foundation scene gameplay orchestration', () => {
     if (!spawn || !reservation || spawn.behavior.archetype !== 'timed') {
       throw new Error('Expected the seeded timed hazard.');
     }
-    expect(spawn.approachTiming.observedAtRunDistance).toBeCloseTo(1805.6);
+    expect(spawn.approachTiming.observedAtRunDistance).toBeCloseTo(
+      getRunMotionState(foundation).distance,
+    );
     expect(
       getTelegraphedHazardLifecycle(getTelegraphedHazardState(foundation), spawn),
     ).toMatchObject({ phase: 'warning', elapsedPhaseSeconds: 0 });
