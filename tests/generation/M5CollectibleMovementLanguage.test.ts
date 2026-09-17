@@ -11,6 +11,9 @@ import {
   PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG,
 } from '../../src/generation/M5AuthoredMultiHazardPatterns';
 import {
+  M5_COLLECTIBLE_MOVEMENT_PATTERNS,
+  M5_CORRIDOR_REWARD_PATTERN,
+  M5_OFFSET_RISK_REWARD_PATTERN,
   M5_RECOVERY_ROUTE_PATTERN,
   M5_TEACHING_FLIGHT_ARC_PATTERN,
 } from '../../src/generation/M5CollectibleMovementPatterns';
@@ -24,6 +27,7 @@ import {
 } from '../../src/generation/PrototypeHazardPatternFixtures';
 import { createPrototypeHazardVerticalDomain } from '../../src/generation/PrototypeHazardVerticalDomain';
 import { createRunGenerationState } from '../../src/generation/RunGenerationState';
+import type { HazardPattern } from '../../src/generation/HazardPattern';
 
 const REACHABILITY = Object.freeze({
   flightState: PROTOTYPE_PATTERN_REACHABILITY_CONTEXT.flightState,
@@ -40,37 +44,40 @@ const REPRESENTATIVE_ROUTES = Object.freeze([
   }),
   Object.freeze({
     role: 'safe-route',
-    pattern: PROTOTYPE_CORRIDOR_PATTERN,
-    pathId: 'corridor-safe-guide',
+    pattern: M5_CORRIDOR_REWARD_PATTERN,
+    pathId: 'corridor-triple-row-row-2',
     intent: 'safe-guide',
   }),
   Object.freeze({
     role: 'risk',
-    pattern: PROTOTYPE_OFFSET_PAIR_PATTERN,
+    pattern: M5_OFFSET_RISK_REWARD_PATTERN,
     pathId: 'offset-graze-route',
     intent: 'risk-reward',
   }),
   Object.freeze({
     role: 'recovery',
     pattern: M5_RECOVERY_ROUTE_PATTERN,
-    pathId: 'recovery-gentle-wave',
+    pathId: 'recovery-coins-text-row-1',
     intent: 'safe-guide',
   }),
   Object.freeze({
     role: 'hazard-composed',
     pattern: M5_LASER_ZAPPER_PATTERN,
-    pathId: 'laser-zapper-center-route',
+    pathId: 'laser-zapper-center-wave',
     intent: 'safe-guide',
   }),
 ] as const);
 
-const getPath = (pattern: (typeof REPRESENTATIVE_ROUTES)[number]['pattern'], pathId: string) => {
+const getPath = (pattern: Readonly<HazardPattern>, pathId: string) => {
   const path = pattern.collectiblePaths?.find((candidate) => candidate.id === pathId);
   if (!path) {
     throw new Error(`Missing collectible route ${pattern.id}/${pathId}.`);
   }
   return path;
 };
+
+const countCollectibles = (pattern: Readonly<HazardPattern>): number =>
+  (pattern.collectiblePaths ?? []).reduce((sum, path) => sum + path.points.length, 0);
 
 describe('M5 collectible movement language', () => {
   it.each(REPRESENTATIVE_ROUTES)(
@@ -82,30 +89,74 @@ describe('M5 collectible movement language', () => {
     },
   );
 
-  it('adds teaching and recovery routes without changing their established hazard slots', () => {
-    expect(M5_TEACHING_FLIGHT_ARC_PATTERN).toMatchObject({
-      id: PROTOTYPE_LINE_PATTERN.id,
-      runLength: PROTOTYPE_LINE_PATTERN.runLength,
-      profile: PROTOTYPE_LINE_PATTERN.profile,
-      entries: PROTOTYPE_LINE_PATTERN.entries,
-    });
-    expect(M5_RECOVERY_ROUTE_PATTERN).toMatchObject({
-      id: PROTOTYPE_ZAPPER_PATTERN.id,
-      runLength: PROTOTYPE_ZAPPER_PATTERN.runLength,
-      profile: PROTOTYPE_ZAPPER_PATTERN.profile,
-      entries: PROTOTYPE_ZAPPER_PATTERN.entries,
-    });
+  it('enriches existing slots without changing established hazard identity, profile, or geometry', () => {
+    const pairs = [
+      [M5_TEACHING_FLIGHT_ARC_PATTERN, PROTOTYPE_LINE_PATTERN],
+      [M5_CORRIDOR_REWARD_PATTERN, PROTOTYPE_CORRIDOR_PATTERN],
+      [M5_OFFSET_RISK_REWARD_PATTERN, PROTOTYPE_OFFSET_PAIR_PATTERN],
+      [M5_RECOVERY_ROUTE_PATTERN, PROTOTYPE_ZAPPER_PATTERN],
+    ] as const;
+
+    for (const [enriched, baseline] of pairs) {
+      expect(enriched).toMatchObject({
+        id: baseline.id,
+        runLength: baseline.runLength,
+        profile: baseline.profile,
+        entries: baseline.entries,
+      });
+      expect(PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG).toContain(enriched);
+    }
   });
 
-  it('keeps risky collectible guidance optional relative to the pattern survival route', () => {
-    const riskPath = getPath(PROTOTYPE_OFFSET_PAIR_PATTERN, 'offset-graze-route');
+  it('uses an exact 3x10 aligned reward block through the safe corridor', () => {
+    const rows = M5_CORRIDOR_REWARD_PATTERN.collectiblePaths ?? [];
+    expect(rows).toHaveLength(3);
+    expect(rows.map((row) => row.points.length)).toEqual([10, 10, 10]);
+    expect(rows.map((row) => row.points[0]?.y)).toEqual([172, 195, 218]);
 
+    for (const row of rows) {
+      const gaps = row.points.slice(1).map((point, index) => {
+        const previous = row.points[index];
+        if (!previous) {
+          throw new Error('Missing previous corridor coin.');
+        }
+        return point.runDistance - previous.runDistance;
+      });
+      expect(gaps).toEqual(Array(9).fill(32));
+    }
+  });
+
+  it('ships visible heart, star, and COINS! reward formations without adding hazard slots', () => {
+    expect(
+      M5_TEACHING_FLIGHT_ARC_PATTERN.collectiblePaths?.some((path) =>
+        path.id.startsWith('teaching-heart-reward-row-'),
+      ),
+    ).toBe(true);
+    expect(
+      M5_OFFSET_RISK_REWARD_PATTERN.collectiblePaths?.some((path) =>
+        path.id.startsWith('offset-star-reward-row-'),
+      ),
+    ).toBe(true);
+    expect(
+      M5_RECOVERY_ROUTE_PATTERN.collectiblePaths?.some((path) =>
+        path.id.startsWith('recovery-coins-text-row-'),
+      ),
+    ).toBe(true);
+    expect(M5_COLLECTIBLE_MOVEMENT_PATTERNS).toHaveLength(4);
+  });
+
+  it('keeps risky guidance optional while placing separate safe reward geometry after it', () => {
+    const riskPath = getPath(M5_OFFSET_RISK_REWARD_PATTERN, 'offset-graze-route');
     expect(riskPath.intent).toBe('risk-reward');
-    expect(PROTOTYPE_OFFSET_PAIR_PATTERN.collectiblePaths).toHaveLength(1);
-    expect(validatePattern(PROTOTYPE_OFFSET_PAIR_PATTERN).valid).toBe(true);
+    expect(
+      M5_OFFSET_RISK_REWARD_PATTERN.collectiblePaths?.some(
+        (path) => path.intent === 'safe-guide' && path.id.startsWith('offset-star-reward-row-'),
+      ),
+    ).toBe(true);
+    expect(validatePattern(M5_OFFSET_RISK_REWARD_PATTERN)).toEqual({ valid: true, issues: [] });
   });
 
-  it('materializes the same teaching-route collectible identities and geometry deterministically', () => {
+  it('materializes dense authored formations deterministically with stable identities', () => {
     const schedule = () =>
       scheduleNextPattern({
         catalog: [M5_TEACHING_FLIGHT_ARC_PATTERN],
@@ -136,27 +187,20 @@ describe('M5 collectible movement language', () => {
     );
 
     expect(first).toEqual(second);
-    expect(first).toHaveLength(7);
-    expect(
-      first.map(({ pathPointIndex, runDistance, y }) => ({ pathPointIndex, runDistance, y })),
-    ).toEqual(
-      M5_TEACHING_FLIGHT_ARC_PATTERN.collectiblePaths?.[0]?.points.map((point, pathPointIndex) => ({
-        pathPointIndex,
-        runDistance: 2_000 + point.runDistance,
-        y: point.y,
-      })),
+    expect(first).toHaveLength(countCollectibles(M5_TEACHING_FLIGHT_ARC_PATTERN));
+    expect(first.length).toBeGreaterThan(30);
+    expect(new Set(first.map((spawn) => `${spawn.pathId}:${spawn.pathPointIndex}`)).size).toBe(
+      first.length,
     );
   });
 
-  it.each([
-    { pattern: M5_TEACHING_FLIGHT_ARC_PATTERN, runDistance: 3_200, intensity: 'medium' },
-    { pattern: M5_RECOVERY_ROUTE_PATTERN, runDistance: 3_200, intensity: 'medium' },
-  ] as const)(
-    '$pattern.id is admitted by its established live policy window instead of existing only as test data',
-    ({ pattern, runDistance, intensity }) => {
+  it.each(M5_COLLECTIBLE_MOVEMENT_PATTERNS)(
+    '$id remains selectable through its established live policy window',
+    (pattern) => {
+      const runDistance = 3_200;
       const state = createLiveEncounterPolicyState(runDistance, REACHABILITY);
       const selection = selectLiveEncounterCandidates([pattern], runDistance, state);
-      expect(selection.pacing.intensity).toBe(intensity);
+      expect(selection.pacing.intensity).toBe('medium');
       const candidateCatalog = [...selection.primaryCatalog, ...selection.deferredCatalog];
       expect(candidateCatalog).toContain(pattern);
 
@@ -178,7 +222,7 @@ describe('M5 collectible movement language', () => {
     },
   );
 
-  it('maps route Y positions with the logical vertical domain while preserving authored run distances', () => {
+  it('maps every route Y position with the logical vertical domain while preserving authored X', () => {
     const domain = createPrototypeHazardVerticalDomain({ ceilingY: -172, floorY: 362 }, [
       M5_TEACHING_FLIGHT_ARC_PATTERN,
       M5_LASER_ZAPPER_PATTERN,
@@ -193,18 +237,22 @@ describe('M5 collectible movement language', () => {
       [M5_TEACHING_FLIGHT_ARC_PATTERN, adaptedTeaching],
       [M5_LASER_ZAPPER_PATTERN, adaptedComposed],
     ] as const) {
-      const authoredPath = authored.collectiblePaths?.[0];
-      const adaptedPath = adapted.collectiblePaths?.[0];
-      if (!authoredPath || !adaptedPath) {
-        throw new Error(`Expected route data for ${authored.id}.`);
+      expect(adapted.collectiblePaths).toHaveLength(authored.collectiblePaths?.length ?? 0);
+      for (let pathIndex = 0; pathIndex < (authored.collectiblePaths?.length ?? 0); pathIndex += 1) {
+        const authoredPath = authored.collectiblePaths?.[pathIndex];
+        const adaptedPath = adapted.collectiblePaths?.[pathIndex];
+        if (!authoredPath || !adaptedPath) {
+          throw new Error(`Expected route data for ${authored.id}.`);
+        }
+
+        expect(adaptedPath.points.map((point) => point.runDistance)).toEqual(
+          authoredPath.points.map((point) => point.runDistance),
+        );
+        expect(adaptedPath.points.map((point) => point.y)).toEqual(
+          authoredPath.points.map((point) => domain.mapAuthoredCenterY(point.y)),
+        );
       }
 
-      expect(adaptedPath.points.map((point) => point.runDistance)).toEqual(
-        authoredPath.points.map((point) => point.runDistance),
-      );
-      expect(adaptedPath.points.map((point) => point.y)).toEqual(
-        authoredPath.points.map((point) => domain.mapAuthoredCenterY(point.y)),
-      );
       expect(
         validatePattern(adapted, domain.constraints, {
           ...PROTOTYPE_PATTERN_REACHABILITY_CONTEXT,
