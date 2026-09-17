@@ -120,7 +120,9 @@ describe('M5 collectible movement language', () => {
 
     expect(first).toEqual(second);
     expect(first).toHaveLength(8);
-    expect(first.map(({ pathPointIndex, runDistance, y }) => ({ pathPointIndex, runDistance, y }))).toEqual(
+    expect(
+      first.map(({ pathPointIndex, runDistance, y }) => ({ pathPointIndex, runDistance, y })),
+    ).toEqual(
       M5_TEACHING_FLIGHT_ARC_PATTERN.collectiblePaths?.[0]?.points.map((point, pathPointIndex) => ({
         pathPointIndex,
         runDistance: 2_000 + point.runDistance,
@@ -159,10 +161,10 @@ describe('M5 collectible movement language', () => {
   );
 
   it('maps route Y positions with the logical vertical domain while preserving authored run distances', () => {
-    const domain = createPrototypeHazardVerticalDomain(
-      { ceilingY: -172, floorY: 362 },
-      [M5_TEACHING_FLIGHT_ARC_PATTERN, M5_LASER_ZAPPER_PATTERN],
-    );
+    const domain = createPrototypeHazardVerticalDomain({ ceilingY: -172, floorY: 362 }, [
+      M5_TEACHING_FLIGHT_ARC_PATTERN,
+      M5_LASER_ZAPPER_PATTERN,
+    ]);
     const adaptedTeaching = domain.catalog[0];
     const adaptedComposed = domain.catalog[1];
     if (!adaptedTeaching || !adaptedComposed) {
