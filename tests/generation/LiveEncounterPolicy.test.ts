@@ -126,7 +126,7 @@ const progressPolicyStream = (seed: string) => {
 
   return advanceGeneratedHazardStream(
     lowPhase,
-    2_600,
+    4_200,
     POLICY_CONTEXT,
     PROTOTYPE_RUN_MOTION_DEFAULTS,
     5,
@@ -223,13 +223,38 @@ describe('live encounter policy integration', () => {
   });
 
   it('changes authored encounter eligibility at the exact difficulty tier boundary', () => {
-    const state = createLiveEncounterPolicyState(2_499, REACHABILITY);
+    const config = {
+      ...PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG,
+      pacing: {
+        phases: [
+          {
+            intensity: 'low' as const,
+            distanceLength: 3_000,
+            maximumPatternEntries: 3,
+            maximumHazardsPer1000Distance: 5,
+          },
+          {
+            intensity: 'breather' as const,
+            distanceLength: 1_000,
+            maximumPatternEntries: 1,
+            maximumHazardsPer1000Distance: 1,
+          },
+        ],
+      },
+    };
+    const state = createLiveEncounterPolicyState(2_499, REACHABILITY, config);
     const beforeBoundary = selectLiveEncounterCandidates(
       [PROTOTYPE_OFFSET_PAIR_PATTERN],
       2_499,
       state,
+      config,
     );
-    const atBoundary = selectLiveEncounterCandidates([PROTOTYPE_OFFSET_PAIR_PATTERN], 2_500, state);
+    const atBoundary = selectLiveEncounterCandidates(
+      [PROTOTYPE_OFFSET_PAIR_PATTERN],
+      2_500,
+      state,
+      config,
+    );
 
     expect(beforeBoundary).toMatchObject({
       difficulty: { tierIndex: 0 },
@@ -257,7 +282,7 @@ describe('live encounter policy integration', () => {
       14_200,
       state,
     );
-    const highPressure = selectLiveEncounterCandidates([PROTOTYPE_LINE_PATTERN], 19_200, state);
+    const highPressure = selectLiveEncounterCandidates([PROTOTYPE_LINE_PATTERN], 20_200, state);
 
     expect(first).toEqual(replay);
     expect(first).toMatchObject({
@@ -265,7 +290,7 @@ describe('live encounter policy integration', () => {
       pacing: { intensity: 'breather' },
       primaryCatalog: [],
       deferredCatalog: [],
-      nextPolicyBoundaryDistance: 15_600,
+      nextPolicyBoundaryDistance: 15_400,
     });
     expect(highPressure).toMatchObject({
       difficulty: { capped: true, tierIndex: 3 },
@@ -290,13 +315,13 @@ describe('live encounter policy integration', () => {
   it('lets recent-family variety prefer a fresh family while retaining deterministic small-catalog fallback', () => {
     const recent = createVarietyPattern('recent-family-pattern', 'family-a');
     const fresh = createVarietyPattern('fresh-family-pattern', 'family-b');
-    const baseState = createLiveEncounterPolicyState(2_500, REACHABILITY);
+    const baseState = createLiveEncounterPolicyState(3_900, REACHABILITY);
     const state: Readonly<LiveEncounterPolicyState> = Object.freeze({
       ...baseState,
       variety: createEncounterVarietyHistoryState(['family-a']),
     });
-    const varied = selectLiveEncounterCandidates([recent, fresh], 2_500, state);
-    const fallback = selectLiveEncounterCandidates([recent], 2_500, state);
+    const varied = selectLiveEncounterCandidates([recent, fresh], 3_900, state);
+    const fallback = selectLiveEncounterCandidates([recent], 3_900, state);
 
     expect(varied.primaryCatalog).toEqual([fresh]);
     expect(varied.deferredCatalog).toEqual([recent]);
@@ -305,15 +330,15 @@ describe('live encounter policy integration', () => {
   });
 
   it('defers overlapping readable candidates without making an individually safe candidate ineligible', () => {
-    const state = createLiveEncounterPolicyState(1_800, REACHABILITY);
-    const pacing = calculatePacing(2_500);
+    const state = createLiveEncounterPolicyState(3_900, REACHABILITY);
+    const pacing = calculatePacing(3_900);
     const first = evaluateLiveEncounterReadability(
       [PROTOTYPE_TARGET_LOCK_STRIKE_PATTERN],
       state,
       pacing,
       0,
-      2_500,
-      1_800,
+      3_900,
+      3_900,
       350,
       REACHABILITY.playerExtents,
     )[0];
@@ -333,8 +358,8 @@ describe('live encounter policy integration', () => {
       occupiedState,
       pacing,
       1,
-      2_500,
-      1_800,
+      3_900,
+      3_900,
       350,
       REACHABILITY.playerExtents,
     )[0];
@@ -353,19 +378,19 @@ describe('live encounter policy integration', () => {
   });
 
   it('keeps transition-fairness rejection deterministic after policy eligibility filtering', () => {
-    const baseState = createLiveEncounterPolicyState(2_500, REACHABILITY);
+    const baseState = createLiveEncounterPolicyState(3_900, REACHABILITY);
     const state: Readonly<LiveEncounterPolicyState> = Object.freeze({
       ...baseState,
       exitEnvelope: createEncounterExitStateEnvelope({
-        runDistance: 2_500,
+        runDistance: 3_900,
         states: [{ positionY: 300, velocityY: 650 }],
       }),
     });
-    const selection = selectLiveEncounterCandidates([HIGH_ENTRY_PATTERN], 2_500, state);
+    const selection = selectLiveEncounterCandidates([HIGH_ENTRY_PATTERN], 3_900, state);
     const request = {
       catalog: selection.primaryCatalog,
       constraints: selection.constraints,
-      patternStartDistance: 2_500,
+      patternStartDistance: 3_900,
       reachability: {
         ...REACHABILITY,
         availableReactionTimeSeconds: selection.difficulty.minimumReactionTimeSeconds,
