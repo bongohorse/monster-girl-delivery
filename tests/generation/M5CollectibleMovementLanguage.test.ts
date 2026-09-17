@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { PROTOTYPE_PATTERN_REACHABILITY_CONTEXT } from '../../src/generation/FlightReachability';
 import { reconcileGeneratedCollectibles } from '../../src/generation/GeneratedCollectibles';
+import type { HazardPattern } from '../../src/generation/HazardPattern';
 import {
   createLiveEncounterPolicyState,
   evaluateLiveEncounterReadability,
@@ -27,7 +28,6 @@ import {
 } from '../../src/generation/PrototypeHazardPatternFixtures';
 import { createPrototypeHazardVerticalDomain } from '../../src/generation/PrototypeHazardVerticalDomain';
 import { createRunGenerationState } from '../../src/generation/RunGenerationState';
-import type { HazardPattern } from '../../src/generation/HazardPattern';
 
 const REACHABILITY = Object.freeze({
   flightState: PROTOTYPE_PATTERN_REACHABILITY_CONTEXT.flightState,
@@ -238,7 +238,11 @@ describe('M5 collectible movement language', () => {
       [M5_LASER_ZAPPER_PATTERN, adaptedComposed],
     ] as const) {
       expect(adapted.collectiblePaths).toHaveLength(authored.collectiblePaths?.length ?? 0);
-      for (let pathIndex = 0; pathIndex < (authored.collectiblePaths?.length ?? 0); pathIndex += 1) {
+      for (
+        let pathIndex = 0;
+        pathIndex < (authored.collectiblePaths?.length ?? 0);
+        pathIndex += 1
+      ) {
         const authoredPath = authored.collectiblePaths?.[pathIndex];
         const adaptedPath = adapted.collectiblePaths?.[pathIndex];
         if (!authoredPath || !adaptedPath) {
