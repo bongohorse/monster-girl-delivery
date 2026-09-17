@@ -12,15 +12,21 @@ describe('pacing system', () => {
   it.each([
     [0, 'breather', 0, 1_400],
     [1_399.999, 'breather', 0, 1_400],
-    [1_400, 'low', 1_400, 3_200],
-    [3_199.999, 'low', 1_400, 3_200],
-    [3_200, 'medium', 3_200, 5_000],
-    [4_999.999, 'medium', 3_200, 5_000],
-    [5_000, 'high', 5_000, 6_400],
-    [6_399.999, 'high', 5_000, 6_400],
-    [6_400, 'peak', 6_400, 7_100],
-    [7_099.999, 'peak', 6_400, 7_100],
-    [7_100, 'breather', 7_100, 8_500],
+    [1_400, 'low', 1_400, 2_300],
+    [2_299.999, 'low', 1_400, 2_300],
+    [2_300, 'breather', 2_300, 3_200],
+    [3_199.999, 'breather', 2_300, 3_200],
+    [3_200, 'medium', 3_200, 4_100],
+    [4_099.999, 'medium', 3_200, 4_100],
+    [4_100, 'breather', 4_100, 5_000],
+    [4_999.999, 'breather', 4_100, 5_000],
+    [5_000, 'high', 5_000, 6_000],
+    [5_999.999, 'high', 5_000, 6_000],
+    [6_000, 'breather', 6_000, 7_000],
+    [6_999.999, 'breather', 6_000, 7_000],
+    [7_000, 'peak', 7_000, 7_900],
+    [7_899.999, 'peak', 7_000, 7_900],
+    [7_900, 'breather', 7_900, 9_300],
   ] as const)(
     'resolves distance %s to %s with explicit boundaries',
     (distance, intensity, start, end) => {
@@ -34,13 +40,60 @@ describe('pacing system', () => {
     },
   );
 
+  it('puts an explicit hazard-free recovery phase after every pressure phase', () => {
+    const phases = PROTOTYPE_PACING_CONFIG.phases;
+
+    for (const [index, phase] of phases.entries()) {
+      if (phase.intensity === 'breather') {
+        continue;
+      }
+      const next = phases[(index + 1) % phases.length];
+      expect(next?.intensity).toBe('breather');
+    }
+
+    const breatherDistance = phases
+      .filter((phase) => phase.intensity === 'breather')
+      .reduce((sum, phase) => sum + phase.distanceLength, 0);
+    const totalDistance = phases.reduce((sum, phase) => sum + phase.distanceLength, 0);
+    expect(breatherDistance / totalDistance).toBeGreaterThan(0.5);
+  });
+
+  it('keeps low and medium to one hazard entry and bounds challenge beats to two entries', () => {
+    const pressure = Object.fromEntries(
+      PROTOTYPE_PACING_CONFIG.phases
+        .filter((phase) => phase.intensity !== 'breather')
+        .map((phase) => [phase.intensity, phase]),
+    );
+
+    expect(pressure.low).toMatchObject({
+      maximumPatternEntries: 1,
+      maximumHazardsPer1000Distance: 2,
+      distanceLength: 900,
+    });
+    expect(pressure.medium).toMatchObject({
+      maximumPatternEntries: 1,
+      maximumHazardsPer1000Distance: 2,
+      distanceLength: 900,
+    });
+    expect(pressure.high).toMatchObject({
+      maximumPatternEntries: 2,
+      maximumHazardsPer1000Distance: 5,
+      distanceLength: 1_000,
+    });
+    expect(pressure.peak).toMatchObject({
+      maximumPatternEntries: 2,
+      maximumHazardsPer1000Distance: 5,
+      distanceLength: 900,
+    });
+  });
+
   it('bounds every peak and guarantees a full recovery window over 1,000 cycles', () => {
     for (let cycleIndex = 0; cycleIndex < 1_000; cycleIndex += 1) {
-      const start = cycleIndex * 7_100;
-      const peak = calculatePacing(start + 6_400);
+      const start = cycleIndex * 7_900;
+      const peak = calculatePacing(start + 7_000);
       const recovery = calculatePacing(peak.phaseEndDistance);
 
-      expect(peak).toMatchObject({ cycleIndex, intensity: 'peak', remainingPhaseDistance: 700 });
+      expect(peak).toMatchObject({ cycleIndex, intensity: 'peak', remainingPhaseDistance: 900 });
       expect(recovery).toMatchObject({
         cycleIndex: cycleIndex + 1,
         intensity: 'breather',
@@ -54,14 +107,14 @@ describe('pacing system', () => {
 
   it('recovers even after difficulty has capped and resolves jumps without transition history', () => {
     const opening = calculatePacing(0);
-    const distance = 1_000_000 * 7_100;
+    const distance = 1_000_000 * 7_900;
     expect(calculateDifficulty(distance).capped).toBe(true);
     expect(calculatePacing(distance)).toMatchObject({
       cycleIndex: 1_000_000,
       intensity: 'breather',
       phaseIndex: 0,
     });
-    calculatePacing(distance + 6_400);
+    calculatePacing(distance + 7_000);
     expect(calculatePacing(0)).toEqual(opening);
     expect(calculatePacing(distance)).not.toHaveProperty('tierIndex');
   });
@@ -69,7 +122,7 @@ describe('pacing system', () => {
   it('holds at zero delta, while paused, and on the first resume frame', () => {
     const time = new TimeService();
     const tuning = { baseScrollSpeed: 350 };
-    let motion = { distance: 7_099 };
+    let motion = { distance: 7_899 };
     const before = calculatePacing(motion.distance);
     motion = stepRunMotion(motion, time.update(0), tuning);
     expect(calculatePacing(motion.distance)).toEqual(before);
@@ -87,7 +140,7 @@ describe('pacing system', () => {
   it('resolves equivalent simulation progress independently of frame partitioning', () => {
     const advance = (frameMilliseconds: number, frames: number) => {
       const time = new TimeService();
-      let motion = { distance: 6_400 };
+      let motion = { distance: 7_600 };
       for (let frame = 0; frame < frames; frame += 1) {
         motion = stepRunMotion(motion, time.update(frameMilliseconds), { baseScrollSpeed: 350 });
       }
