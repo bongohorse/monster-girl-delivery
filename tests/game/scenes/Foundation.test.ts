@@ -83,7 +83,7 @@ const createLowPhaseHazardStream = (services: ReturnType<typeof createAppService
   );
   const stream = advanceGeneratedHazardStream(
     initial,
-    1_800,
+    900,
     context,
     services.runMotion.getSnapshot(),
   );
