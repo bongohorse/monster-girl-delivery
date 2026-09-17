@@ -19,7 +19,6 @@ import {
 } from '../../src/generation/LiveEncounterPolicy';
 import { scheduleNextPattern } from '../../src/generation/PatternSpawnScheduler';
 import {
-  PROTOTYPE_LINE_PATTERN,
   PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES,
   PROTOTYPE_OFFSET_PAIR_PATTERN,
   PROTOTYPE_TARGET_LOCK_STRIKE_PATTERN,
@@ -126,10 +125,10 @@ const progressPolicyStream = (seed: string) => {
 
   return advanceGeneratedHazardStream(
     lowPhase,
-    4_200,
+    8_000,
     POLICY_CONTEXT,
     PROTOTYPE_RUN_MOTION_DEFAULTS,
-    5,
+    15,
   );
 };
 
@@ -229,7 +228,7 @@ describe('live encounter policy integration', () => {
         phases: [
           {
             intensity: 'low' as const,
-            distanceLength: 3_000,
+            distanceLength: 4_000,
             maximumPatternEntries: 3,
             maximumHazardsPer1000Distance: 5,
           },
@@ -282,7 +281,11 @@ describe('live encounter policy integration', () => {
       14_200,
       state,
     );
-    const highPressure = selectLiveEncounterCandidates([PROTOTYPE_LINE_PATTERN], 20_200, state);
+    const highPressure = selectLiveEncounterCandidates(
+      [PROTOTYPE_OFFSET_PAIR_PATTERN],
+      20_200,
+      state,
+    );
 
     expect(first).toEqual(replay);
     expect(first).toMatchObject({
@@ -295,7 +298,7 @@ describe('live encounter policy integration', () => {
     expect(highPressure).toMatchObject({
       difficulty: { capped: true, tierIndex: 3 },
       pacing: { intensity: 'high' },
-      primaryCatalog: [PROTOTYPE_LINE_PATTERN],
+      primaryCatalog: [PROTOTYPE_OFFSET_PAIR_PATTERN],
     });
   });
 
@@ -330,15 +333,15 @@ describe('live encounter policy integration', () => {
   });
 
   it('defers overlapping readable candidates without making an individually safe candidate ineligible', () => {
-    const state = createLiveEncounterPolicyState(3_900, REACHABILITY);
-    const pacing = calculatePacing(3_900);
+    const state = createLiveEncounterPolicyState(6_400, REACHABILITY);
+    const pacing = calculatePacing(6_400);
     const first = evaluateLiveEncounterReadability(
       [PROTOTYPE_TARGET_LOCK_STRIKE_PATTERN],
       state,
       pacing,
       0,
-      3_900,
-      3_900,
+      6_400,
+      6_400,
       350,
       REACHABILITY.playerExtents,
     )[0];
@@ -358,8 +361,8 @@ describe('live encounter policy integration', () => {
       occupiedState,
       pacing,
       1,
-      3_900,
-      3_900,
+      6_400,
+      6_400,
       350,
       REACHABILITY.playerExtents,
     )[0];
@@ -378,19 +381,19 @@ describe('live encounter policy integration', () => {
   });
 
   it('keeps transition-fairness rejection deterministic after policy eligibility filtering', () => {
-    const baseState = createLiveEncounterPolicyState(3_900, REACHABILITY);
+    const baseState = createLiveEncounterPolicyState(6_400, REACHABILITY);
     const state: Readonly<LiveEncounterPolicyState> = Object.freeze({
       ...baseState,
       exitEnvelope: createEncounterExitStateEnvelope({
-        runDistance: 3_900,
+        runDistance: 6_400,
         states: [{ positionY: 300, velocityY: 650 }],
       }),
     });
-    const selection = selectLiveEncounterCandidates([HIGH_ENTRY_PATTERN], 3_900, state);
+    const selection = selectLiveEncounterCandidates([HIGH_ENTRY_PATTERN], 6_400, state);
     const request = {
       catalog: selection.primaryCatalog,
       constraints: selection.constraints,
-      patternStartDistance: 3_900,
+      patternStartDistance: 6_400,
       reachability: {
         ...REACHABILITY,
         availableReactionTimeSeconds: selection.difficulty.minimumReactionTimeSeconds,
