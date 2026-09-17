@@ -1,8 +1,5 @@
 import { createHazardPattern, type HazardPattern } from './HazardPattern';
-import {
-  PROTOTYPE_LINE_PATTERN,
-  PROTOTYPE_ZAPPER_PATTERN,
-} from './PrototypeHazardPatternFixtures';
+import { PROTOTYPE_LINE_PATTERN, PROTOTYPE_ZAPPER_PATTERN } from './PrototypeHazardPatternFixtures';
 
 const copyEntries = (pattern: Readonly<HazardPattern>) =>
   pattern.entries.map((entry) => ({
