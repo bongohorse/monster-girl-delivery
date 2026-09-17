@@ -33,7 +33,9 @@ describe('CollectibleFormationGenerator', () => {
     const distances = distancesBetweenPoints(path.points);
     const average = distances.reduce((sum, distance) => sum + distance, 0) / distances.length;
     expect(path.points.length).toBeGreaterThan(6);
-    expect(Math.max(...distances) - Math.min(...distances)).toBeLessThan(2);
+    // Samples are equal by travelled polyline distance. A segment that straddles a sharp authored
+    // corner has a slightly shorter straight-line chord, so allow a small sub-pixel-scale variance.
+    expect(Math.max(...distances) - Math.min(...distances)).toBeLessThan(2.5);
     expect(average).toBeGreaterThan(28);
     expect(average).toBeLessThan(36);
   });
