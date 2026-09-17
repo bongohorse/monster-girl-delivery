@@ -190,14 +190,16 @@ const PROTOTYPE_ROTATING_ZAPPER_BEHAVIOR = createPrototypeZapperBehavior(
 /**
  * M5 live Zapper: short, slow midpoint rotation with a generous lower escape lane. It intentionally
  * keeps the replaced M4 pattern id so existing Director `Z` and deterministic catalog plumbing keep
- * one stable slot while #252 later adds the explicit variant cycle.
+ * one stable slot while #252 later adds the explicit variant cycle. It is also the single simple
+ * live hazard admitted at tier 0 so the opening LOW beat is meaningful instead of an accidental
+ * empty phase; richer single hazards and multi-entry patterns remain gated by later tiers/pacing.
  */
 export const PROTOTYPE_ROTATING_ZAPPER_PATTERN = createHazardPattern({
   id: 'prototype-vertical-patrol',
   runLength: 640,
   profile: {
     behaviorTags: ['moving-barrier'],
-    difficultyTierRange: { minimumTierIndex: 1, maximumTierIndex: null },
+    difficultyTierRange: { minimumTierIndex: 0, maximumTierIndex: null },
     pacingIntensities: ['low', 'medium', 'high', 'peak'],
     pressureCost: 1,
     readabilityCost: 2,
