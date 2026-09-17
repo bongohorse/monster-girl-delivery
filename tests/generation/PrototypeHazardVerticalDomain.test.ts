@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { PROTOTYPE_LOGICAL_FLIGHT_BOUNDS } from '../../src/game/PrototypeFlightLayout';
 import { createHazardPattern } from '../../src/generation/HazardPattern';
+import { PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG } from '../../src/generation/M5AuthoredMultiHazardPatterns';
 import { PROTOTYPE_PATTERN_VALIDATION_CONSTRAINTS } from '../../src/generation/PatternValidator';
 import {
   PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES,
-  PROTOTYPE_M5_HAZARD_PATTERN_FIXTURES,
   PROTOTYPE_TARGET_LOCK_STRIKE_PATTERN,
 } from '../../src/generation/PrototypeHazardPatternFixtures';
 import { createPrototypeHazardVerticalDomain } from '../../src/generation/PrototypeHazardVerticalDomain';
@@ -35,10 +35,10 @@ const getEntry = (
 };
 
 describe('prototype hazard vertical domain', () => {
-  it('preserves the authored M5 baseline catalog and validation contract exactly', () => {
+  it('preserves the authored M5 live catalog and validation contract exactly', () => {
     const domain = createPrototypeHazardVerticalDomain(PROTOTYPE_LOGICAL_FLIGHT_BOUNDS);
 
-    expect(domain.catalog).toBe(PROTOTYPE_M5_HAZARD_PATTERN_FIXTURES);
+    expect(domain.catalog).toBe(PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG);
     expect(domain.constraints).toBe(PROTOTYPE_PATTERN_VALIDATION_CONSTRAINTS);
     expect(domain.mapAuthoredCenterY(195)).toBe(195);
   });
@@ -123,7 +123,7 @@ describe('prototype hazard vertical domain', () => {
     const second = createPrototypeHazardVerticalDomain(bounds);
 
     expect(first.catalog.map((pattern) => pattern.id)).toEqual(
-      PROTOTYPE_M5_HAZARD_PATTERN_FIXTURES.map((pattern) => pattern.id),
+      PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG.map((pattern) => pattern.id),
     );
     expect(first.catalog).toEqual(second.catalog);
     expect(first.constraints).toEqual(second.constraints);
