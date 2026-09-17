@@ -1,5 +1,44 @@
-import { createHazardPattern, type HazardPattern } from './HazardPattern';
-import { PROTOTYPE_LINE_PATTERN, PROTOTYPE_ZAPPER_PATTERN } from './PrototypeHazardPatternFixtures';
+import {
+  createBitmapCollectiblePaths,
+  createGridCollectiblePaths,
+  createUniformPolylineCollectiblePath,
+  M5_DENSE_COIN_SPACING,
+} from './CollectibleFormationGenerator';
+import { createHazardPattern, type CollectiblePath, type HazardPattern } from './HazardPattern';
+import {
+  PROTOTYPE_CORRIDOR_PATTERN,
+  PROTOTYPE_LINE_PATTERN,
+  PROTOTYPE_OFFSET_PAIR_PATTERN,
+  PROTOTYPE_ZAPPER_PATTERN,
+} from './PrototypeHazardPatternFixtures';
+
+const HEART_BITMAP = Object.freeze([
+  '.##...##.',
+  '####.####',
+  '#########',
+  '.#######.',
+  '..#####..',
+  '...###...',
+  '....##...',
+]);
+
+const STAR_BITMAP = Object.freeze([
+  '...###...',
+  '#########',
+  '.#######.',
+  '..#####..',
+  '.#######.',
+  '###...###',
+  '.##...##.',
+]);
+
+const COINS_BITMAP = Object.freeze([
+  '###.###.###.#..#.###.##',
+  '#...#.#..#..##.#.#...##',
+  '#...#.#..#..#.##.###.##',
+  '#...#.#..#..#..#...#...',
+  '###.###.###.#..#.###.##',
+]);
 
 const copyEntries = (pattern: Readonly<HazardPattern>) =>
   pattern.entries.map((entry) => ({
@@ -10,22 +49,31 @@ const copyEntries = (pattern: Readonly<HazardPattern>) =>
     ...(entry.reactionPolicy === undefined ? {} : { reactionPolicy: entry.reactionPolicy }),
   }));
 
+const enrichPattern = (
+  pattern: Readonly<HazardPattern>,
+  collectiblePaths: ReadonlyArray<Readonly<CollectiblePath>>,
+): Readonly<HazardPattern> =>
+  createHazardPattern({
+    id: pattern.id,
+    runLength: pattern.runLength,
+    profile: pattern.profile,
+    entries: copyEntries(pattern),
+    collectiblePaths,
+  });
+
 /**
- * Teaching vocabulary layered onto the existing three-barrier live slot. The route climbs from the
- * neutral band before the first barrier, stays clearly above the repeated center pressure, then
- * returns toward neutral after the final barrier. Hazard geometry/profile/id remain unchanged so
- * collectible teaching does not perturb deterministic hazard selection.
+ * Teaching vocabulary layered onto the existing three-barrier live slot. The guide is resampled by
+ * actual path length, so the climb/crest/descent no longer produces visibly irregular coin gaps.
+ * A compact heart after the last barrier turns successful traversal into an obvious reward beat.
  */
-export const M5_TEACHING_FLIGHT_ARC_PATTERN: Readonly<HazardPattern> = createHazardPattern({
-  id: PROTOTYPE_LINE_PATTERN.id,
-  runLength: PROTOTYPE_LINE_PATTERN.runLength,
-  profile: PROTOTYPE_LINE_PATTERN.profile,
-  entries: copyEntries(PROTOTYPE_LINE_PATTERN),
-  collectiblePaths: [
-    {
+export const M5_TEACHING_FLIGHT_ARC_PATTERN: Readonly<HazardPattern> = enrichPattern(
+  PROTOTYPE_LINE_PATTERN,
+  [
+    createUniformPolylineCollectiblePath({
       id: 'teaching-flight-arc',
       intent: 'safe-guide',
-      points: [
+      spacing: M5_DENSE_COIN_SPACING,
+      controlPoints: [
         { runDistance: 0, y: 195 },
         { runDistance: 70, y: 150 },
         { runDistance: 140, y: 100 },
@@ -34,42 +82,96 @@ export const M5_TEACHING_FLIGHT_ARC_PATTERN: Readonly<HazardPattern> = createHaz
         { runDistance: 500, y: 105 },
         { runDistance: 600, y: 195 },
       ],
-    },
+    }),
+    ...createBitmapCollectiblePaths({
+      id: 'teaching-heart-reward',
+      intent: 'safe-guide',
+      bitmap: HEART_BITMAP,
+      cellSpacingX: 12,
+      cellSpacingY: 10,
+      originRunDistance: 496,
+      originY: 160,
+    }),
   ],
-});
+);
 
 /**
- * Recovery vocabulary layered onto the existing live rotating-Zapper slot. Its lower gentle wave
- * remains outside the Zapper's conservative full rotation sweep while keeping low-pressure flight
- * active. The original hazard identity, profile and geometry are preserved exactly.
+ * The corridor becomes an explicit 3x10 reward lane: three aligned rows with exactly equal X gaps.
+ * All thirty coins sit inside the already validated center corridor, so following the dense block is
+ * rewarding rather than a trap.
  */
-export const M5_RECOVERY_ROUTE_PATTERN: Readonly<HazardPattern> = createHazardPattern({
-  id: PROTOTYPE_ZAPPER_PATTERN.id,
-  runLength: PROTOTYPE_ZAPPER_PATTERN.runLength,
-  profile: PROTOTYPE_ZAPPER_PATTERN.profile,
-  entries: copyEntries(PROTOTYPE_ZAPPER_PATTERN),
-  collectiblePaths: [
-    {
-      id: 'recovery-gentle-wave',
-      intent: 'safe-guide',
-      points: [
-        { runDistance: 64, y: 220 },
-        { runDistance: 160, y: 245 },
-        { runDistance: 260, y: 270 },
-        { runDistance: 360, y: 260 },
-        { runDistance: 480, y: 235 },
-        { runDistance: 600, y: 210 },
+export const M5_CORRIDOR_REWARD_PATTERN: Readonly<HazardPattern> = enrichPattern(
+  PROTOTYPE_CORRIDOR_PATTERN,
+  createGridCollectiblePaths({
+    id: 'corridor-triple-row',
+    intent: 'safe-guide',
+    columns: 10,
+    rows: 3,
+    columnSpacing: M5_DENSE_COIN_SPACING,
+    rowSpacing: 23,
+    startRunDistance: 48,
+    centerY: 195,
+  }),
+);
+
+/**
+ * The established optional Graze line is made denser and evenly spaced. After the second barrier a
+ * separate star is pure reward space; the risky route remains optional and never becomes survival
+ * authority.
+ */
+export const M5_OFFSET_RISK_REWARD_PATTERN: Readonly<HazardPattern> = enrichPattern(
+  PROTOTYPE_OFFSET_PAIR_PATTERN,
+  [
+    createUniformPolylineCollectiblePath({
+      id: 'offset-graze-route',
+      intent: 'risk-reward',
+      spacing: M5_DENSE_COIN_SPACING,
+      controlPoints: [
+        { runDistance: 32, y: 195 },
+        { runDistance: 488, y: 195 },
       ],
-    },
+    }),
+    ...createBitmapCollectiblePaths({
+      id: 'offset-star-reward',
+      intent: 'safe-guide',
+      bitmap: STAR_BITMAP,
+      cellSpacingX: 16,
+      cellSpacingY: 10,
+      originRunDistance: 388,
+      originY: 165,
+    }),
   ],
-});
+);
+
+/**
+ * Recovery vocabulary layered onto the existing rotating-Zapper slot. A compact COINS! formation
+ * lives entirely in the generous lower safe field: downtime pays out visibly without pointing the
+ * player back toward the Zapper.
+ */
+export const M5_RECOVERY_ROUTE_PATTERN: Readonly<HazardPattern> = enrichPattern(
+  PROTOTYPE_ZAPPER_PATTERN,
+  createBitmapCollectiblePaths({
+    id: 'recovery-coins-text',
+    intent: 'safe-guide',
+    bitmap: COINS_BITMAP,
+    cellSpacingX: 12,
+    cellSpacingY: 16,
+    originRunDistance: 340,
+    originY: 228,
+  }),
+);
 
 export const M5_COLLECTIBLE_MOVEMENT_PATTERNS: ReadonlyArray<Readonly<HazardPattern>> =
-  Object.freeze([M5_TEACHING_FLIGHT_ARC_PATTERN, M5_RECOVERY_ROUTE_PATTERN]);
+  Object.freeze([
+    M5_TEACHING_FLIGHT_ARC_PATTERN,
+    M5_CORRIDOR_REWARD_PATTERN,
+    M5_OFFSET_RISK_REWARD_PATTERN,
+    M5_RECOVERY_ROUTE_PATTERN,
+  ]);
 
 /**
- * Replaces only the matching existing M5 slots. Catalog length/order and all hazard data remain
- * stable, so adding collectible movement language cannot change seeded hazard selection.
+ * Replaces only matching existing M5 slots. Catalog length/order and all hazard data remain stable,
+ * so richer collectible formations cannot change seeded hazard selection.
  */
 export const applyM5CollectibleMovementPatterns = (
   catalog: ReadonlyArray<Readonly<HazardPattern>>,
@@ -79,7 +181,16 @@ export const applyM5CollectibleMovementPatterns = (
       if (pattern.id === PROTOTYPE_LINE_PATTERN.id) {
         return M5_TEACHING_FLIGHT_ARC_PATTERN;
       }
-      if (pattern.id === PROTOTYPE_ZAPPER_PATTERN.id) {
+      if (pattern.id === PROTOTYPE_CORRIDOR_PATTERN.id) {
+        return M5_CORRIDOR_REWARD_PATTERN;
+      }
+      if (pattern.id === PROTOTYPE_OFFSET_PAIR_PATTERN.id) {
+        return M5_OFFSET_RISK_REWARD_PATTERN;
+      }
+      if (
+        pattern.id === PROTOTYPE_ZAPPER_PATTERN.id &&
+        pattern.entries.some((entry) => entry.behavior.kind === 'zapper')
+      ) {
         return M5_RECOVERY_ROUTE_PATTERN;
       }
       return pattern;
