@@ -5,14 +5,8 @@ import {
 } from '../hazards/PrototypeZapperHazard';
 import { createHazardPattern, type HazardPattern } from './HazardPattern';
 
-const TEACHING_ZAPPER_BEHAVIOR = createPrototypeZapperBehavior(
-  0,
-  PROTOTYPE_ZAPPER_LENGTHS.medium,
-);
-const RECOVERY_ZAPPER_BEHAVIOR = createPrototypeZapperBehavior(
-  0,
-  PROTOTYPE_ZAPPER_LENGTHS.short,
-);
+const TEACHING_ZAPPER_BEHAVIOR = createPrototypeZapperBehavior(0, PROTOTYPE_ZAPPER_LENGTHS.medium);
+const RECOVERY_ZAPPER_BEHAVIOR = createPrototypeZapperBehavior(0, PROTOTYPE_ZAPPER_LENGTHS.short);
 
 /**
  * Early-run movement language: release into the opening descent, thrust up and over one obvious
@@ -96,7 +90,5 @@ export const M5_RECOVERY_ROUTE_PATTERN: Readonly<HazardPattern> = createHazardPa
   ],
 });
 
-export const M5_COLLECTIBLE_MOVEMENT_PATTERNS: ReadonlyArray<Readonly<HazardPattern>> = Object.freeze([
-  M5_TEACHING_FLIGHT_ARC_PATTERN,
-  M5_RECOVERY_ROUTE_PATTERN,
-]);
+export const M5_COLLECTIBLE_MOVEMENT_PATTERNS: ReadonlyArray<Readonly<HazardPattern>> =
+  Object.freeze([M5_TEACHING_FLIGHT_ARC_PATTERN, M5_RECOVERY_ROUTE_PATTERN]);
