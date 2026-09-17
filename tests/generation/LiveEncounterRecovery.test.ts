@@ -90,9 +90,18 @@ describe('live stream recovery regressions', () => {
     let breatherFrames = 0;
     let countAtPhaseEnd = 0;
     let sawExactBoundary = false;
-    while (state.runDistance < 4800) {
+    while (state.runDistance < 7_000) {
       const speed = state.schedulingWindow.scrollSpeed;
-      const boundary = state.runDistance < 2500 ? 2500 : state.runDistance < 3900 ? 3900 : 4800;
+      const boundary =
+        state.runDistance < 2_500
+          ? 2_500
+          : state.runDistance < 3_900
+            ? 3_900
+            : state.runDistance < 4_800
+              ? 4_800
+              : state.runDistance < 6_400
+                ? 6_400
+                : 7_000;
       const distance = Math.min(state.runDistance + speed * 0.05, boundary);
       state = advanceGeneratedHazardStream(
         state,
@@ -101,19 +110,20 @@ describe('live stream recovery regressions', () => {
         MOTION,
         (distance - state.runDistance) / speed,
       );
-      if (distance >= 2500 && distance < 3900) {
+      if (distance >= 2_500 && distance < 3_900) {
         breatherFrames += 1;
         expect(state.policy?.pacing.intensity).toBe('breather');
         expect(state.policy?.readability.reservations).toEqual([]);
         countAtPhaseEnd = state.scheduledPatternCount;
       }
-      if (distance === 3900) {
+      if (distance === 3_900) {
         sawExactBoundary = true;
         expect(state.policy?.pacing.intensity).toBe('medium');
       }
     }
     expect(breatherFrames).toBeGreaterThan(50);
     expect(sawExactBoundary).toBe(true);
+    expect(state.policy?.pacing.intensity).toBe('high');
     expect(state.scheduledPatternCount).toBeGreaterThan(countAtPhaseEnd);
   });
 
