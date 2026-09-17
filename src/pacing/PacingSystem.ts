@@ -42,9 +42,12 @@ const createPhase = (phase: PacingPhaseDefinition): Readonly<PacingPhaseDefiniti
 
 /**
  * Mobile-first M5 rhythm. Every pressure beat is followed by an explicit hazard-free breather.
- * Low/medium admit only one logical hazard entry; high/peak admit at most one short two-entry
- * challenge before the next recovery window. This keeps difficulty growth focused on run speed and
- * execution instead of continuously increasing screen occupancy.
+ * Low/medium admit only one logical hazard entry. High/peak are long enough for a complete
+ * telegraphed two-entry challenge; the hazard stream adds a separate post-challenge recovery gap so
+ * the larger lifecycle window cannot turn into back-to-back screen pressure.
+ *
+ * Difficulty tier boundaries (2,500 / 6,000 / 10,000) deliberately fall inside breathers, so a
+ * deterministic speed step is felt during recovery rather than while the player is solving a hazard.
  */
 export const PROTOTYPE_PACING_CONFIG: Readonly<PacingConfig> = Object.freeze({
   phases: Object.freeze([
@@ -62,7 +65,7 @@ export const PROTOTYPE_PACING_CONFIG: Readonly<PacingConfig> = Object.freeze({
     }),
     createPhase({
       intensity: 'breather',
-      distanceLength: 900,
+      distanceLength: 1_400,
       maximumPatternEntries: 1,
       maximumHazardsPer1000Distance: 2,
     }),
@@ -74,25 +77,25 @@ export const PROTOTYPE_PACING_CONFIG: Readonly<PacingConfig> = Object.freeze({
     }),
     createPhase({
       intensity: 'breather',
-      distanceLength: 900,
+      distanceLength: 1_800,
       maximumPatternEntries: 1,
       maximumHazardsPer1000Distance: 2,
     }),
     createPhase({
       intensity: 'high',
-      distanceLength: 1_000,
+      distanceLength: 2_000,
       maximumPatternEntries: 2,
       maximumHazardsPer1000Distance: 5,
     }),
     createPhase({
       intensity: 'breather',
-      distanceLength: 1_000,
+      distanceLength: 2_000,
       maximumPatternEntries: 1,
       maximumHazardsPer1000Distance: 2,
     }),
     createPhase({
       intensity: 'peak',
-      distanceLength: 900,
+      distanceLength: 2_000,
       maximumPatternEntries: 2,
       maximumHazardsPer1000Distance: 5,
     }),
