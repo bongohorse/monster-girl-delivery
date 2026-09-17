@@ -12,6 +12,7 @@ import {
   M5_MISSILE_ZAPPER_PATTERN,
   PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG,
 } from '../../src/generation/M5AuthoredMultiHazardPatterns';
+import { M5_COLLECTIBLE_MOVEMENT_PATTERNS } from '../../src/generation/M5CollectibleMovementPatterns';
 import { scheduleNextPattern } from '../../src/generation/PatternSpawnScheduler';
 import {
   PROTOTYPE_PATTERN_VALIDATION_CONSTRAINTS,
@@ -59,11 +60,12 @@ const evaluateUnderLivePolicy = (pattern: (typeof M5_AUTHORED_MULTI_HAZARD_PATTE
 };
 
 describe('M5 authored multi-hazard patterns', () => {
-  it('adds exactly the three approved two-family combinations to the live M5 catalog', () => {
+  it('adds the three approved two-family combinations before the focused route vocabulary', () => {
     expect(M5_AUTHORED_MULTI_HAZARD_PATTERNS).toHaveLength(3);
     expect(PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG).toEqual([
       ...PROTOTYPE_M5_HAZARD_PATTERN_FIXTURES,
       ...M5_AUTHORED_MULTI_HAZARD_PATTERNS,
+      ...M5_COLLECTIBLE_MOVEMENT_PATTERNS,
     ]);
 
     expect(getKinds(M5_MISSILE_ZAPPER_PATTERN)).toEqual(['zapper', 'target-lock-strike']);
