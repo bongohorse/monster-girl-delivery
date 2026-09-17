@@ -63,10 +63,26 @@ describe('pacing system', () => {
         .filter((phase) => phase.intensity !== 'breather')
         .map((phase) => [phase.intensity, phase]),
     );
-    expect(pressure.low).toMatchObject({ maximumPatternEntries: 1, maximumHazardsPer1000Distance: 2, distanceLength: 900 });
-    expect(pressure.medium).toMatchObject({ maximumPatternEntries: 1, maximumHazardsPer1000Distance: 2, distanceLength: 900 });
-    expect(pressure.high).toMatchObject({ maximumPatternEntries: 2, maximumHazardsPer1000Distance: 4, distanceLength: 2_300 });
-    expect(pressure.peak).toMatchObject({ maximumPatternEntries: 2, maximumHazardsPer1000Distance: 4, distanceLength: 2_300 });
+    expect(pressure.low).toMatchObject({
+      maximumPatternEntries: 1,
+      maximumHazardsPer1000Distance: 2,
+      distanceLength: 900,
+    });
+    expect(pressure.medium).toMatchObject({
+      maximumPatternEntries: 1,
+      maximumHazardsPer1000Distance: 2,
+      distanceLength: 900,
+    });
+    expect(pressure.high).toMatchObject({
+      maximumPatternEntries: 2,
+      maximumHazardsPer1000Distance: 4,
+      distanceLength: 2_300,
+    });
+    expect(pressure.peak).toMatchObject({
+      maximumPatternEntries: 2,
+      maximumHazardsPer1000Distance: 4,
+      distanceLength: 2_300,
+    });
   });
 
   it('bounds every peak and guarantees a full recovery window over 1,000 cycles', () => {
@@ -74,7 +90,11 @@ describe('pacing system', () => {
       const start = cycleIndex * CYCLE_LENGTH;
       const peak = calculatePacing(start + 11_500);
       const recovery = calculatePacing(peak.phaseEndDistance);
-      expect(peak).toMatchObject({ cycleIndex, intensity: 'peak', remainingPhaseDistance: 2_300 });
+      expect(peak).toMatchObject({
+        cycleIndex,
+        intensity: 'peak',
+        remainingPhaseDistance: 2_300,
+      });
       expect(recovery).toMatchObject({
         cycleIndex: cycleIndex + 1,
         intensity: 'breather',
@@ -90,7 +110,11 @@ describe('pacing system', () => {
     const opening = calculatePacing(0);
     const distance = 1_000_000 * CYCLE_LENGTH;
     expect(calculateDifficulty(distance).capped).toBe(true);
-    expect(calculatePacing(distance)).toMatchObject({ cycleIndex: 1_000_000, intensity: 'breather', phaseIndex: 0 });
+    expect(calculatePacing(distance)).toMatchObject({
+      cycleIndex: 1_000_000,
+      intensity: 'breather',
+      phaseIndex: 0,
+    });
     calculatePacing(distance + 11_500);
     expect(calculatePacing(0)).toEqual(opening);
     expect(calculatePacing(distance)).not.toHaveProperty('tierIndex');
@@ -127,13 +151,28 @@ describe('pacing system', () => {
 
   it('uses explicit custom phase order and durations with immutable serializable snapshots', () => {
     const phases: PacingPhaseDefinition[] = [
-      { intensity: 'peak', distanceLength: 30, maximumPatternEntries: 3, maximumHazardsPer1000Distance: 6 },
-      { intensity: 'breather', distanceLength: 70, maximumPatternEntries: 1, maximumHazardsPer1000Distance: 1 },
+      {
+        intensity: 'peak',
+        distanceLength: 30,
+        maximumPatternEntries: 3,
+        maximumHazardsPer1000Distance: 6,
+      },
+      {
+        intensity: 'breather',
+        distanceLength: 70,
+        maximumPatternEntries: 1,
+        maximumHazardsPer1000Distance: 1,
+      },
     ];
     const snapshot = calculatePacing(30, { phases });
     expect(snapshot).toMatchObject({ intensity: 'breather', phaseIndex: 1, phaseEndDistance: 100 });
     expect(calculatePacing(100, { phases })).toMatchObject({ intensity: 'peak', cycleIndex: 1 });
-    phases[1] = { intensity: 'breather', distanceLength: 1, maximumPatternEntries: 2, maximumHazardsPer1000Distance: 3 };
+    phases[1] = {
+      intensity: 'breather',
+      distanceLength: 1,
+      maximumPatternEntries: 2,
+      maximumHazardsPer1000Distance: 3,
+    };
     expect(snapshot.remainingPhaseDistance).toBe(70);
     expect(JSON.parse(JSON.stringify(snapshot))).toEqual(snapshot);
     expect(Object.isFrozen(snapshot)).toBe(true);
@@ -148,17 +187,36 @@ describe('pacing system', () => {
   );
 
   it('rejects missing recovery, invalid intensities, invalid pressure limits and duration overflow', () => {
-    const breather: PacingPhaseDefinition = { intensity: 'breather', distanceLength: 100, maximumPatternEntries: 1, maximumHazardsPer1000Distance: 2 };
+    const breather: PacingPhaseDefinition = {
+      intensity: 'breather',
+      distanceLength: 100,
+      maximumPatternEntries: 1,
+      maximumHazardsPer1000Distance: 2,
+    };
     expect(() => calculatePacing(0, { phases: [] })).toThrow(/breather/);
-    expect(() => calculatePacing(0, { phases: [{ ...breather, intensity: 'peak' }] })).toThrow(/breather/);
-    expect(() => calculatePacing(0, { phases: [breather, { ...breather, intensity: 'unknown' as 'peak' }] })).toThrow(TypeError);
+    expect(() => calculatePacing(0, { phases: [{ ...breather, intensity: 'peak' }] })).toThrow(
+      /breather/,
+    );
+    expect(() =>
+      calculatePacing(0, { phases: [breather, { ...breather, intensity: 'unknown' as 'peak' }] }),
+    ).toThrow(TypeError);
     for (const value of [0, -1, 0.5, Number.NaN, Number.POSITIVE_INFINITY]) {
-      expect(() => calculatePacing(0, { phases: [{ ...breather, distanceLength: value }] })).toThrow(RangeError);
-      expect(() => calculatePacing(0, { phases: [{ ...breather, maximumPatternEntries: value }] })).toThrow(RangeError);
+      expect(() =>
+        calculatePacing(0, { phases: [{ ...breather, distanceLength: value }] }),
+      ).toThrow(RangeError);
+      expect(() =>
+        calculatePacing(0, { phases: [{ ...breather, maximumPatternEntries: value }] }),
+      ).toThrow(RangeError);
     }
     for (const value of [0, -1, Number.NaN, Number.POSITIVE_INFINITY]) {
-      expect(() => calculatePacing(0, { phases: [{ ...breather, maximumHazardsPer1000Distance: value }] })).toThrow(RangeError);
+      expect(() =>
+        calculatePacing(0, { phases: [{ ...breather, maximumHazardsPer1000Distance: value }] }),
+      ).toThrow(RangeError);
     }
-    expect(() => calculatePacing(0, { phases: [breather, { ...breather, distanceLength: Number.MAX_SAFE_INTEGER }] })).toThrow(/cycle length/);
+    expect(() =>
+      calculatePacing(0, {
+        phases: [breather, { ...breather, distanceLength: Number.MAX_SAFE_INTEGER }],
+      }),
+    ).toThrow(/cycle length/);
   });
 });
