@@ -75,7 +75,7 @@ describe('CollectibleFormationGenerator', () => {
     const distances = distancesBetweenPoints(path.points);
     const average = distances.reduce((sum, distance) => sum + distance, 0) / distances.length;
     expect(path.points[0]?.y).toBeCloseTo(195);
-    expect(path.points.at(-1)?.y).toBeCloseTo(195);
+    expect(path.points[path.points.length - 1]?.y).toBeCloseTo(195);
     expect(Math.max(...distances) - Math.min(...distances)).toBeLessThan(1.5);
     expect(average).toBeGreaterThan(28);
     expect(average).toBeLessThan(36);
