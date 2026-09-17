@@ -169,28 +169,7 @@ export const assertValidDifficultyConfig = (config: Readonly<DifficultyConfig>):
   }
 };
 
-const interpolateScrollSpeedMultiplier = (
-  runDistance: number,
-  tier: Readonly<DifficultyTierDefinition>,
-  nextTier: Readonly<DifficultyTierDefinition> | undefined,
-): number => {
-  if (nextTier === undefined) {
-    return tier.scrollSpeedMultiplier;
-  }
-
-  const span = nextTier.startDistance - tier.startDistance;
-  const progress = (runDistance - tier.startDistance) / span;
-  return (
-    tier.scrollSpeedMultiplier +
-    (nextTier.scrollSpeedMultiplier - tier.scrollSpeedMultiplier) * progress
-  );
-};
-
-/**
- * Derives the complete deterministic difficulty state from logical run distance alone. Discrete
- * fairness/content limits still change only at tier boundaries, while run speed ramps continuously
- * toward the next tier so familiar hazards become gradually harder without adding screen clutter.
- */
+/** Derives the complete deterministic difficulty state from logical run distance alone. */
 export const calculateDifficulty = (
   runDistance: number,
   config: Readonly<DifficultyConfig> = PROTOTYPE_DIFFICULTY_CONFIG,
@@ -226,7 +205,7 @@ export const calculateDifficulty = (
     minimumVerticalCorridor: tier.minimumVerticalCorridor,
     nextTierStartDistance: nextTier?.startDistance ?? null,
     runDistance,
-    scrollSpeedMultiplier: interpolateScrollSpeedMultiplier(runDistance, tier, nextTier),
+    scrollSpeedMultiplier: tier.scrollSpeedMultiplier,
     tierId: tier.id,
     tierIndex,
   });
