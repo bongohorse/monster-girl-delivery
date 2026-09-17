@@ -194,13 +194,15 @@ describe('M5 collectible movement language', () => {
     );
   });
 
-  it.each(M5_COLLECTIBLE_MOVEMENT_PATTERNS)(
-    '$id remains selectable through its established live policy window',
-    (pattern) => {
-      const runDistance = 3_200;
+  it.each([
+    { pattern: M5_OFFSET_RISK_REWARD_PATTERN, runDistance: 6_400, intensity: 'high' },
+    { pattern: M5_RECOVERY_ROUTE_PATTERN, runDistance: 3_900, intensity: 'medium' },
+  ] as const)(
+    '$pattern.id remains selectable through its accepted $intensity pressure beat',
+    ({ pattern, runDistance, intensity }) => {
       const state = createLiveEncounterPolicyState(runDistance, REACHABILITY);
       const selection = selectLiveEncounterCandidates([pattern], runDistance, state);
-      expect(selection.pacing.intensity).toBe('medium');
+      expect(selection.pacing.intensity).toBe(intensity);
       const candidateCatalog = [...selection.primaryCatalog, ...selection.deferredCatalog];
       expect(candidateCatalog).toContain(pattern);
 
@@ -219,6 +221,19 @@ describe('M5 collectible movement language', () => {
         intrinsicallyEligible: true,
         decision: { status: 'reserved' },
       });
+    },
+  );
+
+  it.each([M5_TEACHING_FLIGHT_ARC_PATTERN, M5_CORRIDOR_REWARD_PATTERN])(
+    '$id keeps its collectible language but is withheld from the denser normal live pacing',
+    (pattern) => {
+      const runDistance = 6_400;
+      const state = createLiveEncounterPolicyState(runDistance, REACHABILITY);
+      const selection = selectLiveEncounterCandidates([pattern], runDistance, state);
+      expect(selection.pacing.intensity).toBe('high');
+      expect([...selection.primaryCatalog, ...selection.deferredCatalog]).not.toContain(pattern);
+      expect(validatePattern(pattern)).toEqual({ valid: true, issues: [] });
+      expect(countCollectibles(pattern)).toBeGreaterThan(0);
     },
   );
 
