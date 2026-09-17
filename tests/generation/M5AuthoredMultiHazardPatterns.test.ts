@@ -60,13 +60,18 @@ const evaluateUnderLivePolicy = (pattern: (typeof M5_AUTHORED_MULTI_HAZARD_PATTE
 };
 
 describe('M5 authored multi-hazard patterns', () => {
-  it('adds the three approved two-family combinations before the focused route vocabulary', () => {
+  it('keeps the accepted Phase-2 catalog slots stable while enriching two baseline slots with routes', () => {
     expect(M5_AUTHORED_MULTI_HAZARD_PATTERNS).toHaveLength(3);
-    expect(PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG).toEqual([
+    expect(PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG).toHaveLength(
+      PROTOTYPE_M5_HAZARD_PATTERN_FIXTURES.length + M5_AUTHORED_MULTI_HAZARD_PATTERNS.length,
+    );
+    expect(PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG.map((pattern) => pattern.id)).toEqual([
       ...PROTOTYPE_M5_HAZARD_PATTERN_FIXTURES,
       ...M5_AUTHORED_MULTI_HAZARD_PATTERNS,
-      ...M5_COLLECTIBLE_MOVEMENT_PATTERNS,
-    ]);
+    ].map((pattern) => pattern.id));
+    for (const movementPattern of M5_COLLECTIBLE_MOVEMENT_PATTERNS) {
+      expect(PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG).toContain(movementPattern);
+    }
 
     expect(getKinds(M5_MISSILE_ZAPPER_PATTERN)).toEqual(['zapper', 'target-lock-strike']);
     expect(getKinds(M5_MISSILE_LASER_PATTERN)).toEqual(['laser', 'target-lock-strike']);
