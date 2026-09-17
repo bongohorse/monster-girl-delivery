@@ -4,7 +4,7 @@ import {
   createUniformPolylineCollectiblePath,
   M5_DENSE_COIN_SPACING,
 } from './CollectibleFormationGenerator';
-import { createHazardPattern, type CollectiblePath, type HazardPattern } from './HazardPattern';
+import { type CollectiblePath, createHazardPattern, type HazardPattern } from './HazardPattern';
 import {
   PROTOTYPE_CORRIDOR_PATTERN,
   PROTOTYPE_LINE_PATTERN,
