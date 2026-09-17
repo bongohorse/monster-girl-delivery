@@ -18,7 +18,9 @@ import { scheduleNextPattern } from '../../src/generation/PatternSpawnScheduler'
 import { validatePattern } from '../../src/generation/PatternValidator';
 import {
   PROTOTYPE_CORRIDOR_PATTERN,
+  PROTOTYPE_LINE_PATTERN,
   PROTOTYPE_OFFSET_PAIR_PATTERN,
+  PROTOTYPE_ZAPPER_PATTERN,
 } from '../../src/generation/PrototypeHazardPatternFixtures';
 import { createPrototypeHazardVerticalDomain } from '../../src/generation/PrototypeHazardVerticalDomain';
 import { createRunGenerationState } from '../../src/generation/RunGenerationState';
@@ -80,6 +82,21 @@ describe('M5 collectible movement language', () => {
     },
   );
 
+  it('adds teaching and recovery routes without changing their established hazard slots', () => {
+    expect(M5_TEACHING_FLIGHT_ARC_PATTERN).toMatchObject({
+      id: PROTOTYPE_LINE_PATTERN.id,
+      runLength: PROTOTYPE_LINE_PATTERN.runLength,
+      profile: PROTOTYPE_LINE_PATTERN.profile,
+      entries: PROTOTYPE_LINE_PATTERN.entries,
+    });
+    expect(M5_RECOVERY_ROUTE_PATTERN).toMatchObject({
+      id: PROTOTYPE_ZAPPER_PATTERN.id,
+      runLength: PROTOTYPE_ZAPPER_PATTERN.runLength,
+      profile: PROTOTYPE_ZAPPER_PATTERN.profile,
+      entries: PROTOTYPE_ZAPPER_PATTERN.entries,
+    });
+  });
+
   it('keeps risky collectible guidance optional relative to the pattern survival route', () => {
     const riskPath = getPath(PROTOTYPE_OFFSET_PAIR_PATTERN, 'offset-graze-route');
 
@@ -119,7 +136,7 @@ describe('M5 collectible movement language', () => {
     );
 
     expect(first).toEqual(second);
-    expect(first).toHaveLength(8);
+    expect(first).toHaveLength(7);
     expect(
       first.map(({ pathPointIndex, runDistance, y }) => ({ pathPointIndex, runDistance, y })),
     ).toEqual(
@@ -132,10 +149,10 @@ describe('M5 collectible movement language', () => {
   });
 
   it.each([
-    { pattern: M5_TEACHING_FLIGHT_ARC_PATTERN, runDistance: 1_600, intensity: 'low' },
-    { pattern: M5_RECOVERY_ROUTE_PATTERN, runDistance: 1_600, intensity: 'low' },
+    { pattern: M5_TEACHING_FLIGHT_ARC_PATTERN, runDistance: 3_200, intensity: 'medium' },
+    { pattern: M5_RECOVERY_ROUTE_PATTERN, runDistance: 2_600, intensity: 'low' },
   ] as const)(
-    '$pattern.id is admitted by live low-pressure policy instead of existing only as test data',
+    '$pattern.id is admitted by its established live policy window instead of existing only as test data',
     ({ pattern, runDistance, intensity }) => {
       const state = createLiveEncounterPolicyState(runDistance, REACHABILITY);
       const selection = selectLiveEncounterCandidates([pattern], runDistance, state);
