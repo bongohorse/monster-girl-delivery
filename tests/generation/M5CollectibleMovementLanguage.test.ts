@@ -150,7 +150,7 @@ describe('M5 collectible movement language', () => {
 
   it.each([
     { pattern: M5_TEACHING_FLIGHT_ARC_PATTERN, runDistance: 3_200, intensity: 'medium' },
-    { pattern: M5_RECOVERY_ROUTE_PATTERN, runDistance: 2_600, intensity: 'low' },
+    { pattern: M5_RECOVERY_ROUTE_PATTERN, runDistance: 3_200, intensity: 'medium' },
   ] as const)(
     '$pattern.id is admitted by its established live policy window instead of existing only as test data',
     ({ pattern, runDistance, intensity }) => {
