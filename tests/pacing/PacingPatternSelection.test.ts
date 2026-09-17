@@ -9,6 +9,7 @@ import { validatePattern } from '../../src/generation/PatternValidator';
 import {
   PROTOTYPE_HAZARD_PATTERN_FIXTURES,
   PROTOTYPE_LINE_PATTERN,
+  PROTOTYPE_OFFSET_PAIR_PATTERN,
 } from '../../src/generation/PrototypeHazardPatternFixtures';
 import { createRunGenerationState } from '../../src/generation/RunGenerationState';
 import {
@@ -45,8 +46,8 @@ const CATALOG = Object.freeze([
 
 describe('pacing pattern selection', () => {
   it('explicitly requests lower entry counts and density in recovery, including at capped difficulty', () => {
-    const difficulty = calculateDifficulty(14_200);
-    const request = createPacingPatternRequest(calculatePacing(14_200));
+    const difficulty = calculateDifficulty(27_600);
+    const request = createPacingPatternRequest(calculatePacing(27_600));
     const allowed = filterPatternsForDifficulty(CATALOG, difficulty);
 
     expect(difficulty.capped).toBe(true);
@@ -54,7 +55,7 @@ describe('pacing pattern selection', () => {
       intensity: 'breather',
       maximumPatternEntries: 1,
       maximumHazardsPer1000Distance: 2,
-      maximumRunLength: 1_400,
+      maximumRunLength: 1_600,
     });
     expect(filterPatternsForPacing(allowed, request)).toEqual([
       BREATHER_PATTERN,
@@ -70,20 +71,20 @@ describe('pacing pattern selection', () => {
   });
 
   it('accepts exact pressure/window limits and rejects patterns crossing the next phase', () => {
-    const exact = createPacingPatternRequest(calculatePacing(900));
+    const exact = createPacingPatternRequest(calculatePacing(1_100));
     expect(evaluatePatternPacingEligibility(BREATHER_PATTERN, exact).eligible).toBe(true);
-    const tooLate = createPacingPatternRequest(calculatePacing(900.001));
+    const tooLate = createPacingPatternRequest(calculatePacing(1_100.001));
     expect(evaluatePatternPacingEligibility(BREATHER_PATTERN, tooLate).reasons).toEqual([
       'pacing-window-limit',
     ]);
 
-    // A high-pressure candidate cannot spill from peak into the guaranteed breather.
-    const peak = createPacingPatternRequest(calculatePacing(6_501));
-    expect(evaluatePatternPacingEligibility(PROTOTYPE_LINE_PATTERN, peak).reasons).toEqual([
+    // A challenge candidate that otherwise fits peak pressure cannot spill into guaranteed recovery.
+    const peak = createPacingPatternRequest(calculatePacing(13_281));
+    expect(evaluatePatternPacingEligibility(PROTOTYPE_OFFSET_PAIR_PATTERN, peak).reasons).toEqual([
       'pacing-window-limit',
     ]);
     expect(
-      filterPatternsForPacing(CATALOG, createPacingPatternRequest(calculatePacing(7_099))),
+      filterPatternsForPacing(CATALOG, createPacingPatternRequest(calculatePacing(13_799))),
     ).toEqual([]);
   });
 
@@ -97,7 +98,7 @@ describe('pacing pattern selection', () => {
   });
 
   it('preserves difficulty restrictions even during peak pressure', () => {
-    const peak = createPacingPatternRequest(calculatePacing(6_400));
+    const peak = createPacingPatternRequest(calculatePacing(11_500));
     const strictDifficulty = {
       ...calculateDifficulty(0),
       maximumPatternEntries: 1,
