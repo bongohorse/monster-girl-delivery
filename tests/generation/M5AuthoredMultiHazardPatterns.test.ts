@@ -65,10 +65,11 @@ describe('M5 authored multi-hazard patterns', () => {
     expect(PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG).toHaveLength(
       PROTOTYPE_M5_HAZARD_PATTERN_FIXTURES.length + M5_AUTHORED_MULTI_HAZARD_PATTERNS.length,
     );
-    expect(PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG.map((pattern) => pattern.id)).toEqual([
-      ...PROTOTYPE_M5_HAZARD_PATTERN_FIXTURES,
-      ...M5_AUTHORED_MULTI_HAZARD_PATTERNS,
-    ].map((pattern) => pattern.id));
+    expect(PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG.map((pattern) => pattern.id)).toEqual(
+      [...PROTOTYPE_M5_HAZARD_PATTERN_FIXTURES, ...M5_AUTHORED_MULTI_HAZARD_PATTERNS].map(
+        (pattern) => pattern.id,
+      ),
+    );
     for (const movementPattern of M5_COLLECTIBLE_MOVEMENT_PATTERNS) {
       expect(PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG).toContain(movementPattern);
     }
