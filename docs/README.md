@@ -7,20 +7,14 @@ This is the canonical map for MGD documentation. Use it to answer two questions 
 
 The hub is intentionally a navigation/ownership document, not another specification.
 
-## Current project pointer
+## Project status and planning
 
-- **Project phase:** Pre-Production
-- **Current milestone:** M5 — Complete Arcade Loop & Skill Layer (in progress; parent #197)
-- **Current version:** `0.4` (`package.json`: `0.4.0`), working toward M5 closeout / `0.5`
-- **Current milestone owner:** [M5 Issue #197](https://github.com/bongohorse/monster-girl-delivery/issues/197)
-- **Latest completed milestone:** M4 — [`milestones/M4-run-pacing-hazard-language.md`](milestones/M4-run-pacing-hazard-language.md)
-- **Latest completed milestone evidence:** [`milestones/M4-run-pacing-validation.md`](milestones/M4-run-pacing-validation.md)
-- **Roadmap:** [`ROADMAP.md`](ROADMAP.md)
+- **Live phase/progress:** [GitHub Milestones](https://github.com/bongohorse/monster-girl-delivery/milestones)
+- **Approved milestone sequence/scope:** [`ROADMAP.md`](ROADMAP.md)
+- **Completed milestone history/evidence:** [`milestones/README.md`](milestones/README.md)
 - **Product/game specification:** [`../MASTER_SPEC.md`](../MASTER_SPEC.md)
 
-Pre-M5 authority decisions: [run metrics / events (#182)](PRE_M5_RUN_METRICS_EVENT_AUTHORITY_AUDIT.md) and [player consequences (#184)](PRE_M5_CONSEQUENCE_OWNERSHIP_AUDIT.md).
-
-GitHub Issues/PRs are the live execution trail. Completed milestone reports are historical evidence, not current planning.
+GitHub Milestones and focused Issues/PRs are the live execution trail. Completed milestone reports are historical evidence, not current planning.
 
 ---
 
@@ -31,7 +25,7 @@ GitHub Issues/PRs are the live execution trail. Completed milestone reports are 
 | I want to… | Go to |
 |---|---|
 | Start or preview the game | [`../README.md`](../README.md) |
-| See what is being built now | current GitHub milestone/Issue |
+| See what is being built now | [GitHub Milestones](https://github.com/bongohorse/monster-girl-delivery/milestones) |
 | See milestone order and future milestone scope | [`ROADMAP.md`](ROADMAP.md) |
 | Check an approved game/product rule | [`../MASTER_SPEC.md`](../MASTER_SPEC.md) |
 | Browse unapproved future ideas | [`BACKLOG.md`](BACKLOG.md) |
@@ -228,9 +222,9 @@ Current completed reports:
 - supporting M3 evidence: [`milestones/M3-seeded-run-validation.md`](milestones/M3-seeded-run-validation.md)
 - supporting M4 evidence: [`milestones/M4-run-pacing-validation.md`](milestones/M4-run-pacing-validation.md)
 
-M4 closeout is recorded in [`milestones/M4-run-pacing-hazard-language.md`](milestones/M4-run-pacing-hazard-language.md) with supporting evidence in [`milestones/M4-run-pacing-validation.md`](milestones/M4-run-pacing-validation.md). M5 parent #197 is active; implementation is in progress and remains version `0.4.x` until M5's factual closeout.
+M4 closeout is recorded in [`milestones/M4-run-pacing-hazard-language.md`](milestones/M4-run-pacing-hazard-language.md) with supporting evidence in [`milestones/M4-run-pacing-validation.md`](milestones/M4-run-pacing-validation.md).
 
-Historical reports should be corrected only when factual evidence is wrong, not rewritten to match later plans.
+For live milestone progress, use [GitHub Milestones](https://github.com/bongohorse/monster-girl-delivery/milestones). Historical reports should be corrected only when factual evidence is wrong, not rewritten to match later plans.
 
 ---
 
@@ -248,7 +242,7 @@ Historical reports should be corrected only when factual evidence is wrong, not 
 - Update this hub when a major document is added, removed, renamed, or changes ownership.
 - Use native GitHub Milestones for numbered phase membership/progress; use umbrella Issues for detailed planning and dependency/acceptance context.
 - Backfill historical native milestone assignments sequentially (M0, verify, then M1, verify, then M2, ...), never as an unaudited bulk reassignment.
-- At milestone closeout, verify native milestone membership, merge the factual closeout report, close the native milestone, and update the current milestone pointer and milestone history index.
+- At milestone closeout, verify native milestone membership, merge the factual closeout report, close the native milestone, and update the milestone history index plus any genuinely changed roadmap scope.
 
 ---
 
