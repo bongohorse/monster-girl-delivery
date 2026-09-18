@@ -27,10 +27,18 @@ const candidatesAt = (runDistance: number) => {
 };
 
 describe('M5 mobile breathing-room pacing', () => {
-  it('keeps explicit breather windows free from schedulable hazard content', () => {
-    for (const runDistance of [0, 2_600, 5_000, 9_000, 13_900]) {
-      expect(calculatePacing(runDistance).intensity).toBe('breather');
-      expect(candidatesAt(runDistance)).toEqual([]);
+  it('keeps every explicit breather window free from schedulable hazard content', () => {
+    let phaseStartDistance = 0;
+
+    for (const phase of PROTOTYPE_PACING_CONFIG.phases) {
+      const phaseEndDistance = phaseStartDistance + phase.distanceLength;
+      if (phase.intensity === 'breather') {
+        for (const runDistance of [phaseStartDistance, phaseEndDistance - 0.001]) {
+          expect(calculatePacing(runDistance).intensity).toBe('breather');
+          expect(candidatesAt(runDistance)).toEqual([]);
+        }
+      }
+      phaseStartDistance = phaseEndDistance;
     }
   });
 
