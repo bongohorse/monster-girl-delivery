@@ -14,6 +14,7 @@ import {
 import {
   PROTOTYPE_TARGET_LOCK_STRIKE_PATTERN,
   PROTOTYPE_TIMED_PULSE_PATTERN,
+  PROTOTYPE_ZAPPER_PATTERN,
 } from '../../src/generation/PrototypeHazardPatternFixtures';
 import { TEST_ENCOUNTER_PROFILE } from '../support/TestEncounterProfile';
 
@@ -80,14 +81,15 @@ const contextFor = (
 ): GeneratedHazardStreamContext => ({ catalog, policy: POLICY, reachability: REACHABILITY });
 
 describe('live stream recovery regressions', () => {
-  it('keeps the entire default second breather free of next-phase warning and pressure', () => {
+  it('keeps the entire default second breather empty and resumes pressure after its boundary', () => {
     const context = {
-      catalog: [PROTOTYPE_TARGET_LOCK_STRIKE_PATTERN],
+      catalog: [PROTOTYPE_ZAPPER_PATTERN],
       policy: PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG,
       reachability: REACHABILITY,
     };
     let state = createGeneratedHazardStream('breather-lead-in', context, MOTION);
     let breatherFrames = 0;
+    let countDuringBreather: number | null = null;
     let sawExactBoundary = false;
     while (state.runDistance < 4_800) {
       const speed = state.schedulingWindow.scrollSpeed;
@@ -105,6 +107,8 @@ describe('live stream recovery regressions', () => {
         breatherFrames += 1;
         expect(state.policy?.pacing.intensity).toBe('breather');
         expect(state.policy?.readability.reservations).toEqual([]);
+        if (countDuringBreather === null) countDuringBreather = state.scheduledPatternCount;
+        expect(state.scheduledPatternCount).toBe(countDuringBreather);
       }
       if (distance === 3_900) {
         sawExactBoundary = true;
@@ -113,6 +117,9 @@ describe('live stream recovery regressions', () => {
     }
     expect(breatherFrames).toBeGreaterThan(50);
     expect(sawExactBoundary).toBe(true);
+    expect(countDuringBreather).not.toBeNull();
+    expect(state.scheduledPatternCount).toBeGreaterThan(countDuringBreather ?? 0);
+    expect(state.spawns.some((spawn) => spawn.patternId === PROTOTYPE_ZAPPER_PATTERN.id)).toBe(true);
     expect(state.policy?.pacing.intensity).toBe('breather');
   });
 
