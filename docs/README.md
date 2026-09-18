@@ -94,7 +94,9 @@ A **current explicit Game Director decision** controls product intent. Living do
 |---|---|---|
 | [`../MASTER_SPEC.md`](../MASTER_SPEC.md) | durable product/game decisions, decision states, platform/game constraints | milestone sequence, development commands, AI workflow |
 | [`ROADMAP.md`](ROADMAP.md) | M0–M10 order, milestone versions, and milestone-level future scope | focused implementation details, product decisions outside sequencing |
-| Current GitHub Issue / PR | focused live scope, acceptance criteria, dependencies, implementation/review trail | silent overrides of `DECIDED` product rules or architecture boundaries |
+| Native GitHub Milestone | numbered phase membership and progress across its assigned Issues/PRs | roadmap scope, detailed dependency planning, historical closeout evidence |
+| Milestone umbrella Issue | detailed live planning, ordering, dependencies, Director decisions, and acceptance trail for one milestone | replacing the native milestone progress view or the roadmap |
+| Focused GitHub Issue / PR | concrete live scope, acceptance criteria, implementation/review trail | silent overrides of `DECIDED` product rules or architecture boundaries |
 | [`../ARCHITECTURE.md`](../ARCHITECTURE.md) | technical ownership, service/system boundaries, current vs. planned architecture | product scope, milestone scheduling |
 | [`../DEVELOPMENT.md`](../DEVELOPMENT.md) | commands, verification, Codespaces, CI, PR mechanics, milestone closeout process | product/game design |
 | [`../AGENTS.md`](../AGENTS.md) | mandatory coding-agent behavior and scope discipline | product design |
@@ -244,7 +246,9 @@ Historical reports should be corrected only when factual evidence is wrong, not 
 - Remove historical phase-specific instructions from living workflow/architecture docs once the milestone report owns that history.
 - Distinguish **current implementation** from **planned architecture** explicitly.
 - Update this hub when a major document is added, removed, renamed, or changes ownership.
-- At milestone closeout, update the current milestone pointer and milestone history index.
+- Use native GitHub Milestones for numbered phase membership/progress; use umbrella Issues for detailed planning and dependency/acceptance context.
+- Backfill historical native milestone assignments sequentially (M0, verify, then M1, verify, then M2, ...), never as an unaudited bulk reassignment.
+- At milestone closeout, verify native milestone membership, merge the factual closeout report, close the native milestone, and update the current milestone pointer and milestone history index.
 
 ---
 
