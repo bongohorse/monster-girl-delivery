@@ -35,9 +35,9 @@ const getKinds = (pattern: (typeof M5_AUTHORED_MULTI_HAZARD_PATTERNS)[number]) =
   pattern.entries.map((entry) => entry.behavior.kind);
 
 const evaluateUnderLivePolicy = (pattern: (typeof M5_AUTHORED_MULTI_HAZARD_PATTERNS)[number]) => {
-  // First production high-pressure window: tier 1 and high pacing, so these combinations cannot
+  // First production high-pressure window: tier 2 and high pacing, so these combinations cannot
   // pollute the opening/low/medium run but are evaluated by the real live policy once eligible.
-  const runDistance = 5_200;
+  const runDistance = 6_400;
   const state = createLiveEncounterPolicyState(runDistance, REACHABILITY);
   const selection = selectLiveEncounterCandidates([pattern], runDistance, state);
   expect(selection.pacing.intensity).toBe('high');

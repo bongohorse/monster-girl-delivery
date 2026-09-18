@@ -163,11 +163,9 @@ describe('LongRunEncounterHarness', () => {
   });
 
   it('preserves boundary conditions and rejects properly on deliberate invalid fixture', () => {
-    // Two entries over runLength 1000 keeps hazard density (2 per 1000) inside the difficulty
-    // and pacing eligibility limits, so this fixture reaches the scheduler on non-breather
-    // phases and fails there on its blocked geometry instead of being filtered earlier as
-    // no-content. (Breather phases still defer it as no-content because 2 entries exceed the
-    // breather allowance; that is correct policy behavior, not the asserted failure path.)
+    // Two entries over runLength 1000 keep hazard density inside the high/peak challenge limits.
+    // Breather/low/medium phases correctly filter this fixture before scheduling, so the run must
+    // reach the first HIGH window to exercise the geometry-rejection path itself.
     const BLOCKED_PATTERN = createHazardPattern({
       id: 'blocked-validation-pattern',
       runLength: 1000,
@@ -187,15 +185,15 @@ describe('LongRunEncounterHarness', () => {
     });
 
     const harness = new LongRunEncounterHarness([BLOCKED_PATTERN]);
-    const { trace } = harness.run(400, 5000);
+    const { trace } = harness.run(400, 8000);
 
     // The blocked geometry must never spawn.
     const hasReserved = trace.some((t) => t.type === 'reserved');
     expect(hasReserved).toBe(false);
 
     // The failure must be the specific scheduler geometry rejection for the blocked pattern,
-    // not a generic no-content defer: every candidate attempt fails pattern validation with
-    // no passable vertical corridor.
+    // not a generic no-content defer: every candidate attempt that reaches the scheduler fails
+    // pattern validation with no passable vertical corridor.
     const geometryRejections = trace.filter(
       (t) =>
         t.type === 'rejected' &&

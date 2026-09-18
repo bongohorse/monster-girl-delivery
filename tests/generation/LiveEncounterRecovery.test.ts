@@ -12,8 +12,8 @@ import {
   PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG,
 } from '../../src/generation/LiveEncounterPolicy';
 import {
-  PROTOTYPE_TARGET_LOCK_STRIKE_PATTERN,
   PROTOTYPE_TIMED_PULSE_PATTERN,
+  PROTOTYPE_ZAPPER_PATTERN,
 } from '../../src/generation/PrototypeHazardPatternFixtures';
 import { TEST_ENCOUNTER_PROFILE } from '../support/TestEncounterProfile';
 
@@ -80,19 +80,21 @@ const contextFor = (
 ): GeneratedHazardStreamContext => ({ catalog, policy: POLICY, reachability: REACHABILITY });
 
 describe('live stream recovery regressions', () => {
-  it('keeps the entire default second breather free of next-phase warning and pressure', () => {
+  it('keeps the entire default second breather empty and resumes pressure after its boundary', () => {
     const context = {
-      catalog: [PROTOTYPE_TARGET_LOCK_STRIKE_PATTERN],
+      catalog: [PROTOTYPE_ZAPPER_PATTERN],
       policy: PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG,
       reachability: REACHABILITY,
     };
     let state = createGeneratedHazardStream('breather-lead-in', context, MOTION);
     let breatherFrames = 0;
-    let countAtPhaseEnd = 0;
     let sawExactBoundary = false;
-    while (state.runDistance < 9500) {
+    let sawReservedPressureAfterBoundary = false;
+    let sawZapperSpawnAfterBoundary = false;
+    while (state.runDistance < 4_800) {
       const speed = state.schedulingWindow.scrollSpeed;
-      const boundary = state.runDistance < 7100 ? 7100 : state.runDistance < 8500 ? 8500 : 9500;
+      const boundary =
+        state.runDistance < 2_500 ? 2_500 : state.runDistance < 3_900 ? 3_900 : 4_800;
       const distance = Math.min(state.runDistance + speed * 0.05, boundary);
       state = advanceGeneratedHazardStream(
         state,
@@ -101,20 +103,38 @@ describe('live stream recovery regressions', () => {
         MOTION,
         (distance - state.runDistance) / speed,
       );
-      if (distance >= 7100 && distance < 8500) {
+      if (distance >= 2_500 && distance < 3_900) {
         breatherFrames += 1;
         expect(state.policy?.pacing.intensity).toBe('breather');
-        expect(state.policy?.readability.reservations).toEqual([]);
-        countAtPhaseEnd = state.scheduledPatternCount;
+        // The generator may pre-reserve a future next-phase encounter, but no readability window
+        // may be active during the breather itself.
+        expect(
+          state.policy?.readability.reservations.every(
+            (reservation) =>
+              reservation.activeWindow.startSeconds > 0 || reservation.activeWindow.endSeconds <= 0,
+          ),
+        ).toBe(true);
       }
-      if (distance === 8500) {
+      if (distance === 3_900) {
         sawExactBoundary = true;
-        expect(state.policy?.pacing.intensity).toBe('low');
+        expect(state.policy?.pacing.intensity).toBe('medium');
+      }
+      if (distance >= 3_900 && distance < 4_800) {
+        sawReservedPressureAfterBoundary ||= Boolean(
+          state.policy?.readability.reservations.some(
+            (reservation) => reservation.patternId === PROTOTYPE_ZAPPER_PATTERN.id,
+          ),
+        );
+        sawZapperSpawnAfterBoundary ||= state.spawns.some(
+          (spawn) => spawn.patternId === PROTOTYPE_ZAPPER_PATTERN.id,
+        );
       }
     }
     expect(breatherFrames).toBeGreaterThan(50);
     expect(sawExactBoundary).toBe(true);
-    expect(state.scheduledPatternCount).toBeGreaterThan(countAtPhaseEnd);
+    expect(sawReservedPressureAfterBoundary).toBe(true);
+    expect(sawZapperSpawnAfterBoundary).toBe(true);
+    expect(state.policy?.pacing.intensity).toBe('breather');
   });
 
   it('resumes after readability expiry with a fresh minimum reaction horizon', () => {

@@ -26,12 +26,12 @@ const evaluateSelectedGroup = (prngState: number) => {
     throw new Error('Expected selected Laser pattern.');
   }
 
-  // 3200 is the beginning of the production medium pacing phase and is already difficulty tier 1,
-  // so two-entry Laser groups are eligible without weakening any global policy limits.
-  const runDistance = 3_200;
+  // 6400 is the beginning of the production high pacing phase and is already difficulty tier 2,
+  // so two-entry Laser groups are eligible without weakening the new low/medium one-entry limits.
+  const runDistance = 6_400;
   const state = createLiveEncounterPolicyState(runDistance, REACHABILITY);
   const selection = selectLiveEncounterCandidates([pattern], runDistance, state);
-  expect(selection.pacing.intensity).toBe('medium');
+  expect(selection.pacing.intensity).toBe('high');
   expect(selection.primaryCatalog).toEqual([pattern]);
 
   const evaluation = evaluateLiveEncounterReadability(
