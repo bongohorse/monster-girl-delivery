@@ -89,7 +89,7 @@ describe('live stream recovery regressions', () => {
     let state = createGeneratedHazardStream('breather-lead-in', context, MOTION);
     let breatherFrames = 0;
     let sawExactBoundary = false;
-    let sawActivePressureAfterBoundary = false;
+    let sawReservedPressureAfterBoundary = false;
     while (state.runDistance < 4_800) {
       const speed = state.schedulingWindow.scrollSpeed;
       const boundary =
@@ -119,17 +119,16 @@ describe('live stream recovery regressions', () => {
         expect(state.policy?.pacing.intensity).toBe('medium');
       }
       if (distance >= 3_900 && distance < 4_800) {
-        sawActivePressureAfterBoundary ||= Boolean(
+        sawReservedPressureAfterBoundary ||= Boolean(
           state.policy?.readability.reservations.some(
-            (reservation) =>
-              reservation.activeWindow.startSeconds <= 0 && reservation.activeWindow.endSeconds > 0,
+            (reservation) => reservation.patternId === PROTOTYPE_ZAPPER_PATTERN.id,
           ),
         );
       }
     }
     expect(breatherFrames).toBeGreaterThan(50);
     expect(sawExactBoundary).toBe(true);
-    expect(sawActivePressureAfterBoundary).toBe(true);
+    expect(sawReservedPressureAfterBoundary).toBe(true);
     expect(state.spawns.some((spawn) => spawn.patternId === PROTOTYPE_ZAPPER_PATTERN.id)).toBe(
       true,
     );
