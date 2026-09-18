@@ -12,7 +12,6 @@ import {
   PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG,
 } from '../../src/generation/LiveEncounterPolicy';
 import {
-  PROTOTYPE_TARGET_LOCK_STRIKE_PATTERN,
   PROTOTYPE_TIMED_PULSE_PATTERN,
   PROTOTYPE_ZAPPER_PATTERN,
 } from '../../src/generation/PrototypeHazardPatternFixtures';
@@ -119,7 +118,9 @@ describe('live stream recovery regressions', () => {
     expect(sawExactBoundary).toBe(true);
     expect(countDuringBreather).not.toBeNull();
     expect(state.scheduledPatternCount).toBeGreaterThan(countDuringBreather ?? 0);
-    expect(state.spawns.some((spawn) => spawn.patternId === PROTOTYPE_ZAPPER_PATTERN.id)).toBe(true);
+    expect(state.spawns.some((spawn) => spawn.patternId === PROTOTYPE_ZAPPER_PATTERN.id)).toBe(
+      true,
+    );
     expect(state.policy?.pacing.intensity).toBe('breather');
   });
 
