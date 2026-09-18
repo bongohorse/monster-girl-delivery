@@ -53,20 +53,11 @@ export class GeneratedCollectiblePresentation {
 
     if (contentChanged) {
       this.anchorRunDistance = runState.distance;
-      this.graphics
-        .clear()
-        .setPosition(0, projection.offsetY)
-        .setScale(1, projection.scaleY);
+      this.graphics.clear().setPosition(0, projection.offsetY).setScale(1, projection.scaleY);
       const consumed = consumedCollectibleIds.length === 0 ? null : new Set(consumedCollectibleIds);
 
       this.drawIntent(spawns, consumed, 'safe-guide', SAFE_GUIDE_COLOR, playerScreenX);
-      this.drawIntent(
-        spawns,
-        consumed,
-        'risk-reward',
-        RISK_REWARD_COLOR,
-        playerScreenX,
-      );
+      this.drawIntent(spawns, consumed, 'risk-reward', RISK_REWARD_COLOR, playerScreenX);
 
       this.renderedSpawns = spawns;
       this.renderedConsumedCollectibleIds = consumedCollectibleIds;
