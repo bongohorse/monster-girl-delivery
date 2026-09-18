@@ -458,7 +458,7 @@ describe('system frame partition evidence', () => {
       });
 
       const seed = 'm3-contiguous-stream-seed';
-      const totalDuration = 8.5; // reaches distance 2975 logical distance units at 350 px/s
+      const totalDuration = 13; // reaches safely inside the first current MEDIUM pressure beat at 350 px/s
       const runMotion = PROTOTYPE_RUN_MOTION_DEFAULTS;
 
       const runLegacyStream = (schedule: FrameSchedule) => {
@@ -548,12 +548,10 @@ describe('system frame partition evidence', () => {
     });
 
     it('produces identical PRNG state, pattern sequence, and exact spawn/cursor placement across all 6 schedules under policy mode', () => {
-      // When recovering from a no-content gap across a policy boundary, selectLiveEncounterCandidates
-      // determines the exact deterministic policy boundary selection.nextPolicyBoundaryDistance (here: 2500).
-      // The cursor remains anchored to this deterministic policy boundary rather than absorbing incidental
-      // frame-sampling overshoot from the crossing frame's windowEnd. When the scheduling window reaches
-      // the boundary, the first post-gap pattern is scheduled at exactly distance 2500 (first spawn at 2620)
-      // across all 6 schedules.
+      // The opening breather/low/breather sequence contains no eligible M4 fixture. The cursor must
+      // remain anchored to exact policy boundaries instead of absorbing incidental frame overshoot.
+      // At the first current MEDIUM beat (3900), the one-entry vertical patrol becomes schedulable;
+      // all schedules must therefore consume the same PRNG state and place it at the same world position.
       const policyContext: GeneratedHazardStreamContext = Object.freeze({
         catalog: PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES,
         config: PROTOTYPE_GENERATED_HAZARD_STREAM_CONFIG,
@@ -607,8 +605,8 @@ describe('system frame partition evidence', () => {
       );
 
       const baseline = results['60hz'];
-      expect(baseline.stream.scheduledPatternCount).toBe(2);
-      expect(baseline.stream.spawns.length).toBe(4);
+      expect(baseline.stream.scheduledPatternCount).toBe(1);
+      expect(baseline.stream.spawns.length).toBe(1);
 
       for (const [_name, result] of Object.entries(results)) {
         // Scheduled pattern count is identical in this scenario:
@@ -646,22 +644,15 @@ describe('system frame partition evidence', () => {
         ).toBeLessThanOrEqual(FLOATING_POINT_TOLERANCE);
       }
 
-      // Concrete observed placement values demonstrating exact deterministic anchoring:
-      // Pattern 1 (prototype-timed-pulse) start distance = 2500, hitbox left = 120 -> runDistance = 2620.0
-      expect(results['30hz'].stream.spawns[0].runDistance).toBeCloseTo(2620.0, 9);
-      expect(results['60hz'].stream.spawns[0].runDistance).toBeCloseTo(2620.0, 9);
-      expect(results['90hz'].stream.spawns[0].runDistance).toBeCloseTo(2620.0, 9);
-      expect(results['120hz'].stream.spawns[0].runDistance).toBeCloseTo(2620.0, 9);
-      expect(results['144hz'].stream.spawns[0].runDistance).toBeCloseTo(2620.0, 9);
-      expect(results.jittered.stream.spawns[0].runDistance).toBeCloseTo(2620.0, 9);
-
-      // nextPatternStartDistance is exactly 3800.0 across all schedules:
-      expect(results['30hz'].stream.nextPatternStartDistance).toBeCloseTo(3800.0, 9);
-      expect(results['60hz'].stream.nextPatternStartDistance).toBeCloseTo(3800.0, 9);
-      expect(results['90hz'].stream.nextPatternStartDistance).toBeCloseTo(3800.0, 9);
-      expect(results['120hz'].stream.nextPatternStartDistance).toBeCloseTo(3800.0, 9);
-      expect(results['144hz'].stream.nextPatternStartDistance).toBeCloseTo(3800.0, 9);
-      expect(results.jittered.stream.nextPatternStartDistance).toBeCloseTo(3800.0, 9);
+      // Concrete placement proving the cursor recovered at the exact 3900 policy boundary:
+      // prototype-vertical-patrol starts at 3900 and its authored hitbox begins at +280.
+      for (const result of Object.values(results)) {
+        expect(result.stream.spawns[0]?.patternId).toBe('prototype-vertical-patrol');
+        expect(result.stream.spawns[0]?.runDistance).toBeCloseTo(4_180, 9);
+        // The remaining MEDIUM space cannot fit another full pattern, then the following breather
+        // advances the deterministic cursor to the next difficulty boundary at 6000.
+        expect(result.stream.nextPatternStartDistance).toBeCloseTo(6_000, 9);
+      }
     });
   });
 
