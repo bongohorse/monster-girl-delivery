@@ -94,12 +94,7 @@ describe('GeneratedCollectiblePresentation', () => {
     graphics.clear.mockClear();
     graphics.fillCircle.mockClear();
 
-    presentation.sync(
-      spawns,
-      [getLogicalCollectibleSpawnIdentity(spawn)],
-      { distance: 120 },
-      200,
-    );
+    presentation.sync(spawns, [getLogicalCollectibleSpawnIdentity(spawn)], { distance: 120 }, 200);
 
     expect(graphics.clear).toHaveBeenCalledOnce();
     expect(graphics.fillCircle).not.toHaveBeenCalled();
