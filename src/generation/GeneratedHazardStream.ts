@@ -768,13 +768,18 @@ const createMotionPlanningContext = (
   state: Readonly<GeneratedHazardStreamState>,
   context: Readonly<GeneratedHazardStreamContext>,
 ): Readonly<GeneratedHazardStreamContext> => {
+  // Motion planning is a speculative internal pass. Do not leak its segment boundaries into
+  // Director diagnostics; only the real scheduling/commit path may publish encounter observations.
+  const planningContext = { ...context };
+  delete planningContext.observeEncounter;
+
   if (state.policy === null || context.policy === undefined) {
-    return context;
+    return Object.freeze(planningContext);
   }
 
   const reachability = context.reachability ?? PROTOTYPE_PATTERN_REACHABILITY_CONTEXT;
   return Object.freeze({
-    ...context,
+    ...planningContext,
     reachability: Object.freeze({
       ...reachability,
       // Run-speed planning must not switch Director flight tuning part-way through one frame.
