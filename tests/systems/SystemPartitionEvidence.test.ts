@@ -6,8 +6,8 @@ import {
   advanceGeneratedHazardStream,
   createGeneratedHazardStream,
   type GeneratedHazardStreamContext,
-  planGeneratedHazardMotion,
   PROTOTYPE_GENERATED_HAZARD_STREAM_CONFIG,
+  planGeneratedHazardMotion,
 } from '../../src/generation/GeneratedHazardStream';
 import { PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG } from '../../src/generation/LiveEncounterPolicy';
 import {
