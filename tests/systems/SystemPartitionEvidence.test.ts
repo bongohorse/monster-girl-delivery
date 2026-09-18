@@ -19,6 +19,7 @@ import {
   PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES,
   PROTOTYPE_TARGET_LOCK_STRIKE_PATTERN,
   PROTOTYPE_TIMED_PULSE_PATTERN,
+  PROTOTYPE_ZAPPER_PATTERN,
 } from '../../src/generation/PrototypeHazardPatternFixtures';
 import { createRunGenerationState } from '../../src/generation/RunGenerationState';
 import {
@@ -548,12 +549,12 @@ describe('system frame partition evidence', () => {
     });
 
     it('produces identical PRNG state, pattern sequence, and exact spawn/cursor placement across all 6 schedules under policy mode', () => {
-      // The opening breather/low/breather sequence contains no eligible M4 fixture. The cursor must
-      // remain anchored to exact policy boundaries instead of absorbing incidental frame overshoot.
-      // At the first current MEDIUM beat (3900), the one-entry vertical patrol becomes schedulable;
-      // all schedules must therefore consume the same PRNG state and place it at the same world position.
+      // The opening breather must advance the cursor to the exact LOW boundary at 1600 without
+      // consuming RNG. The current tier-0 Zapper is intentionally the single simple live hazard
+      // eligible there, so this isolates policy-boundary recovery and seeded scheduling from the
+      // broader catalog's challenge gating.
       const policyContext: GeneratedHazardStreamContext = Object.freeze({
-        catalog: PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES,
+        catalog: Object.freeze([PROTOTYPE_ZAPPER_PATTERN]),
         config: PROTOTYPE_GENERATED_HAZARD_STREAM_CONFIG,
         policy: PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG,
         reachability: PROTOTYPE_PATTERN_REACHABILITY_CONTEXT,
@@ -561,7 +562,7 @@ describe('system frame partition evidence', () => {
       });
 
       const seed = 'm4-cross-partition-generation-seed';
-      const totalDuration = 13; // reaches safely inside the first current MEDIUM pressure beat
+      const totalDuration = 5; // remains inside the first LOW beat and retains its accepted spawn
       const runMotion = PROTOTYPE_RUN_MOTION_DEFAULTS;
 
       const runPolicyStream = (schedule: FrameSchedule) => {
@@ -644,14 +645,20 @@ describe('system frame partition evidence', () => {
         ).toBeLessThanOrEqual(FLOATING_POINT_TOLERANCE);
       }
 
-      // Concrete placement proving the cursor recovered at the exact 3900 policy boundary:
-      // prototype-vertical-patrol starts at 3900 and its authored hitbox begins at +280.
+      // Concrete placement proves the no-content breather handed off at exactly 1600.
+      const authoredEntry = PROTOTYPE_ZAPPER_PATTERN.entries[0];
+      if (!authoredEntry) {
+        throw new Error('Expected the tier-0 Zapper fixture to contain one entry.');
+      }
       for (const result of Object.values(results)) {
-        expect(result.stream.spawns[0]?.patternId).toBe('prototype-vertical-patrol');
-        expect(result.stream.spawns[0]?.runDistance).toBeCloseTo(4_180, 9);
-        // The remaining MEDIUM space cannot fit another full pattern, then the following breather
-        // advances the deterministic cursor to the next difficulty boundary at 6000.
-        expect(result.stream.nextPatternStartDistance).toBeCloseTo(6_000, 9);
+        expect(result.stream.spawns[0]?.patternId).toBe(PROTOTYPE_ZAPPER_PATTERN.id);
+        expect(result.stream.spawns[0]?.runDistance).toBeCloseTo(
+          1_600 + authoredEntry.hitbox.left,
+          9,
+        );
+        // A second full 640-distance pattern cannot fit in the remaining LOW beat, so the cursor
+        // deterministically advances to the following breather boundary.
+        expect(result.stream.nextPatternStartDistance).toBeCloseTo(2_500, 9);
       }
     });
   });
