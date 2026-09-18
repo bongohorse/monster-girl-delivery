@@ -224,7 +224,20 @@ Do not add Cloudflare/backend infrastructure without a concrete approved require
 - Do not print secrets in logs, documentation, Issues, or PRs.
 - Do not weaken repository protections to make automation easier.
 
-## 14. Milestone closeout
+## 14. Milestone tracking and closeout
+
+MGD uses GitHub's native **Milestones** feature as the execution/progress layer for numbered roadmap milestones.
+
+The responsibilities are deliberately separate:
+
+- **GitHub Milestone** — one numbered development phase (M0, M1, ...), its assigned Issues/PRs, and GitHub's progress view;
+- **`docs/ROADMAP.md`** — milestone sequence, purpose, proof question, entry/exit gates, version mapping, and milestone-level scope;
+- **milestone umbrella Issue** — detailed planning, ordering, dependencies, Director decisions, and acceptance trail;
+- **focused Issue / PR** — one concrete delivery unit;
+- **labels** — classification such as work type, discipline, or priority; labels are not a substitute for native milestone assignment;
+- **`docs/milestones/`** — factual completed history and evidence after closeout.
+
+Historical native-milestone backfill is performed **sequentially**, not as one bulk edit: audit M0 and verify it before M1, then verify M1 before M2, and so on. For each milestone, compare the roadmap, its umbrella Issue, and its factual closeout report; assign only work that actually belonged to that milestone. Maintenance, FUTURE work, and unrelated backlog work must not be pulled into a milestone merely because it happened during the same period.
 
 Every completed milestone receives a factual report under `docs/milestones/` before, or as part of, advancing the documented current milestone.
 
@@ -250,5 +263,14 @@ Accuracy rules:
 - automated coverage does not substitute for manual evidence;
 - keep `PROTOTYPE`, `EXPERIMENT`, `TBD`, `FUTURE`, and deferred states explicit;
 - historical reports must not be rewritten simply because later plans changed.
+
+Before closing a native GitHub milestone:
+
+- its roadmap exit gate must have passed;
+- required Game Director acceptance must be recorded;
+- focused milestone work must be closed or explicitly deferred/routed elsewhere;
+- the factual closeout report must be merged;
+- native milestone assignments must be checked so unrelated work does not distort progress;
+- the roadmap/current-version pointer must be updated consistently.
 
 Apply [required verification](#3-required-verification) to closeout/documentation transitions as well.
