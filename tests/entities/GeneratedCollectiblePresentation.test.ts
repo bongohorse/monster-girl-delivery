@@ -30,6 +30,7 @@ const createSceneFake = () => {
     fillStyle: vi.fn(),
     setDepth: vi.fn(),
     setPosition: vi.fn(),
+    setScale: vi.fn(),
   };
   for (const method of [
     graphics.clear,
@@ -37,6 +38,7 @@ const createSceneFake = () => {
     graphics.fillStyle,
     graphics.setDepth,
     graphics.setPosition,
+    graphics.setScale,
   ]) {
     method.mockReturnValue(graphics);
   }
@@ -59,8 +61,10 @@ describe('GeneratedCollectiblePresentation', () => {
     expect(graphics.clear).toHaveBeenCalledOnce();
     expect(graphics.fillStyle).toHaveBeenNthCalledWith(1, 0x6fffe9, 0.95);
     expect(graphics.fillStyle).toHaveBeenNthCalledWith(2, 0xffd166, 0.95);
-    expect(graphics.fillCircle).toHaveBeenNthCalledWith(1, 600, 107.5, 7);
-    expect(graphics.fillCircle).toHaveBeenNthCalledWith(2, 750, 107.5, 7);
+    expect(graphics.fillCircle).toHaveBeenNthCalledWith(1, 600, 195, 7);
+    expect(graphics.fillCircle).toHaveBeenNthCalledWith(2, 750, 195, 7);
+    expect(graphics.setPosition).toHaveBeenCalledWith(0, 10);
+    expect(graphics.setScale).toHaveBeenCalledWith(1, 0.5);
   });
 
   it('scrolls unchanged collectible geometry with one transform instead of redrawing coins', () => {
