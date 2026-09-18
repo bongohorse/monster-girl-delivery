@@ -995,8 +995,7 @@ export class Foundation extends Scene {
     const scheduledPatternCountChanged =
       this.collectibleScheduledPatternCount !== this.hazardStream.scheduledPatternCount;
     const pruningDue =
-      this.nextCollectiblePruneDistance !== null &&
-      runDistance > this.nextCollectiblePruneDistance;
+      this.nextCollectiblePruneDistance !== null && runDistance > this.nextCollectiblePruneDistance;
 
     if (!force && !scheduledPatternCountChanged && !pruningDue) {
       return;
