@@ -6,6 +6,7 @@ import {
   advanceGeneratedHazardStream,
   createGeneratedHazardStream,
   type GeneratedHazardStreamContext,
+  planGeneratedHazardMotion,
   PROTOTYPE_GENERATED_HAZARD_STREAM_CONFIG,
 } from '../../src/generation/GeneratedHazardStream';
 import { PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG } from '../../src/generation/LiveEncounterPolicy';
@@ -688,9 +689,17 @@ describe('system frame partition evidence', () => {
           const delta = Math.min(nominalDelta, totalDuration - elapsed);
 
           stream = advanceGeneratedHazardStream(stream, distance, context, runMotion, 0, false);
-          distance += stream.schedulingWindow.scrollSpeed * delta;
+          const motionPlan = planGeneratedHazardMotion(stream, context, runMotion, delta);
+          distance = motionPlan.endRunDistance;
           elapsed += delta;
-          stream = advanceGeneratedHazardStream(stream, distance, context, runMotion, delta, true);
+          stream = advanceGeneratedHazardStream(
+            motionPlan.stream,
+            distance,
+            context,
+            runMotion,
+            0,
+            true,
+          );
         }
 
         return stream.policy;
