@@ -20,6 +20,17 @@ export const getLogicalCollectibleSpawnIdentity = (
 ): string =>
   `${spawn.patternId}:${spawn.patternStartDistance}:${spawn.pathId}:${spawn.pathPointIndex}`;
 
+export const getNextGeneratedCollectiblePruneDistance = (
+  state: ReadonlyArray<Readonly<LogicalCollectibleSpawnInstance>>,
+  retainBehindDistance = PROTOTYPE_COLLECTIBLE_RETAIN_BEHIND_DISTANCE,
+): number | null => {
+  if (!Number.isFinite(retainBehindDistance) || retainBehindDistance < 0) {
+    throw new RangeError('Collectible retention distance must be non-negative and finite.');
+  }
+  const first = state[0];
+  return first === undefined ? null : first.runDistance + retainBehindDistance;
+};
+
 const materializeCurrentPatternOccurrences = (
   hazardSpawns: ReadonlyArray<Readonly<LogicalHazardSpawnInstance>>,
   catalog: ReadonlyArray<Readonly<HazardPattern>>,
