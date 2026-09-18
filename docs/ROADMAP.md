@@ -4,8 +4,7 @@
 **Approved by:** Game Director / Product Owner
 **Originally approved:** 2026-09-03
 **Roadmap 3.1 revision:** 2026-09-13
-**Current milestone:** M5 — Complete Arcade Loop & Skill Layer (in progress; parent #197)
-**Current version:** `0.4` (`package.json`: `0.4.0`); M5 is in progress, target after factual closeout: `0.5`
+**Live execution status:** [GitHub Milestones](https://github.com/bongohorse/monster-girl-delivery/milestones)
 
 > [!IMPORTANT]
 > This file is the **single source of truth for milestone sequencing and milestone-level future scope**. `MASTER_SPEC.md` owns durable product/game decisions; focused GitHub Issues own live implementation scope.
@@ -134,7 +133,7 @@ M0–M4 are complete. Reports own delivered scope, acceptance, and limitations; 
 
 # Completed decision gate — Pre-M5 Gameplay Authority Gate
 
-**Status: PASSED. M5 implementation is active under parent #197.**
+**Status: PASSED.**
 
 [Issue #179](https://github.com/bongohorse/monster-girl-delivery/issues/179) records the authority audit; [M5 parent #197](https://github.com/bongohorse/monster-girl-delivery/issues/197) owns the active M5 implementation and acceptance trail.
 
@@ -618,11 +617,11 @@ M10 / `1.0` completes only when:
 
 # Development sequence
 
-M0–M4 are complete. The current and future route is:
+The approved milestone/gate sequence from M5 onward is:
 
 ```mermaid
 flowchart TD
-  PRE["PASSED: Pre-M5 authority gate"] --> M5["CURRENT: M5 / 0.5 — outcome → skill → arcade integration"]
+  PRE["Pre-M5 authority gate"] --> M5["M5 / 0.5 — outcome → skill → arcade integration"]
   M5 --> PRODUCT["Product and Art Gates"]
   PRODUCT --> M6["M6 / 0.6: vertical slice"]
   M6 --> PLATFORM["Platform Gate"]
