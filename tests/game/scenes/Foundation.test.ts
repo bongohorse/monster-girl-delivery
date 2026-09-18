@@ -7,12 +7,14 @@ import {
   projectLogicalYToScreen,
 } from '../../../src/game/PrototypeFlightLayout';
 import { Foundation } from '../../../src/game/scenes/Foundation';
+import { createEncounterExitStateEnvelope } from '../../../src/generation/EncounterTransitionValidator';
 import { PROTOTYPE_PATTERN_REACHABILITY_CONTEXT } from '../../../src/generation/FlightReachability';
 import {
   advanceGeneratedHazardStream,
   createGeneratedHazardStream,
   type GeneratedHazardStreamState,
   PROTOTYPE_LIVE_RUN_SEED,
+  planGeneratedHazardMotion,
 } from '../../../src/generation/GeneratedHazardStream';
 import { evaluateHazardApproachTiming } from '../../../src/generation/HazardApproachTiming';
 import type { HazardPattern } from '../../../src/generation/HazardPattern';
@@ -236,13 +238,18 @@ describe('Foundation scene gameplay orchestration', () => {
         false,
       );
       const deltaSeconds = 0.016;
-      const nextDistance = distance + resolved.schedulingWindow.scrollSpeed * deltaSeconds;
-      const committed = advanceGeneratedHazardStream(
+      const motionPlan = planGeneratedHazardMotion(
         resolved,
-        nextDistance,
         context,
         services.runMotion.getSnapshot(),
         deltaSeconds,
+      );
+      const committed = advanceGeneratedHazardStream(
+        motionPlan.stream,
+        motionPlan.endRunDistance,
+        context,
+        services.runMotion.getSnapshot(),
+        0,
         true,
       );
       if (committed.spawns.length > resolved.spawns.length) {
@@ -251,7 +258,7 @@ describe('Foundation scene gameplay orchestration', () => {
         break;
       }
       initial = committed;
-      distance = nextDistance;
+      distance = motionPlan.endRunDistance;
     }
 
     expect(admissionDistance).not.toBeNull();
@@ -626,9 +633,29 @@ describe('Foundation scene gameplay orchestration', () => {
     expect(playerPresentation.setPosition).toHaveBeenLastCalledWith(320, 28);
     expect(playerPresentation.setScale).toHaveBeenLastCalledWith(1, 1);
     const motion = getRunMotionState(foundation);
-    const stream = getHazardStream(foundation);
+    const naturallyProgressedStream = getHazardStream(foundation);
+    if (!naturallyProgressedStream.policy) {
+      throw new Error('Expected live encounter policy state before resize.');
+    }
+    // Keep the resize integration test independent of whichever encounter the seeded live stream
+    // happened to accept: inject retained out-of-domain history, then prove resize reconciles only
+    // that history while preserving the run, generation state, spawns, readability, and lifecycle.
+    const stream = Object.freeze({
+      ...naturallyProgressedStream,
+      policy: Object.freeze({
+        ...naturallyProgressedStream.policy,
+        exitEnvelope: createEncounterExitStateEnvelope({
+          runDistance: naturallyProgressedStream.policy.exitEnvelope.runDistance,
+          states: [
+            ...naturallyProgressedStream.policy.exitEnvelope.states,
+            { positionY: -100, velocityY: -100 },
+          ],
+        }),
+      }),
+    });
+    Reflect.set(foundation, 'hazardStream', stream);
     const telegraphs = getTelegraphedHazardState(foundation);
-    expect(stream.policy?.exitEnvelope.states.some((state) => state.positionY < 28)).toBe(true);
+    expect(stream.policy.exitEnvelope.states.some((state) => state.positionY < 28)).toBe(true);
 
     handleResize({ width: 844, height: 390 });
 
