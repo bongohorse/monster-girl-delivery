@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   getLogicalCollectibleSpawnIdentity,
+  getNextGeneratedCollectiblePruneDistance,
   reconcileGeneratedCollectibles,
 } from '../../src/generation/GeneratedCollectibles';
 import { scheduleNextPattern } from '../../src/generation/PatternSpawnScheduler';
@@ -70,6 +71,25 @@ describe('GeneratedCollectibles', () => {
     expect(initial.every((spawn) => spawn.intent === 'risk-reward')).toBe(true);
     expect(preserved).toEqual(initial);
     expect(preserved[0]).toBe(initial[0]);
+  });
+
+  it('exposes the next distance where retained collectible pruning can matter', () => {
+    const first = Object.freeze({
+      intent: 'safe-guide' as const,
+      pathId: 'first',
+      pathPointIndex: 0,
+      patternId: 'pattern',
+      patternStartDistance: 0,
+      runDistance: 80,
+      value: 1,
+      y: 195,
+    });
+    const second = Object.freeze({ ...first, pathId: 'second', runDistance: 140 });
+
+    expect(getNextGeneratedCollectiblePruneDistance([])).toBeNull();
+    expect(getNextGeneratedCollectiblePruneDistance([first, second])).toBe(240);
+    expect(getNextGeneratedCollectiblePruneDistance([first], 20)).toBe(100);
+    expect(() => getNextGeneratedCollectiblePruneDistance([first], -1)).toThrow(RangeError);
   });
 
   it('evicts collectible instances only after the bounded behind-distance retention window', () => {
