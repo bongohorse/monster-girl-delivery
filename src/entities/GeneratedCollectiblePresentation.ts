@@ -1,7 +1,6 @@
 import type { GameObjects, Scene } from 'phaser';
 import {
   type PrototypeVerticalOffsetOrProjection,
-  projectLogicalYToScreen,
   resolveVerticalProjection,
 } from '../game/PrototypeFlightLayout';
 import {
@@ -54,17 +53,19 @@ export class GeneratedCollectiblePresentation {
 
     if (contentChanged) {
       this.anchorRunDistance = runState.distance;
-      this.graphics.clear().setPosition(0, 0);
+      this.graphics
+        .clear()
+        .setPosition(0, projection.offsetY)
+        .setScale(1, projection.scaleY);
       const consumed = consumedCollectibleIds.length === 0 ? null : new Set(consumedCollectibleIds);
 
-      this.drawIntent(spawns, consumed, 'safe-guide', SAFE_GUIDE_COLOR, playerScreenX, projection);
+      this.drawIntent(spawns, consumed, 'safe-guide', SAFE_GUIDE_COLOR, playerScreenX);
       this.drawIntent(
         spawns,
         consumed,
         'risk-reward',
         RISK_REWARD_COLOR,
         playerScreenX,
-        projection,
       );
 
       this.renderedSpawns = spawns;
@@ -75,7 +76,10 @@ export class GeneratedCollectiblePresentation {
       return;
     }
 
-    this.graphics.setPosition(this.anchorRunDistance - runState.distance, 0);
+    this.graphics.setPosition(
+      this.anchorRunDistance - runState.distance,
+      this.renderedProjectionOffsetY,
+    );
   }
 
   destroy(): void {
@@ -93,7 +97,6 @@ export class GeneratedCollectiblePresentation {
     intent: LogicalCollectibleSpawnInstance['intent'],
     color: number,
     playerScreenX: number,
-    projection: ReturnType<typeof resolveVerticalProjection>,
   ): void {
     this.graphics.fillStyle(color, 0.95);
 
@@ -107,7 +110,7 @@ export class GeneratedCollectiblePresentation {
 
       this.graphics.fillCircle(
         playerScreenX + (spawn.runDistance - this.anchorRunDistance),
-        projectLogicalYToScreen(spawn.y, projection),
+        spawn.y,
         COLLECTIBLE_RADIUS,
       );
     }
