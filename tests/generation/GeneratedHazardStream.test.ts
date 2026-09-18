@@ -1,15 +1,22 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { PROTOTYPE_FLIGHT_TUNING_DEFAULTS } from '../../src/config/FlightTuningConfig';
 import { PROTOTYPE_RUN_MOTION_DEFAULTS } from '../../src/config/RunMotionConfig';
 import {
   advanceGeneratedHazardStream,
   createGeneratedHazardStream,
+  planGeneratedHazardMotion,
   PROTOTYPE_GENERATED_HAZARD_STREAM_CONFIG,
+  resolveGeneratedHazardMotionRunDistance,
   resolveHazardSafeSpeedChange,
 } from '../../src/generation/GeneratedHazardStream';
+import { PROTOTYPE_PATTERN_REACHABILITY_CONTEXT } from '../../src/generation/FlightReachability';
 import { evaluateHazardApproachTiming } from '../../src/generation/HazardApproachTiming';
 import { createHazardPattern } from '../../src/generation/HazardPattern';
-import { PROTOTYPE_HAZARD_PATTERN_FIXTURES } from '../../src/generation/PrototypeHazardPatternFixtures';
+import { PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG } from '../../src/generation/LiveEncounterPolicy';
+import {
+  PROTOTYPE_HAZARD_PATTERN_FIXTURES,
+  PROTOTYPE_ZAPPER_PATTERN,
+} from '../../src/generation/PrototypeHazardPatternFixtures';
 import { PROTOTYPE_PLAYER_COLLISION_EXTENTS } from '../../src/systems/HazardCollision';
 import { TEST_ENCOUNTER_PROFILE } from '../support/TestEncounterProfile';
 
@@ -57,6 +64,115 @@ const UPWARD_ONLY_PATTERN = createHazardPattern({
       hitbox: { left: 100, right: 148, top: 180, bottom: 342 },
     },
   ],
+});
+
+describe('generated hazard motion planning', () => {
+  const EMPTY_POLICY_CONTEXT = Object.freeze({
+    catalog: Object.freeze([]),
+    policy: PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG,
+    reachability: PROTOTYPE_PATTERN_REACHABILITY_CONTEXT,
+  });
+
+  it('splits an exact difficulty-speed boundary without consuming generation state', () => {
+    const initial = createGeneratedHazardStream(
+      'motion-boundary',
+      EMPTY_POLICY_CONTEXT,
+      PROTOTYPE_RUN_MOTION_DEFAULTS,
+    );
+    const beforeBoundary = advanceGeneratedHazardStream(
+      initial,
+      2_490,
+      EMPTY_POLICY_CONTEXT,
+      PROTOTYPE_RUN_MOTION_DEFAULTS,
+      2_490 / PROTOTYPE_RUN_MOTION_DEFAULTS.baseScrollSpeed,
+      false,
+    );
+    const plan = planGeneratedHazardMotion(
+      beforeBoundary,
+      EMPTY_POLICY_CONTEXT,
+      PROTOTYPE_RUN_MOTION_DEFAULTS,
+      0.1,
+    );
+
+    expect(plan.segments).toHaveLength(2);
+    expect(plan.segments[0]).toMatchObject({
+      startRunDistance: 2_490,
+      endRunDistance: 2_500,
+      scrollSpeed: 350,
+    });
+    expect(plan.segments[0]?.durationSeconds).toBeCloseTo(10 / 350, 12);
+    expect(plan.segments[1]).toMatchObject({
+      startRunDistance: 2_500,
+      endRunDistance: 2_527,
+      scrollSpeed: 378,
+    });
+    expect(plan.endRunDistance).toBeCloseTo(2_527, 12);
+    expect(plan.averageScrollSpeed).toBeCloseTo(370, 12);
+    expect(resolveGeneratedHazardMotionRunDistance(plan, 10 / 350)).toBeCloseTo(2_500, 12);
+    expect(resolveGeneratedHazardMotionRunDistance(plan, 0.1)).toBeCloseTo(2_527, 12);
+    expect(plan.stream.generationState).toBe(beforeBoundary.generationState);
+    expect(plan.stream.scheduledPatternCount).toBe(beforeBoundary.scheduledPatternCount);
+  });
+
+  it('keeps zero-delta plans stationary and emits no synthetic Director observations', () => {
+    const observeEncounter = vi.fn();
+    const lowPolicy = Object.freeze({
+      ...PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG,
+      pacing: Object.freeze({
+        phases: Object.freeze([
+          Object.freeze({
+            intensity: 'low' as const,
+            distanceLength: 100_000,
+            maximumPatternEntries: 1,
+            maximumHazardsPer1000Distance: 2,
+          }),
+          Object.freeze({
+            intensity: 'breather' as const,
+            distanceLength: 1_000,
+            maximumPatternEntries: 1,
+            maximumHazardsPer1000Distance: 1,
+          }),
+        ]),
+      }),
+    });
+    const context = Object.freeze({
+      catalog: Object.freeze([PROTOTYPE_ZAPPER_PATTERN]),
+      observeEncounter,
+      policy: lowPolicy,
+      reachability: PROTOTYPE_PATTERN_REACHABILITY_CONTEXT,
+    });
+    const state = createGeneratedHazardStream(
+      'motion-observer',
+      context,
+      PROTOTYPE_RUN_MOTION_DEFAULTS,
+    );
+    expect(state.scheduledPatternCount).toBeGreaterThan(0);
+    observeEncounter.mockClear();
+
+    const zero = planGeneratedHazardMotion(
+      state,
+      context,
+      PROTOTYPE_RUN_MOTION_DEFAULTS,
+      0,
+    );
+    expect(zero.segments).toEqual([]);
+    expect(zero.endRunDistance).toBe(state.runDistance);
+    expect(resolveGeneratedHazardMotionRunDistance(zero, 0)).toBe(state.runDistance);
+
+    const planned = planGeneratedHazardMotion(
+      state,
+      context,
+      { baseScrollSpeed: 700 },
+      0.05,
+    );
+    expect(observeEncounter).not.toHaveBeenCalled();
+    expect(planned.stream.generationState).toBe(state.generationState);
+    expect(planned.stream.scheduledPatternCount).toBe(state.scheduledPatternCount);
+    expect(planned.stream.spawns).toEqual(state.spawns);
+    expect(planned.stream.schedulingWindow.scrollSpeed).toBe(
+      state.schedulingWindow.scrollSpeed,
+    );
+  });
 });
 
 describe('generated hazard stream', () => {
