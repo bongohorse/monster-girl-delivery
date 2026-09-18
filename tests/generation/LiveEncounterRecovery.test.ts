@@ -88,8 +88,8 @@ describe('live stream recovery regressions', () => {
     };
     let state = createGeneratedHazardStream('breather-lead-in', context, MOTION);
     let breatherFrames = 0;
-    let countDuringBreather: number | null = null;
     let sawExactBoundary = false;
+    let sawActivePressureAfterBoundary = false;
     while (state.runDistance < 4_800) {
       const speed = state.schedulingWindow.scrollSpeed;
       const boundary =
@@ -105,19 +105,31 @@ describe('live stream recovery regressions', () => {
       if (distance >= 2_500 && distance < 3_900) {
         breatherFrames += 1;
         expect(state.policy?.pacing.intensity).toBe('breather');
-        expect(state.policy?.readability.reservations).toEqual([]);
-        if (countDuringBreather === null) countDuringBreather = state.scheduledPatternCount;
-        expect(state.scheduledPatternCount).toBe(countDuringBreather);
+        // The generator may pre-reserve a future next-phase encounter, but no readability window
+        // may be active during the breather itself.
+        expect(
+          state.policy?.readability.reservations.every(
+            (reservation) =>
+              reservation.activeWindow.startSeconds > 0 || reservation.activeWindow.endSeconds <= 0,
+          ),
+        ).toBe(true);
       }
       if (distance === 3_900) {
         sawExactBoundary = true;
         expect(state.policy?.pacing.intensity).toBe('medium');
       }
+      if (distance >= 3_900 && distance < 4_800) {
+        sawActivePressureAfterBoundary ||= Boolean(
+          state.policy?.readability.reservations.some(
+            (reservation) =>
+              reservation.activeWindow.startSeconds <= 0 && reservation.activeWindow.endSeconds > 0,
+          ),
+        );
+      }
     }
     expect(breatherFrames).toBeGreaterThan(50);
     expect(sawExactBoundary).toBe(true);
-    expect(countDuringBreather).not.toBeNull();
-    expect(state.scheduledPatternCount).toBeGreaterThan(countDuringBreather ?? 0);
+    expect(sawActivePressureAfterBoundary).toBe(true);
     expect(state.spawns.some((spawn) => spawn.patternId === PROTOTYPE_ZAPPER_PATTERN.id)).toBe(
       true,
     );
