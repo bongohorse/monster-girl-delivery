@@ -6,7 +6,16 @@ This directory records what each project milestone **actually delivered**.
 
 `MASTER_SPEC.md` remains the product specification. [`../ROADMAP.md`](../ROADMAP.md) owns the approved milestone sequence and forward-looking milestone structure. These milestone reports are historical closeout records: they document the implemented result, evidence, decisions, and deferred work after a milestone exits.
 
-They are **not** a substitute for the current roadmap or the current GitHub milestone Issue.
+They are **not** a substitute for the current roadmap, the native GitHub Milestone progress view, or the active milestone umbrella Issue.
+
+## Relationship to native GitHub Milestones
+
+- A native **GitHub Milestone** represents one numbered development phase and its assigned Issues/PRs.
+- [`../ROADMAP.md`](../ROADMAP.md) owns milestone sequencing, proof questions, entry/exit gates, version mapping, and milestone-level scope.
+- The milestone umbrella Issue owns detailed live planning, ordering, dependencies, Game Director decisions, and acceptance while work is active.
+- This directory records what actually shipped and why a completed milestone was allowed to close.
+
+Historical native-milestone backfill is audited **one milestone at a time: M0 -> verify -> M1 -> verify -> M2 -> ...**. Membership must be checked against the roadmap, umbrella Issue, implementation trail, and closeout evidence rather than inferred from creation date alone. Supporting maintenance, FUTURE work, and unrelated backlog work stay outside the numbered milestone unless they genuinely contributed to its accepted scope.
 
 ## Completed milestones
 
@@ -26,7 +35,7 @@ A new report is added here only when the milestone has factual implementation an
 
 M4 — Run Pacing & Hazard Language is complete. Its factual closeout is recorded in [`M4-run-pacing-hazard-language.md`](M4-run-pacing-hazard-language.md) with supporting evidence in [`M4-run-pacing-validation.md`](M4-run-pacing-validation.md).
 
-The next milestone in the approved roadmap sequence is M5 — Complete Arcade Loop & Skill Layer. M5 implementation remains unstarted until an approved focused M5 parent plan is established.
+The current milestone is M5 — Complete Arcade Loop & Skill Layer. Its active umbrella/parent is Issue #197; the project remains on version `0.4.x` until M5 passes its exit gate and factual closeout.
 
 ## Closeout rule for M2+
 
@@ -55,3 +64,4 @@ A closeout report must distinguish:
 - Maintenance performed during a milestone must not be rewritten as milestone gameplay scope.
 - If a later correction is needed, amend the historical report transparently; do not silently rewrite the reason a milestone originally exited.
 - Future roadmap changes do not rewrite completed milestone history.
+- A native GitHub Milestone is closed only after its exit decision is supported, required Director acceptance is recorded, deferred work is explicitly routed, the factual closeout report is merged, and milestone membership has been checked for unrelated work.
