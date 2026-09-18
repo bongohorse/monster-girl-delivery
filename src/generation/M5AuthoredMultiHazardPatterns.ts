@@ -3,7 +3,13 @@ import {
   createPrototypeZapperHitbox,
   PROTOTYPE_ZAPPER_LENGTHS,
 } from '../hazards/PrototypeZapperHazard';
+import {
+  createSineCollectiblePath,
+  createUniformPolylineCollectiblePath,
+  M5_DENSE_COIN_SPACING,
+} from './CollectibleFormationGenerator';
 import { createHazardPattern, type HazardPattern } from './HazardPattern';
+import { applyM5CollectibleMovementPatterns } from './M5CollectibleMovementPatterns';
 import {
   PROTOTYPE_LASER_PATTERN,
   PROTOTYPE_M5_HAZARD_PATTERN_FIXTURES,
@@ -71,12 +77,27 @@ export const M5_MISSILE_ZAPPER_PATTERN: Readonly<HazardPattern> = createHazardPa
         : { reactionPolicy: PROTOTYPE_MISSILE_ENTRY.reactionPolicy }),
     },
   ],
+  collectiblePaths: [
+    createUniformPolylineCollectiblePath({
+      id: 'missile-zapper-graze-invite',
+      intent: 'risk-reward',
+      spacing: M5_DENSE_COIN_SPACING,
+      controlPoints: [
+        { runDistance: 64, y: 220 },
+        { runDistance: 140, y: 210 },
+        { runDistance: 230, y: 210 },
+        { runDistance: 300, y: 240 },
+        { runDistance: 360, y: 265 },
+      ],
+    }),
+  ],
 });
 
 /**
  * High Laser + Missile uses one coherent answer: bait the Missile toward the threatened upper band,
  * recognize its lock, then move into the broad lower space before the committed shot and Laser ON
- * window overlap. The two warnings remain existing production warning languages, not a combo-only UI.
+ * window overlap. No safe-guide coins are added here yet: a reactive Missile route should not claim
+ * safety until its moving active trajectory is also part of collectible-route validation.
  */
 export const M5_MISSILE_LASER_PATTERN: Readonly<HazardPattern> = createHazardPattern({
   id: 'm5-combo-missile-laser',
@@ -105,9 +126,9 @@ export const M5_MISSILE_LASER_PATTERN: Readonly<HazardPattern> = createHazardPat
 });
 
 /**
- * High Laser + lower short diagonal Zapper leaves a deliberately generous center corridor. This is
- * the simplest timing+space composition and is intentionally static before any rotating/timed Zapper
- * is combined with Laser pressure in normal generation.
+ * High Laser + lower short diagonal Zapper leaves a deliberately generous center corridor. A small
+ * sine guide demonstrates useful rhythmic flight while remaining inside the authored safe band; the
+ * generator arc-length-resamples it so the visible coin spacing stays regular even on the curves.
  */
 export const M5_LASER_ZAPPER_PATTERN: Readonly<HazardPattern> = createHazardPattern({
   id: 'm5-combo-laser-zapper',
@@ -130,11 +151,30 @@ export const M5_LASER_ZAPPER_PATTERN: Readonly<HazardPattern> = createHazardPatt
       hitbox: createPrototypeZapperHitbox(360, 260, LOWER_DIAGONAL_ZAPPER_BEHAVIOR),
     },
   ],
+  collectiblePaths: [
+    createSineCollectiblePath({
+      id: 'laser-zapper-center-wave',
+      intent: 'safe-guide',
+      startRunDistance: 64,
+      endRunDistance: 700,
+      centerY: 180,
+      amplitudeY: 8,
+      cycles: 1.5,
+      spacing: M5_DENSE_COIN_SPACING,
+    }),
+  ],
 });
 
 export const M5_AUTHORED_MULTI_HAZARD_PATTERNS: ReadonlyArray<Readonly<HazardPattern>> =
   Object.freeze([M5_MISSILE_ZAPPER_PATTERN, M5_MISSILE_LASER_PATTERN, M5_LASER_ZAPPER_PATTERN]);
 
-/** Live M5 catalog: proven baseline vocabulary plus the small authored Phase-2 combination set. */
+const M5_ROUTE_ENHANCED_BASELINE_CATALOG = applyM5CollectibleMovementPatterns(
+  PROTOTYPE_M5_HAZARD_PATTERN_FIXTURES,
+);
+
+/**
+ * Live M5 catalog keeps the Phase-2 slot count/order stable. Collectible teaching/recovery data are
+ * layered onto matching baseline slots, then the already accepted Phase-2 combinations follow.
+ */
 export const PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG: ReadonlyArray<Readonly<HazardPattern>> =
-  Object.freeze([...PROTOTYPE_M5_HAZARD_PATTERN_FIXTURES, ...M5_AUTHORED_MULTI_HAZARD_PATTERNS]);
+  Object.freeze([...M5_ROUTE_ENHANCED_BASELINE_CATALOG, ...M5_AUTHORED_MULTI_HAZARD_PATTERNS]);

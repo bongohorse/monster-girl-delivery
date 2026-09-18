@@ -597,7 +597,6 @@ const fillSpawnWindow = (
   state.policy === null
     ? fillLegacySpawnWindow(state, context, runDistance, schedulingWindow)
     : fillPolicySpawnWindow(state, context, runDistance, schedulingWindow);
-
 /** Creates and pre-fills the first deterministic logical spawn window for a run. */
 export const createGeneratedHazardStream = (
   seed: SeedInput,
@@ -697,7 +696,12 @@ export const advanceGeneratedHazardStream = (
     getReactionTimeConstraint(context, runDistance),
   );
 
+  const schedulingNeeded =
+    scheduleEncounters &&
+    state.status === 'active' &&
+    state.nextPatternStartDistance <= getPatternSchedulingBoundary(runDistance, schedulingWindow);
   if (
+    !schedulingNeeded &&
     runDistance === state.runDistance &&
     schedulingWindow.minimumReactionDistance === state.schedulingWindow.minimumReactionDistance &&
     schedulingWindow.minimumReactionTimeSeconds ===
@@ -743,4 +747,217 @@ export const advanceGeneratedHazardStream = (
   }
 
   return fillSpawnWindow(adjustedState, context, runDistance, schedulingWindow);
+};
+
+export interface GeneratedHazardMotionSegment {
+  readonly durationSeconds: number;
+  readonly endRunDistance: number;
+  readonly scrollSpeed: number;
+  readonly startRunDistance: number;
+}
+
+export interface GeneratedHazardMotionPlan {
+  readonly averageScrollSpeed: number;
+  readonly elapsedSeconds: number;
+  readonly endRunDistance: number;
+  readonly segments: ReadonlyArray<Readonly<GeneratedHazardMotionSegment>>;
+  readonly startRunDistance: number;
+  /** Stream aged through the planned motion with encounter admission disabled. */
+  readonly stream: Readonly<GeneratedHazardStreamState>;
+}
+
+const MOTION_EVENT_EPSILON = 1e-9;
+const MAX_MOTION_SEGMENTS = 64;
+
+const createMotionPlanningContext = (
+  state: Readonly<GeneratedHazardStreamState>,
+  context: Readonly<GeneratedHazardStreamContext>,
+): Readonly<GeneratedHazardStreamContext> => {
+  // Motion planning is a speculative internal pass. Do not leak its segment boundaries into
+  // Director diagnostics; only the real scheduling/commit path may publish encounter observations.
+  const planningContext = { ...context };
+  delete planningContext.observeEncounter;
+
+  if (state.policy === null || context.policy === undefined) {
+    return Object.freeze(planningContext);
+  }
+
+  const reachability = context.reachability ?? PROTOTYPE_PATTERN_REACHABILITY_CONTEXT;
+  return Object.freeze({
+    ...planningContext,
+    reachability: Object.freeze({
+      ...reachability,
+      // Run-speed planning must not switch Director flight tuning part-way through one frame.
+      // The normal zero-time commit applies a newly-safe flight tuning at the frame boundary.
+      flightTuning: state.policy.flightTuning,
+    }),
+  });
+};
+
+const getReadabilityClearSeconds = (state: Readonly<GeneratedHazardStreamState>): number | null => {
+  const reservations = state.policy?.readability.reservations ?? [];
+  if (reservations.length === 0) {
+    return null;
+  }
+  return Math.max(...reservations.map((reservation) => reservation.activeWindow.endSeconds));
+};
+
+const getNextMotionDistanceEvent = (
+  state: Readonly<GeneratedHazardStreamState>,
+  context: Readonly<GeneratedHazardStreamContext>,
+): number | null => {
+  const currentDistance = state.runDistance;
+  const candidates: number[] = [];
+
+  if (context.policy !== undefined) {
+    const nextTierStartDistance = calculateDifficulty(
+      currentDistance,
+      context.policy.difficulty,
+    ).nextTierStartDistance;
+    if (
+      nextTierStartDistance !== null &&
+      nextTierStartDistance > currentDistance + MOTION_EVENT_EPSILON
+    ) {
+      candidates.push(nextTierStartDistance);
+    }
+  }
+
+  const exitDistance = state.policy?.exitEnvelope.runDistance;
+  if (exitDistance !== undefined && exitDistance > currentDistance + MOTION_EVENT_EPSILON) {
+    candidates.push(exitDistance);
+  }
+
+  for (const spawn of state.spawns) {
+    const targetDistance = spawn.approachTiming.targetRunDistance;
+    if (targetDistance >= currentDistance) {
+      candidates.push(
+        Math.max(targetDistance + MOTION_EVENT_EPSILON, currentDistance + MOTION_EVENT_EPSILON),
+      );
+    }
+  }
+
+  return candidates.length === 0 ? null : Math.min(...candidates);
+};
+
+/**
+ * Plans authoritative horizontal motion across difficulty/safety transition boundaries instead of
+ * sampling a new speed only at the next rendered frame. Encounter admission stays disabled while
+ * the plan ages policy state, so 30/60/144 Hz partitions reach the same logical distance.
+ */
+export const planGeneratedHazardMotion = (
+  state: Readonly<GeneratedHazardStreamState>,
+  context: Readonly<GeneratedHazardStreamContext>,
+  runMotion: Readonly<RunMotionValues>,
+  elapsedSeconds: number,
+): Readonly<GeneratedHazardMotionPlan> => {
+  if (!Number.isFinite(elapsedSeconds) || elapsedSeconds < 0) {
+    throw new RangeError('Generated hazard motion elapsedSeconds must be non-negative and finite.');
+  }
+
+  const startRunDistance = state.runDistance;
+  let preview = advanceGeneratedHazardStream(
+    state,
+    startRunDistance,
+    createMotionPlanningContext(state, context),
+    runMotion,
+    0,
+    false,
+  );
+  let remainingSeconds = elapsedSeconds;
+  const segments: GeneratedHazardMotionSegment[] = [];
+
+  while (remainingSeconds > 0) {
+    if (segments.length >= MAX_MOTION_SEGMENTS) {
+      throw new RangeError('Generated hazard motion exceeded its bounded transition count.');
+    }
+
+    const scrollSpeed = preview.schedulingWindow.scrollSpeed;
+    if (!Number.isFinite(scrollSpeed) || scrollSpeed <= 0) {
+      throw new RangeError('Generated hazard motion scroll speed must remain positive and finite.');
+    }
+
+    const distanceEvent = getNextMotionDistanceEvent(preview, context);
+    const distanceEventSeconds =
+      distanceEvent === null
+        ? Number.POSITIVE_INFINITY
+        : (distanceEvent - preview.runDistance) / scrollSpeed;
+    const readabilityClearSeconds = getReadabilityClearSeconds(preview) ?? Number.POSITIVE_INFINITY;
+    let segmentSeconds = Math.min(remainingSeconds, distanceEventSeconds, readabilityClearSeconds);
+
+    if (!Number.isFinite(segmentSeconds) || segmentSeconds <= 0) {
+      segmentSeconds = remainingSeconds;
+    }
+
+    const hitsDistanceEvent =
+      distanceEvent !== null && distanceEventSeconds <= segmentSeconds + Number.EPSILON;
+    const startDistance = preview.runDistance;
+    const endRunDistance = hitsDistanceEvent
+      ? distanceEvent
+      : startDistance + scrollSpeed * segmentSeconds;
+    const planningContext = createMotionPlanningContext(preview, context);
+    preview = advanceGeneratedHazardStream(
+      preview,
+      endRunDistance,
+      planningContext,
+      runMotion,
+      segmentSeconds,
+      false,
+    );
+    segments.push(
+      Object.freeze({
+        durationSeconds: segmentSeconds,
+        endRunDistance,
+        scrollSpeed,
+        startRunDistance: startDistance,
+      }),
+    );
+
+    remainingSeconds = Math.max(0, remainingSeconds - segmentSeconds);
+  }
+
+  const endRunDistance = preview.runDistance;
+  const averageScrollSpeed =
+    elapsedSeconds === 0
+      ? preview.schedulingWindow.scrollSpeed
+      : (endRunDistance - startRunDistance) / elapsedSeconds;
+
+  return Object.freeze({
+    averageScrollSpeed,
+    elapsedSeconds,
+    endRunDistance,
+    segments: Object.freeze(segments),
+    startRunDistance,
+    stream: preview,
+  });
+};
+
+/** Resolves the exact piecewise run distance at a sub-frame time inside a motion plan. */
+export const resolveGeneratedHazardMotionRunDistance = (
+  plan: Readonly<GeneratedHazardMotionPlan>,
+  elapsedSeconds: number,
+): number => {
+  if (
+    !Number.isFinite(elapsedSeconds) ||
+    elapsedSeconds < 0 ||
+    elapsedSeconds > plan.elapsedSeconds
+  ) {
+    throw new RangeError('Motion-plan elapsedSeconds must stay inside the planned frame.');
+  }
+  if (elapsedSeconds === 0 || plan.segments.length === 0) {
+    return plan.startRunDistance;
+  }
+
+  let consumedSeconds = 0;
+  for (const segment of plan.segments) {
+    const segmentEndSeconds = consumedSeconds + segment.durationSeconds;
+    if (elapsedSeconds <= segmentEndSeconds) {
+      if (elapsedSeconds === segmentEndSeconds) {
+        return segment.endRunDistance;
+      }
+      return segment.startRunDistance + segment.scrollSpeed * (elapsedSeconds - consumedSeconds);
+    }
+    consumedSeconds = segmentEndSeconds;
+  }
+
+  return plan.endRunDistance;
 };

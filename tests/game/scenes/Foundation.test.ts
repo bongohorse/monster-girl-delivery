@@ -7,12 +7,14 @@ import {
   projectLogicalYToScreen,
 } from '../../../src/game/PrototypeFlightLayout';
 import { Foundation } from '../../../src/game/scenes/Foundation';
+import { createEncounterExitStateEnvelope } from '../../../src/generation/EncounterTransitionValidator';
 import { PROTOTYPE_PATTERN_REACHABILITY_CONTEXT } from '../../../src/generation/FlightReachability';
 import {
   advanceGeneratedHazardStream,
   createGeneratedHazardStream,
   type GeneratedHazardStreamState,
   PROTOTYPE_LIVE_RUN_SEED,
+  planGeneratedHazardMotion,
 } from '../../../src/generation/GeneratedHazardStream';
 import { evaluateHazardApproachTiming } from '../../../src/generation/HazardApproachTiming';
 import type { HazardPattern } from '../../../src/generation/HazardPattern';
@@ -21,9 +23,11 @@ import { scheduleNextPattern } from '../../../src/generation/PatternSpawnSchedul
 import {
   PROTOTYPE_LINE_PATTERN,
   PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES,
-  PROTOTYPE_OFFSET_PAIR_PATTERN,
   PROTOTYPE_TARGET_LOCK_STRIKE_PATTERN,
+  PROTOTYPE_TIMED_PULSE_PATTERN,
+  PROTOTYPE_ZAPPER_PATTERN,
 } from '../../../src/generation/PrototypeHazardPatternFixtures';
+import { createPrototypeHazardVerticalDomain } from '../../../src/generation/PrototypeHazardVerticalDomain';
 import { createRunGenerationState } from '../../../src/generation/RunGenerationState';
 import { resolveHazardHitboxAtRunDistance } from '../../../src/hazards/HazardArchetype';
 import * as TelegraphedHazardSimulation from '../../../src/hazards/TelegraphedHazardSimulation';
@@ -73,7 +77,7 @@ const createTestHazardStreamContext = (
   });
 
 const createLowPhaseHazardStream = (services: ReturnType<typeof createAppServices>) => {
-  const context = createTestHazardStreamContext(services, [PROTOTYPE_OFFSET_PAIR_PATTERN]);
+  const context = createTestHazardStreamContext(services, [PROTOTYPE_ZAPPER_PATTERN]);
   const initial = createGeneratedHazardStream(
     PROTOTYPE_LIVE_RUN_SEED,
     context,
@@ -81,7 +85,7 @@ const createLowPhaseHazardStream = (services: ReturnType<typeof createAppService
   );
   const stream = advanceGeneratedHazardStream(
     initial,
-    1_800,
+    900,
     context,
     services.runMotion.getSnapshot(),
   );
@@ -210,17 +214,62 @@ describe('Foundation scene gameplay orchestration', () => {
   });
 
   it('commits new telegraphs after the frame step and keeps reservation and lifecycle clocks aligned', () => {
-    const { foundation, services } = createFoundationHarness();
-    const initial = createGeneratedHazardStream(
-      1,
-      createTestHazardStreamContext(services),
-      services.runMotion.getSnapshot(),
+    const { foundation, services, viewportService } = createFoundationHarness();
+    const domain = createPrototypeHazardVerticalDomain(
+      createPrototypeFlightBounds(viewportService.getSnapshot()),
+      [PROTOTYPE_TIMED_PULSE_PATTERN],
     );
+    Reflect.set(foundation, 'hazardVerticalDomain', domain);
+    const context = Object.freeze({
+      ...createTestHazardStreamContext(services, domain.catalog),
+      constraints: domain.constraints,
+    });
+    let initial = createGeneratedHazardStream(1, context, services.runMotion.getSnapshot());
+    let distance = 0;
+    let admissionDistance: number | null = null;
+
+    for (let frame = 0; frame < 2_000 && admissionDistance === null; frame += 1) {
+      const resolved = advanceGeneratedHazardStream(
+        initial,
+        distance,
+        context,
+        services.runMotion.getSnapshot(),
+        0,
+        false,
+      );
+      const deltaSeconds = 0.016;
+      const motionPlan = planGeneratedHazardMotion(
+        resolved,
+        context,
+        services.runMotion.getSnapshot(),
+        deltaSeconds,
+      );
+      const committed = advanceGeneratedHazardStream(
+        motionPlan.stream,
+        motionPlan.endRunDistance,
+        context,
+        services.runMotion.getSnapshot(),
+        0,
+        true,
+      );
+      if (committed.spawns.length > resolved.spawns.length) {
+        initial = resolved;
+        admissionDistance = distance;
+        break;
+      }
+      initial = committed;
+      distance = motionPlan.endRunDistance;
+    }
+
+    expect(admissionDistance).not.toBeNull();
+    if (admissionDistance === null) {
+      throw new Error('Expected the isolated timed hazard to reach an admission frame.');
+    }
+
     Reflect.set(foundation, 'hazardStream', initial);
-    // Moving the scheduling horizon makes the current M5 timed slot enter the stream.
     Reflect.set(foundation, 'runState', {
       phase: 'running',
-      motion: { distance: 1800 },
+      motion: { distance: admissionDistance },
       flight: { positionY: 400, velocityY: 0 },
     });
     foundation.update(0, 16);
@@ -230,7 +279,9 @@ describe('Foundation scene gameplay orchestration', () => {
     if (!spawn || !reservation || spawn.behavior.archetype !== 'timed') {
       throw new Error('Expected the seeded timed hazard.');
     }
-    expect(spawn.approachTiming.observedAtRunDistance).toBeCloseTo(1805.6);
+    expect(spawn.approachTiming.observedAtRunDistance).toBeCloseTo(
+      getRunMotionState(foundation).distance,
+    );
     expect(
       getTelegraphedHazardLifecycle(getTelegraphedHazardState(foundation), spawn),
     ).toMatchObject({ phase: 'warning', elapsedPhaseSeconds: 0 });
@@ -582,9 +633,29 @@ describe('Foundation scene gameplay orchestration', () => {
     expect(playerPresentation.setPosition).toHaveBeenLastCalledWith(320, 28);
     expect(playerPresentation.setScale).toHaveBeenLastCalledWith(1, 1);
     const motion = getRunMotionState(foundation);
-    const stream = getHazardStream(foundation);
+    const naturallyProgressedStream = getHazardStream(foundation);
+    if (!naturallyProgressedStream.policy) {
+      throw new Error('Expected live encounter policy state before resize.');
+    }
+    // Keep the resize integration test independent of whichever encounter the seeded live stream
+    // happened to accept: inject retained out-of-domain history, then prove resize reconciles only
+    // that history while preserving the run, generation state, spawns, readability, and lifecycle.
+    const stream = Object.freeze({
+      ...naturallyProgressedStream,
+      policy: Object.freeze({
+        ...naturallyProgressedStream.policy,
+        exitEnvelope: createEncounterExitStateEnvelope({
+          runDistance: naturallyProgressedStream.policy.exitEnvelope.runDistance,
+          states: [
+            ...naturallyProgressedStream.policy.exitEnvelope.states,
+            { positionY: -100, velocityY: -100 },
+          ],
+        }),
+      }),
+    });
+    Reflect.set(foundation, 'hazardStream', stream);
     const telegraphs = getTelegraphedHazardState(foundation);
-    expect(stream.policy?.exitEnvelope.states.some((state) => state.positionY < 28)).toBe(true);
+    expect(stream.policy.exitEnvelope.states.some((state) => state.positionY < 28)).toBe(true);
 
     handleResize({ width: 844, height: 390 });
 
