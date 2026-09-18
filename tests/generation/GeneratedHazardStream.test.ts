@@ -419,6 +419,34 @@ describe('generated hazard stream', () => {
     });
   });
 
+  it('commits newly reachable encounters at the same distance after a planning-only advance', () => {
+    const initial = createGeneratedHazardStream(
+      'planning-commit',
+      LIVE_CONTEXT,
+      PROTOTYPE_RUN_MOTION_DEFAULTS,
+    );
+    const preview = advanceGeneratedHazardStream(
+      initial,
+      1_000,
+      LIVE_CONTEXT,
+      PROTOTYPE_RUN_MOTION_DEFAULTS,
+      1_000 / PROTOTYPE_RUN_MOTION_DEFAULTS.baseScrollSpeed,
+      false,
+    );
+    const committed = advanceGeneratedHazardStream(
+      preview,
+      preview.runDistance,
+      LIVE_CONTEXT,
+      PROTOTYPE_RUN_MOTION_DEFAULTS,
+      0,
+      true,
+    );
+
+    expect(preview.scheduledPatternCount).toBe(initial.scheduledPatternCount);
+    expect(committed.scheduledPatternCount).toBeGreaterThan(preview.scheduledPatternCount);
+    expect(committed.runDistance).toBe(preview.runDistance);
+  });
+
   it('returns the same state without duplicate spawns at repeated run distance', () => {
     const initial = createGeneratedHazardStream(
       'no-duplicates',
