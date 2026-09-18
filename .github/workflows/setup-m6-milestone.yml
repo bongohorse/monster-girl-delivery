@@ -1,0 +1,57 @@
+name: One-time M6 milestone setup
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/setup-m6-milestone.yml
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+
+    steps:
+      - name: Create M6 milestone and assign promoted presentation work
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          title="M6 — Vertical Slice / Visual Identity"
+          description="Roadmap M6 / v0.6 · Prove one coherent release-quality Monster Girl Delivery slice with production presentation and representative mobile performance. Scope remains gated by M5, Product Gate A, and Art Gate."
+
+          number="$(
+            gh api "repos/$REPO/milestones?state=all&per_page=100"               --paginate               --jq ".[] | select(.title == \"$title\") | .number"               | head -n 1
+          )"
+
+          if [[ -z "$number" ]]; then
+            number="$(
+              gh api --method POST "repos/$REPO/milestones"                 -f title="$title"                 -f description="$description"                 -f state="open"                 --jq .number
+            )"
+          else
+            gh api --method PATCH "repos/$REPO/milestones/$number"               -f title="$title"               -f description="$description"               -f state="open"               >/dev/null
+          fi
+
+          for issue_number in 155 324 325 326
+          do
+            gh api --method PATCH "repos/$REPO/issues/$issue_number"               -F milestone="$number"               >/dev/null
+          done
+
+          for issue_number in 155 324 325 326
+          do
+            assigned="$(gh api "repos/$REPO/issues/$issue_number" --jq '.milestone.number // 0')"
+            if [[ "$assigned" != "$number" ]]; then
+              echo "Issue #$issue_number was not assigned to M6 milestone #$number" >&2
+              exit 1
+            fi
+          done
+
+          echo "M6 milestone #$number ready and promoted issues assigned."
