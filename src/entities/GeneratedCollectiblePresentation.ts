@@ -29,7 +29,7 @@ export class GeneratedCollectiblePresentation {
   private renderedProjectionOffsetY = Number.NaN;
   private renderedProjectionScaleY = Number.NaN;
 
-  constructor(private readonly scene: Scene) {
+  constructor(scene: Scene) {
     this.graphics = scene.add.graphics().setDepth(-40);
   }
 
@@ -55,17 +55,9 @@ export class GeneratedCollectiblePresentation {
     if (contentChanged) {
       this.anchorRunDistance = runState.distance;
       this.graphics.clear().setPosition(0, 0);
-      const consumed =
-        consumedCollectibleIds.length === 0 ? null : new Set(consumedCollectibleIds);
+      const consumed = consumedCollectibleIds.length === 0 ? null : new Set(consumedCollectibleIds);
 
-      this.drawIntent(
-        spawns,
-        consumed,
-        'safe-guide',
-        SAFE_GUIDE_COLOR,
-        playerScreenX,
-        projection,
-      );
+      this.drawIntent(spawns, consumed, 'safe-guide', SAFE_GUIDE_COLOR, playerScreenX, projection);
       this.drawIntent(
         spawns,
         consumed,
@@ -108,7 +100,7 @@ export class GeneratedCollectiblePresentation {
     for (const spawn of spawns) {
       if (
         spawn.intent !== intent ||
-        (consumed !== null && consumed.has(getLogicalCollectibleSpawnIdentity(spawn)))
+        consumed?.has(getLogicalCollectibleSpawnIdentity(spawn)) === true
       ) {
         continue;
       }
