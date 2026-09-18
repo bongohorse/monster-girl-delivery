@@ -28,6 +28,7 @@ import {
   constrainGeneratedHazardStream,
   createGeneratedHazardStream,
   type GeneratedHazardStreamState,
+  planGeneratedHazardMotion,
   PROTOTYPE_LIVE_RUN_SEED,
 } from '../../generation/GeneratedHazardStream';
 import type { HazardPattern } from '../../generation/HazardPattern';
@@ -426,93 +427,122 @@ export class Foundation extends Scene {
         false,
       );
       this.reconcileRetainedGeneratedTelegraphedHazards(generatedBeforeMotionAdvance);
-      const appliedScrollSpeed = this.hazardStream.schedulingWindow.scrollSpeed;
-      const runMotionTuning = Object.freeze({ baseScrollSpeed: appliedScrollSpeed });
       const activeFlightTuning = this.hazardStream.policy?.flightTuning ?? flightTuning;
       const thrustHeld = this.services.input.isThrustHeld();
-      const initialFlight = this.runState.flight;
-      const initialMotion = this.runState.motion;
       const playerScreenX = getPrototypePlayerX(viewport);
-      const resolvePlayerTargetAtDelta = (deltaSeconds: number): TelegraphedHazardTarget => {
-        const subFlight = stepVerticalFlight(
-          initialFlight,
-          deltaSeconds,
-          thrustHeld,
-          activeFlightTuning,
-          flightBounds,
-        );
-        const subMotion = stepRunMotion(initialMotion, deltaSeconds, runMotionTuning);
-        return {
-          positionY: subFlight.positionY,
-          runDistance: subMotion.distance,
+      const motionPlan = planGeneratedHazardMotion(
+        this.hazardStream,
+        hazardStreamContext,
+        requestedRunMotion,
+        simulationDeltaSeconds,
+      );
+      let enteredDead = false;
+
+      // Run each constant-speed slice through the existing authoritative simulation. This preserves
+      // continuous collision/Graze/collectible math while making difficulty/safety speed boundaries
+      // independent of how the renderer partitions the same simulation time.
+      for (const motionSegment of motionPlan.segments) {
+        const initialFlight = this.runState.flight;
+        const initialMotion = this.runState.motion;
+        const runMotionTuning = Object.freeze({ baseScrollSpeed: motionSegment.scrollSpeed });
+        const resolvePlayerTargetAtDelta = (deltaSeconds: number): TelegraphedHazardTarget => {
+          const subFlight = stepVerticalFlight(
+            initialFlight,
+            deltaSeconds,
+            thrustHeld,
+            activeFlightTuning,
+            flightBounds,
+          );
+          const subMotion = stepRunMotion(initialMotion, deltaSeconds, runMotionTuning);
+          return {
+            positionY: subFlight.positionY,
+            runDistance: subMotion.distance,
+          };
         };
-      };
-      const activeHazards = this.getActiveHazardSpawns();
-      this.telegraphedHazardState = stepTelegraphedHazardSimulation(
-        this.telegraphedHazardState,
-        activeHazards,
-        simulationDeltaSeconds,
-        {
-          positionY: this.runState.flight.positionY,
-          runDistance: this.runState.motion.distance,
-        },
-        resolvePlayerTargetAtDelta,
-        {
-          playerRunDistance: initialMotion.distance,
-          playerScreenX,
-          viewportLeft: 0,
-          viewportRight: viewport.width,
-        },
-      );
-      this.timedZapperState = stepTimedZapperSimulation(
-        this.timedZapperState,
-        activeHazards,
-        simulationDeltaSeconds,
-      );
-      const telegraphedCollisionHazards = getCollisionHazardsForTelegraphedSimulation(
-        this.telegraphedHazardState,
-        activeHazards,
-        {
-          playerRunDistance: initialMotion.distance,
-          playerScreenX,
-          scrollSpeed: appliedScrollSpeed,
-          viewportLeft: 0,
-          viewportRight: viewport.width,
-        },
-      );
-      const result = stepPrototypeRun(this.runState, simulationDeltaSeconds, {
-        collectibles: this.collectibleSpawns,
-        flightBounds,
-        flightTuning: activeFlightTuning,
-        hazards: getCollisionHazardsForTimedZapperSimulation(
+        const activeHazards = this.getActiveHazardSpawns();
+        this.telegraphedHazardState = stepTelegraphedHazardSimulation(
+          this.telegraphedHazardState,
+          activeHazards,
+          motionSegment.durationSeconds,
+          {
+            positionY: initialFlight.positionY,
+            runDistance: initialMotion.distance,
+          },
+          resolvePlayerTargetAtDelta,
+          {
+            playerRunDistance: initialMotion.distance,
+            playerScreenX,
+            viewportLeft: 0,
+            viewportRight: viewport.width,
+          },
+        );
+        this.timedZapperState = stepTimedZapperSimulation(
           this.timedZapperState,
-          telegraphedCollisionHazards,
-        ),
-        runMotionTuning,
-        thrustHeld,
-      });
-      const godModePreventedDeath = result.enteredDead && this.directorGodModeEnabled;
-      if (godModePreventedDeath) {
-        const { finalResult: _ignoredFinalResult, ...survivingState } = result.state;
-        this.runState = { ...survivingState, phase: 'running' };
-      } else {
-        this.runState = result.state;
-      }
-      if (result.enteredDead && !godModePreventedDeath) {
-        const finalResult = this.runState.finalResult;
-        if (!finalResult) {
-          throw new TypeError('Authoritative run end must provide a final result snapshot.');
+          activeHazards,
+          motionSegment.durationSeconds,
+        );
+        const telegraphedCollisionHazards = getCollisionHazardsForTelegraphedSimulation(
+          this.telegraphedHazardState,
+          activeHazards,
+          {
+            playerRunDistance: initialMotion.distance,
+            playerScreenX,
+            scrollSpeed: motionSegment.scrollSpeed,
+            viewportLeft: 0,
+            viewportRight: viewport.width,
+          },
+        );
+        const result = stepPrototypeRun(this.runState, motionSegment.durationSeconds, {
+          collectibles: this.collectibleSpawns,
+          flightBounds,
+          flightTuning: activeFlightTuning,
+          hazards: getCollisionHazardsForTimedZapperSimulation(
+            this.timedZapperState,
+            telegraphedCollisionHazards,
+          ),
+          runMotionTuning,
+          thrustHeld,
+        });
+        const godModePreventedDeath = result.enteredDead && this.directorGodModeEnabled;
+        if (godModePreventedDeath) {
+          const { finalResult: _ignoredFinalResult, ...survivingState } = result.state;
+          this.runState = { ...survivingState, phase: 'running' };
+        } else {
+          this.runState = result.state;
         }
-        this.enterRunFailState(finalResult);
-      } else {
-        // Age existing reservations by the completed frame, then commit new content at t=0.
+
+        if (this.runState.phase === 'running') {
+          this.runState = {
+            ...this.runState,
+            motion: {
+              ...this.runState.motion,
+              distance: motionSegment.endRunDistance,
+            },
+          };
+        }
+
+        if (result.enteredDead && !godModePreventedDeath) {
+          enteredDead = true;
+          const finalResult = this.runState.finalResult;
+          if (!finalResult) {
+            throw new TypeError('Authoritative run end must provide a final result snapshot.');
+          }
+          this.enterRunFailState(finalResult);
+          break;
+        }
+      }
+
+      if (!enteredDead) {
+        // The planner already aged policy/readability through the completed frame without admitting
+        // encounters. Adopt that state, then perform one real end-of-frame scheduling commit at t=0.
         const generatedBeforeCommit = this.hazardStream.spawns;
+        this.hazardStream = motionPlan.stream;
         this.hazardStream = advanceGeneratedHazardStream(
           this.hazardStream,
           this.runState.motion.distance,
           hazardStreamContext,
           requestedRunMotion,
-          simulationDeltaSeconds,
+          0,
           this.directorAutoHazardsEnabled,
         );
         this.reconcileRetainedGeneratedTelegraphedHazards(generatedBeforeCommit);
