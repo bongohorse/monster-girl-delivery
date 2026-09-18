@@ -392,7 +392,11 @@ describe('live encounter policy integration', () => {
       intrinsicallyEligible: true,
       decision: { status: 'deferred' },
     });
-    expect(overlapping?.decision.issues.length).toBeGreaterThan(0);
+    expect(overlapping?.decision.issues.map((issue) => issue.code)).toEqual([
+      'active-readability-budget-exceeded',
+      'warning-concurrency-exceeded',
+      'lethal-concurrency-exceeded',
+    ]);
   });
 
   it('keeps transition-fairness rejection deterministic after policy eligibility filtering', () => {
