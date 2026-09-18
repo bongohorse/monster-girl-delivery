@@ -20,6 +20,7 @@ import {
 import type { EncounterStreamObservation } from '../../generation/EncounterStreamObservation';
 import { PROTOTYPE_PATTERN_REACHABILITY_CONTEXT } from '../../generation/FlightReachability';
 import {
+  getNextGeneratedCollectiblePruneDistance,
   type LogicalCollectibleSpawnInstance,
   reconcileGeneratedCollectibles,
 } from '../../generation/GeneratedCollectibles';
@@ -195,6 +196,8 @@ export class Foundation extends Scene {
   private lifecycleAdapter?: PhaserLifecycleAdapter;
   private collectibleSpawns: ReadonlyArray<Readonly<LogicalCollectibleSpawnInstance>> =
     Object.freeze([]);
+  private collectibleScheduledPatternCount = -1;
+  private nextCollectiblePruneDistance: number | null = null;
   private generatedCollectiblePresentation?: GeneratedCollectiblePresentation;
   private generatedHazardPresentation?: GeneratedHazardPresentation;
   private hazardStream?: Readonly<GeneratedHazardStreamState>;
@@ -305,12 +308,10 @@ export class Foundation extends Scene {
       ),
       this.services.runMotion.getSnapshot(),
     );
-    this.collectibleSpawns = reconcileGeneratedCollectibles(
-      [],
-      this.hazardStream.spawns,
-      this.hazardVerticalDomain.catalog,
-      this.runState.motion.distance,
-    );
+    this.collectibleSpawns = Object.freeze([]);
+    this.collectibleScheduledPatternCount = -1;
+    this.nextCollectiblePruneDistance = null;
+    this.reconcileCollectiblesIfNeeded(true);
     const initialHazards = this.getActiveHazardSpawns();
     this.telegraphedHazardState = stepTelegraphedHazardSimulation(
       createTelegraphedHazardSimulationState(),
@@ -547,14 +548,7 @@ export class Foundation extends Scene {
         );
         this.reconcileRetainedGeneratedTelegraphedHazards(generatedBeforeCommit);
         this.pruneDirectorManualHazards();
-        this.collectibleSpawns = this.directorAutoHazardsEnabled
-          ? reconcileGeneratedCollectibles(
-              this.collectibleSpawns,
-              this.hazardStream.spawns,
-              this.hazardVerticalDomain.catalog,
-              this.runState.motion.distance,
-            )
-          : Object.freeze([]);
+        this.reconcileCollectiblesIfNeeded();
         const committedHazards = this.getActiveHazardSpawns();
         this.telegraphedHazardState = stepTelegraphedHazardSimulation(
           this.telegraphedHazardState,
@@ -696,6 +690,8 @@ export class Foundation extends Scene {
     this.retainedGeneratedTelegraphedHazards = Object.freeze([]);
     this.directorManualHazards = Object.freeze([]);
     this.collectibleSpawns = Object.freeze([]);
+    this.collectibleScheduledPatternCount = this.hazardStream?.scheduledPatternCount ?? -1;
+    this.nextCollectiblePruneDistance = null;
     this.telegraphedHazardState = createTelegraphedHazardSimulationState();
     this.timedZapperState = createTimedZapperSimulationState();
     this.directorLaserVariantIndex = 0;
@@ -956,12 +952,10 @@ export class Foundation extends Scene {
       this.services.runMotion.getSnapshot(),
     );
     if (this.directorAutoHazardsEnabled) {
-      this.collectibleSpawns = reconcileGeneratedCollectibles(
-        [],
-        this.hazardStream.spawns,
-        this.hazardVerticalDomain.catalog,
-        this.runState.motion.distance,
-      );
+      this.collectibleSpawns = Object.freeze([]);
+      this.collectibleScheduledPatternCount = -1;
+      this.nextCollectiblePruneDistance = null;
+      this.reconcileCollectiblesIfNeeded(true);
       this.telegraphedHazardState = stepTelegraphedHazardSimulation(
         createTelegraphedHazardSimulationState(),
         this.hazardStream.spawns,
@@ -981,6 +975,43 @@ export class Foundation extends Scene {
     }
     this.services.input.releaseAll();
     this.instructions?.setText(RUNNING_INSTRUCTIONS);
+  }
+
+  private reconcileCollectiblesIfNeeded(force = false): void {
+    if (!this.hazardStream) {
+      return;
+    }
+
+    if (!this.directorAutoHazardsEnabled) {
+      if (this.collectibleSpawns.length > 0) {
+        this.collectibleSpawns = Object.freeze([]);
+      }
+      this.collectibleScheduledPatternCount = this.hazardStream.scheduledPatternCount;
+      this.nextCollectiblePruneDistance = null;
+      return;
+    }
+
+    const runDistance = this.runState.motion.distance;
+    const scheduledPatternCountChanged =
+      this.collectibleScheduledPatternCount !== this.hazardStream.scheduledPatternCount;
+    const pruningDue =
+      this.nextCollectiblePruneDistance !== null &&
+      runDistance > this.nextCollectiblePruneDistance;
+
+    if (!force && !scheduledPatternCountChanged && !pruningDue) {
+      return;
+    }
+
+    this.collectibleSpawns = reconcileGeneratedCollectibles(
+      this.collectibleSpawns,
+      this.hazardStream.spawns,
+      this.hazardVerticalDomain.catalog,
+      runDistance,
+    );
+    this.collectibleScheduledPatternCount = this.hazardStream.scheduledPatternCount;
+    this.nextCollectiblePruneDistance = getNextGeneratedCollectiblePruneDistance(
+      this.collectibleSpawns,
+    );
   }
 
   private renderRun(viewport: ReturnType<ViewportService['getSnapshot']>): void {
@@ -1059,6 +1090,8 @@ export class Foundation extends Scene {
     this.generatedHazardPresentation?.destroy();
     this.generatedHazardPresentation = undefined;
     this.collectibleSpawns = Object.freeze([]);
+    this.collectibleScheduledPatternCount = -1;
+    this.nextCollectiblePruneDistance = null;
     this.retainedGeneratedTelegraphedHazards = Object.freeze([]);
     this.directorManualHazards = Object.freeze([]);
     this.hazardStream = undefined;
