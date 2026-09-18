@@ -107,6 +107,10 @@ Before merging a milestone completion report:
 - [ ] Product/architecture decision states are accurate.
 - [ ] Exit decision is explicit.
 - [ ] Next-milestone inheritance is explicit.
+- [ ] Native GitHub Milestone membership has been audited against actual milestone scope; unrelated maintenance/backlog work is not inflating or blocking progress.
+- [ ] Any unfinished work is explicitly deferred/routed before the native milestone is closed.
+- [ ] Required Game Director acceptance/exit decision is recorded before the native milestone is closed.
+- [ ] The native GitHub Milestone is closed only after this factual closeout is merged.
 - [ ] `bun run ci:check` passes.
 - [ ] `bun run typecheck` passes.
 - [ ] `bun run test` passes.
