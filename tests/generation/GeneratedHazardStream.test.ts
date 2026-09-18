@@ -1,15 +1,15 @@
 import { describe, expect, it, vi } from 'vitest';
 import { PROTOTYPE_FLIGHT_TUNING_DEFAULTS } from '../../src/config/FlightTuningConfig';
 import { PROTOTYPE_RUN_MOTION_DEFAULTS } from '../../src/config/RunMotionConfig';
+import { PROTOTYPE_PATTERN_REACHABILITY_CONTEXT } from '../../src/generation/FlightReachability';
 import {
   advanceGeneratedHazardStream,
   createGeneratedHazardStream,
-  planGeneratedHazardMotion,
   PROTOTYPE_GENERATED_HAZARD_STREAM_CONFIG,
+  planGeneratedHazardMotion,
   resolveGeneratedHazardMotionRunDistance,
   resolveHazardSafeSpeedChange,
 } from '../../src/generation/GeneratedHazardStream';
-import { PROTOTYPE_PATTERN_REACHABILITY_CONTEXT } from '../../src/generation/FlightReachability';
 import { evaluateHazardApproachTiming } from '../../src/generation/HazardApproachTiming';
 import { createHazardPattern } from '../../src/generation/HazardPattern';
 import { PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG } from '../../src/generation/LiveEncounterPolicy';
@@ -149,29 +149,17 @@ describe('generated hazard motion planning', () => {
     expect(state.scheduledPatternCount).toBeGreaterThan(0);
     observeEncounter.mockClear();
 
-    const zero = planGeneratedHazardMotion(
-      state,
-      context,
-      PROTOTYPE_RUN_MOTION_DEFAULTS,
-      0,
-    );
+    const zero = planGeneratedHazardMotion(state, context, PROTOTYPE_RUN_MOTION_DEFAULTS, 0);
     expect(zero.segments).toEqual([]);
     expect(zero.endRunDistance).toBe(state.runDistance);
     expect(resolveGeneratedHazardMotionRunDistance(zero, 0)).toBe(state.runDistance);
 
-    const planned = planGeneratedHazardMotion(
-      state,
-      context,
-      { baseScrollSpeed: 700 },
-      0.05,
-    );
+    const planned = planGeneratedHazardMotion(state, context, { baseScrollSpeed: 700 }, 0.05);
     expect(observeEncounter).not.toHaveBeenCalled();
     expect(planned.stream.generationState).toBe(state.generationState);
     expect(planned.stream.scheduledPatternCount).toBe(state.scheduledPatternCount);
     expect(planned.stream.spawns).toEqual(state.spawns);
-    expect(planned.stream.schedulingWindow.scrollSpeed).toBe(
-      state.schedulingWindow.scrollSpeed,
-    );
+    expect(planned.stream.schedulingWindow.scrollSpeed).toBe(state.schedulingWindow.scrollSpeed);
   });
 });
 
