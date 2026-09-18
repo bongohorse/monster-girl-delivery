@@ -458,7 +458,7 @@ describe('system frame partition evidence', () => {
       });
 
       const seed = 'm3-contiguous-stream-seed';
-      const totalDuration = 13; // reaches safely inside the first current MEDIUM pressure beat at 350 px/s
+      const totalDuration = 8.5; // reaches distance 2975 logical distance units at 350 px/s
       const runMotion = PROTOTYPE_RUN_MOTION_DEFAULTS;
 
       const runLegacyStream = (schedule: FrameSchedule) => {
@@ -561,7 +561,7 @@ describe('system frame partition evidence', () => {
       });
 
       const seed = 'm4-cross-partition-generation-seed';
-      const totalDuration = 8.5; // reaches distance 2975 logical distance units
+      const totalDuration = 13; // reaches safely inside the first current MEDIUM pressure beat
       const runMotion = PROTOTYPE_RUN_MOTION_DEFAULTS;
 
       const runPolicyStream = (schedule: FrameSchedule) => {
