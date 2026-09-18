@@ -696,7 +696,12 @@ export const advanceGeneratedHazardStream = (
     getReactionTimeConstraint(context, runDistance),
   );
 
+  const schedulingNeeded =
+    scheduleEncounters &&
+    state.status === 'active' &&
+    state.nextPatternStartDistance <= getPatternSchedulingBoundary(runDistance, schedulingWindow);
   if (
+    !schedulingNeeded &&
     runDistance === state.runDistance &&
     schedulingWindow.minimumReactionDistance === state.schedulingWindow.minimumReactionDistance &&
     schedulingWindow.minimumReactionTimeSeconds ===
