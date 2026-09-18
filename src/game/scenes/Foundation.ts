@@ -28,8 +28,8 @@ import {
   constrainGeneratedHazardStream,
   createGeneratedHazardStream,
   type GeneratedHazardStreamState,
-  planGeneratedHazardMotion,
   PROTOTYPE_LIVE_RUN_SEED,
+  planGeneratedHazardMotion,
 } from '../../generation/GeneratedHazardStream';
 import type { HazardPattern } from '../../generation/HazardPattern';
 import { PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG } from '../../generation/LiveEncounterPolicy';
