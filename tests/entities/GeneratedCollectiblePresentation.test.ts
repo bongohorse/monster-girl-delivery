@@ -23,75 +23,89 @@ const createSpawn = (
   });
 
 const createSceneFake = () => {
-  const graphicsObjects: Array<{
-    destroy: ReturnType<typeof vi.fn>;
-    fillCircle: ReturnType<typeof vi.fn>;
-    fillStyle: ReturnType<typeof vi.fn>;
-    lineStyle: ReturnType<typeof vi.fn>;
-    setPosition: ReturnType<typeof vi.fn>;
-    strokeCircle: ReturnType<typeof vi.fn>;
-  }> = [];
-  const addGraphics = vi.fn(() => {
-    const graphics = {
-      destroy: vi.fn(),
-      fillCircle: vi.fn(),
-      fillStyle: vi.fn(),
-      lineStyle: vi.fn(),
-      setDepth: vi.fn(),
-      setPosition: vi.fn(),
-      setScale: vi.fn(),
-      strokeCircle: vi.fn(),
-    };
+  const graphics = {
+    clear: vi.fn(),
+    destroy: vi.fn(),
+    fillCircle: vi.fn(),
+    fillStyle: vi.fn(),
+    setDepth: vi.fn(),
+    setPosition: vi.fn(),
+    setScale: vi.fn(),
+  };
+  for (const method of [
+    graphics.clear,
+    graphics.fillCircle,
+    graphics.fillStyle,
+    graphics.setDepth,
+    graphics.setPosition,
+    graphics.setScale,
+  ]) {
+    method.mockReturnValue(graphics);
+  }
 
-    for (const method of [
-      graphics.fillCircle,
-      graphics.fillStyle,
-      graphics.lineStyle,
-      graphics.setDepth,
-      graphics.setPosition,
-      graphics.setScale,
-      graphics.strokeCircle,
-    ]) {
-      method.mockReturnValue(graphics);
-    }
-
-    graphicsObjects.push(graphics);
-    return graphics;
-  });
+  const addGraphics = vi.fn(() => graphics);
   const scene = { add: { graphics: addGraphics } } as unknown as Scene;
-  return { addGraphics, graphicsObjects, scene };
+  return { addGraphics, graphics, scene };
 };
 
 describe('GeneratedCollectiblePresentation', () => {
-  it('creates readable safe and risk primitives at projected logical positions', () => {
-    const { addGraphics, graphicsObjects, scene } = createSceneFake();
+  it('draws all safe/risk coins into one simplified batched graphics object', () => {
+    const { addGraphics, graphics, scene } = createSceneFake();
     const presentation = new GeneratedCollectiblePresentation(scene);
     const safe = createSpawn('safe', 500);
     const risk = createSpawn('risk', 650, 'risk-reward');
 
     presentation.sync([safe, risk], [], { distance: 100 }, 200, { offsetY: 10, scaleY: 0.5 });
 
-    expect(addGraphics).toHaveBeenCalledTimes(2);
-    expect(graphicsObjects[0]?.fillStyle).toHaveBeenCalledWith(0x6fffe9, 0.95);
-    expect(graphicsObjects[1]?.fillStyle).toHaveBeenCalledWith(0xffd166, 0.95);
-    expect(graphicsObjects[0]?.setPosition).toHaveBeenCalledWith(600, 107.5);
-    expect(graphicsObjects[1]?.setPosition).toHaveBeenCalledWith(750, 107.5);
+    expect(addGraphics).toHaveBeenCalledOnce();
+    expect(graphics.clear).toHaveBeenCalledOnce();
+    expect(graphics.fillStyle).toHaveBeenNthCalledWith(1, 0x6fffe9, 0.95);
+    expect(graphics.fillStyle).toHaveBeenNthCalledWith(2, 0xffd166, 0.95);
+    expect(graphics.fillCircle).toHaveBeenNthCalledWith(1, 600, 195, 7);
+    expect(graphics.fillCircle).toHaveBeenNthCalledWith(2, 750, 195, 7);
+    expect(graphics.setPosition).toHaveBeenCalledWith(0, 10);
+    expect(graphics.setScale).toHaveBeenCalledWith(1, 0.5);
   });
 
-  it('removes a collectible presentation as soon as authoritative state consumes it', () => {
-    const { addGraphics, graphicsObjects, scene } = createSceneFake();
+  it('scrolls unchanged collectible geometry with one transform instead of redrawing coins', () => {
+    const { graphics, scene } = createSceneFake();
+    const presentation = new GeneratedCollectiblePresentation(scene);
+    const spawns = Object.freeze([createSpawn('safe', 500)]);
+    const consumed = Object.freeze([]) as ReadonlyArray<string>;
+
+    presentation.sync(spawns, consumed, { distance: 100 }, 200);
+    graphics.clear.mockClear();
+    graphics.fillCircle.mockClear();
+    graphics.fillStyle.mockClear();
+    graphics.setPosition.mockClear();
+
+    presentation.sync(spawns, consumed, { distance: 120 }, 200);
+
+    expect(graphics.clear).not.toHaveBeenCalled();
+    expect(graphics.fillCircle).not.toHaveBeenCalled();
+    expect(graphics.fillStyle).not.toHaveBeenCalled();
+    expect(graphics.setPosition).toHaveBeenCalledOnce();
+    expect(graphics.setPosition).toHaveBeenCalledWith(-20, 0);
+  });
+
+  it('redraws the shared batch when authoritative state consumes a coin', () => {
+    const { graphics, scene } = createSceneFake();
     const presentation = new GeneratedCollectiblePresentation(scene);
     const spawn = createSpawn('safe', 500);
+    const spawns = Object.freeze([spawn]);
 
-    presentation.sync([spawn], [], { distance: 100 }, 200);
-    presentation.sync([spawn], [getLogicalCollectibleSpawnIdentity(spawn)], { distance: 120 }, 200);
+    presentation.sync(spawns, [], { distance: 100 }, 200);
+    graphics.clear.mockClear();
+    graphics.fillCircle.mockClear();
 
-    expect(addGraphics).toHaveBeenCalledOnce();
-    expect(graphicsObjects[0]?.destroy).toHaveBeenCalledOnce();
+    presentation.sync(spawns, [getLogicalCollectibleSpawnIdentity(spawn)], { distance: 120 }, 200);
+
+    expect(graphics.clear).toHaveBeenCalledOnce();
+    expect(graphics.fillCircle).not.toHaveBeenCalled();
   });
 
-  it('destroys bounded graphics once and ignores later synchronization', () => {
-    const { addGraphics, graphicsObjects, scene } = createSceneFake();
+  it('destroys the one bounded graphics object once and ignores later synchronization', () => {
+    const { addGraphics, graphics, scene } = createSceneFake();
     const presentation = new GeneratedCollectiblePresentation(scene);
     const spawn = createSpawn('safe', 500);
 
@@ -100,7 +114,7 @@ describe('GeneratedCollectiblePresentation', () => {
     presentation.destroy();
     presentation.sync([spawn], [], { distance: 120 }, 200);
 
-    expect(graphicsObjects[0]?.destroy).toHaveBeenCalledOnce();
+    expect(graphics.destroy).toHaveBeenCalledOnce();
     expect(addGraphics).toHaveBeenCalledOnce();
   });
 });

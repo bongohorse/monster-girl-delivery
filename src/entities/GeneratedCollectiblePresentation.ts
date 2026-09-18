@@ -1,7 +1,6 @@
 import type { GameObjects, Scene } from 'phaser';
 import {
   type PrototypeVerticalOffsetOrProjection,
-  projectLogicalYToScreen,
   resolveVerticalProjection,
 } from '../game/PrototypeFlightLayout';
 import {
@@ -10,38 +9,28 @@ import {
 } from '../generation/GeneratedCollectibles';
 import type { RunMotionState } from '../systems/RunMotionSimulation';
 
-interface ActiveCollectiblePresentation {
-  readonly graphics: GameObjects.Graphics;
-}
-
-const drawCollectible = (
-  graphics: GameObjects.Graphics,
-  collectible: Readonly<LogicalCollectibleSpawnInstance>,
-): void => {
-  const riskReward = collectible.intent === 'risk-reward';
-  const fillColor = riskReward ? 0xffd166 : 0x6fffe9;
-  const strokeColor = riskReward ? 0xff2d95 : 0xffffff;
-
-  graphics
-    .fillStyle(fillColor, 0.95)
-    .fillCircle(0, 0, 8)
-    .lineStyle(3, strokeColor, 1)
-    .strokeCircle(0, 0, 10);
-
-  if (riskReward) {
-    graphics.lineStyle(2, fillColor, 0.85).strokeCircle(0, 0, 14);
-  }
-};
+const SAFE_GUIDE_COLOR = 0x6fffe9;
+const RISK_REWARD_COLOR = 0xffd166;
+const COLLECTIBLE_RADIUS = 7;
 
 /**
- * Temporary M5 pickup presentation. Logical placement and collection remain Phaser-independent;
- * this class only mirrors unconsumed generated collectibles into bounded scene graphics.
+ * Temporary M5 pickup presentation. All visible coins share one Graphics object instead of creating
+ * one Phaser GameObject per coin. Geometry is redrawn only when the accepted collectible set,
+ * consumed ids, or viewport projection changes; ordinary scrolling is one object transform.
  */
 export class GeneratedCollectiblePresentation {
-  private readonly active = new Map<string, ActiveCollectiblePresentation>();
+  private readonly graphics: GameObjects.Graphics;
   private destroyed = false;
+  private anchorRunDistance = 0;
+  private renderedSpawns: ReadonlyArray<Readonly<LogicalCollectibleSpawnInstance>> | null = null;
+  private renderedConsumedCollectibleIds: ReadonlyArray<string> | null = null;
+  private renderedPlayerScreenX = Number.NaN;
+  private renderedProjectionOffsetY = Number.NaN;
+  private renderedProjectionScaleY = Number.NaN;
 
-  constructor(private readonly scene: Scene) {}
+  constructor(scene: Scene) {
+    this.graphics = scene.add.graphics().setDepth(-40);
+  }
 
   sync(
     spawns: ReadonlyArray<Readonly<LogicalCollectibleSpawnInstance>>,
@@ -54,41 +43,34 @@ export class GeneratedCollectiblePresentation {
       return;
     }
 
-    const consumed = new Set(consumedCollectibleIds);
-    const retainedIdentities = new Set<string>();
     const projection = resolveVerticalProjection(verticalProjection);
+    const contentChanged =
+      spawns !== this.renderedSpawns ||
+      consumedCollectibleIds !== this.renderedConsumedCollectibleIds ||
+      playerScreenX !== this.renderedPlayerScreenX ||
+      projection.offsetY !== this.renderedProjectionOffsetY ||
+      projection.scaleY !== this.renderedProjectionScaleY;
 
-    for (const spawn of spawns) {
-      const identity = getLogicalCollectibleSpawnIdentity(spawn);
-      if (consumed.has(identity)) {
-        continue;
-      }
+    if (contentChanged) {
+      this.anchorRunDistance = runState.distance;
+      this.graphics.clear().setPosition(0, projection.offsetY).setScale(1, projection.scaleY);
+      const consumed = consumedCollectibleIds.length === 0 ? null : new Set(consumedCollectibleIds);
 
-      retainedIdentities.add(identity);
-      let active = this.active.get(identity);
-      if (!active) {
-        const graphics = this.scene.add.graphics().setDepth(-40);
-        drawCollectible(graphics, spawn);
-        active = { graphics };
-        this.active.set(identity, active);
-      }
+      this.drawIntent(spawns, consumed, 'safe-guide', SAFE_GUIDE_COLOR, playerScreenX);
+      this.drawIntent(spawns, consumed, 'risk-reward', RISK_REWARD_COLOR, playerScreenX);
 
-      active.graphics
-        .setPosition(
-          playerScreenX + (spawn.runDistance - runState.distance),
-          projectLogicalYToScreen(spawn.y, projection),
-        )
-        .setScale?.(1, projection.scaleY);
+      this.renderedSpawns = spawns;
+      this.renderedConsumedCollectibleIds = consumedCollectibleIds;
+      this.renderedPlayerScreenX = playerScreenX;
+      this.renderedProjectionOffsetY = projection.offsetY;
+      this.renderedProjectionScaleY = projection.scaleY;
+      return;
     }
 
-    for (const [identity, active] of this.active) {
-      if (retainedIdentities.has(identity)) {
-        continue;
-      }
-
-      active.graphics.destroy();
-      this.active.delete(identity);
-    }
+    this.graphics.setPosition(
+      this.anchorRunDistance - runState.distance,
+      this.renderedProjectionOffsetY,
+    );
   }
 
   destroy(): void {
@@ -97,9 +79,31 @@ export class GeneratedCollectiblePresentation {
     }
 
     this.destroyed = true;
-    for (const active of this.active.values()) {
-      active.graphics.destroy();
+    this.graphics.destroy();
+  }
+
+  private drawIntent(
+    spawns: ReadonlyArray<Readonly<LogicalCollectibleSpawnInstance>>,
+    consumed: ReadonlySet<string> | null,
+    intent: LogicalCollectibleSpawnInstance['intent'],
+    color: number,
+    playerScreenX: number,
+  ): void {
+    this.graphics.fillStyle(color, 0.95);
+
+    for (const spawn of spawns) {
+      if (
+        spawn.intent !== intent ||
+        consumed?.has(getLogicalCollectibleSpawnIdentity(spawn)) === true
+      ) {
+        continue;
+      }
+
+      this.graphics.fillCircle(
+        playerScreenX + (spawn.runDistance - this.anchorRunDistance),
+        spawn.y,
+        COLLECTIBLE_RADIUS,
+      );
     }
-    this.active.clear();
   }
 }
