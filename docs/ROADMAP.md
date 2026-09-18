@@ -135,7 +135,7 @@ M0–M4 are complete. Reports own delivered scope, acceptance, and limitations; 
 
 **Status: PASSED.**
 
-[Issue #179](https://github.com/bongohorse/monster-girl-delivery/issues/179) records the authority audit; [M5 parent #197](https://github.com/bongohorse/monster-girl-delivery/issues/197) owns the active M5 implementation and acceptance trail.
+[Issue #179](https://github.com/bongohorse/monster-girl-delivery/issues/179) records the authority audit; [M5 parent #197](https://github.com/bongohorse/monster-girl-delivery/issues/197) records M5 implementation and acceptance.
 
 | Domain | Focused owner |
 |---|---|
