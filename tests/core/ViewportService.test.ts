@@ -26,11 +26,21 @@ describe('ViewportService', () => {
     });
   });
 
-  it('returns snapshots that cannot mutate service state', () => {
+  it('reuses deeply immutable snapshots until resize', () => {
     const viewport = new ViewportService(320, 640);
     const snapshot = viewport.getSnapshot();
-    snapshot.safeArea.top = 99;
 
+    expect(Object.isFrozen(snapshot)).toBe(true);
+    expect(Object.isFrozen(snapshot.safeArea)).toBe(true);
+    expect(Reflect.set(snapshot.safeArea, 'top', 99)).toBe(false);
+    expect(viewport.getSnapshot()).toBe(snapshot);
     expect(viewport.getSnapshot().safeArea.top).toBe(0);
+
+    viewport.resize(640, 320);
+    const resized = viewport.getSnapshot();
+
+    expect(resized).not.toBe(snapshot);
+    expect(resized.orientation).toBe('landscape');
+    expect(viewport.getSnapshot()).toBe(resized);
   });
 });
