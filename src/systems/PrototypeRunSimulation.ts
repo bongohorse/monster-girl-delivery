@@ -49,7 +49,7 @@ export interface PrototypeRunStepContext {
   resultTotals?: Readonly<PrototypeRunResultTotals>;
   runMotionTuning: Readonly<RunMotionValues>;
   thrustHeld: boolean;
-  /** Optional read-only instrumentation sink; never consulted by gameplay decisions. */
+  /** Optional additive instrumentation sink; gameplay writes counters but never reads them. */
   zapperCollisionWorkCounters?: PrototypeZapperCollisionWorkCounters;
 }
 
