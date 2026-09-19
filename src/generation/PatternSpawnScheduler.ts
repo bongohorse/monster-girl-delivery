@@ -35,8 +35,10 @@ export interface PatternSpawnScheduleRequest {
 
 export interface LogicalHazardSpawnIdentityFields {
   readonly entryId: string;
+  /** Authored entry position retained as a deterministic tie-breaker and diagnostic. */
   readonly patternEntryIndex: number;
   readonly patternId: string;
+  /** Absolute leading-edge position in logical run-distance space. */
   readonly runDistance: number;
 }
 
@@ -55,12 +57,38 @@ const LOGICAL_HAZARD_SPAWN_IDENTITY_CACHE = new WeakMap<
   string
 >();
 
+const LOGICAL_HAZARD_IDENTITY_KEYS = [
+  'patternId',
+  'patternEntryIndex',
+  'entryId',
+  'runDistance',
+] as const;
+
+const canCacheLogicalHazardSpawnIdentity = (
+  spawn: Readonly<LogicalHazardSpawnIdentityFields>,
+): boolean => {
+  if (!Object.isFrozen(spawn)) {
+    return false;
+  }
+
+  return LOGICAL_HAZARD_IDENTITY_KEYS.every((key) => {
+    const descriptor = Object.getOwnPropertyDescriptor(spawn, key);
+    return (
+      descriptor !== undefined &&
+      'value' in descriptor &&
+      descriptor.writable === false &&
+      descriptor.configurable === false
+    );
+  });
+};
+
 /**
  * Stable serializable identity shared by logical runtime state and Phaser presentation.
  *
- * Authoritative spawns and collision adapters are immutable, so their composite string is cached by
- * object identity after the first request. Mutable/manual carriers deliberately bypass caching so a
- * caller that changes identity fields cannot observe stale identity.
+ * Authoritative spawns and collision adapters publish frozen own data properties, so their
+ * composite string is cached by object identity after the first request. Mutable carriers and frozen
+ * accessor-based fixtures deliberately bypass caching so changing logical values cannot expose a
+ * stale identity.
  */
 export const getLogicalHazardSpawnIdentity = (
   spawn: Readonly<LogicalHazardSpawnIdentityFields>,
@@ -71,7 +99,7 @@ export const getLogicalHazardSpawnIdentity = (
   }
 
   const identity = `${spawn.patternId}:${spawn.patternEntryIndex}:${spawn.entryId}:${spawn.runDistance}`;
-  if (Object.isFrozen(spawn)) {
+  if (canCacheLogicalHazardSpawnIdentity(spawn)) {
     LOGICAL_HAZARD_SPAWN_IDENTITY_CACHE.set(spawn, identity);
   }
   return identity;
