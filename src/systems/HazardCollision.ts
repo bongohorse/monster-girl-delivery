@@ -549,11 +549,28 @@ const evaluatePrototypeZapperPaddingPairDuringStep = (
   const rotating = hazard.behavior.rotation !== undefined;
   let staticGeometry: ReturnType<typeof resolvePrototypeZapperGeometry> | undefined;
   let secondaryHit = false;
+  let trajectorySegmentIndex = 0;
+  const trajectorySegments = trajectory.segments;
 
   for (const seconds of sampleTimes) {
+    let trajectorySegment = trajectorySegments[trajectorySegmentIndex];
+    while (
+      trajectorySegment &&
+      trajectorySegmentIndex < trajectorySegments.length - 1 &&
+      seconds > trajectorySegment.endSeconds
+    ) {
+      trajectorySegmentIndex += 1;
+      trajectorySegment = trajectorySegments[trajectorySegmentIndex];
+    }
+    const playerPositionY =
+      trajectorySegment &&
+      seconds >= trajectorySegment.startSeconds &&
+      seconds <= trajectorySegment.endSeconds
+        ? evaluateFlightSegmentPosition(trajectorySegment, seconds)
+        : evaluateFlightTrajectoryPosition(trajectory, seconds);
     const playerHitbox = createPrototypePlayerHitbox(
       { distance: initialRunState.distance + runMotionTuning.baseScrollSpeed * seconds },
-      { positionY: evaluateFlightTrajectoryPosition(trajectory, seconds), velocityY: 0 },
+      { positionY: playerPositionY, velocityY: 0 },
       playerExtents,
     );
     let geometry: ReturnType<typeof resolvePrototypeZapperGeometry>;
@@ -591,9 +608,10 @@ const evaluatePrototypeZapperPaddingPairDuringStep = (
  * conservative horizontal envelope; rotating Zappers reserve their full angular sweep. A cheap
  * player-sweep broadphase rejects envelopes that cannot reach the player during the active interval
  * before any dense sample times or geometry are created. Samples remain anchored to absolute world
- * distance plus an authoritative 1/720-second simulation-time lattice. Static Zappers resolve their
- * immutable geometry once per step; rotating Zappers resolve each sample from authoritative
- * simulation time so a beam cannot tunnel between endpoint poses.
+ * distance plus an authoritative 1/720-second simulation-time lattice. Sorted samples advance one
+ * monotonic flight-segment cursor instead of linearly searching the trajectory again per sample.
+ * Static Zappers resolve their immutable geometry once per step; rotating Zappers resolve each
+ * sample from authoritative simulation time so a beam cannot tunnel between endpoint poses.
  */
 export const isPlayerCollidingWithPrototypeZapperDuringStep = (
   initialRunState: Readonly<RunMotionState>,
