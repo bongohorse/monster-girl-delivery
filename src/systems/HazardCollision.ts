@@ -556,12 +556,7 @@ const createZapperCollisionSampleTimes = (
   // globally anchored lattices.
   const eventCandidates = [interval.startSeconds, interval.endSeconds];
   for (const segment of trajectory.segments) {
-    addCandidate(
-      eventCandidates,
-      segment.startSeconds,
-      interval.startSeconds,
-      interval.endSeconds,
-    );
+    addCandidate(eventCandidates, segment.startSeconds, interval.startSeconds, interval.endSeconds);
     addCandidate(eventCandidates, segment.endSeconds, interval.startSeconds, interval.endSeconds);
     if (segment.accelerationY !== 0) {
       addCandidate(
@@ -636,8 +631,7 @@ const createZapperCollisionSampleTimes = (
 
     let timeSeconds = Number.POSITIVE_INFINITY;
     while (timeIndex <= timeLastIndex) {
-      const candidate =
-        timeIndex * ZAPPER_MAX_COLLISION_SAMPLE_SECONDS - initialSimulationSeconds;
+      const candidate = timeIndex * ZAPPER_MAX_COLLISION_SAMPLE_SECONDS - initialSimulationSeconds;
       if (candidate >= interval.startSeconds && candidate <= interval.endSeconds) {
         timeSeconds = candidate;
         break;
