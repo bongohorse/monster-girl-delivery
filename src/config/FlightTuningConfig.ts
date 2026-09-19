@@ -50,7 +50,7 @@ export class FlightTuningConfig {
   private snapshot: Readonly<FlightTuningValues> = PROTOTYPE_FLIGHT_TUNING_DEFAULTS;
 
   update(update: FlightTuningUpdate): void {
-    let changed = false;
+    let nextValues: FlightTuningValues | undefined;
 
     for (const key of FLIGHT_TUNING_KEYS) {
       if (!(key in update)) {
@@ -59,22 +59,17 @@ export class FlightTuningConfig {
 
       const value = update[key];
       assertValidMagnitude(key, value);
-      if (value !== this.snapshot[key]) {
-        changed = true;
+      if (value === this.snapshot[key]) {
+        continue;
       }
+
+      nextValues ??= { ...this.snapshot };
+      nextValues[key] = value;
     }
 
-    if (!changed) {
-      return;
+    if (nextValues) {
+      this.snapshot = Object.freeze(nextValues);
     }
-
-    const nextValues: FlightTuningValues = { ...this.snapshot };
-    for (const key of FLIGHT_TUNING_KEYS) {
-      if (key in update) {
-        nextValues[key] = update[key] as number;
-      }
-    }
-    this.snapshot = Object.freeze(nextValues);
   }
 
   getSnapshot(): Readonly<FlightTuningValues> {
