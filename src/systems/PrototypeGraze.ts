@@ -36,6 +36,11 @@ export interface PrototypeGrazeRunState {
 export interface PrototypeGrazeStepResult {
   readonly grazeDelta: number;
   readonly lethalCollision: boolean;
+  /**
+   * Complete lethal-core set for positive simulation steps. Zero-delta pause/resize checks retain
+   * their existing short-circuit path and report null because pickup authority does not advance.
+   */
+  readonly resolvedLethalHazards: ReadonlyArray<Readonly<LogicalHazard>> | null;
   readonly state: Readonly<PrototypeGrazeRunState>;
 }
 
@@ -249,6 +254,7 @@ export const evaluatePrototypeGrazeStep = (
           hazard,
         ),
       ),
+      resolvedLethalHazards: null,
       state,
     };
   }
@@ -357,13 +363,19 @@ export const evaluatePrototypeGrazeStep = (
       pending.has(occurrenceId),
     );
     if (samePending) {
-      return { grazeDelta: 0, lethalCollision, state };
+      return {
+        grazeDelta: 0,
+        lethalCollision,
+        resolvedLethalHazards: lethalHazards,
+        state,
+      };
     }
   }
 
   return {
     grazeDelta: awardedOccurrenceIds.length,
     lethalCollision,
+    resolvedLethalHazards: lethalHazards,
     state: Object.freeze({
       consumedOccurrenceIds: Object.freeze([...consumed, ...awardedOccurrenceIds]),
       count: state.count + awardedOccurrenceIds.length,
