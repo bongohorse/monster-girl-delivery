@@ -10,6 +10,7 @@ import {
   createPrototypeZapperCollisionWorkCounters,
   evaluatePlayerPrototypeZapperCoreAndGrazeDuringStep,
   isPlayerCollidingWithPrototypeZapperDuringStep,
+  PROTOTYPE_PLAYER_COLLISION_EXTENTS,
   type PrototypeZapperCollisionWorkCounters,
 } from '../../src/systems/HazardCollision';
 import { createVerticalFlightTrajectory } from '../../src/systems/VerticalFlightSimulation';
@@ -182,6 +183,69 @@ describe('M5 Zapper collision work evidence', () => {
       geometryResolutionCount: 1,
       primaryNarrowphaseCheckCount: 1,
     });
+  });
+
+  it('matches the historical dense path for static one-axis core and Graze outcomes', () => {
+    const scenarios = [
+      {
+        initialRunState: { distance: 0, simulationSeconds: 0 },
+        trajectory: createLinearTrajectory(-100, 200, 1),
+        elapsedSeconds: 1,
+        runMotionTuning: NO_SCROLL,
+      },
+      {
+        initialRunState: { distance: -120, simulationSeconds: 0 },
+        trajectory: createStationaryTrajectory(0, 1),
+        elapsedSeconds: 1,
+        runMotionTuning: NORMAL_SCROLL,
+      },
+      {
+        initialRunState: { distance: 0, simulationSeconds: 0 },
+        trajectory: createStationaryTrajectory(39, 0.1),
+        elapsedSeconds: 0.1,
+        runMotionTuning: NO_SCROLL,
+      },
+    ] as const;
+    const customStableExtents = { ...PROTOTYPE_PLAYER_COLLISION_EXTENTS };
+    const hazard = createZapper(false);
+
+    for (const scenario of scenarios) {
+      const exactCore = isPlayerCollidingWithPrototypeZapperDuringStep(
+        scenario.initialRunState,
+        scenario.trajectory,
+        scenario.elapsedSeconds,
+        scenario.runMotionTuning,
+        hazard,
+      );
+      const denseCore = isPlayerCollidingWithPrototypeZapperDuringStep(
+        scenario.initialRunState,
+        scenario.trajectory,
+        scenario.elapsedSeconds,
+        scenario.runMotionTuning,
+        hazard,
+        customStableExtents,
+      );
+      expect(exactCore).toBe(denseCore);
+
+      const exactGraze = evaluatePlayerPrototypeZapperCoreAndGrazeDuringStep(
+        scenario.initialRunState,
+        scenario.trajectory,
+        scenario.elapsedSeconds,
+        scenario.runMotionTuning,
+        hazard,
+        PROTOTYPE_ZAPPER_GRAZE_PADDING,
+      );
+      const denseGraze = evaluatePlayerPrototypeZapperCoreAndGrazeDuringStep(
+        scenario.initialRunState,
+        scenario.trajectory,
+        scenario.elapsedSeconds,
+        scenario.runMotionTuning,
+        hazard,
+        PROTOTYPE_ZAPPER_GRAZE_PADDING,
+        customStableExtents,
+      );
+      expect(exactGraze).toEqual(denseGraze);
+    }
   });
 
   it('keeps genuine two-axis static motion on the dense lattice fallback', () => {
