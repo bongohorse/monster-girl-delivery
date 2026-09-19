@@ -8,8 +8,8 @@ import {
   isPrototypeZapperHazard,
 } from '../hazards/PrototypeZapperHazard';
 import {
+  evaluatePlayerPrototypeZapperCoreAndGrazeDuringStep,
   isPlayerCollidingWithHazardDuringStep,
-  isPlayerCollidingWithPrototypeZapperDuringStep,
   type LogicalHazard,
   type LogicalHazardCollisionInterval,
   PROTOTYPE_PLAYER_COLLISION_EXTENTS,
@@ -201,31 +201,21 @@ const hasLethalCollisionBy = (
   );
 };
 
-const isPlayerInGrazeZoneDuringStep = (
+const isPlayerInLegacyGrazeZoneDuringStep = (
   initialRunState: Readonly<RunMotionState>,
   trajectory: Readonly<VerticalFlightTrajectory>,
   elapsedSeconds: number,
   runMotionTuning: Readonly<RunMotionValues>,
   hazard: Readonly<LogicalHazard>,
 ): boolean =>
-  isPrototypeZapperHazard(hazard)
-    ? isPlayerCollidingWithPrototypeZapperDuringStep(
-        initialRunState,
-        trajectory,
-        elapsedSeconds,
-        runMotionTuning,
-        hazard,
-        PROTOTYPE_PLAYER_COLLISION_EXTENTS,
-        getPrototypeZapperGrazePadding(hazard),
-      )
-    : isPlayerCollidingWithHazardDuringStep(
-        initialRunState,
-        trajectory,
-        elapsedSeconds,
-        runMotionTuning,
-        hazard,
-        PROTOTYPE_PLAYER_GRAZE_EXTENTS,
-      );
+  isPlayerCollidingWithHazardDuringStep(
+    initialRunState,
+    trajectory,
+    elapsedSeconds,
+    runMotionTuning,
+    hazard,
+    PROTOTYPE_PLAYER_GRAZE_EXTENTS,
+  );
 
 /**
  * Evaluates lethal core collision and optional Graze from the same continuous trajectory/lifecycle
@@ -234,7 +224,9 @@ const isPlayerInGrazeZoneDuringStep = (
  * pre-lethal outer-zone touch that a coarse terminal step would suppress. In a terminal step,
  * resolved different-hazard candidates are retained only when the existing continuous collision
  * authority confirms that no lethal overlap has happened by that candidate's resolution boundary.
- * The boundary is deterministic qualification state, not unsupported physical TOI ordering.
+ * Zappers resolve core and outer-padding contact from one shared sample/geometry pass when Graze is
+ * still eligible. The boundary is deterministic qualification state, not unsupported physical TOI
+ * ordering.
  */
 export const evaluatePrototypeGrazeStep = (
   state: Readonly<PrototypeGrazeRunState>,
@@ -285,13 +277,30 @@ export const evaluatePrototypeGrazeStep = (
 
   for (const hazard of hazards) {
     const occurrenceId = getGrazeOccurrenceId(hazard);
-    const coreHit = isPlayerCollidingWithHazardDuringStep(
-      initialRunState,
-      trajectory,
-      elapsedSeconds,
-      runMotionTuning,
-      hazard,
-    );
+    const canResolveGraze = occurrenceId !== null && !consumed.has(occurrenceId);
+    let coreHit: boolean;
+    let preResolvedZapperGrazeHit: boolean | null = null;
+
+    if (isPrototypeZapperHazard(hazard) && canResolveGraze) {
+      const contacts = evaluatePlayerPrototypeZapperCoreAndGrazeDuringStep(
+        initialRunState,
+        trajectory,
+        elapsedSeconds,
+        runMotionTuning,
+        hazard,
+        getPrototypeZapperGrazePadding(hazard),
+      );
+      coreHit = contacts.coreHit;
+      preResolvedZapperGrazeHit = contacts.grazeHit;
+    } else {
+      coreHit = isPlayerCollidingWithHazardDuringStep(
+        initialRunState,
+        trajectory,
+        elapsedSeconds,
+        runMotionTuning,
+        hazard,
+      );
+    }
 
     if (coreHit) {
       lethalCollision = true;
@@ -303,19 +312,20 @@ export const evaluatePrototypeGrazeStep = (
       continue;
     }
 
-    if (!occurrenceId || consumed.has(occurrenceId)) {
+    if (!canResolveGraze || occurrenceId === null) {
       continue;
     }
 
-    if (
-      isPlayerInGrazeZoneDuringStep(
+    const grazeHit =
+      preResolvedZapperGrazeHit ??
+      isPlayerInLegacyGrazeZoneDuringStep(
         initialRunState,
         trajectory,
         elapsedSeconds,
         runMotionTuning,
         hazard,
-      )
-    ) {
+      );
+    if (grazeHit) {
       pending.add(occurrenceId);
     }
 
