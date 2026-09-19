@@ -552,20 +552,34 @@ const createZapperCollisionSampleTimes = (
     throw new RangeError('Zapper initial simulation time must be non-negative and finite.');
   }
 
-  const candidates = [interval.startSeconds, interval.endSeconds];
+  // Trajectory events are the only unsorted source and remain a tiny set relative to the dense
+  // globally anchored lattices.
+  const eventCandidates = [interval.startSeconds, interval.endSeconds];
   for (const segment of trajectory.segments) {
-    addCandidate(candidates, segment.startSeconds, interval.startSeconds, interval.endSeconds);
-    addCandidate(candidates, segment.endSeconds, interval.startSeconds, interval.endSeconds);
+    addCandidate(eventCandidates, segment.startSeconds, interval.startSeconds, interval.endSeconds);
+    addCandidate(eventCandidates, segment.endSeconds, interval.startSeconds, interval.endSeconds);
     if (segment.accelerationY !== 0) {
       addCandidate(
-        candidates,
+        eventCandidates,
         segment.startSeconds - segment.velocityY / segment.accelerationY,
         interval.startSeconds,
         interval.endSeconds,
       );
     }
   }
+  eventCandidates.sort((first, second) => first - second);
+  let eventUniqueCount = 0;
+  for (const candidate of eventCandidates) {
+    if (eventUniqueCount === 0 || candidate !== eventCandidates[eventUniqueCount - 1]) {
+      eventCandidates[eventUniqueCount] = candidate;
+      eventUniqueCount += 1;
+    }
+  }
+  eventCandidates.length = eventUniqueCount;
 
+  let distanceIndex = 0;
+  let distanceLastIndex = -1;
+  let distanceStep = 1;
   if (scrollSpeed !== 0) {
     const firstDistance = initialDistance + scrollSpeed * interval.startSeconds;
     const lastDistance = initialDistance + scrollSpeed * interval.endSeconds;
@@ -573,10 +587,14 @@ const createZapperCollisionSampleTimes = (
     const maximumDistance = Math.max(firstDistance, lastDistance);
     const firstIndex = Math.ceil(minimumDistance / ZAPPER_MAX_COLLISION_SAMPLE_DISTANCE);
     const lastIndex = Math.floor(maximumDistance / ZAPPER_MAX_COLLISION_SAMPLE_DISTANCE);
-    for (let index = firstIndex; index <= lastIndex; index += 1) {
-      const distance = index * ZAPPER_MAX_COLLISION_SAMPLE_DISTANCE;
-      const seconds = (distance - initialDistance) / scrollSpeed;
-      addCandidate(candidates, seconds, interval.startSeconds, interval.endSeconds);
+    if (scrollSpeed > 0) {
+      distanceIndex = firstIndex;
+      distanceLastIndex = lastIndex;
+      distanceStep = 1;
+    } else {
+      distanceIndex = lastIndex;
+      distanceLastIndex = firstIndex;
+      distanceStep = -1;
     }
   }
 
@@ -584,26 +602,64 @@ const createZapperCollisionSampleTimes = (
   // world scroll is zero or changes independently of Zapper rotation.
   const absoluteStartSeconds = initialSimulationSeconds + interval.startSeconds;
   const absoluteEndSeconds = initialSimulationSeconds + interval.endSeconds;
-  const firstTimeIndex = Math.ceil(absoluteStartSeconds / ZAPPER_MAX_COLLISION_SAMPLE_SECONDS);
-  const lastTimeIndex = Math.floor(absoluteEndSeconds / ZAPPER_MAX_COLLISION_SAMPLE_SECONDS);
-  for (let index = firstTimeIndex; index <= lastTimeIndex; index += 1) {
-    addCandidate(
-      candidates,
-      index * ZAPPER_MAX_COLLISION_SAMPLE_SECONDS - initialSimulationSeconds,
-      interval.startSeconds,
-      interval.endSeconds,
-    );
-  }
+  let timeIndex = Math.ceil(absoluteStartSeconds / ZAPPER_MAX_COLLISION_SAMPLE_SECONDS);
+  const timeLastIndex = Math.floor(absoluteEndSeconds / ZAPPER_MAX_COLLISION_SAMPLE_SECONDS);
 
-  candidates.sort((first, second) => first - second);
-  let uniqueCount = 0;
-  for (const candidate of candidates) {
-    if (uniqueCount === 0 || candidate !== candidates[uniqueCount - 1]) {
-      candidates[uniqueCount] = candidate;
-      uniqueCount += 1;
+  const candidates: number[] = [];
+  let eventIndex = 0;
+  let previousCandidate: number | undefined;
+
+  while (true) {
+    const eventSeconds =
+      eventIndex < eventCandidates.length
+        ? (eventCandidates[eventIndex] ?? Number.POSITIVE_INFINITY)
+        : Number.POSITIVE_INFINITY;
+
+    let distanceSeconds = Number.POSITIVE_INFINITY;
+    while (
+      scrollSpeed !== 0 &&
+      (distanceStep > 0 ? distanceIndex <= distanceLastIndex : distanceIndex >= distanceLastIndex)
+    ) {
+      const candidate =
+        (distanceIndex * ZAPPER_MAX_COLLISION_SAMPLE_DISTANCE - initialDistance) / scrollSpeed;
+      if (candidate >= interval.startSeconds && candidate <= interval.endSeconds) {
+        distanceSeconds = candidate;
+        break;
+      }
+      distanceIndex += distanceStep;
+    }
+
+    let timeSeconds = Number.POSITIVE_INFINITY;
+    while (timeIndex <= timeLastIndex) {
+      const candidate = timeIndex * ZAPPER_MAX_COLLISION_SAMPLE_SECONDS - initialSimulationSeconds;
+      if (candidate >= interval.startSeconds && candidate <= interval.endSeconds) {
+        timeSeconds = candidate;
+        break;
+      }
+      timeIndex += 1;
+    }
+
+    const nextCandidate = Math.min(eventSeconds, distanceSeconds, timeSeconds);
+    if (nextCandidate === Number.POSITIVE_INFINITY) {
+      break;
+    }
+
+    if (previousCandidate === undefined || nextCandidate !== previousCandidate) {
+      candidates.push(nextCandidate);
+      previousCandidate = nextCandidate;
+    }
+
+    if (eventSeconds === nextCandidate) {
+      eventIndex += 1;
+    }
+    if (distanceSeconds === nextCandidate) {
+      distanceIndex += distanceStep;
+    }
+    if (timeSeconds === nextCandidate) {
+      timeIndex += 1;
     }
   }
-  candidates.length = uniqueCount;
+
   return candidates;
 };
 
