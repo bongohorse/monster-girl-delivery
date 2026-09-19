@@ -183,10 +183,8 @@ const getHorizontalOverlapRange = (
     throw new RangeError('Hazard horizontal broadphase padding must be finite and non-negative.');
   }
   const relativeScrollSpeed = scrollSpeed - hazardVelocity;
-  const minimumPlayerDistance =
-    hazard.hitbox.left - hazardHorizontalPadding - playerExtents.right;
-  const maximumPlayerDistance =
-    hazard.hitbox.right + hazardHorizontalPadding + playerExtents.left;
+  const minimumPlayerDistance = hazard.hitbox.left - hazardHorizontalPadding - playerExtents.right;
+  const maximumPlayerDistance = hazard.hitbox.right + hazardHorizontalPadding + playerExtents.left;
 
   if (relativeScrollSpeed === 0) {
     return initialDistance > minimumPlayerDistance && initialDistance < maximumPlayerDistance
@@ -408,9 +406,9 @@ const createZapperCollisionSampleTimes = (
  * player-sweep broadphase rejects envelopes that cannot reach the player during the active interval
  * before any dense sample times or geometry are created. It deliberately mirrors current Zapper
  * narrowphase semantics, where generic hazard horizontalVelocity metadata does not move Zapper
- * geometry. Samples that remain are anchored
- * to absolute world distance plus an authoritative 1/720-second simulation-time lattice. Every
- * sample resolves the current beam/node pose from the same simulation clock used by presentation and
+ * geometry. Samples that remain are anchored to absolute world distance plus an authoritative
+ * 1/720-second simulation-time lattice. Every sample resolves the current beam/node pose from the
+ * same simulation clock used by presentation and
  * Director HB, so a rotating beam cannot tunnel between endpoint poses and remains deterministic
  * across partitions.
  */
@@ -429,14 +427,7 @@ export const isPlayerCollidingWithPrototypeZapperDuringStep = (
   if (!Number.isFinite(elapsedSeconds) || elapsedSeconds < 0) {
     throw new RangeError('elapsedSeconds must be a non-negative finite number.');
   }
-  if (!Number.isFinite(initialRunState.distance)) {
-    throw new RangeError('Player run distance must be finite.');
-  }
-  assertValidPlayerCollisionExtents(playerExtents);
   const initialSimulationSeconds = initialRunState.simulationSeconds ?? 0;
-  if (!Number.isFinite(initialSimulationSeconds) || initialSimulationSeconds < 0) {
-    throw new RangeError('Zapper initial simulation time must be non-negative and finite.');
-  }
   if (elapsedSeconds === 0) {
     const geometry = resolvePrototypeZapperGeometry(hazard, initialSimulationSeconds);
     return geometry
@@ -452,7 +443,16 @@ export const isPlayerCollidingWithPrototypeZapperDuringStep = (
   if (!interval) {
     return false;
   }
-  const maximumPadding = Math.max(padding.beam, padding.endpoints);
+  if (!Number.isFinite(initialRunState.distance)) {
+    throw new RangeError('Player run distance must be finite.');
+  }
+  assertValidPlayerCollisionExtents(playerExtents);
+  if (!Number.isFinite(initialSimulationSeconds) || initialSimulationSeconds < 0) {
+    throw new RangeError('Zapper initial simulation time must be non-negative and finite.');
+  }
+  if (!Number.isFinite(runMotionTuning.baseScrollSpeed)) {
+    throw new RangeError('Zapper scroll speed must be finite.');
+  }
   if (
     !Number.isFinite(padding.beam) ||
     padding.beam < 0 ||
@@ -461,6 +461,7 @@ export const isPlayerCollidingWithPrototypeZapperDuringStep = (
   ) {
     throw new RangeError('Zapper geometry padding must be finite and non-negative.');
   }
+  const maximumPadding = Math.max(padding.beam, padding.endpoints);
   if (
     !getHorizontalOverlapRange(
       initialRunState.distance,
