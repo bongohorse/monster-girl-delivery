@@ -27,10 +27,7 @@ const createFastLongRotatingZapper = () => {
   });
 };
 
-const createNearTangentPlayerHitbox = (
-  targetAngleDegrees: number,
-  endpointPenetration: number,
-) => {
+const createNearTangentPlayerHitbox = (targetAngleDegrees: number, endpointPenetration: number) => {
   const radians = (targetAngleDegrees * Math.PI) / 180;
   const directionX = Math.cos(radians);
   const directionY = Math.sin(radians);
