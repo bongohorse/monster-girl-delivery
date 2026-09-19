@@ -129,6 +129,54 @@ const runRotatingGrazePass = (schedule: FrameSchedule) => {
 };
 
 describe('M5 Zapper Graze', () => {
+  it('shares one static geometry pass between lethal core and Graze padding', () => {
+    const baseBehavior = createPrototypeZapperBehavior(0, PROTOTYPE_ZAPPER_LENGTHS.short);
+    const hitbox = createPrototypeZapperHitbox(0, 195, baseBehavior);
+    let angleReads = 0;
+    const behavior = Object.freeze({
+      ...baseBehavior,
+      get angleDegrees(): number {
+        angleReads += 1;
+        if (angleReads > 1) {
+          throw new Error('Zapper Graze started a second geometry pass');
+        }
+        return baseBehavior.angleDegrees;
+      },
+    });
+    const hazard = Object.freeze({
+      behavior,
+      collisionEndsAtIntervalEnd: true,
+      collisionInterval: Object.freeze({ startSeconds: 0, endSeconds: 0.1 }),
+      entryId: 'shared-static-graze',
+      hitbox,
+      patternEntryIndex: 0,
+      patternId: 'shared-static-graze-pattern',
+      runDistance: hitbox.left,
+      type: 'placeholder-barrier' as const,
+    });
+    const trajectory = createVerticalFlightTrajectory(
+      { positionY: 230, velocityY: 0 },
+      0.1,
+      false,
+      FLIGHT_TUNING,
+      { ceilingY: 0, floorY: 400 },
+    );
+
+    const result = evaluatePrototypeGrazeStep(
+      EMPTY_PROTOTYPE_GRAZE_RUN_STATE,
+      { distance: 0, simulationSeconds: 0 },
+      trajectory,
+      0.1,
+      { baseScrollSpeed: 0 },
+      [hazard],
+    );
+
+    expect(result.lethalCollision).toBe(false);
+    expect(result.grazeDelta).toBe(1);
+    expect(result.state.count).toBe(1);
+    expect(angleReads).toBe(1);
+  });
+
   it('awards at most one Graze for endpoint + beam + endpoint contact across frame schedules', () => {
     const results = Object.fromEntries(
       Object.entries(STANDARD_FRAME_SCHEDULES).map(([name, schedule]) => [

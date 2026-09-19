@@ -8,6 +8,7 @@ import {
   resolvePrototypeZapperAngleDegrees,
 } from '../../src/hazards/PrototypeZapperHazard';
 import {
+  evaluatePlayerPrototypeZapperCoreAndGrazeDuringStep,
   isPlayerCollidingWithHazard,
   isPlayerCollidingWithPrototypeZapperDuringStep,
 } from '../../src/systems/HazardCollision';
@@ -221,6 +222,142 @@ describe('M5 rotating Zapper', () => {
         hazard,
       ),
     ).toBe(true);
+  });
+
+  it('matches the previous separate core and Graze passes across representative Zapper states', () => {
+    const staticBehavior = createPrototypeZapperBehavior(0, PROTOTYPE_ZAPPER_LENGTHS.short);
+    const staticHitbox = createPrototypeZapperHitbox(0, 0, staticBehavior);
+    const staticHazard = Object.freeze({
+      behavior: staticBehavior,
+      entryId: 'shared-equivalence-static',
+      hitbox: staticHitbox,
+      patternEntryIndex: 0,
+      patternId: 'shared-equivalence-static-pattern',
+      runDistance: staticHitbox.left,
+      type: 'placeholder-barrier' as const,
+    });
+    const rotatingBehavior = createPrototypeZapperBehavior(0, PROTOTYPE_ZAPPER_LENGTHS.long, {
+      direction: 'clockwise',
+      speedDegreesPerSecond: PROTOTYPE_ZAPPER_ROTATION_SPEEDS.slow,
+    });
+    const rotatingHitbox = createPrototypeZapperHitbox(0, 0, rotatingBehavior);
+    const rotatingHazard = Object.freeze({
+      behavior: rotatingBehavior,
+      entryId: 'shared-equivalence-rotating',
+      hitbox: rotatingHitbox,
+      patternEntryIndex: 0,
+      patternId: 'shared-equivalence-rotating-pattern',
+      runDistance: rotatingHitbox.left,
+      type: 'placeholder-barrier' as const,
+    });
+    const cases = [
+      {
+        elapsedSeconds: 0.1,
+        hazard: staticHazard,
+        initialRunState: { distance: 0, simulationSeconds: 0 },
+        positionY: 0,
+      },
+      {
+        elapsedSeconds: 0.1,
+        hazard: staticHazard,
+        initialRunState: { distance: 0, simulationSeconds: 0 },
+        positionY: 35,
+      },
+      {
+        elapsedSeconds: 0.1,
+        hazard: staticHazard,
+        initialRunState: { distance: 0, simulationSeconds: 0 },
+        positionY: 100,
+      },
+      {
+        elapsedSeconds: 1,
+        hazard: rotatingHazard,
+        initialRunState: { distance: 40, simulationSeconds: 0 },
+        positionY: 35,
+      },
+    ] as const;
+
+    for (const testCase of cases) {
+      const trajectory = createStationaryTrajectory(testCase.positionY, testCase.elapsedSeconds);
+      const coreHit = isPlayerCollidingWithPrototypeZapperDuringStep(
+        testCase.initialRunState,
+        trajectory,
+        testCase.elapsedSeconds,
+        RUN_TUNING,
+        testCase.hazard,
+      );
+      const outerHit = isPlayerCollidingWithPrototypeZapperDuringStep(
+        testCase.initialRunState,
+        trajectory,
+        testCase.elapsedSeconds,
+        RUN_TUNING,
+        testCase.hazard,
+        undefined,
+        PROTOTYPE_ZAPPER_GRAZE_PADDING,
+      );
+      const combined = evaluatePlayerPrototypeZapperCoreAndGrazeDuringStep(
+        testCase.initialRunState,
+        trajectory,
+        testCase.elapsedSeconds,
+        RUN_TUNING,
+        testCase.hazard,
+        PROTOTYPE_ZAPPER_GRAZE_PADDING,
+      );
+
+      expect(combined.coreHit).toBe(coreHit);
+      expect(combined.grazeHit).toBe(!coreHit && outerHit);
+    }
+  });
+
+  it('lets a later rotating core hit override an earlier Graze-only sample', () => {
+    const behavior = createPrototypeZapperBehavior(0, PROTOTYPE_ZAPPER_LENGTHS.long, {
+      direction: 'clockwise',
+      speedDegreesPerSecond: PROTOTYPE_ZAPPER_ROTATION_SPEEDS.slow,
+    });
+    const hitbox = createPrototypeZapperHitbox(0, 0, behavior);
+    const hazard = Object.freeze({
+      behavior,
+      entryId: 'graze-then-core',
+      hitbox,
+      patternEntryIndex: 0,
+      patternId: 'graze-then-core-pattern',
+      runDistance: hitbox.left,
+      type: 'placeholder-barrier' as const,
+    });
+    const initial = { distance: 40, simulationSeconds: 0 };
+    const trajectory = createStationaryTrajectory(35, 1);
+
+    expect(
+      isPlayerCollidingWithPrototypeZapperDuringStep(
+        initial,
+        createStationaryTrajectory(35, 0),
+        0,
+        RUN_TUNING,
+        hazard,
+      ),
+    ).toBe(false);
+    expect(
+      isPlayerCollidingWithPrototypeZapperDuringStep(
+        initial,
+        createStationaryTrajectory(35, 0),
+        0,
+        RUN_TUNING,
+        hazard,
+        undefined,
+        PROTOTYPE_ZAPPER_GRAZE_PADDING,
+      ),
+    ).toBe(true);
+
+    expect(
+      evaluatePlayerPrototypeZapperCoreAndGrazeDuringStep(
+        initial,
+        trajectory,
+        1,
+        RUN_TUNING,
+        hazard,
+        PROTOTYPE_ZAPPER_GRAZE_PADDING,
+      ),
+    ).toEqual({ coreHit: true, grazeHit: false });
   });
 
   it('reports the same angular sweep collision across standard frame partitions', () => {
