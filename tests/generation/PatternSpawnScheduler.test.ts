@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { PROTOTYPE_FLIGHT_TUNING_DEFAULTS } from '../../src/config/FlightTuningConfig';
 import { PROTOTYPE_PATTERN_REACHABILITY_CONTEXT } from '../../src/generation/FlightReachability';
 import { createHazardPattern, type HazardPattern } from '../../src/generation/HazardPattern';
-import { scheduleNextPattern } from '../../src/generation/PatternSpawnScheduler';
+import {
+  getLogicalHazardSpawnIdentity,
+  scheduleNextPattern,
+} from '../../src/generation/PatternSpawnScheduler';
 import {
   PROTOTYPE_CORRIDOR_PATTERN,
   PROTOTYPE_HAZARD_PATTERN_FIXTURES,
@@ -110,6 +113,53 @@ const collectAcceptedSequence = (
 };
 
 describe('scheduleNextPattern', () => {
+  it('caches composite identity for immutable carriers without changing serialized identity', () => {
+    let fieldReads = 0;
+    const spawn = Object.freeze({
+      get entryId(): string {
+        fieldReads += 1;
+        return 'cached-entry';
+      },
+      get patternEntryIndex(): number {
+        fieldReads += 1;
+        return 2;
+      },
+      get patternId(): string {
+        fieldReads += 1;
+        return 'cached-pattern';
+      },
+      get runDistance(): number {
+        fieldReads += 1;
+        return 1_234;
+      },
+    });
+
+    const first = getLogicalHazardSpawnIdentity(spawn);
+    const readsAfterFirst = fieldReads;
+    const second = getLogicalHazardSpawnIdentity(spawn);
+    const third = getLogicalHazardSpawnIdentity(spawn);
+
+    expect(first).toBe('cached-pattern:2:cached-entry:1234');
+    expect(second).toBe(first);
+    expect(third).toBe(first);
+    expect(readsAfterFirst).toBe(4);
+    expect(fieldReads).toBe(readsAfterFirst);
+    expect(JSON.stringify(spawn)).not.toContain(first);
+  });
+
+  it('does not cache mutable identity carriers', () => {
+    const spawn = {
+      entryId: 'mutable-entry',
+      patternEntryIndex: 0,
+      patternId: 'mutable-pattern',
+      runDistance: 100,
+    };
+
+    expect(getLogicalHazardSpawnIdentity(spawn)).toBe('mutable-pattern:0:mutable-entry:100');
+    spawn.runDistance = 200;
+    expect(getLogicalHazardSpawnIdentity(spawn)).toBe('mutable-pattern:0:mutable-entry:200');
+  });
+
   it('produces the same accepted spawn sequence from the same explicit inputs', () => {
     const first = collectAcceptedSequence(
       createRunGenerationState('spawn-replay'),
