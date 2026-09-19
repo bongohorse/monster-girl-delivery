@@ -518,7 +518,7 @@ const canRotatingZapperAngularSweepReachPlayer = (
   runMotionTuning: Readonly<RunMotionValues>,
   hazard: Readonly<LogicalHazard>,
   interval: Readonly<LogicalHazardCollisionInterval>,
-  padding: Readonly<PrototypeZapperGeometryPadding>,
+  maximumPadding: number,
 ): boolean => {
   if (!isPrototypeZapperHazard(hazard) || hazard.behavior.rotation === undefined) {
     return true;
@@ -537,12 +537,12 @@ const canRotatingZapperAngularSweepReachPlayer = (
     return true;
   }
 
-  const playerBounds: LogicalHitbox = {
-    bottom: verticalRange.maximum + PROTOTYPE_PLAYER_COLLISION_EXTENTS.bottom,
-    left: Math.min(startDistance, endDistance) - PROTOTYPE_PLAYER_COLLISION_EXTENTS.left,
-    right: Math.max(startDistance, endDistance) + PROTOTYPE_PLAYER_COLLISION_EXTENTS.right,
-    top: verticalRange.minimum - PROTOTYPE_PLAYER_COLLISION_EXTENTS.top,
-  };
+  const playerBottom = verticalRange.maximum + PROTOTYPE_PLAYER_COLLISION_EXTENTS.bottom;
+  const playerLeft =
+    Math.min(startDistance, endDistance) - PROTOTYPE_PLAYER_COLLISION_EXTENTS.left;
+  const playerRight =
+    Math.max(startDistance, endDistance) + PROTOTYPE_PLAYER_COLLISION_EXTENTS.right;
+  const playerTop = verticalRange.minimum - PROTOTYPE_PLAYER_COLLISION_EXTENTS.top;
 
   const centerX = (hazard.hitbox.left + hazard.hitbox.right) / 2;
   const centerY = (hazard.hitbox.top + hazard.hitbox.bottom) / 2;
@@ -572,23 +572,25 @@ const canRotatingZapperAngularSweepReachPlayer = (
   const minimumRadians = Math.min(firstRadians, secondRadians);
   const maximumRadians = Math.max(firstRadians, secondRadians);
   const halfLength = hazard.behavior.length / 2;
-  const maximumRadius = Math.max(
-    hazard.behavior.beamThickness / 2 + padding.beam,
-    hazard.behavior.endpointDiameter / 2 + padding.endpoints,
-  );
+  const maximumRadius =
+    Math.max(hazard.behavior.beamThickness / 2, hazard.behavior.endpointDiameter / 2) +
+    maximumPadding;
   const horizontalExtent =
     halfLength * getMaximumAbsoluteCosine(minimumRadians, maximumRadians) + maximumRadius;
   const verticalExtent =
     halfLength * getMaximumAbsoluteSine(minimumRadians, maximumRadians) + maximumRadius;
 
-  const zapperBounds: LogicalHitbox = {
-    bottom: centerY + verticalExtent,
-    left: centerX - horizontalExtent,
-    right: centerX + horizontalExtent,
-    top: centerY - verticalExtent,
-  };
+  const zapperBottom = centerY + verticalExtent;
+  const zapperLeft = centerX - horizontalExtent;
+  const zapperRight = centerX + horizontalExtent;
+  const zapperTop = centerY - verticalExtent;
 
-  return doLogicalHitboxesOverlap(playerBounds, zapperBounds);
+  return (
+    playerLeft < zapperRight &&
+    playerRight > zapperLeft &&
+    playerTop < zapperBottom &&
+    playerBottom > zapperTop
+  );
 };
 
 const evaluateStaticZapperOneAxisSweep = (
@@ -1038,10 +1040,7 @@ const evaluatePrototypeZapperPaddingPairDuringStep = (
       runMotionTuning,
       hazard,
       interval,
-      {
-        beam: maximumPadding,
-        endpoints: maximumPadding,
-      },
+      maximumPadding,
     )
   ) {
     if (workCounters) {
