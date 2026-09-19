@@ -5,11 +5,13 @@ import {
   resolveVerticalPatrolOffsetAtRunDistance,
 } from '../hazards/HazardArchetype';
 import {
+  createPrototypeZapperGeometryScratch,
   doesHitboxOverlapPrototypeZapper,
   isPrototypeZapperHazard,
   PROTOTYPE_ZAPPER_LETHAL_PADDING,
   type PrototypeZapperGeometryPadding,
   resolvePrototypeZapperGeometry,
+  resolvePrototypeZapperGeometryInto,
 } from '../hazards/PrototypeZapperHazard';
 import type { RunMotionState } from './RunMotionSimulation';
 import type {
@@ -546,7 +548,8 @@ const evaluatePrototypeZapperPaddingPairDuringStep = (
     runMotionTuning.baseScrollSpeed,
     interval,
   );
-  const rotating = hazard.behavior.rotation !== undefined;
+  const rotatingGeometryScratch =
+    hazard.behavior.rotation === undefined ? null : createPrototypeZapperGeometryScratch();
   let staticGeometry: ReturnType<typeof resolvePrototypeZapperGeometry> | undefined;
   let secondaryHit = false;
   let trajectorySegmentIndex = 0;
@@ -589,8 +592,12 @@ const evaluatePrototypeZapperPaddingPairDuringStep = (
       );
     }
     let geometry: ReturnType<typeof resolvePrototypeZapperGeometry>;
-    if (rotating) {
-      geometry = resolvePrototypeZapperGeometry(hazard, initialSimulationSeconds + seconds);
+    if (rotatingGeometryScratch !== null) {
+      geometry = resolvePrototypeZapperGeometryInto(
+        hazard,
+        initialSimulationSeconds + seconds,
+        rotatingGeometryScratch,
+      );
     } else {
       if (staticGeometry === undefined) {
         staticGeometry = resolvePrototypeZapperGeometry(hazard, initialSimulationSeconds);
@@ -628,8 +635,9 @@ const evaluatePrototypeZapperPaddingPairDuringStep = (
  * The canonical frozen player extents reuse one local hitbox scratch instead of allocating transient
  * run-state, flight-state, and hitbox objects per sample. Custom extents keep the historical
  * per-sample validation/allocation path so dynamic runtime inputs preserve their previous contract.
- * Static Zappers resolve their immutable geometry once per step; rotating Zappers resolve each
- * sample from authoritative simulation time so a beam cannot tunnel between endpoint poses.
+ * Static Zappers resolve immutable geometry once per step; rotating Zappers rewrite one local
+ * geometry scratch from authoritative simulation time so a beam cannot tunnel between endpoint
+ * poses without allocating/freeze-building a geometry tree per sample.
  */
 export const isPlayerCollidingWithPrototypeZapperDuringStep = (
   initialRunState: Readonly<RunMotionState>,

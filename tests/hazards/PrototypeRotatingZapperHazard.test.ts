@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
   createPrototypeZapperBehavior,
+  createPrototypeZapperGeometryScratch,
   createPrototypeZapperHitbox,
   PROTOTYPE_ZAPPER_GRAZE_PADDING,
   PROTOTYPE_ZAPPER_LENGTHS,
   PROTOTYPE_ZAPPER_ROTATION_SPEEDS,
   resolvePrototypeZapperAngleDegrees,
+  resolvePrototypeZapperGeometry,
+  resolvePrototypeZapperGeometryInto,
 } from '../../src/hazards/PrototypeZapperHazard';
 import {
   evaluatePlayerPrototypeZapperCoreAndGrazeDuringStep,
@@ -18,7 +21,7 @@ import { STANDARD_FRAME_SCHEDULES } from '../support/FramePartitionHarness';
 
 const createRotatingZapper = (
   direction: 'clockwise' | 'counterclockwise' = 'clockwise',
-  speedDegreesPerSecond = PROTOTYPE_ZAPPER_ROTATION_SPEEDS.fast,
+  speedDegreesPerSecond: number = PROTOTYPE_ZAPPER_ROTATION_SPEEDS.fast,
 ) => {
   const behavior = createPrototypeZapperBehavior(0, PROTOTYPE_ZAPPER_LENGTHS.long, {
     direction,
@@ -81,6 +84,46 @@ describe('M5 rotating Zapper', () => {
 
     expect(resolvePrototypeZapperAngleDegrees(behavior, 2.5)).toBe(120);
     expect(resolvePrototypeZapperAngleDegrees(behavior, 2.5)).toBe(120);
+  });
+
+  it('rewrites one rotating geometry scratch with immutable-resolver-equivalent values', () => {
+    const hazard = createRotatingZapper(
+      'counterclockwise',
+      PROTOTYPE_ZAPPER_ROTATION_SPEEDS.medium,
+    );
+    const scratch = createPrototypeZapperGeometryScratch();
+    const identities = {
+      beam: scratch.beam,
+      beamEnd: scratch.beam.end,
+      beamStart: scratch.beam.start,
+      bounds: scratch.bounds,
+      endpointA: scratch.endpointA,
+      endpointACenter: scratch.endpointA.center,
+      endpointB: scratch.endpointB,
+      endpointBCenter: scratch.endpointB.center,
+    };
+
+    for (const simulationSeconds of [0, 0.125, 0.5, 1, 2.75]) {
+      const expected = resolvePrototypeZapperGeometry(hazard, simulationSeconds);
+      const actual = resolvePrototypeZapperGeometryInto(hazard, simulationSeconds, scratch);
+
+      expect(expected).not.toBeNull();
+      expect(actual).toBe(scratch);
+      expect(actual).toEqual(expected);
+      expect(Object.isFrozen(expected)).toBe(true);
+      expect(Object.isFrozen(expected?.beam)).toBe(true);
+      expect(Object.isFrozen(expected?.beam.start)).toBe(true);
+      expect(Object.isFrozen(expected?.bounds)).toBe(true);
+      expect(Object.isFrozen(scratch)).toBe(false);
+      expect(scratch.beam).toBe(identities.beam);
+      expect(scratch.beam.end).toBe(identities.beamEnd);
+      expect(scratch.beam.start).toBe(identities.beamStart);
+      expect(scratch.bounds).toBe(identities.bounds);
+      expect(scratch.endpointA).toBe(identities.endpointA);
+      expect(scratch.endpointA.center).toBe(identities.endpointACenter);
+      expect(scratch.endpointB).toBe(identities.endpointB);
+      expect(scratch.endpointB.center).toBe(identities.endpointBCenter);
+    }
   });
 
   it('detects a mid-step angular sweep hit that neither endpoint pose contains', () => {
