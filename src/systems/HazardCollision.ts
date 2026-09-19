@@ -500,9 +500,15 @@ export const isPlayerCollidingWithPrototypeZapperDuringStep = (
       { positionY: evaluateFlightTrajectoryPosition(trajectory, seconds), velocityY: 0 },
       playerExtents,
     );
-    const geometry = rotating
-      ? resolvePrototypeZapperGeometry(hazard, initialSimulationSeconds + seconds)
-      : (staticGeometry ??= resolvePrototypeZapperGeometry(hazard, initialSimulationSeconds));
+    let geometry: ReturnType<typeof resolvePrototypeZapperGeometry>;
+    if (rotating) {
+      geometry = resolvePrototypeZapperGeometry(hazard, initialSimulationSeconds + seconds);
+    } else {
+      if (staticGeometry === undefined) {
+        staticGeometry = resolvePrototypeZapperGeometry(hazard, initialSimulationSeconds);
+      }
+      geometry = staticGeometry;
+    }
     return geometry ? doesHitboxOverlapPrototypeZapper(playerHitbox, geometry, padding) : false;
   });
 };
