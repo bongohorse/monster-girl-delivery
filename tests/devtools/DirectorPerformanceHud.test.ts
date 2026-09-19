@@ -103,19 +103,25 @@ const createHarness = () => {
   const clearHazards = vi.fn();
   const setSimulationFrozen = vi.fn();
   const triggerDeath = vi.fn();
-  const hud = new DirectorPerformanceHud(container as unknown as HTMLElement, input, sampler, {
-    setFpsLimit,
-    setWireframesEnabled,
-    setGodModeEnabled,
-    setAutoHazardsEnabled,
-    spawnMissile,
-    spawnZapper,
-    spawnZapperGroup,
-    spawnLaser,
-    clearHazards,
-    setSimulationFrozen,
-    triggerDeath,
-  }, zapperWorkCounters);
+  const hud = new DirectorPerformanceHud(
+    container as unknown as HTMLElement,
+    input,
+    sampler,
+    {
+      setFpsLimit,
+      setWireframesEnabled,
+      setGodModeEnabled,
+      setAutoHazardsEnabled,
+      spawnMissile,
+      spawnZapper,
+      spawnZapperGroup,
+      spawnLaser,
+      clearHazards,
+      setSimulationFrozen,
+      triggerDeath,
+    },
+    zapperWorkCounters,
+  );
   const root = container.children[0];
   const visibilityButton = root?.children[0];
   const values = root?.children[1];
