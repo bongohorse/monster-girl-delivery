@@ -20,7 +20,9 @@ The report records:
 - canvas backing-buffer size;
 - current render scale;
 - run seed and run distance;
-- Director GOD/AUTO state;
+- active performance-preset identity;
+- Director GOD/AUTO/frozen/wireframe state;
+- base/effective run speed and current flight-tuning values;
 - current FPS limit and Phaser actual FPS;
 - rolling average / P95 / P99 / current frame time;
 - session worst frame time and slow-frame count;
@@ -41,7 +43,7 @@ For before/after comparisons:
 7. preserve the raw JSON evidence rather than transcribing only the headline FPS;
 8. treat development/Director results as development evidence, not as a production-build certification.
 
-The current sampler window is 300 valid raw-frame samples. At 60 Hz that represents about five seconds; at higher refresh rates it covers a shorter wall-clock interval. The JSON explicitly records sample count/capacity so this is visible in the evidence.
+The current sampler window is 300 valid raw-frame samples. At 60 Hz that represents about five seconds; at higher refresh rates it covers a shorter wall-clock interval. The JSON explicitly records sample count/capacity so this is visible in the evidence. Schema version 2 also records benchmark identity and tuning/runtime state required to reject mismatched captures.
 
 ## #332 before/after reference
 
@@ -53,21 +55,34 @@ The optimized reference is current `main` after the #332 mechanical gates.
 
 For a trustworthy device comparison, use equivalent evidence instrumentation on both refs. Do not compare a Director-instrumented build against a different production/tooling configuration and attribute the difference to Zapper collision.
 
-## Initial Zapper workload
+## Zapper benchmark preset
 
-Until #323 owns a dedicated one-click benchmark preset, use the existing real Director controls:
+The Director HUD exposes **ZP** for the bounded `zapper-heavy-v1` workload.
+
+ZP normalizes the benchmark setup in one action:
+
+- enables **GOD**;
+- disables **AUTO** generation;
+- resumes the simulation if it was frozen;
+- disables collision wireframes;
+- resets the bounded frame-time sampler and Zapper work counters;
+- restarts the run at distance/time zero with the fixed live-run seed;
+- spawns the fixed `zapper-heavy-v1` pattern fully beyond the right edge.
+
+The pattern contains 14 real Zappers spread across a 2,320 px run: static, diagonal, timed, plus clockwise/counterclockwise rotating Zappers at 30/60/90 degrees per second. It intentionally uses the normal hazard, lifecycle, collision, Graze, presentation, pruning, and run-motion paths rather than a benchmark-only simulation.
+
+At the prototype 350 px/s base speed, the authored Zapper span keeps new benchmark hazards arriving for roughly five seconds, matching the 300-sample window closely at 60 Hz.
+
+To capture:
 
 1. start a development build; Director Mode is enabled automatically in DEV;
-2. set the FPS limit to the chosen comparison value (start with 60);
-3. enable **GOD**;
-4. disable **AUTO**;
-5. press **CLR**;
-6. press **↻** to reset frame statistics and Zapper counters;
-7. exercise the same documented Zapper spawn sequence on both refs;
-8. after the rolling window is full and the same workload phase is active, press **CP**;
-9. save the copied JSON with the build commit in the filename.
+2. select the FPS limit to compare (start with 60);
+3. press **ZP**;
+4. do not change tuning, controls, wireframes, or add manual hazards during the capture window;
+5. once the 300-sample window is full, press **CP**;
+6. preserve the copied JSON with the build commit in the filename.
 
-This manual sequence is a temporary bridge. #323 should replace it with bounded deterministic benchmark presets so workload setup itself becomes one-click and reproducible.
+A valid standard Zapper capture should report `performancePresetId: "zapper-heavy-v1"`, AUTO false, GOD true, frozen false, and wireframes false. The JSON also records tuning values and FPS limit so mismatched runs can be rejected instead of silently compared.
 
 ## #332 closeout
 
