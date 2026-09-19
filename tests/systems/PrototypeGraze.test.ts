@@ -87,10 +87,7 @@ const LATER_VERTICAL_LETHAL_SCHEDULES: ReadonlyArray<readonly [string, ReadonlyA
 
 describe('prototype Graze skill layer', () => {
   it('preserves the original hazard array when every retained hazard can reach the player', () => {
-    const hazards = [
-      hazard('near-a', 25, 30, 20, 30),
-      hazard('near-b', -30, -25, 70, 80),
-    ] as const;
+    const hazards = [hazard('near-a', 25, 30, 20, 30), hazard('near-b', -30, -25, 70, 80)] as const;
 
     expect(filterPrototypeHazardCandidatesForStep(START.motion, 1, MOTION, hazards)).toBe(hazards);
   });
