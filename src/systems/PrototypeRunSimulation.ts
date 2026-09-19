@@ -1,10 +1,7 @@
 import type { FlightTuningValues } from '../config/FlightTuningConfig';
 import type { RunMotionValues } from '../config/RunMotionConfig';
 import type { LogicalCollectibleSpawnInstance } from '../generation/GeneratedCollectibles';
-import type {
-  LogicalHazard,
-  PrototypeZapperCollisionWorkCounters,
-} from './HazardCollision';
+import type { LogicalHazard, PrototypeZapperCollisionWorkCounters } from './HazardCollision';
 import {
   EMPTY_PROTOTYPE_COLLECTIBLE_RUN_STATE,
   evaluatePrototypeCollectibleStep,
