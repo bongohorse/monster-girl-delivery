@@ -22,6 +22,13 @@ export interface DirectorPerformanceHudControls {
   readonly clearHazards?: () => void;
   readonly setSimulationFrozen?: (frozen: boolean) => void;
   readonly triggerDeath?: () => void;
+  readonly startZapperPerformancePreset?: () => void;
+  readonly exportPerformanceEvidence?: (
+    snapshot: Readonly<PerformanceSnapshot>,
+    framesPerSecond: number,
+    fpsLimit: number,
+    zapperWork?: Readonly<PrototypeZapperCollisionWorkCounters>,
+  ) => void;
 }
 
 type PerformanceHealth = 'good' | 'mild' | 'noticeable' | 'severe' | 'unknown';
@@ -97,7 +104,10 @@ export class DirectorPerformanceHud {
   private readonly freezeButton: HTMLButtonElement;
   private readonly deathButton: HTMLButtonElement;
   private readonly resetButton: HTMLButtonElement;
+  private readonly evidenceButton: HTMLButtonElement;
+  private readonly zapperPerformanceButton: HTMLButtonElement;
   private destroyed = false;
+  private discardNextPerformanceSample = false;
   private elapsedSinceRefreshMilliseconds = Number.POSITIVE_INFINITY;
   private fpsLimitIndex = 0;
   private hidden = false;
@@ -186,6 +196,11 @@ export class DirectorPerformanceHud {
       '☠',
       'Trigger normal death / fail-state flow',
     );
+    this.zapperPerformanceButton = this.createButton(
+      ownerDocument,
+      'ZP',
+      'Start deterministic Zapper performance preset',
+    );
     this.playgroundControls.append(
       this.godModeButton,
       this.autoHazardsButton,
@@ -196,6 +211,7 @@ export class DirectorPerformanceHud {
       this.clearButton,
       this.freezeButton,
       this.deathButton,
+      this.zapperPerformanceButton,
     );
     this.setToggleState(this.godModeButton, false);
     this.setToggleState(this.autoHazardsButton, true);
@@ -211,12 +227,19 @@ export class DirectorPerformanceHud {
       'Reset performance statistics and Zapper work counters',
     );
 
+    this.evidenceButton = this.createButton(
+      ownerDocument,
+      'CP',
+      'Copy structured performance evidence JSON',
+    );
+
     this.root.append(
       this.visibilityButton,
       this.values,
       this.wireframeLabel,
       this.playgroundControls,
       this.resetButton,
+      this.evidenceButton,
     );
     container.append(this.root);
 
@@ -231,7 +254,9 @@ export class DirectorPerformanceHud {
     this.addControlListeners(this.clearButton, this.handleClearClick);
     this.addControlListeners(this.freezeButton, this.handleFreezeClick);
     this.addControlListeners(this.deathButton, this.handleDeathClick);
+    this.addControlListeners(this.zapperPerformanceButton, this.handleZapperPerformanceClick);
     this.addControlListeners(this.resetButton, this.handleResetClick);
+    this.addControlListeners(this.evidenceButton, this.handleEvidenceClick);
     this.addTogglePointerListeners(this.wireframeLabel);
     this.wireframeCheckbox.addEventListener('change', this.handleWireframeChange);
     this.refreshFpsLimitTitle();
@@ -249,10 +274,12 @@ export class DirectorPerformanceHud {
     }
 
     this.latestFramesPerSecond = framesPerSecond;
+    const discardPresetSetupSample = this.discardNextPerformanceSample;
+    this.discardNextPerformanceSample = false;
     const accepted = this.sampler.sample(
       rawFrameTimeMilliseconds,
       lifecyclePaused,
-      discardCurrentSample,
+      discardCurrentSample || discardPresetSetupSample,
     );
 
     if (!accepted || this.hidden) {
@@ -298,7 +325,9 @@ export class DirectorPerformanceHud {
     this.removeControlListeners(this.clearButton, this.handleClearClick);
     this.removeControlListeners(this.freezeButton, this.handleFreezeClick);
     this.removeControlListeners(this.deathButton, this.handleDeathClick);
+    this.removeControlListeners(this.zapperPerformanceButton, this.handleZapperPerformanceClick);
     this.removeControlListeners(this.resetButton, this.handleResetClick);
+    this.removeControlListeners(this.evidenceButton, this.handleEvidenceClick);
     this.removeTogglePointerListeners(this.wireframeLabel);
     this.wireframeCheckbox.removeEventListener('change', this.handleWireframeChange);
     this.root.remove();
@@ -347,6 +376,7 @@ export class DirectorPerformanceHud {
     this.wireframeLabel.hidden = this.hidden;
     this.playgroundControls.hidden = this.hidden;
     this.resetButton.hidden = this.hidden;
+    this.evidenceButton.hidden = this.hidden;
     this.visibilityButton.title = this.hidden
       ? 'Show Director values and controls'
       : 'Hide Director values and controls';
@@ -430,14 +460,63 @@ export class DirectorPerformanceHud {
     this.controls?.triggerDeath?.();
   };
 
-  private readonly handleResetClick = (event: Event): void => {
-    this.stopControlEvent(event);
+  private resetPerformanceMeasurements(): void {
     this.sampler.reset();
     if (this.zapperCollisionWorkCounters) {
       resetPrototypeZapperCollisionWorkCounters(this.zapperCollisionWorkCounters);
     }
     this.elapsedSinceRefreshMilliseconds = 0;
     this.refreshVisibleValues();
+  }
+
+  private readonly handleResetClick = (event: Event): void => {
+    this.stopControlEvent(event);
+    this.resetPerformanceMeasurements();
+  };
+
+  private readonly handleZapperPerformanceClick = (event: Event): void => {
+    this.stopControlEvent(event);
+
+    if (!this.godModeEnabled) {
+      this.godModeEnabled = true;
+      this.setToggleState(this.godModeButton, true);
+      this.controls?.setGodModeEnabled?.(true);
+    }
+    if (this.autoHazardsEnabled) {
+      this.autoHazardsEnabled = false;
+      this.setToggleState(this.autoHazardsButton, false);
+      this.controls?.setAutoHazardsEnabled?.(false);
+    }
+    if (this.simulationFrozen) {
+      this.simulationFrozen = false;
+      this.setToggleState(this.freezeButton, false);
+      this.freezeButton.textContent = '⏸';
+      this.freezeButton.title = 'Freeze gameplay simulation';
+      this.freezeButton.setAttribute('aria-label', this.freezeButton.title);
+      this.controls?.setSimulationFrozen?.(false);
+    }
+    if (this.wireframeCheckbox.checked) {
+      this.wireframeCheckbox.checked = false;
+      this.controls?.setWireframesEnabled(false);
+    }
+
+    this.resetPerformanceMeasurements();
+    this.discardNextPerformanceSample = true;
+    this.controls?.startZapperPerformancePreset?.();
+  };
+
+  private readonly handleEvidenceClick = (event: Event): void => {
+    this.stopControlEvent(event);
+    const limit = DIRECTOR_FPS_LIMIT_OPTIONS[this.fpsLimitIndex] ?? 0;
+    const zapperWork = this.zapperCollisionWorkCounters
+      ? Object.freeze({ ...this.zapperCollisionWorkCounters })
+      : undefined;
+    this.controls?.exportPerformanceEvidence?.(
+      this.sampler.createSnapshot(),
+      this.latestFramesPerSecond,
+      limit,
+      zapperWork,
+    );
   };
 
   private addControlListeners(element: HTMLElement, clickHandler: (event: Event) => void): void {
