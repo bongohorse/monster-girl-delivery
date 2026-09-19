@@ -3,6 +3,7 @@ import { ViewportService } from '../../src/core/ViewportService';
 import { DirectorPerformanceHud } from '../../src/devtools/DirectorPerformanceHud';
 import { PerformanceSampler } from '../../src/devtools/PerformanceSampler';
 import { InputService } from '../../src/input/InputService';
+import { createPrototypeZapperCollisionWorkCounters } from '../../src/systems/HazardCollision';
 
 type FakeEventHandler = (event: Event) => void;
 
@@ -90,6 +91,7 @@ const createHarness = () => {
   const container = new FakeElement(ownerDocument);
   const input = new InputService();
   const sampler = new PerformanceSampler({ sampleWindowSize: 8 });
+  const zapperWorkCounters = createPrototypeZapperCollisionWorkCounters();
   const setFpsLimit = vi.fn();
   const setWireframesEnabled = vi.fn();
   const setGodModeEnabled = vi.fn();
@@ -113,7 +115,7 @@ const createHarness = () => {
     clearHazards,
     setSimulationFrozen,
     triggerDeath,
-  });
+  }, zapperWorkCounters);
   const root = container.children[0];
   const visibilityButton = root?.children[0];
   const values = root?.children[1];
@@ -121,6 +123,7 @@ const createHarness = () => {
   const playgroundControls = root?.children[3];
   const resetButton = root?.children[4];
   const fpsButton = values?.children[0];
+  const zapperWorkValue = values?.children[3];
   const wireframeCheckbox = wireframeLabel?.children[0];
   const godModeButton = playgroundControls?.children[0];
   const autoHazardsButton = playgroundControls?.children[1];
@@ -140,6 +143,7 @@ const createHarness = () => {
     !playgroundControls ||
     !resetButton ||
     !fpsButton ||
+    !zapperWorkValue ||
     !wireframeCheckbox ||
     !godModeButton ||
     !autoHazardsButton ||
@@ -187,6 +191,8 @@ const createHarness = () => {
     wireframeLabel,
     zapperButton,
     zapperGroupButton,
+    zapperWorkCounters,
+    zapperWorkValue,
   };
 };
 
@@ -205,7 +211,7 @@ describe('DirectorPerformanceHud', () => {
     expect(container.children).toHaveLength(1);
     expect(root.className).toBe('director-performance-hud');
     expect(root.style).toMatchObject({ left: '52px', top: '20px', maxWidth: '740px' });
-    expect(values.children).toHaveLength(3);
+    expect(values.children).toHaveLength(4);
     expect(wireframeLabel.children).toHaveLength(2);
     expect(playgroundControls.children).toHaveLength(9);
   });
@@ -226,6 +232,32 @@ describe('DirectorPerformanceHud', () => {
     expect(values.children[2]?.textContent).toContain('P95 16.0 | P99 16.0');
     expect(values.children[0]?.dataset.health).toBe('good');
     expect(values.children[1]?.dataset.health).toBe('good');
+  });
+
+  it('refreshes authoritative Zapper work only on the existing HUD cadence', () => {
+    const { hud, zapperWorkCounters, zapperWorkValue } = createHarness();
+    zapperWorkCounters.collisionCallCount = 2;
+    zapperWorkCounters.broadphaseRejectedCallCount = 1;
+    zapperWorkCounters.candidateSampleCount = 40;
+    zapperWorkCounters.evaluatedSampleCount = 30;
+    zapperWorkCounters.geometryResolutionCount = 30;
+    zapperWorkCounters.primaryNarrowphaseCheckCount = 30;
+    zapperWorkCounters.secondaryNarrowphaseCheckCount = 12;
+
+    hud.update(16, 60, false);
+    expect(zapperWorkValue.textContent).toBe(' | Z C 2 B 1 Sm 30/40 G 30 N 30/12');
+    const writesAfterRefresh = zapperWorkValue.textWriteCount;
+
+    zapperWorkCounters.evaluatedSampleCount = 99;
+    for (let frame = 0; frame < 15; frame += 1) {
+      hud.update(16, 60, false);
+    }
+    expect(zapperWorkValue.textWriteCount).toBe(writesAfterRefresh);
+    expect(zapperWorkValue.textContent).toContain('Sm 30/40');
+
+    hud.update(16, 60, false);
+    expect(zapperWorkValue.textContent).toContain('Sm 99/40');
+    expect(zapperWorkValue.textWriteCount).toBe(writesAfterRefresh + 1);
   });
 
   it('cycles runtime FPS limits from unlimited through all requested presets', () => {
@@ -401,15 +433,32 @@ describe('DirectorPerformanceHud', () => {
     expect(input.getSnapshot().gameplayBlocked).toBe(false);
   });
 
-  it('resets visible metrics without restarting or replacing the sampler', () => {
-    const { hud, resetButton, sampler, values } = createHarness();
+  it('resets frame metrics and Zapper work without replacing either owner', () => {
+    const { hud, resetButton, sampler, values, zapperWorkCounters, zapperWorkValue } =
+      createHarness();
     hud.update(30, 45, false);
+    zapperWorkCounters.collisionCallCount = 4;
+    zapperWorkCounters.candidateSampleCount = 80;
+    zapperWorkCounters.evaluatedSampleCount = 60;
+    zapperWorkCounters.geometryResolutionCount = 60;
+    zapperWorkCounters.primaryNarrowphaseCheckCount = 60;
+    zapperWorkCounters.secondaryNarrowphaseCheckCount = 20;
 
     resetButton.dispatch('click');
 
     expect(sampler.createSnapshot().sampleCount).toBe(0);
+    expect(zapperWorkCounters).toEqual({
+      broadphaseRejectedCallCount: 0,
+      candidateSampleCount: 0,
+      collisionCallCount: 0,
+      evaluatedSampleCount: 0,
+      geometryResolutionCount: 0,
+      primaryNarrowphaseCheckCount: 0,
+      secondaryNarrowphaseCheckCount: 0,
+    });
     expect(values.children[1]?.textContent).toBe(' | -- ms');
     expect(values.children[2]?.textContent).toContain('M -- | S 0');
+    expect(zapperWorkValue.textContent).toBe(' | Z C 0 B 0 Sm 0/0 G 0 N 0/0');
   });
 
   it('removes its DOM and listeners idempotently on shutdown', () => {
