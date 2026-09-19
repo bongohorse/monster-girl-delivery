@@ -1,8 +1,8 @@
 import type { ViewportSnapshot } from '../core/ViewportService';
 import type { InputService } from '../input/InputService';
 import {
-  resetPrototypeZapperCollisionWorkCounters,
   type PrototypeZapperCollisionWorkCounters,
+  resetPrototypeZapperCollisionWorkCounters,
 } from '../systems/HazardCollision';
 import { createDirectorResponsiveLayout } from './DirectorResponsiveLayout';
 import { PerformanceSampler, type PerformanceSnapshot } from './PerformanceSampler';
