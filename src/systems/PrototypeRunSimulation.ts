@@ -113,8 +113,9 @@ export const stepPrototypeRun = (
     flightTrajectory,
     elapsedSeconds,
     context.runMotionTuning,
-    hazardCandidates,
+    context.hazards,
     context.zapperCollisionWorkCounters,
+    hazardCandidates,
   );
   const graze =
     state.graze || grazeResult.state.count > 0 || grazeResult.state.pendingOccurrenceIds.length > 0
