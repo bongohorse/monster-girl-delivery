@@ -527,8 +527,6 @@ const evaluateStaticZapperOneAxisSweep = (
   }
 
   if (workCounters) {
-    workCounters.candidateSampleCount += 1;
-    workCounters.evaluatedSampleCount += 1;
     workCounters.geometryResolutionCount += 1;
     workCounters.primaryNarrowphaseCheckCount += 1;
   }
