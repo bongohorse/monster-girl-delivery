@@ -142,6 +142,41 @@ describe('prototype Graze skill layer', () => {
     );
   });
 
+  it('keeps consumed Graze history for retained hazards rejected only from contact work', () => {
+    const retainedFar = hazard('retained-far', 25, 30, 1_000, 1_020);
+    const state: PrototypeRunState = {
+      ...START,
+      graze: Object.freeze({
+        consumedOccurrenceIds: Object.freeze(['retained-far']),
+        count: 1,
+        pendingOccurrenceIds: Object.freeze([]),
+      }),
+    };
+
+    const result = stepPrototypeRun(state, 0.1, context([retainedFar])).state;
+
+    expect(result.graze?.count).toBe(1);
+    expect(result.graze?.consumedOccurrenceIds).toEqual(['retained-far']);
+  });
+
+  it('resolves pending Graze after the hazard leaves the contact broadphase', () => {
+    const passedHazard = hazard('pending-passed', 25, 30, -100, -80);
+    const state: PrototypeRunState = {
+      ...START,
+      graze: Object.freeze({
+        consumedOccurrenceIds: Object.freeze([]),
+        count: 0,
+        pendingOccurrenceIds: Object.freeze(['pending-passed']),
+      }),
+    };
+
+    const result = stepPrototypeRun(state, 0.1, context([passedHazard])).state;
+
+    expect(result.graze?.count).toBe(1);
+    expect(result.graze?.pendingOccurrenceIds).toEqual([]);
+    expect(result.graze?.consumedOccurrenceIds).toEqual(['pending-passed']);
+  });
+
   it('bounds occurrence history to the retained hazard window without losing run totals', () => {
     let state = START;
     for (let index = 0; index < 100; index += 1) {
