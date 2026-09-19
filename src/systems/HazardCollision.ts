@@ -488,9 +488,7 @@ const resolveCoveredFlightTrajectoryVerticalRange = (
     }
   }
 
-  return foundSegment && coveredUntilSeconds === interval.endSeconds
-    ? { maximum, minimum }
-    : null;
+  return foundSegment && coveredUntilSeconds === interval.endSeconds ? { maximum, minimum } : null;
 };
 
 const intervalContainsPeriodicPhase = (
@@ -539,8 +537,7 @@ const canRotatingZapperAngularSweepReachPlayer = (
   }
 
   const playerBottom = verticalRange.maximum + PROTOTYPE_PLAYER_COLLISION_EXTENTS.bottom;
-  const playerLeft =
-    Math.min(startDistance, endDistance) - PROTOTYPE_PLAYER_COLLISION_EXTENTS.left;
+  const playerLeft = Math.min(startDistance, endDistance) - PROTOTYPE_PLAYER_COLLISION_EXTENTS.left;
   const playerRight =
     Math.max(startDistance, endDistance) + PROTOTYPE_PLAYER_COLLISION_EXTENTS.right;
   const playerTop = verticalRange.minimum - PROTOTYPE_PLAYER_COLLISION_EXTENTS.top;
@@ -559,9 +556,7 @@ const canRotatingZapperAngularSweepReachPlayer = (
     initialSimulationSeconds + interval.startSeconds,
   );
   const sweepDegrees =
-    direction *
-    rotation.speedDegreesPerSecond *
-    (interval.endSeconds - interval.startSeconds);
+    direction * rotation.speedDegreesPerSecond * (interval.endSeconds - interval.startSeconds);
   if (!Number.isFinite(startDegrees) || !Number.isFinite(sweepDegrees)) {
     return true;
   }
