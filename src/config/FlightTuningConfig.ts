@@ -47,10 +47,10 @@ export const assertValidFlightTuningValues = (values: Readonly<FlightTuningValue
 
 /** Owns the live M1 flight tuning state shared by gameplay and Director tools. */
 export class FlightTuningConfig {
-  private values: FlightTuningValues = { ...PROTOTYPE_FLIGHT_TUNING_DEFAULTS };
+  private snapshot: Readonly<FlightTuningValues> = PROTOTYPE_FLIGHT_TUNING_DEFAULTS;
 
   update(update: FlightTuningUpdate): void {
-    const nextValues = { ...this.values };
+    let changed = false;
 
     for (const key of FLIGHT_TUNING_KEYS) {
       if (!(key in update)) {
@@ -59,13 +59,25 @@ export class FlightTuningConfig {
 
       const value = update[key];
       assertValidMagnitude(key, value);
-      nextValues[key] = value;
+      if (value !== this.snapshot[key]) {
+        changed = true;
+      }
     }
 
-    this.values = nextValues;
+    if (!changed) {
+      return;
+    }
+
+    const nextValues: FlightTuningValues = { ...this.snapshot };
+    for (const key of FLIGHT_TUNING_KEYS) {
+      if (key in update) {
+        nextValues[key] = update[key] as number;
+      }
+    }
+    this.snapshot = Object.freeze(nextValues);
   }
 
   getSnapshot(): Readonly<FlightTuningValues> {
-    return Object.freeze({ ...this.values });
+    return this.snapshot;
   }
 }
