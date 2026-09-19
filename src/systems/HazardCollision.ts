@@ -491,9 +491,8 @@ export const isPlayerCollidingWithPrototypeZapperDuringStep = (
     runMotionTuning.baseScrollSpeed,
     interval,
   );
-  const staticGeometry = hazard.behavior.rotation
-    ? null
-    : resolvePrototypeZapperGeometry(hazard, initialSimulationSeconds);
+  const rotating = hazard.behavior.rotation !== undefined;
+  let staticGeometry: ReturnType<typeof resolvePrototypeZapperGeometry> | undefined;
 
   return sampleTimes.some((seconds) => {
     const playerHitbox = createPrototypePlayerHitbox(
@@ -501,8 +500,9 @@ export const isPlayerCollidingWithPrototypeZapperDuringStep = (
       { positionY: evaluateFlightTrajectoryPosition(trajectory, seconds), velocityY: 0 },
       playerExtents,
     );
-    const geometry =
-      staticGeometry ?? resolvePrototypeZapperGeometry(hazard, initialSimulationSeconds + seconds);
+    const geometry = rotating
+      ? resolvePrototypeZapperGeometry(hazard, initialSimulationSeconds + seconds)
+      : (staticGeometry ??= resolvePrototypeZapperGeometry(hazard, initialSimulationSeconds));
     return geometry ? doesHitboxOverlapPrototypeZapper(playerHitbox, geometry, padding) : false;
   });
 };
