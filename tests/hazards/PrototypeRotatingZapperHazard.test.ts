@@ -21,7 +21,7 @@ import { STANDARD_FRAME_SCHEDULES } from '../support/FramePartitionHarness';
 
 const createRotatingZapper = (
   direction: 'clockwise' | 'counterclockwise' = 'clockwise',
-  speedDegreesPerSecond = PROTOTYPE_ZAPPER_ROTATION_SPEEDS.fast,
+  speedDegreesPerSecond: number = PROTOTYPE_ZAPPER_ROTATION_SPEEDS.fast,
 ) => {
   const behavior = createPrototypeZapperBehavior(0, PROTOTYPE_ZAPPER_LENGTHS.long, {
     direction,
