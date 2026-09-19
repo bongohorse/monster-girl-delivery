@@ -324,8 +324,10 @@ const isPlayerInLegacyGrazeZoneDuringStep = (
  * resolved different-hazard candidates are retained only when the existing continuous collision
  * authority confirms that no lethal overlap has happened by that candidate's resolution boundary.
  * Zappers resolve core and outer-padding contact from one shared sample/geometry pass when Graze is
- * still eligible. The boundary is deterministic qualification state, not unsupported physical TOI
- * ordering.
+ * still eligible. The full retained hazard stream owns occurrence history, while an optional
+ * conservative contact-candidate subset may skip exact collision work for horizontally unreachable
+ * hazards. Pending occurrences still resolve against the retained stream after their opportunity
+ * passes. The boundary is deterministic qualification state, not unsupported physical TOI ordering.
  */
 export const evaluatePrototypeGrazeStep = (
   state: Readonly<PrototypeGrazeRunState>,
@@ -335,6 +337,7 @@ export const evaluatePrototypeGrazeStep = (
   runMotionTuning: Readonly<RunMotionValues>,
   hazards: ReadonlyArray<Readonly<LogicalHazard>>,
   workCounters?: PrototypeZapperCollisionWorkCounters,
+  contactHazards: ReadonlyArray<Readonly<LogicalHazard>> = hazards,
 ): PrototypeGrazeStepResult => {
   // The lifecycle adapter omits Active intervals on zero-delta pause/resize updates. Preserve
   // qualification history through that transient absence while retaining the core collision rule.
@@ -377,7 +380,7 @@ export const evaluatePrototypeGrazeStep = (
   const resolvedCandidates = new Map<string, number>();
   let lethalCollision = false;
 
-  for (const hazard of hazards) {
+  for (const hazard of contactHazards) {
     const occurrenceId = getGrazeOccurrenceId(hazard);
     const grazeOccurrenceId =
       occurrenceId !== null && !consumed.has(occurrenceId) ? occurrenceId : null;
@@ -447,6 +450,29 @@ export const evaluatePrototypeGrazeStep = (
       if (resolutionSeconds !== null) {
         resolvedCandidates.set(grazeOccurrenceId, resolutionSeconds);
       }
+    }
+  }
+
+  // A previously entered Graze can become fully qualified after its current-step contact window has
+  // already moved out of broadphase range. Retain the full logical stream for that state transition
+  // without sending those hazards back through collision/narrowphase work.
+  for (const hazard of hazards) {
+    const occurrenceId = getGrazeOccurrenceId(hazard);
+    if (
+      occurrenceId === null ||
+      !pending.has(occurrenceId) ||
+      resolvedCandidates.has(occurrenceId)
+    ) {
+      continue;
+    }
+    const resolutionSeconds = getGrazeResolutionSeconds(
+      initialRunState.distance,
+      runMotionTuning.baseScrollSpeed,
+      hazard,
+      elapsedSeconds,
+    );
+    if (resolutionSeconds !== null) {
+      resolvedCandidates.set(occurrenceId, resolutionSeconds);
     }
   }
 
