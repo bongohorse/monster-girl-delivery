@@ -112,11 +112,7 @@ describe('Timed Zapper simulation', () => {
 
   it('uses the authoritative identity index for lifecycle and collision lookups', () => {
     const spawn = createTimedSpawn();
-    const state = stepTimedZapperSimulation(
-      createTimedZapperSimulationState(),
-      [spawn],
-      2.2,
-    );
+    const state = stepTimedZapperSimulation(createTimedZapperSimulationState(), [spawn], 2.2);
     const identity = getLogicalHazardSpawnIdentity(spawn);
     const indexedInstance = state.instanceByIdentity?.[identity];
 
@@ -135,9 +131,7 @@ describe('Timed Zapper simulation', () => {
     });
 
     expect(getTimedZapperLifecycle(noLinearFindState, spawn)).toBe(indexedInstance?.lifecycle);
-    expect(
-      getCollisionHazardsForTimedZapperSimulation(noLinearFindState, [spawn]),
-    ).toHaveLength(1);
+    expect(getCollisionHazardsForTimedZapperSimulation(noLinearFindState, [spawn])).toHaveLength(1);
 
     const missingSpawn = Object.freeze({
       ...spawn,
