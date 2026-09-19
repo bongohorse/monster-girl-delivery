@@ -401,6 +401,49 @@ describe('M5 rotating Zapper', () => {
     ).toBe(true);
   });
 
+  it('keeps per-sample finite player-state validation with the reusable hitbox scratch', () => {
+    const behavior = createPrototypeZapperBehavior(0, PROTOTYPE_ZAPPER_LENGTHS.short);
+    const hitbox = createPrototypeZapperHitbox(0, 0, behavior);
+    const hazard = Object.freeze({
+      behavior,
+      entryId: 'scratch-finite-validation',
+      hitbox,
+      patternEntryIndex: 0,
+      patternId: 'scratch-finite-validation-pattern',
+      runDistance: hitbox.left,
+      type: 'placeholder-barrier' as const,
+    });
+    const trajectory = Object.freeze({
+      finalState: Object.freeze({ positionY: Number.NaN, velocityY: 0 }),
+      segments: Object.freeze([
+        Object.freeze({
+          accelerationY: 0,
+          endSeconds: 0.25,
+          positionY: 100,
+          startSeconds: 0,
+          velocityY: 0,
+        }),
+        Object.freeze({
+          accelerationY: 0,
+          endSeconds: 1,
+          positionY: Number.NaN,
+          startSeconds: 0.25,
+          velocityY: 0,
+        }),
+      ]),
+    });
+
+    expect(() =>
+      isPlayerCollidingWithPrototypeZapperDuringStep(
+        { distance: 0, simulationSeconds: 0 },
+        trajectory,
+        1,
+        RUN_TUNING,
+        hazard,
+      ),
+    ).toThrow('Player run distance and vertical position must be finite.');
+  });
+
   it('reports the same angular sweep collision across standard frame partitions', () => {
     const hazard = createRotatingZapper();
     const results: Record<string, boolean> = {};
