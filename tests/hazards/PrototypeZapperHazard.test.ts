@@ -3,12 +3,12 @@ import {
   createPrototypeZapperBehavior,
   createPrototypeZapperHitbox,
   doesHitboxOverlapPrototypeZapper,
+  type LogicalPoint,
   PROTOTYPE_ZAPPER_GRAZE_PADDING,
   PROTOTYPE_ZAPPER_LENGTHS,
-  resolvePrototypeZapperGeometry,
-  type LogicalPoint,
   type PrototypeZapperGeometry,
   type PrototypeZapperGeometryPadding,
+  resolvePrototypeZapperGeometry,
 } from '../../src/hazards/PrototypeZapperHazard';
 import {
   isPlayerCollidingWithHazardDuringStep,
