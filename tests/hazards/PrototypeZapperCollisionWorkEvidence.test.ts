@@ -34,6 +34,19 @@ const createStationaryTrajectory = (positionY: number, elapsedSeconds: number) =
     FLIGHT_BOUNDS,
   );
 
+const createLinearTrajectory = (
+  positionY: number,
+  velocityY: number,
+  elapsedSeconds: number,
+) =>
+  createVerticalFlightTrajectory(
+    { positionY, velocityY },
+    elapsedSeconds,
+    false,
+    FLIGHT_TUNING,
+    FLIGHT_BOUNDS,
+  );
+
 const createZapper = (
   rotating: boolean,
   centerX = 0,
@@ -143,6 +156,92 @@ describe('M5 Zapper collision work evidence', () => {
       geometryResolutionCount: 73,
       primaryNarrowphaseCheckCount: 73,
     });
+  });
+
+  it('uses one exact swept-AABB check for static vertical-only flight', () => {
+    const counters = createPrototypeZapperCollisionWorkCounters();
+
+    expect(
+      isPlayerCollidingWithPrototypeZapperDuringStep(
+        { distance: 0, simulationSeconds: 0 },
+        createLinearTrajectory(-100, 200, 1),
+        1,
+        NO_SCROLL,
+        createZapper(false),
+        undefined,
+        undefined,
+        counters,
+      ),
+    ).toBe(true);
+
+    expect(counters).toMatchObject({
+      broadphaseRejectedCallCount: 0,
+      candidateSampleCount: 1,
+      collisionCallCount: 1,
+      evaluatedSampleCount: 1,
+      geometryResolutionCount: 1,
+      primaryNarrowphaseCheckCount: 1,
+    });
+  });
+
+  it('keeps genuine two-axis static motion on the dense lattice fallback', () => {
+    const counters = createPrototypeZapperCollisionWorkCounters();
+
+    isPlayerCollidingWithPrototypeZapperDuringStep(
+      { distance: -80, simulationSeconds: 0 },
+      createLinearTrajectory(39, 20, 0.1),
+      0.1,
+      NORMAL_SCROLL,
+      createZapper(false),
+      undefined,
+      undefined,
+      counters,
+    );
+
+    expect(counters.collisionCallCount).toBe(1);
+    expect(counters.candidateSampleCount).toBeGreaterThan(1);
+    expect(counters.evaluatedSampleCount).toBeGreaterThan(1);
+    expect(counters.geometryResolutionCount).toBe(1);
+  });
+
+  it('keeps gapped static trajectories on the historical dense fallback', () => {
+    const counters = createPrototypeZapperCollisionWorkCounters();
+    const trajectory = Object.freeze({
+      finalState: Object.freeze({ positionY: 39, velocityY: 0 }),
+      segments: Object.freeze([
+        Object.freeze({
+          accelerationY: 0,
+          endSeconds: 0.04,
+          positionY: 39,
+          startSeconds: 0,
+          velocityY: 0,
+        }),
+        Object.freeze({
+          accelerationY: 0,
+          endSeconds: 0.1,
+          positionY: 39,
+          startSeconds: 0.06,
+          velocityY: 0,
+        }),
+      ]),
+    });
+
+    expect(
+      isPlayerCollidingWithPrototypeZapperDuringStep(
+        { distance: 0, simulationSeconds: 0 },
+        trajectory,
+        0.1,
+        NO_SCROLL,
+        createZapper(false),
+        undefined,
+        undefined,
+        counters,
+      ),
+    ).toBe(false);
+
+    expect(counters.candidateSampleCount).toBeGreaterThan(1);
+    expect(counters.evaluatedSampleCount).toBe(counters.candidateSampleCount);
+    expect(counters.geometryResolutionCount).toBe(1);
   });
 
   it('uses one exact swept-AABB check for static horizontal-only motion at normal scroll', () => {
