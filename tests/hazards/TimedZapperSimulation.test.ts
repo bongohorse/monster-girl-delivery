@@ -110,6 +110,36 @@ describe('Timed Zapper simulation', () => {
     }
   });
 
+  it('uses the authoritative identity index for lifecycle and collision lookups', () => {
+    const spawn = createTimedSpawn();
+    const state = stepTimedZapperSimulation(
+      createTimedZapperSimulationState(),
+      [spawn],
+      2.2,
+    );
+    const identity = getLogicalHazardSpawnIdentity(spawn);
+    const indexedInstance = state.instanceByIdentity?.[identity];
+
+    expect(indexedInstance).toBe(state.instances[0]);
+
+    const noLinearFindState = Object.freeze({
+      ...state,
+      instances: new Proxy(state.instances, {
+        get(target, property, receiver) {
+          if (property === 'find') {
+            throw new Error('timed Zapper lifecycle lookup fell back to linear find');
+          }
+          return Reflect.get(target, property, receiver);
+        },
+      }),
+    });
+
+    expect(getTimedZapperLifecycle(noLinearFindState, spawn)).toBe(indexedInstance?.lifecycle);
+    expect(
+      getCollisionHazardsForTimedZapperSimulation(noLinearFindState, [spawn]),
+    ).toHaveLength(1);
+  });
+
   it('uses only the true ON slice when a coarse step crosses CHARGE -> ON', () => {
     const spawn = createTimedSpawn();
     let state = stepTimedZapperSimulation(createTimedZapperSimulationState(), [spawn], 1.8);
