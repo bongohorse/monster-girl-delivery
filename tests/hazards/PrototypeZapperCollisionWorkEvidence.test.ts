@@ -536,12 +536,12 @@ describe('M5 Zapper collision work evidence', () => {
 
   it('records the current one-second rotating workload across the #143 frame schedules', () => {
     const expectedCandidateSamples = {
-      '30hz': 771,
-      '60hz': 829,
-      '90hz': 887,
-      '120hz': 948,
-      '144hz': 1_005,
-      jittered: 835,
+      '30hz': 491,
+      '60hz': 516,
+      '90hz': 559,
+      '120hz': 590,
+      '144hz': 623,
+      jittered: 519,
     } as const;
 
     for (const [name, schedule] of Object.entries(STANDARD_FRAME_SCHEDULES)) {
@@ -556,7 +556,7 @@ describe('M5 Zapper collision work evidence', () => {
     }
   });
 
-  it('shows static geometry reuse removes geometry churn but not the dense time lattice', () => {
+  it('shows exact static sweep and rotating arc rejection remove different classes of dense work', () => {
     const staticCounters = collectOneSecondPartitionedWork(STANDARD_FRAME_SCHEDULES['60hz'], false);
     const rotatingCounters = collectOneSecondPartitionedWork(
       STANDARD_FRAME_SCHEDULES['60hz'],
@@ -567,7 +567,7 @@ describe('M5 Zapper collision work evidence', () => {
     expect(staticCounters.evaluatedSampleCount).toBe(0);
     expect(staticCounters.geometryResolutionCount).toBe(60);
     expect(staticCounters.primaryNarrowphaseCheckCount).toBe(60);
-    expect(rotatingCounters.candidateSampleCount).toBe(829);
-    expect(rotatingCounters.geometryResolutionCount).toBe(829);
+    expect(rotatingCounters.candidateSampleCount).toBe(516);
+    expect(rotatingCounters.geometryResolutionCount).toBe(516);
   });
 });
