@@ -449,12 +449,7 @@ describe('DirectorPerformanceHud', () => {
   });
 
   it('exports one structured snapshot on demand without retaining live counter references', () => {
-    const {
-      evidenceButton,
-      exportPerformanceEvidence,
-      hud,
-      zapperWorkCounters,
-    } = createHarness();
+    const { evidenceButton, exportPerformanceEvidence, hud, zapperWorkCounters } = createHarness();
     hud.update(16, 58.5, false);
     zapperWorkCounters.collisionCallCount = 3;
     zapperWorkCounters.candidateSampleCount = 40;
