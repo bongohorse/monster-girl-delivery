@@ -1,11 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import type { LogicalCollectibleSpawnInstance } from '../../src/generation/GeneratedCollectibles';
+import {
+  getLogicalCollectibleSpawnIdentity,
+  type LogicalCollectibleSpawnInstance,
+} from '../../src/generation/GeneratedCollectibles';
 import type { LogicalHazard } from '../../src/systems/HazardCollision';
+import { evaluatePrototypeCollectibleStep } from '../../src/systems/PrototypeCollectibles';
 import {
   createPrototypeRunState,
   type PrototypeRunState,
   stepPrototypeRun,
 } from '../../src/systems/PrototypeRunSimulation';
+import { createVerticalFlightTrajectory } from '../../src/systems/VerticalFlightSimulation';
 import { type FrameSchedule, STANDARD_FRAME_SCHEDULES } from '../support/FramePartitionHarness';
 
 const FLIGHT_TUNING = Object.freeze({
@@ -127,6 +132,42 @@ describe('PrototypeCollectibles', () => {
       collectedValue: 1,
       earnedReward: 1,
     });
+  });
+
+  it('does not evaluate lethal hazards when every broadphase candidate is already consumed', () => {
+    const initial = createPrototypeRunState(FLIGHT_BOUNDS);
+    const nearby = Object.freeze({ ...COLLECTIBLE, runDistance: 10 });
+    const consumedState = Object.freeze({
+      collectedCount: 1,
+      collectedValue: 1,
+      consumedCollectibleIds: Object.freeze([getLogicalCollectibleSpawnIdentity(nearby)]),
+      earnedReward: 1,
+      pendingCollectibleIds: Object.freeze([]),
+    });
+    const poisonHazard = Object.freeze({
+      get hitbox() {
+        throw new Error('lethal hazard collision should stay deferred without a pickup contact');
+      },
+    }) as Readonly<LogicalHazard>;
+    const trajectory = createVerticalFlightTrajectory(
+      initial.flight,
+      0.1,
+      false,
+      FLIGHT_TUNING,
+      FLIGHT_BOUNDS,
+    );
+
+    const result = evaluatePrototypeCollectibleStep(
+      consumedState,
+      initial.motion,
+      trajectory,
+      0.1,
+      RUN_MOTION,
+      [nearby],
+      [poisonHazard],
+    );
+
+    expect(result).toBe(consumedState);
   });
 
   it('uses a forgiving pickup footprint while preserving a real miss outside its edge', () => {
