@@ -330,6 +330,33 @@ describe('M5 Zapper collision work evidence', () => {
     });
   });
 
+  it('preserves full candidate evidence while an early core hit stops expensive sample work', () => {
+    const counters = createPrototypeZapperCollisionWorkCounters();
+
+    expect(
+      isPlayerCollidingWithPrototypeZapperDuringStep(
+        { distance: 0, simulationSeconds: 0 },
+        createStationaryTrajectory(0, 0.1),
+        0.1,
+        NO_SCROLL,
+        createZapper(true),
+        undefined,
+        undefined,
+        counters,
+      ),
+    ).toBe(true);
+
+    expect(counters).toMatchObject({
+      broadphaseRejectedCallCount: 0,
+      candidateSampleCount: 73,
+      collisionCallCount: 1,
+      evaluatedSampleCount: 1,
+      geometryResolutionCount: 1,
+      primaryNarrowphaseCheckCount: 1,
+      secondaryNarrowphaseCheckCount: 0,
+    });
+  });
+
   it('pins the current dual time + 0.5px distance lattice cost at normal scroll speed', () => {
     const counters = createPrototypeZapperCollisionWorkCounters();
 
