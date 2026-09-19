@@ -14,6 +14,7 @@ import {
   type LogicalHazardCollisionInterval,
   PROTOTYPE_PLAYER_COLLISION_EXTENTS,
   type PrototypePlayerCollisionExtents,
+  type PrototypeZapperCollisionWorkCounters,
 } from './HazardCollision';
 import type { RunMotionState } from './RunMotionSimulation';
 import type { VerticalFlightTrajectory } from './VerticalFlightSimulation';
@@ -175,6 +176,7 @@ const hasLethalCollisionBy = (
   runMotionTuning: Readonly<RunMotionValues>,
   hazard: Readonly<LogicalHazard>,
   boundarySeconds: number,
+  workCounters?: PrototypeZapperCollisionWorkCounters,
 ): boolean => {
   if (boundarySeconds <= 0) {
     return false;
@@ -198,6 +200,8 @@ const hasLethalCollisionBy = (
         endSeconds: boundedEndSeconds,
       },
     },
+    PROTOTYPE_PLAYER_COLLISION_EXTENTS,
+    workCounters,
   );
 };
 
@@ -207,6 +211,7 @@ const isPlayerInLegacyGrazeZoneDuringStep = (
   elapsedSeconds: number,
   runMotionTuning: Readonly<RunMotionValues>,
   hazard: Readonly<LogicalHazard>,
+  workCounters?: PrototypeZapperCollisionWorkCounters,
 ): boolean =>
   isPlayerCollidingWithHazardDuringStep(
     initialRunState,
@@ -215,6 +220,7 @@ const isPlayerInLegacyGrazeZoneDuringStep = (
     runMotionTuning,
     hazard,
     PROTOTYPE_PLAYER_GRAZE_EXTENTS,
+    workCounters,
   );
 
 /**
@@ -235,6 +241,7 @@ export const evaluatePrototypeGrazeStep = (
   elapsedSeconds: number,
   runMotionTuning: Readonly<RunMotionValues>,
   hazards: ReadonlyArray<Readonly<LogicalHazard>>,
+  workCounters?: PrototypeZapperCollisionWorkCounters,
 ): PrototypeGrazeStepResult => {
   // The lifecycle adapter omits Active intervals on zero-delta pause/resize updates. Preserve
   // qualification history through that transient absence while retaining the core collision rule.
@@ -248,6 +255,8 @@ export const evaluatePrototypeGrazeStep = (
           elapsedSeconds,
           runMotionTuning,
           hazard,
+          PROTOTYPE_PLAYER_COLLISION_EXTENTS,
+          workCounters,
         ),
       ),
       resolvedLethalHazards: null,
@@ -290,6 +299,8 @@ export const evaluatePrototypeGrazeStep = (
         runMotionTuning,
         hazard,
         getPrototypeZapperGrazePadding(hazard),
+        PROTOTYPE_PLAYER_COLLISION_EXTENTS,
+        workCounters,
       );
       coreHit = contacts.coreHit;
       preResolvedZapperGrazeHit = contacts.grazeHit;
@@ -300,6 +311,8 @@ export const evaluatePrototypeGrazeStep = (
         elapsedSeconds,
         runMotionTuning,
         hazard,
+        PROTOTYPE_PLAYER_COLLISION_EXTENTS,
+        workCounters,
       );
     }
 
@@ -325,6 +338,7 @@ export const evaluatePrototypeGrazeStep = (
         elapsedSeconds,
         runMotionTuning,
         hazard,
+        workCounters,
       );
     if (grazeHit) {
       pending.add(grazeOccurrenceId);
@@ -356,6 +370,7 @@ export const evaluatePrototypeGrazeStep = (
               runMotionTuning,
               hazard,
               resolutionSeconds,
+              workCounters,
             ),
           )),
     )

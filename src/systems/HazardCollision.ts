@@ -50,6 +50,43 @@ export interface PrototypePlayerCollisionExtents {
 }
 
 /**
+ * Optional additive diagnostics for work actually performed by the authoritative Zapper collision
+ * path. Gameplay never reads these values; Director/performance tooling may supply one collector.
+ */
+export interface PrototypeZapperCollisionWorkCounters {
+  broadphaseRejectedCallCount: number;
+  candidateSampleCount: number;
+  collisionCallCount: number;
+  evaluatedSampleCount: number;
+  geometryResolutionCount: number;
+  primaryNarrowphaseCheckCount: number;
+  secondaryNarrowphaseCheckCount: number;
+}
+
+export const createPrototypeZapperCollisionWorkCounters =
+  (): PrototypeZapperCollisionWorkCounters => ({
+    broadphaseRejectedCallCount: 0,
+    candidateSampleCount: 0,
+    collisionCallCount: 0,
+    evaluatedSampleCount: 0,
+    geometryResolutionCount: 0,
+    primaryNarrowphaseCheckCount: 0,
+    secondaryNarrowphaseCheckCount: 0,
+  });
+
+export const resetPrototypeZapperCollisionWorkCounters = (
+  counters: PrototypeZapperCollisionWorkCounters,
+): void => {
+  counters.broadphaseRejectedCallCount = 0;
+  counters.candidateSampleCount = 0;
+  counters.collisionCallCount = 0;
+  counters.evaluatedSampleCount = 0;
+  counters.geometryResolutionCount = 0;
+  counters.primaryNarrowphaseCheckCount = 0;
+  counters.secondaryNarrowphaseCheckCount = 0;
+};
+
+/**
  * Temporary M2 collision footprint around the player's logical position. Callers may supply tuned
  * extents later without coupling the rule to a sprite or Phaser body.
  */
@@ -474,9 +511,13 @@ const evaluatePrototypeZapperPaddingPairDuringStep = (
   playerExtents: Readonly<PrototypePlayerCollisionExtents>,
   primaryPadding: Readonly<PrototypeZapperGeometryPadding>,
   secondaryPadding?: Readonly<PrototypeZapperGeometryPadding>,
+  workCounters?: PrototypeZapperCollisionWorkCounters,
 ): Readonly<PrototypeZapperPaddingPairContacts> => {
   if (!isPrototypeZapperHazard(hazard)) {
     return NO_PROTOTYPE_ZAPPER_PADDING_PAIR_CONTACT;
+  }
+  if (workCounters) {
+    workCounters.collisionCallCount += 1;
   }
   if (!Number.isFinite(elapsedSeconds) || elapsedSeconds < 0) {
     throw new RangeError('elapsedSeconds must be a non-negative finite number.');
@@ -488,18 +529,31 @@ const evaluatePrototypeZapperPaddingPairDuringStep = (
     if (!geometry) {
       return NO_PROTOTYPE_ZAPPER_PADDING_PAIR_CONTACT;
     }
+    if (workCounters) {
+      workCounters.candidateSampleCount += 1;
+      workCounters.evaluatedSampleCount += 1;
+      workCounters.geometryResolutionCount += 1;
+    }
     const playerHitbox = createPrototypePlayerHitbox(
       initialRunState,
       trajectory.finalState,
       playerExtents,
     );
+    if (workCounters) {
+      workCounters.primaryNarrowphaseCheckCount += 1;
+    }
     if (doesHitboxOverlapPrototypeZapper(playerHitbox, geometry, primaryPadding)) {
       return PROTOTYPE_ZAPPER_PRIMARY_CONTACT;
     }
-    return secondaryPadding &&
-      doesHitboxOverlapPrototypeZapper(playerHitbox, geometry, secondaryPadding)
-      ? PROTOTYPE_ZAPPER_SECONDARY_ONLY_CONTACT
-      : NO_PROTOTYPE_ZAPPER_PADDING_PAIR_CONTACT;
+    if (secondaryPadding) {
+      if (workCounters) {
+        workCounters.secondaryNarrowphaseCheckCount += 1;
+      }
+      return doesHitboxOverlapPrototypeZapper(playerHitbox, geometry, secondaryPadding)
+        ? PROTOTYPE_ZAPPER_SECONDARY_ONLY_CONTACT
+        : NO_PROTOTYPE_ZAPPER_PADDING_PAIR_CONTACT;
+    }
+    return NO_PROTOTYPE_ZAPPER_PADDING_PAIR_CONTACT;
   }
 
   const interval = getCollisionTimeRange(hazard, elapsedSeconds);
@@ -538,6 +592,9 @@ const evaluatePrototypeZapperPaddingPairDuringStep = (
       0,
     )
   ) {
+    if (workCounters) {
+      workCounters.broadphaseRejectedCallCount += 1;
+    }
     return NO_PROTOTYPE_ZAPPER_PADDING_PAIR_CONTACT;
   }
 
@@ -548,6 +605,9 @@ const evaluatePrototypeZapperPaddingPairDuringStep = (
     runMotionTuning.baseScrollSpeed,
     interval,
   );
+  if (workCounters) {
+    workCounters.candidateSampleCount += sampleTimes.length;
+  }
   const rotatingGeometryScratch =
     hazard.behavior.rotation === undefined ? null : createPrototypeZapperGeometryScratch();
   let staticGeometry: ReturnType<typeof resolvePrototypeZapperGeometry> | undefined;
@@ -558,6 +618,9 @@ const evaluatePrototypeZapperPaddingPairDuringStep = (
   const playerHitboxScratch: LogicalHitbox = { bottom: 0, left: 0, right: 0, top: 0 };
 
   for (const seconds of sampleTimes) {
+    if (workCounters) {
+      workCounters.evaluatedSampleCount += 1;
+    }
     let trajectorySegment = trajectorySegments[trajectorySegmentIndex];
     while (
       trajectorySegment &&
@@ -598,9 +661,15 @@ const evaluatePrototypeZapperPaddingPairDuringStep = (
         initialSimulationSeconds + seconds,
         rotatingGeometryScratch,
       );
+      if (workCounters) {
+        workCounters.geometryResolutionCount += 1;
+      }
     } else {
       if (staticGeometry === undefined) {
         staticGeometry = resolvePrototypeZapperGeometry(hazard, initialSimulationSeconds);
+        if (workCounters) {
+          workCounters.geometryResolutionCount += 1;
+        }
       }
       geometry = staticGeometry;
     }
@@ -608,15 +677,19 @@ const evaluatePrototypeZapperPaddingPairDuringStep = (
       continue;
     }
 
+    if (workCounters) {
+      workCounters.primaryNarrowphaseCheckCount += 1;
+    }
     if (doesHitboxOverlapPrototypeZapper(playerHitbox, geometry, primaryPadding)) {
       return PROTOTYPE_ZAPPER_PRIMARY_CONTACT;
     }
-    if (
-      secondaryPadding &&
-      !secondaryHit &&
-      doesHitboxOverlapPrototypeZapper(playerHitbox, geometry, secondaryPadding)
-    ) {
-      secondaryHit = true;
+    if (secondaryPadding && !secondaryHit) {
+      if (workCounters) {
+        workCounters.secondaryNarrowphaseCheckCount += 1;
+      }
+      if (doesHitboxOverlapPrototypeZapper(playerHitbox, geometry, secondaryPadding)) {
+        secondaryHit = true;
+      }
     }
   }
 
@@ -647,6 +720,7 @@ export const isPlayerCollidingWithPrototypeZapperDuringStep = (
   hazard: Readonly<LogicalHazard>,
   playerExtents: Readonly<PrototypePlayerCollisionExtents> = PROTOTYPE_PLAYER_COLLISION_EXTENTS,
   padding: Readonly<PrototypeZapperGeometryPadding> = PROTOTYPE_ZAPPER_LETHAL_PADDING,
+  workCounters?: PrototypeZapperCollisionWorkCounters,
 ): boolean =>
   evaluatePrototypeZapperPaddingPairDuringStep(
     initialRunState,
@@ -656,6 +730,8 @@ export const isPlayerCollidingWithPrototypeZapperDuringStep = (
     hazard,
     playerExtents,
     padding,
+    undefined,
+    workCounters,
   ).primaryHit;
 
 /**
@@ -670,6 +746,7 @@ export const evaluatePlayerPrototypeZapperCoreAndGrazeDuringStep = (
   hazard: Readonly<LogicalHazard>,
   grazePadding: Readonly<PrototypeZapperGeometryPadding>,
   playerExtents: Readonly<PrototypePlayerCollisionExtents> = PROTOTYPE_PLAYER_COLLISION_EXTENTS,
+  workCounters?: PrototypeZapperCollisionWorkCounters,
 ): Readonly<PrototypeZapperCoreGrazeContacts> => {
   const contacts = evaluatePrototypeZapperPaddingPairDuringStep(
     initialRunState,
@@ -680,6 +757,7 @@ export const evaluatePlayerPrototypeZapperCoreAndGrazeDuringStep = (
     playerExtents,
     PROTOTYPE_ZAPPER_LETHAL_PADDING,
     grazePadding,
+    workCounters,
   );
   if (contacts.primaryHit) {
     return PROTOTYPE_ZAPPER_CORE_CONTACT;
@@ -703,6 +781,7 @@ export const isPlayerCollidingWithHazardDuringStep = (
   runMotionTuning: Readonly<RunMotionValues>,
   hazard: Readonly<LogicalHazard>,
   playerExtents: Readonly<PrototypePlayerCollisionExtents> = PROTOTYPE_PLAYER_COLLISION_EXTENTS,
+  workCounters?: PrototypeZapperCollisionWorkCounters,
 ): boolean => {
   if (!Number.isFinite(elapsedSeconds) || elapsedSeconds < 0) {
     throw new RangeError('elapsedSeconds must be a non-negative finite number.');
@@ -717,6 +796,8 @@ export const isPlayerCollidingWithHazardDuringStep = (
       runMotionTuning,
       hazard,
       playerExtents,
+      PROTOTYPE_ZAPPER_LETHAL_PADDING,
+      workCounters,
     );
   }
 

@@ -8,6 +8,7 @@ import {
   type LogicalHazard,
   type LogicalHazardCollisionInterval,
   PROTOTYPE_PLAYER_COLLISION_EXTENTS,
+  type PrototypeZapperCollisionWorkCounters,
 } from './HazardCollision';
 import type { RunMotionState } from './RunMotionSimulation';
 import type {
@@ -239,6 +240,7 @@ const hasLethalCollisionBy = (
   runMotionTuning: Readonly<RunMotionValues>,
   hazard: Readonly<LogicalHazard>,
   boundarySeconds: number,
+  workCounters?: PrototypeZapperCollisionWorkCounters,
 ): boolean => {
   if (boundarySeconds <= 0) {
     return false;
@@ -262,6 +264,8 @@ const hasLethalCollisionBy = (
         endSeconds: boundedEndSeconds,
       },
     },
+    PROTOTYPE_PLAYER_COLLISION_EXTENTS,
+    workCounters,
   );
 };
 
@@ -289,6 +293,7 @@ export const evaluatePrototypeCollectibleStep = (
   collectibles: ReadonlyArray<Readonly<LogicalCollectibleSpawnInstance>>,
   hazards: ReadonlyArray<Readonly<LogicalHazard>>,
   resolvedLethalHazards: ReadonlyArray<Readonly<LogicalHazard>> | null = null,
+  workCounters?: PrototypeZapperCollisionWorkCounters,
 ): Readonly<PrototypeCollectibleRunState> => {
   if (elapsedSeconds === 0) {
     return state;
@@ -364,6 +369,8 @@ export const evaluatePrototypeCollectibleStep = (
         elapsedSeconds,
         runMotionTuning,
         hazard,
+        PROTOTYPE_PLAYER_COLLISION_EXTENTS,
+        workCounters,
       ),
     );
     if (
@@ -375,6 +382,7 @@ export const evaluatePrototypeCollectibleStep = (
           runMotionTuning,
           hazard,
           contactSeconds,
+          workCounters,
         ),
       )
     ) {
