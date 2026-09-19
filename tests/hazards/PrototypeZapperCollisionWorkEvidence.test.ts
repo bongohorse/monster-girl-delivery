@@ -177,7 +177,7 @@ describe('M5 Zapper collision work evidence', () => {
     expect(
       evaluatePlayerPrototypeZapperCoreAndGrazeDuringStep(
         { distance: 0, simulationSeconds: 0 },
-        createStationaryTrajectory(500, 0.1),
+        createStationaryTrajectory(47, 0.1),
         0.1,
         NO_SCROLL,
         createZapper(true),
