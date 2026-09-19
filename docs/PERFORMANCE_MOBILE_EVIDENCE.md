@@ -16,6 +16,7 @@ The report records:
 - capture timestamp;
 - logical viewport size;
 - device pixel ratio;
+- browser/user-agent identity;
 - canvas backing-buffer size;
 - current render scale;
 - run seed and run distance;
