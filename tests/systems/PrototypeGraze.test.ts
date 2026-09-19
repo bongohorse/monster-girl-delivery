@@ -95,12 +95,19 @@ describe('prototype Graze skill layer', () => {
     expect(filterPrototypeHazardCandidatesForStep(START.motion, 1, MOTION, hazards)).toBe(hazards);
   });
 
-  it('rejects far hazards before Graze identity/contact work', () => {
+  it('rejects far hazards before exact vertical/contact work', () => {
     const farHazard = Object.freeze({
-      get grazeOccurrenceId(): never {
-        throw new Error('far hazard reached Graze identity resolution');
-      },
-      hitbox: Object.freeze({ left: 1_000, right: 1_020, top: 20, bottom: 30 }),
+      grazeOccurrenceId: 'far-contact-poison',
+      hitbox: Object.freeze({
+        left: 1_000,
+        right: 1_020,
+        get top(): never {
+          throw new Error('far hazard reached exact vertical/contact work');
+        },
+        get bottom(): never {
+          throw new Error('far hazard reached exact vertical/contact work');
+        },
+      }),
     }) as Readonly<LogicalHazard>;
 
     expect(() => stepPrototypeRun(START, 0.1, context([farHazard]))).not.toThrow();
