@@ -13,7 +13,7 @@ import {
   type PrototypeZapperCollisionWorkCounters,
 } from '../../src/systems/HazardCollision';
 import { createVerticalFlightTrajectory } from '../../src/systems/VerticalFlightSimulation';
-import { STANDARD_FRAME_SCHEDULES, type FrameSchedule } from '../support/FramePartitionHarness';
+import { type FrameSchedule, STANDARD_FRAME_SCHEDULES } from '../support/FramePartitionHarness';
 
 const FLIGHT_TUNING = Object.freeze({
   gravity: 0,
