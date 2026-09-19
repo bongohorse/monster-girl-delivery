@@ -900,6 +900,11 @@ const assertValidPrototypeZapperPadding = (
   }
 };
 
+const isCanonicalPrototypeZapperPadding = (
+  padding: Readonly<PrototypeZapperGeometryPadding>,
+): boolean =>
+  padding === PROTOTYPE_ZAPPER_LETHAL_PADDING || padding === PROTOTYPE_ZAPPER_GRAZE_PADDING;
+
 const doesHitboxOverlapPrototypeZapperOnValidatedPath = (
   hitbox: Readonly<LogicalHitbox>,
   geometry: NonNullable<ReturnType<typeof resolvePrototypeZapperGeometry>>,
@@ -1025,9 +1030,14 @@ const evaluatePrototypeZapperPaddingPairDuringStep = (
     }
   }
 
+  const canUseCanonicalAngularBroadphase =
+    isCanonicalPrototypeZapperPadding(primaryPadding) &&
+    (secondaryPadding === undefined || isCanonicalPrototypeZapperPadding(secondaryPadding));
+
   if (
     playerExtents === PROTOTYPE_PLAYER_COLLISION_EXTENTS &&
     hazard.behavior.rotation !== undefined &&
+    canUseCanonicalAngularBroadphase &&
     !canRotatingZapperAngularSweepReachPlayer(
       initialRunState,
       trajectory,
