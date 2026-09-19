@@ -429,10 +429,11 @@ const PROTOTYPE_ZAPPER_SECONDARY_ONLY_CONTACT: Readonly<PrototypeZapperPaddingPa
     primaryHit: false,
     secondaryHitWithoutPrimary: true,
   });
-const PROTOTYPE_ZAPPER_PRIMARY_CONTACT: Readonly<PrototypeZapperPaddingPairContacts> = Object.freeze({
-  primaryHit: true,
-  secondaryHitWithoutPrimary: false,
-});
+const PROTOTYPE_ZAPPER_PRIMARY_CONTACT: Readonly<PrototypeZapperPaddingPairContacts> =
+  Object.freeze({
+    primaryHit: true,
+    secondaryHitWithoutPrimary: false,
+  });
 
 const NO_PROTOTYPE_ZAPPER_CORE_GRAZE_CONTACT: Readonly<PrototypeZapperCoreGrazeContacts> =
   Object.freeze({
