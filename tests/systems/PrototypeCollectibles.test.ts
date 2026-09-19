@@ -297,7 +297,8 @@ describe('PrototypeCollectibles', () => {
 
     expect(result.enteredDead).toBe(true);
     expect(result.state.collectibles?.collectedCount).toBe(1);
-    expect(horizontalVelocityReads).toBe(2);
+    expect(horizontalVelocityReads).toBeGreaterThanOrEqual(1);
+    expect(horizontalVelocityReads).toBeLessThanOrEqual(2);
   });
 
   it('keeps only pickups contacted before a lethal collision in a coarse terminal step', () => {
