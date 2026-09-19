@@ -170,6 +170,54 @@ describe('PrototypeCollectibles', () => {
     expect(result).toBe(consumedState);
   });
 
+  it('keeps the broadphase cutoff conservative at the positive-area overlap boundary', () => {
+    const stationaryRunMotion = Object.freeze({ baseScrollSpeed: 0 });
+    const edgeTouch = Object.freeze({
+      ...COLLECTIBLE,
+      pathId: 'edge-touch',
+      runDistance: 32,
+    });
+    const justInside = Object.freeze({
+      ...COLLECTIBLE,
+      pathId: 'just-inside',
+      runDistance: 32 - 1e-6,
+    });
+    const justOutside = Object.freeze({
+      ...COLLECTIBLE,
+      pathId: 'just-outside',
+      runDistance: 32 + 1e-6,
+    });
+
+    const touchResult = stepPrototypeRun(createPrototypeRunState(FLIGHT_BOUNDS), 0.1, {
+      collectibles: [edgeTouch],
+      flightBounds: FLIGHT_BOUNDS,
+      flightTuning: FLIGHT_TUNING,
+      hazards: [],
+      runMotionTuning: stationaryRunMotion,
+      thrustHeld: false,
+    }).state;
+    const insideResult = stepPrototypeRun(createPrototypeRunState(FLIGHT_BOUNDS), 0.1, {
+      collectibles: [justInside],
+      flightBounds: FLIGHT_BOUNDS,
+      flightTuning: FLIGHT_TUNING,
+      hazards: [],
+      runMotionTuning: stationaryRunMotion,
+      thrustHeld: false,
+    }).state;
+    const outsideResult = stepPrototypeRun(createPrototypeRunState(FLIGHT_BOUNDS), 0.1, {
+      collectibles: [justOutside],
+      flightBounds: FLIGHT_BOUNDS,
+      flightTuning: FLIGHT_TUNING,
+      hazards: [],
+      runMotionTuning: stationaryRunMotion,
+      thrustHeld: false,
+    }).state;
+
+    expect(touchResult.collectibles).toBeUndefined();
+    expect(insideResult.collectibles?.collectedCount).toBe(1);
+    expect(outsideResult.collectibles).toBeUndefined();
+  });
+
   it('uses a forgiving pickup footprint while preserving a real miss outside its edge', () => {
     const nearEdge = Object.freeze({ ...COLLECTIBLE, pathId: 'near-edge', y: 232 });
     const visibleMiss = Object.freeze({ ...COLLECTIBLE, pathId: 'visible-miss', y: 234 });
