@@ -56,6 +56,38 @@ The test suite also sweeps many odd `1/720` indices from roughly 20 to 70 degree
 
 This keeps the evidence reproducible while covering many lattice phases instead of relying on one hand-picked angle. A deterministic adversarial sweep is more useful here than unconstrained random fuzzing because the failure condition is specifically phase alignment between two fixed lattices.
 
+## Why a naive 0.5 px relative-motion bound is not cheaper
+
+A second tempting replacement is to derive a timestep from the existing `0.5 px` spatial tolerance and the maximum relative motion of the player and rotating Zapper.
+
+Using the current prototype authorities:
+
+- base run speed: `350 px/s` from `RunMotionConfig`;
+- tier-3 multiplier: `1.24`, giving `434 px/s`;
+- maximum vertical player speed: `700 px/s`;
+- long-Zapper endpoint radius from center: `100 px`;
+- maximum angular speed: `90 deg/s = pi/2 rad/s`.
+
+A conservative translational speed magnitude is
+
+`sqrt(434^2 + 700^2) ~= 823.5 px/s`.
+
+The rotating endpoint contributes at most
+
+`100 * pi/2 ~= 157.1 px/s`.
+
+Using the triangle inequality gives a conservative relative-motion bound of roughly
+
+`823.5 + 157.1 = 980.6 px/s`.
+
+Keeping relative motion below `0.5 px` would therefore require approximately
+
+`dt <= 0.5 / 980.6 ~= 0.000510 s ~= 1/1961 s`.
+
+That is about `2.7x` denser than the existing `1/720 s` time lattice. This bound is conservative rather than exact, but it is enough to reject the simple idea that an actual-motion-derived `0.5 px` fixed step would automatically reduce work at the current gameplay envelope.
+
+This does not rule out adaptive interval rejection or a tighter time-of-impact method. It rules out the naive fixed-step substitution as a performance win.
+
 ## Why this also matters for the current 1/720 s lattice
 
 The same construction can be repeated between any two fixed samples.
