@@ -551,6 +551,8 @@ const evaluatePrototypeZapperPaddingPairDuringStep = (
   let secondaryHit = false;
   let trajectorySegmentIndex = 0;
   const trajectorySegments = trajectory.segments;
+  const canReusePlayerHitboxScratch = playerExtents === PROTOTYPE_PLAYER_COLLISION_EXTENTS;
+  const playerHitboxScratch: LogicalHitbox = { bottom: 0, left: 0, right: 0, top: 0 };
 
   for (const seconds of sampleTimes) {
     let trajectorySegment = trajectorySegments[trajectorySegmentIndex];
@@ -568,11 +570,24 @@ const evaluatePrototypeZapperPaddingPairDuringStep = (
       seconds <= trajectorySegment.endSeconds
         ? evaluateFlightSegmentPosition(trajectorySegment, seconds)
         : evaluateFlightTrajectoryPosition(trajectory, seconds);
-    const playerHitbox = createPrototypePlayerHitbox(
-      { distance: initialRunState.distance + runMotionTuning.baseScrollSpeed * seconds },
-      { positionY: playerPositionY, velocityY: 0 },
-      playerExtents,
-    );
+    const playerDistance = initialRunState.distance + runMotionTuning.baseScrollSpeed * seconds;
+    let playerHitbox: Readonly<LogicalHitbox>;
+    if (canReusePlayerHitboxScratch) {
+      if (!Number.isFinite(playerDistance) || !Number.isFinite(playerPositionY)) {
+        throw new RangeError('Player run distance and vertical position must be finite.');
+      }
+      playerHitboxScratch.left = playerDistance - PROTOTYPE_PLAYER_COLLISION_EXTENTS.left;
+      playerHitboxScratch.right = playerDistance + PROTOTYPE_PLAYER_COLLISION_EXTENTS.right;
+      playerHitboxScratch.top = playerPositionY - PROTOTYPE_PLAYER_COLLISION_EXTENTS.top;
+      playerHitboxScratch.bottom = playerPositionY + PROTOTYPE_PLAYER_COLLISION_EXTENTS.bottom;
+      playerHitbox = playerHitboxScratch;
+    } else {
+      playerHitbox = createPrototypePlayerHitbox(
+        { distance: playerDistance },
+        { positionY: playerPositionY, velocityY: 0 },
+        playerExtents,
+      );
+    }
     let geometry: ReturnType<typeof resolvePrototypeZapperGeometry>;
     if (rotating) {
       geometry = resolvePrototypeZapperGeometry(hazard, initialSimulationSeconds + seconds);
@@ -610,6 +625,9 @@ const evaluatePrototypeZapperPaddingPairDuringStep = (
  * before any dense sample times or geometry are created. Samples remain anchored to absolute world
  * distance plus an authoritative 1/720-second simulation-time lattice. Sorted samples advance one
  * monotonic flight-segment cursor instead of linearly searching the trajectory again per sample.
+ * The canonical frozen player extents reuse one local hitbox scratch instead of allocating transient
+ * run-state, flight-state, and hitbox objects per sample. Custom extents keep the historical
+ * per-sample validation/allocation path so dynamic runtime inputs preserve their previous contract.
  * Static Zappers resolve their immutable geometry once per step; rotating Zappers resolve each
  * sample from authoritative simulation time so a beam cannot tunnel between endpoint poses.
  */
