@@ -107,6 +107,7 @@ export class DirectorPerformanceHud {
   private readonly evidenceButton: HTMLButtonElement;
   private readonly zapperPerformanceButton: HTMLButtonElement;
   private destroyed = false;
+  private discardNextPerformanceSample = false;
   private elapsedSinceRefreshMilliseconds = Number.POSITIVE_INFINITY;
   private fpsLimitIndex = 0;
   private hidden = false;
@@ -273,10 +274,12 @@ export class DirectorPerformanceHud {
     }
 
     this.latestFramesPerSecond = framesPerSecond;
+    const discardPresetSetupSample = this.discardNextPerformanceSample;
+    this.discardNextPerformanceSample = false;
     const accepted = this.sampler.sample(
       rawFrameTimeMilliseconds,
       lifecyclePaused,
-      discardCurrentSample,
+      discardCurrentSample || discardPresetSetupSample,
     );
 
     if (!accepted || this.hidden) {
@@ -498,6 +501,7 @@ export class DirectorPerformanceHud {
     }
 
     this.resetPerformanceMeasurements();
+    this.discardNextPerformanceSample = true;
     this.controls?.startZapperPerformancePreset?.();
   };
 
