@@ -87,7 +87,10 @@ describe('M5 rotating Zapper', () => {
   });
 
   it('rewrites one rotating geometry scratch with immutable-resolver-equivalent values', () => {
-    const hazard = createRotatingZapper('counterclockwise', PROTOTYPE_ZAPPER_ROTATION_SPEEDS.medium);
+    const hazard = createRotatingZapper(
+      'counterclockwise',
+      PROTOTYPE_ZAPPER_ROTATION_SPEEDS.medium,
+    );
     const scratch = createPrototypeZapperGeometryScratch();
     const identities = {
       beam: scratch.beam,
