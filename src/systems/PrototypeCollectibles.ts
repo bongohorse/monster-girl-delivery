@@ -275,6 +275,10 @@ const hasLethalCollisionBy = (
  * broadphase narrows exact pickup work to the conservative swept horizontal interaction window;
  * boundary-touching entries are deliberately retained as false positives so broadphase cannot hide
  * a positive-area contact from the existing continuous collision authority.
+ *
+ * The authoritative run orchestrator may supply the lethal-core hazards already resolved by Graze
+ * for the same positive simulation step. Standalone callers can omit that evidence and retain the
+ * previous lazy fallback.
  */
 export const evaluatePrototypeCollectibleStep = (
   state: Readonly<PrototypeCollectibleRunState>,
@@ -284,6 +288,7 @@ export const evaluatePrototypeCollectibleStep = (
   runMotionTuning: Readonly<RunMotionValues>,
   collectibles: ReadonlyArray<Readonly<LogicalCollectibleSpawnInstance>>,
   hazards: ReadonlyArray<Readonly<LogicalHazard>>,
+  resolvedLethalHazards: ReadonlyArray<Readonly<LogicalHazard>> | null = null,
 ): Readonly<PrototypeCollectibleRunState> => {
   if (elapsedSeconds === 0) {
     return state;
@@ -314,7 +319,8 @@ export const evaluatePrototypeCollectibleStep = (
   }
 
   const consumed = new Set(state.consumedCollectibleIds);
-  let lethalHazards: ReadonlyArray<Readonly<LogicalHazard>> | undefined;
+  let lethalHazards: ReadonlyArray<Readonly<LogicalHazard>> | undefined =
+    resolvedLethalHazards ?? undefined;
   const awarded: Array<Readonly<LogicalCollectibleSpawnInstance>> = [];
 
   for (let index = firstCandidateIndex; index < candidateEndIndex; index += 1) {

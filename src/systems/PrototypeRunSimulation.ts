@@ -73,9 +73,10 @@ export const createPrototypeRunState = (
 
 /**
  * Advances one authoritative run step. Lethal core collision, Graze, and M5 collectible pickup
- * inspect the same continuous player trajectory. Pickup qualification is resolved against lethal
- * collision ordering before the immutable terminal result is created, so presentation never owns
- * collection and a coarse terminal step cannot award a pickup that occurs only after death.
+ * inspect the same continuous player trajectory. Positive-step lethal-core contacts resolved by
+ * Graze are reused by collectible ordering, avoiding a second full-step collision pass. Pickup
+ * qualification still resolves prefix ordering before the immutable terminal result is created, so
+ * presentation never owns collection and a coarse terminal step cannot award a pickup after death.
  */
 export const stepPrototypeRun = (
   state: Readonly<PrototypeRunState>,
@@ -115,6 +116,7 @@ export const stepPrototypeRun = (
     context.runMotionTuning,
     context.collectibles ?? [],
     context.hazards,
+    grazeResult.resolvedLethalHazards,
   );
   const collectibles =
     state.collectibles ||
