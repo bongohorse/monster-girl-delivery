@@ -432,9 +432,11 @@ describe('Foundation Director mode boundary', () => {
     );
     expect(firstHazards).toHaveLength(14);
     expect(firstHazards.every((hazard) => hazard.behavior.kind === 'zapper')).toBe(true);
-    expect(firstHazards.every((hazard) => hazard.patternId === 'director-zapper-performance-v1:director-1')).toBe(
-      true,
-    );
+    expect(
+      firstHazards.every(
+        (hazard) => hazard.patternId === 'director-zapper-performance-v1:director-1',
+      ),
+    ).toBe(true);
     expect(
       new Set(
         firstHazards.flatMap((hazard) =>
