@@ -495,8 +495,8 @@ const evaluatePrototypeZapperPaddingPairDuringStep = (
     }
     return secondaryPadding &&
       doesHitboxOverlapPrototypeZapper(playerHitbox, geometry, secondaryPadding)
-      ? PROTOTYPE_ZAPPER_GRAZE_ONLY_CONTACT
-      : NO_PROTOTYPE_ZAPPER_CONTACT;
+      ? PROTOTYPE_ZAPPER_SECONDARY_ONLY_CONTACT
+      : NO_PROTOTYPE_ZAPPER_PADDING_PAIR_CONTACT;
   }
 
   const interval = getCollisionTimeRange(hazard, elapsedSeconds);
@@ -581,8 +581,8 @@ const evaluatePrototypeZapperPaddingPairDuringStep = (
   }
 
   return secondaryHit
-    ? PROTOTYPE_ZAPPER_GRAZE_ONLY_CONTACT
-    : NO_PROTOTYPE_ZAPPER_CONTACT;
+    ? PROTOTYPE_ZAPPER_SECONDARY_ONLY_CONTACT
+    : NO_PROTOTYPE_ZAPPER_PADDING_PAIR_CONTACT;
 };
 
 /**
