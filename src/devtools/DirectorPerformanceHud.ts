@@ -205,8 +205,11 @@ export class DirectorPerformanceHud {
     this.resetButton.className = 'director-performance-hud__button';
     this.resetButton.type = 'button';
     this.resetButton.textContent = '↻';
-    this.resetButton.title = 'Reset performance statistics';
-    this.resetButton.setAttribute('aria-label', 'Reset performance statistics');
+    this.resetButton.title = 'Reset performance statistics and Zapper work counters';
+    this.resetButton.setAttribute(
+      'aria-label',
+      'Reset performance statistics and Zapper work counters',
+    );
 
     this.root.append(
       this.visibilityButton,
