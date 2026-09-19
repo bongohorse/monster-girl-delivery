@@ -6,6 +6,12 @@ import {
   projectHazardHitboxToScreen,
 } from '../../src/hazards/PrototypeHazard';
 import {
+  createPrototypeZapperBehavior,
+  createPrototypeZapperHitbox,
+  PROTOTYPE_ZAPPER_LENGTHS,
+} from '../../src/hazards/PrototypeZapperHazard';
+import { createPrototypeZapperCollisionWorkCounters } from '../../src/systems/HazardCollision';
+import {
   createPrototypeRunState,
   type PrototypeRunState,
   stepPrototypeRun,
@@ -139,6 +145,43 @@ describe('prototype run simulation', () => {
 
     expect(coarse.enteredDead).toBe(true);
     expect(fine.phase).toBe('dead');
+  });
+
+  it('threads one Zapper work collector through the authoritative run collision path', () => {
+    const behavior = createPrototypeZapperBehavior(0, PROTOTYPE_ZAPPER_LENGTHS.short);
+    const hitbox = createPrototypeZapperHitbox(10, 0, behavior);
+    const zapper = Object.freeze({
+      behavior,
+      entryId: 'run-work-counter',
+      hitbox,
+      patternEntryIndex: 0,
+      patternId: 'run-work-counter-pattern',
+      runDistance: hitbox.left,
+      type: 'placeholder-barrier' as const,
+    });
+    const counters = createPrototypeZapperCollisionWorkCounters();
+    const state: PrototypeRunState = {
+      phase: 'running',
+      motion: { distance: 0, simulationSeconds: 0 },
+      flight: { positionY: 100, velocityY: 0 },
+    };
+
+    const result = stepPrototypeRun(state, 0.05, {
+      flightBounds: { ceilingY: -1_000, floorY: 1_000 },
+      flightTuning: { gravity: 0, thrust: 0, maxFallVelocity: 1_000, maxRiseVelocity: 1_000 },
+      hazards: [zapper],
+      runMotionTuning: { baseScrollSpeed: 0 },
+      thrustHeld: false,
+      zapperCollisionWorkCounters: counters,
+    });
+
+    expect(result.enteredDead).toBe(false);
+    expect(counters.collisionCallCount).toBe(1);
+    expect(counters.candidateSampleCount).toBeGreaterThan(2);
+    expect(counters.evaluatedSampleCount).toBe(counters.candidateSampleCount);
+    expect(counters.geometryResolutionCount).toBe(1);
+    expect(counters.primaryNarrowphaseCheckCount).toBe(counters.evaluatedSampleCount);
+    expect(counters.secondaryNarrowphaseCheckCount).toBe(counters.evaluatedSampleCount);
   });
 
   it('recreates the same clean state and derived hazard position on every restart', () => {
