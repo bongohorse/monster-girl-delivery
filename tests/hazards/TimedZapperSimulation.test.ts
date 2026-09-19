@@ -122,8 +122,8 @@ describe('Timed Zapper simulation', () => {
       ...state,
       instances: new Proxy(state.instances, {
         get(target, property, receiver) {
-          if (property === 'find') {
-            throw new Error('timed Zapper lifecycle lookup fell back to linear find');
+          if (property === 'find' || property === 'map') {
+            throw new Error('timed Zapper lifecycle state fell back to array indexing work');
           }
           return Reflect.get(target, property, receiver);
         },
@@ -143,6 +143,7 @@ describe('Timed Zapper simulation', () => {
     expect(
       getCollisionHazardsForTimedZapperSimulation(noLinearFindState, [missingSpawn]),
     ).toHaveLength(1);
+    expect(() => stepTimedZapperSimulation(noLinearFindState, [spawn], 0.1)).not.toThrow();
   });
 
   it('uses only the true ON slice when a coarse step crosses CHARGE -> ON', () => {
