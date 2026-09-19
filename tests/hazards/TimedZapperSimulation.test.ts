@@ -110,6 +110,42 @@ describe('Timed Zapper simulation', () => {
     }
   });
 
+  it('uses the authoritative identity index for lifecycle and collision lookups', () => {
+    const spawn = createTimedSpawn();
+    const state = stepTimedZapperSimulation(createTimedZapperSimulationState(), [spawn], 2.2);
+    const identity = getLogicalHazardSpawnIdentity(spawn);
+    const indexedInstance = state.instanceByIdentity?.[identity];
+
+    expect(indexedInstance).toBe(state.instances[0]);
+
+    const noLinearFindState = Object.freeze({
+      ...state,
+      instances: new Proxy(state.instances, {
+        get(target, property, receiver) {
+          if (property === 'find' || property === 'map') {
+            throw new Error('timed Zapper lifecycle state fell back to array indexing work');
+          }
+          return Reflect.get(target, property, receiver);
+        },
+      }),
+    });
+
+    expect(getTimedZapperLifecycle(noLinearFindState, spawn)).toBe(indexedInstance?.lifecycle);
+    expect(getCollisionHazardsForTimedZapperSimulation(noLinearFindState, [spawn])).toHaveLength(1);
+
+    const missingSpawn = Object.freeze({
+      ...spawn,
+      entryId: 'missing-timed-zapper',
+      patternId: 'missing-timed-zapper-pattern',
+      runDistance: spawn.runDistance + 1_000,
+    });
+    expect(getTimedZapperLifecycle(noLinearFindState, missingSpawn)).toBeNull();
+    expect(
+      getCollisionHazardsForTimedZapperSimulation(noLinearFindState, [missingSpawn]),
+    ).toHaveLength(1);
+    expect(() => stepTimedZapperSimulation(noLinearFindState, [spawn], 0.1)).not.toThrow();
+  });
+
   it('uses only the true ON slice when a coarse step crosses CHARGE -> ON', () => {
     const spawn = createTimedSpawn();
     let state = stepTimedZapperSimulation(createTimedZapperSimulationState(), [spawn], 1.8);

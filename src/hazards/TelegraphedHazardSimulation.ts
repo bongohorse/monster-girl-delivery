@@ -48,6 +48,10 @@ export interface TelegraphedHazardLifecycleInstance {
 }
 
 export interface TelegraphedHazardSimulationState {
+  /** Optional for compatibility with focused/manual fixtures; authoritative states always publish it. */
+  readonly instanceByIdentity?: Readonly<
+    Record<string, Readonly<TelegraphedHazardLifecycleInstance>>
+  >;
   readonly instances: ReadonlyArray<Readonly<TelegraphedHazardLifecycleInstance>>;
 }
 
@@ -55,8 +59,16 @@ export interface PrototypeMissileCollisionContext extends PrototypeMissileHorizo
   readonly scrollSpeed: number;
 }
 
+const EMPTY_TELEGRAPHED_INSTANCE_INDEX: Readonly<
+  Record<string, Readonly<TelegraphedHazardLifecycleInstance>>
+> = Object.freeze(
+  Object.create(null) as Record<string, Readonly<TelegraphedHazardLifecycleInstance>>,
+);
 const EMPTY_TELEGRAPHED_HAZARD_SIMULATION_STATE: Readonly<TelegraphedHazardSimulationState> =
-  Object.freeze({ instances: Object.freeze([]) });
+  Object.freeze({
+    instanceByIdentity: EMPTY_TELEGRAPHED_INSTANCE_INDEX,
+    instances: Object.freeze([]),
+  });
 const EMPTY_LASER_INTERVALS: ReadonlyArray<Readonly<TimedLaserLethalInterval>> = Object.freeze([]);
 const LASER_VERTICAL_COLLISION_EXTENT = 1_000_000;
 
@@ -141,6 +153,28 @@ const freezeInstance = (
     warningOriginTarget,
   });
 
+const createTelegraphedInstanceIndex = (
+  instances: ReadonlyArray<Readonly<TelegraphedHazardLifecycleInstance>>,
+): Readonly<Record<string, Readonly<TelegraphedHazardLifecycleInstance>>> => {
+  if (instances.length === 0) {
+    return EMPTY_TELEGRAPHED_INSTANCE_INDEX;
+  }
+
+  const index = Object.create(null) as Record<string, Readonly<TelegraphedHazardLifecycleInstance>>;
+  for (const instance of instances) {
+    index[instance.spawnIdentity] = instance;
+  }
+  return Object.freeze(index);
+};
+
+const getTelegraphedInstanceByIdentity = (
+  state: Readonly<TelegraphedHazardSimulationState>,
+  identity: string,
+): Readonly<TelegraphedHazardLifecycleInstance> | undefined =>
+  state.instanceByIdentity
+    ? state.instanceByIdentity[identity]
+    : state.instances.find((instance) => instance.spawnIdentity === identity);
+
 /**
  * Synchronizes all lifecycle-owned hazards to the generated spawn window. The M5 Laser uses its own
  * five-phase lifecycle inside this existing retention authority; Missile/pulse behavior keeps the
@@ -158,9 +192,8 @@ export const stepTelegraphedHazardSimulation = (
     throw new RangeError('Telegraphed hazard elapsedSeconds must be non-negative and finite.');
   }
 
-  const existingByIdentity = new Map(
-    state.instances.map((instance) => [instance.spawnIdentity, instance] as const),
-  );
+  const existingByIdentity =
+    state.instanceByIdentity ?? createTelegraphedInstanceIndex(state.instances);
   const seenIdentities = new Set<string>();
   const instances: Array<Readonly<TelegraphedHazardLifecycleInstance>> = [];
 
@@ -175,7 +208,7 @@ export const stepTelegraphedHazardSimulation = (
     }
     seenIdentities.add(spawnIdentity);
 
-    const existing = existingByIdentity.get(spawnIdentity);
+    const existing = existingByIdentity[spawnIdentity];
     const rawObservedTarget = getObservedTarget(spawn, playerTarget);
     const warningOriginTarget = existing?.warningOriginTarget ?? rawObservedTarget;
 
@@ -261,7 +294,11 @@ export const stepTelegraphedHazardSimulation = (
     return EMPTY_TELEGRAPHED_HAZARD_SIMULATION_STATE;
   }
 
-  return Object.freeze({ instances: Object.freeze(instances) });
+  const frozenInstances = Object.freeze(instances);
+  return Object.freeze({
+    instanceByIdentity: createTelegraphedInstanceIndex(frozenInstances),
+    instances: frozenInstances,
+  });
 };
 
 /**
@@ -327,7 +364,7 @@ export const getCollisionHazardsForTelegraphedSimulation = (
     }
 
     const identity = getLogicalHazardSpawnIdentity(spawn);
-    const instance = state.instances.find((candidate) => candidate.spawnIdentity === identity);
+    const instance = getTelegraphedInstanceByIdentity(state, identity);
 
     if (isLaserHazardBehavior(spawn.behavior)) {
       if (
@@ -405,7 +442,7 @@ export const getTelegraphedHazardLifecycle = (
   }
 
   const identity = getLogicalHazardSpawnIdentity(spawn);
-  return state.instances.find((instance) => instance.spawnIdentity === identity)?.lifecycle ?? null;
+  return getTelegraphedInstanceByIdentity(state, identity)?.lifecycle ?? null;
 };
 
 export const getTimedLaserLifecycle = (
@@ -416,9 +453,7 @@ export const getTimedLaserLifecycle = (
     return null;
   }
   const identity = getLogicalHazardSpawnIdentity(spawn);
-  return (
-    state.instances.find((instance) => instance.spawnIdentity === identity)?.laserLifecycle ?? null
-  );
+  return getTelegraphedInstanceByIdentity(state, identity)?.laserLifecycle ?? null;
 };
 
 export const getPrototypeMissileLaunchRelativeLeft = (
@@ -433,10 +468,7 @@ export const getPrototypeMissileLaunchRelativeLeft = (
   }
 
   const identity = getLogicalHazardSpawnIdentity(spawn);
-  return (
-    state.instances.find((instance) => instance.spawnIdentity === identity)
-      ?.missileLaunchRelativeLeft ?? null
-  );
+  return getTelegraphedInstanceByIdentity(state, identity)?.missileLaunchRelativeLeft ?? null;
 };
 
 /**
@@ -458,7 +490,7 @@ export const getLethalHazardsForTelegraphedSimulation = (
     }
 
     const identity = getLogicalHazardSpawnIdentity(spawn);
-    const instance = state.instances.find((candidate) => candidate.spawnIdentity === identity);
+    const instance = getTelegraphedInstanceByIdentity(state, identity);
 
     if (isLaserHazardBehavior(spawn.behavior)) {
       if (!instance?.laserLifecycle || !isTimedLaserLethal(instance.laserLifecycle)) {

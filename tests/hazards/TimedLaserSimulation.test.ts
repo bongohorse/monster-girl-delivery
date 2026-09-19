@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { createHazardPattern } from '../../src/generation/HazardPattern';
-import type { LogicalHazardSpawnInstance } from '../../src/generation/PatternSpawnScheduler';
+import {
+  getLogicalHazardSpawnIdentity,
+  type LogicalHazardSpawnInstance,
+} from '../../src/generation/PatternSpawnScheduler';
 import { createPrototypeLaserBehavior } from '../../src/hazards/PrototypeLaserHazard';
 import {
   createTelegraphedHazardSimulationState,
@@ -51,6 +54,55 @@ const collisionContext = Object.freeze({
 });
 
 describe('Timed Laser telegraph integration', () => {
+  it('uses the authoritative identity index for telegraphed lifecycle lookups', () => {
+    const spawn = createSpawn('horizontal');
+    const state = stepTelegraphedHazardSimulation(
+      createTelegraphedHazardSimulationState(),
+      [spawn],
+      2.6,
+      playerTarget,
+    );
+    const identity = getLogicalHazardSpawnIdentity(spawn);
+    const indexedInstance = state.instanceByIdentity?.[identity];
+
+    expect(indexedInstance).toBe(state.instances[0]);
+
+    const noLinearFindState = Object.freeze({
+      ...state,
+      instances: new Proxy(state.instances, {
+        get(target, property, receiver) {
+          if (property === 'find' || property === 'map') {
+            throw new Error('telegraphed lifecycle state fell back to array indexing work');
+          }
+          return Reflect.get(target, property, receiver);
+        },
+      }),
+    });
+
+    expect(getTimedLaserLifecycle(noLinearFindState, spawn)).toBe(indexedInstance?.laserLifecycle);
+    expect(
+      getCollisionHazardsForTelegraphedSimulation(noLinearFindState, [spawn], collisionContext),
+    ).toHaveLength(1);
+
+    const missingSpawn = Object.freeze({
+      ...spawn,
+      entryId: 'missing-laser',
+      patternId: 'missing-laser-pattern',
+      runDistance: spawn.runDistance + 1_000,
+    });
+    expect(getTimedLaserLifecycle(noLinearFindState, missingSpawn)).toBeNull();
+    expect(
+      getCollisionHazardsForTelegraphedSimulation(
+        noLinearFindState,
+        [missingSpawn],
+        collisionContext,
+      ),
+    ).toEqual([]);
+    expect(() =>
+      stepTelegraphedHazardSimulation(noLinearFindState, [spawn], 0.1, playerTarget),
+    ).not.toThrow();
+  });
+
   it('keeps OFF, TELEGRAPH and CHARGE out of collision and exposes the real phase', () => {
     const spawn = createSpawn('horizontal');
     const state = stepTelegraphedHazardSimulation(

@@ -19,6 +19,8 @@ export interface TimedZapperLifecycleInstance {
 }
 
 export interface TimedZapperSimulationState {
+  /** Optional for compatibility with focused/manual fixtures; authoritative states always publish it. */
+  readonly instanceByIdentity?: Readonly<Record<string, Readonly<TimedZapperLifecycleInstance>>>;
   readonly instances: ReadonlyArray<Readonly<TimedZapperLifecycleInstance>>;
   /** Most recent normalized simulation delta; zero means collision must not be re-evaluated. */
   readonly stepElapsedSeconds: number;
@@ -28,7 +30,11 @@ export type TimedZapperGameplayStateResolver = (
   spawn: Readonly<LogicalHazardSpawnInstance>,
 ) => HazardGameplayState;
 
+const EMPTY_TIMED_ZAPPER_INSTANCE_INDEX: Readonly<
+  Record<string, Readonly<TimedZapperLifecycleInstance>>
+> = Object.freeze(Object.create(null) as Record<string, Readonly<TimedZapperLifecycleInstance>>);
 const EMPTY_TIMED_ZAPPER_SIMULATION_STATE: Readonly<TimedZapperSimulationState> = Object.freeze({
+  instanceByIdentity: EMPTY_TIMED_ZAPPER_INSTANCE_INDEX,
   instances: Object.freeze([]),
   stepElapsedSeconds: 0,
 });
@@ -40,6 +46,28 @@ export const createTimedZapperSimulationState = (): Readonly<TimedZapperSimulati
 
 const getTimedZapperConfig = (spawn: Readonly<LogicalHazardSpawnInstance>) =>
   isPrototypeZapperHazard(spawn) ? (spawn.behavior.timing ?? null) : null;
+
+const createTimedZapperInstanceIndex = (
+  instances: ReadonlyArray<Readonly<TimedZapperLifecycleInstance>>,
+): Readonly<Record<string, Readonly<TimedZapperLifecycleInstance>>> => {
+  if (instances.length === 0) {
+    return EMPTY_TIMED_ZAPPER_INSTANCE_INDEX;
+  }
+
+  const index = Object.create(null) as Record<string, Readonly<TimedZapperLifecycleInstance>>;
+  for (const instance of instances) {
+    index[instance.spawnIdentity] = instance;
+  }
+  return Object.freeze(index);
+};
+
+const getTimedZapperInstanceByIdentity = (
+  state: Readonly<TimedZapperSimulationState>,
+  identity: string,
+): Readonly<TimedZapperLifecycleInstance> | undefined =>
+  state.instanceByIdentity
+    ? state.instanceByIdentity[identity]
+    : state.instances.find((instance) => instance.spawnIdentity === identity);
 
 /**
  * Synchronizes per-spawn Timed Zapper lifecycle state to the currently retained spawn set. Timing is
@@ -55,9 +83,8 @@ export const stepTimedZapperSimulation = (
     throw new RangeError('Timed Zapper simulation elapsedSeconds must be non-negative and finite.');
   }
 
-  const existingByIdentity = new Map(
-    state.instances.map((instance) => [instance.spawnIdentity, instance] as const),
-  );
+  const existingByIdentity =
+    state.instanceByIdentity ?? createTimedZapperInstanceIndex(state.instances);
   const seenIdentities = new Set<string>();
   const instances: TimedZapperLifecycleInstance[] = [];
 
@@ -73,7 +100,7 @@ export const stepTimedZapperSimulation = (
     }
     seenIdentities.add(spawnIdentity);
 
-    const existing = existingByIdentity.get(spawnIdentity);
+    const existing = existingByIdentity[spawnIdentity];
     const lifecycleStep = stepTimedZapperLifecycle(
       existing?.lifecycle ?? createTimedZapperLifecycleState(),
       elapsedSeconds,
@@ -92,8 +119,10 @@ export const stepTimedZapperSimulation = (
     return EMPTY_TIMED_ZAPPER_SIMULATION_STATE;
   }
 
+  const frozenInstances = Object.freeze(instances);
   return Object.freeze({
-    instances: Object.freeze(instances),
+    instanceByIdentity: createTimedZapperInstanceIndex(frozenInstances),
+    instances: frozenInstances,
     stepElapsedSeconds: elapsedSeconds,
   });
 };
@@ -125,7 +154,7 @@ export const getCollisionHazardsForTimedZapperSimulation = (
     }
 
     const identity = getLogicalHazardSpawnIdentity(spawn);
-    const instance = state.instances.find((candidate) => candidate.spawnIdentity === identity);
+    const instance = getTimedZapperInstanceByIdentity(state, identity);
     const gameplayState = resolveGameplayState(spawn);
     if (!instance || gameplayState !== 'active' || instance.lethalIntervals.length === 0) {
       hazards.push(
@@ -164,5 +193,5 @@ export const getTimedZapperLifecycle = (
     return null;
   }
   const identity = getLogicalHazardSpawnIdentity(spawn);
-  return state.instances.find((instance) => instance.spawnIdentity === identity)?.lifecycle ?? null;
+  return getTimedZapperInstanceByIdentity(state, identity)?.lifecycle ?? null;
 };
