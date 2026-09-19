@@ -33,24 +33,49 @@ export interface PatternSpawnScheduleRequest {
   readonly transition?: Readonly<EncounterTransitionContext>;
 }
 
-export interface LogicalHazardSpawnInstance extends LogicalHazard {
-  readonly behavior: Readonly<HazardBehavior>;
+export interface LogicalHazardSpawnIdentityFields {
   readonly entryId: string;
-  readonly hitbox: Readonly<LogicalHitbox>;
-  /** Authored entry position retained as a deterministic tie-breaker and diagnostic. */
   readonly patternEntryIndex: number;
   readonly patternId: string;
+  readonly runDistance: number;
+}
+
+export interface LogicalHazardSpawnInstance
+  extends LogicalHazard,
+    LogicalHazardSpawnIdentityFields {
+  readonly behavior: Readonly<HazardBehavior>;
+  readonly hitbox: Readonly<LogicalHitbox>;
   /** Optional authored override; omission uses the shared default hazard reaction policy. */
   readonly reactionPolicy?: Readonly<HazardReactionPolicy>;
-  /** Absolute leading-edge position in logical run-distance space. */
-  readonly runDistance: number;
   readonly type: HazardPatternEntryType;
 }
 
-/** Stable serializable identity shared by logical runtime state and Phaser presentation. */
+const LOGICAL_HAZARD_SPAWN_IDENTITY_CACHE = new WeakMap<
+  Readonly<LogicalHazardSpawnIdentityFields>,
+  string
+>();
+
+/**
+ * Stable serializable identity shared by logical runtime state and Phaser presentation.
+ *
+ * Authoritative spawns and collision adapters are immutable, so their composite string is cached by
+ * object identity after the first request. Mutable/manual carriers deliberately bypass caching so a
+ * caller that changes identity fields cannot observe stale identity.
+ */
 export const getLogicalHazardSpawnIdentity = (
-  spawn: Readonly<LogicalHazardSpawnInstance>,
-): string => `${spawn.patternId}:${spawn.patternEntryIndex}:${spawn.entryId}:${spawn.runDistance}`;
+  spawn: Readonly<LogicalHazardSpawnIdentityFields>,
+): string => {
+  const cached = LOGICAL_HAZARD_SPAWN_IDENTITY_CACHE.get(spawn);
+  if (cached !== undefined) {
+    return cached;
+  }
+
+  const identity = `${spawn.patternId}:${spawn.patternEntryIndex}:${spawn.entryId}:${spawn.runDistance}`;
+  if (Object.isFrozen(spawn)) {
+    LOGICAL_HAZARD_SPAWN_IDENTITY_CACHE.set(spawn, identity);
+  }
+  return identity;
+};
 
 export interface RejectedPatternCandidate {
   /** One-based position of this candidate within the current scheduling call. */
