@@ -248,7 +248,7 @@ describe('M5 Zapper collision work evidence', () => {
     const counters = createPrototypeZapperCollisionWorkCounters();
 
     isPlayerCollidingWithPrototypeZapperDuringStep(
-      { distance: -80, simulationSeconds: 0 },
+      { distance: -70, simulationSeconds: 0 },
       createLinearTrajectory(39, 20, 0.1),
       0.1,
       NORMAL_SCROLL,
