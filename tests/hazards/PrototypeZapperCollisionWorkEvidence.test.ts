@@ -34,14 +34,18 @@ const createStationaryTrajectory = (positionY: number, elapsedSeconds: number) =
     FLIGHT_BOUNDS,
   );
 
-const createZapper = (rotating: boolean, centerX = 0) => {
+const createZapper = (
+  rotating: boolean,
+  centerX = 0,
+  rotationSpeedDegreesPerSecond = PROTOTYPE_ZAPPER_ROTATION_SPEEDS.fast,
+) => {
   const behavior = createPrototypeZapperBehavior(
     0,
     PROTOTYPE_ZAPPER_LENGTHS.long,
     rotating
       ? {
           direction: 'clockwise',
-          speedDegreesPerSecond: PROTOTYPE_ZAPPER_ROTATION_SPEEDS.fast,
+          speedDegreesPerSecond: rotationSpeedDegreesPerSecond,
         }
       : undefined,
   );
@@ -61,8 +65,13 @@ const collectOneSecondPartitionedWork = (
   schedule: Readonly<FrameSchedule>,
   rotating: boolean,
 ): PrototypeZapperCollisionWorkCounters => {
-  const hazard = createZapper(rotating);
+  const hazard = createZapper(
+    rotating,
+    0,
+    rotating ? PROTOTYPE_ZAPPER_ROTATION_SPEEDS.slow : PROTOTYPE_ZAPPER_ROTATION_SPEEDS.fast,
+  );
   const counters = createPrototypeZapperCollisionWorkCounters();
+  const playerPositionY = rotating ? 120 : 39;
   let elapsedSeconds = 0;
   let stepIndex = 0;
 
@@ -76,7 +85,7 @@ const collectOneSecondPartitionedWork = (
     expect(
       isPlayerCollidingWithPrototypeZapperDuringStep(
         { distance: 0, simulationSeconds: elapsedSeconds },
-        createStationaryTrajectory(500, deltaSeconds),
+        createStationaryTrajectory(playerPositionY, deltaSeconds),
         deltaSeconds,
         NO_SCROLL,
         hazard,
@@ -100,7 +109,7 @@ describe('M5 Zapper collision work evidence', () => {
     expect(
       isPlayerCollidingWithPrototypeZapperDuringStep(
         { distance: 0, simulationSeconds: 0 },
-        createStationaryTrajectory(500, 0.1),
+        createStationaryTrajectory(39, 0.1),
         0.1,
         NO_SCROLL,
         createZapper(false),
@@ -112,7 +121,7 @@ describe('M5 Zapper collision work evidence', () => {
     expect(
       isPlayerCollidingWithPrototypeZapperDuringStep(
         { distance: 0, simulationSeconds: 0 },
-        createStationaryTrajectory(500, 0.1),
+        createStationaryTrajectory(39, 0.1),
         0.1,
         NO_SCROLL,
         createZapper(true),
@@ -142,7 +151,7 @@ describe('M5 Zapper collision work evidence', () => {
     expect(
       isPlayerCollidingWithPrototypeZapperDuringStep(
         { distance: 0, simulationSeconds: 0 },
-        createStationaryTrajectory(500, 0.1),
+        createStationaryTrajectory(47, 0.1),
         0.1,
         NORMAL_SCROLL,
         createZapper(true, 17.5),
