@@ -434,10 +434,7 @@ const evaluateStaticZapperOneAxisSweep = (
   secondaryPadding: Readonly<PrototypeZapperGeometryPadding> | undefined,
   workCounters: PrototypeZapperCollisionWorkCounters | undefined,
 ): Readonly<PrototypeZapperPaddingPairContacts> | null => {
-  if (
-    !isPrototypeZapperHazard(hazard) ||
-    hazard.behavior.rotation !== undefined
-  ) {
+  if (!isPrototypeZapperHazard(hazard) || hazard.behavior.rotation !== undefined) {
     return null;
   }
 
@@ -504,10 +501,8 @@ const evaluateStaticZapperOneAxisSweep = (
     return null;
   }
 
-  const startDistance =
-    initialRunState.distance + scrollSpeed * interval.startSeconds;
-  const endDistance =
-    initialRunState.distance + scrollSpeed * interval.endSeconds;
+  const startDistance = initialRunState.distance + scrollSpeed * interval.startSeconds;
+  const endDistance = initialRunState.distance + scrollSpeed * interval.endSeconds;
   if (!Number.isFinite(startDistance) || !Number.isFinite(endDistance)) {
     return null;
   }
@@ -518,10 +513,7 @@ const evaluateStaticZapperOneAxisSweep = (
     right: Math.max(startDistance, endDistance) + PROTOTYPE_PLAYER_COLLISION_EXTENTS.right,
     top: minimumPositionY - PROTOTYPE_PLAYER_COLLISION_EXTENTS.top,
   };
-  const geometry = resolvePrototypeZapperGeometry(
-    hazard,
-    initialRunState.simulationSeconds ?? 0,
-  );
+  const geometry = resolvePrototypeZapperGeometry(hazard, initialRunState.simulationSeconds ?? 0);
   if (!geometry) {
     return null;
   }
