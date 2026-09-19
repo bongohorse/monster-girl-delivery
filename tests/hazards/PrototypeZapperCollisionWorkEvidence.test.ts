@@ -357,6 +357,95 @@ describe('M5 Zapper collision work evidence', () => {
     });
   });
 
+  it('rejects a rotating Zapper when the active angle arc cannot reach the player', () => {
+    const counters = createPrototypeZapperCollisionWorkCounters();
+
+    expect(
+      isPlayerCollidingWithPrototypeZapperDuringStep(
+        { distance: 0, simulationSeconds: 0 },
+        createStationaryTrajectory(100, 0.01),
+        0.01,
+        NO_SCROLL,
+        createZapper(true),
+        undefined,
+        undefined,
+        counters,
+      ),
+    ).toBe(false);
+
+    expect(counters).toMatchObject({
+      broadphaseRejectedCallCount: 1,
+      candidateSampleCount: 0,
+      collisionCallCount: 1,
+      evaluatedSampleCount: 0,
+      geometryResolutionCount: 0,
+      primaryNarrowphaseCheckCount: 0,
+    });
+  });
+
+  it('keeps a rotating Zapper on the dense path when the active angle arc can reach the player', () => {
+    const counters = createPrototypeZapperCollisionWorkCounters();
+
+    expect(
+      isPlayerCollidingWithPrototypeZapperDuringStep(
+        { distance: 0, simulationSeconds: 0 },
+        createStationaryTrajectory(100, 1),
+        1,
+        NO_SCROLL,
+        createZapper(true),
+        undefined,
+        undefined,
+        counters,
+      ),
+    ).toBe(true);
+
+    expect(counters.broadphaseRejectedCallCount).toBe(0);
+    expect(counters.candidateSampleCount).toBeGreaterThan(1);
+    expect(counters.evaluatedSampleCount).toBeGreaterThan(0);
+    expect(counters.geometryResolutionCount).toBe(counters.evaluatedSampleCount);
+  });
+
+  it('falls back to dense rotating sampling when trajectory coverage is gapped', () => {
+    const counters = createPrototypeZapperCollisionWorkCounters();
+    const trajectory = Object.freeze({
+      finalState: Object.freeze({ positionY: 100, velocityY: 0 }),
+      segments: Object.freeze([
+        Object.freeze({
+          accelerationY: 0,
+          endSeconds: 0.004,
+          positionY: 100,
+          startSeconds: 0,
+          velocityY: 0,
+        }),
+        Object.freeze({
+          accelerationY: 0,
+          endSeconds: 0.01,
+          positionY: 100,
+          startSeconds: 0.006,
+          velocityY: 0,
+        }),
+      ]),
+    });
+
+    expect(
+      isPlayerCollidingWithPrototypeZapperDuringStep(
+        { distance: 0, simulationSeconds: 0 },
+        trajectory,
+        0.01,
+        NO_SCROLL,
+        createZapper(true),
+        undefined,
+        undefined,
+        counters,
+      ),
+    ).toBe(false);
+
+    expect(counters.broadphaseRejectedCallCount).toBe(0);
+    expect(counters.candidateSampleCount).toBeGreaterThan(1);
+    expect(counters.evaluatedSampleCount).toBe(counters.candidateSampleCount);
+    expect(counters.geometryResolutionCount).toBe(counters.evaluatedSampleCount);
+  });
+
   it('pins the current dual time + 0.5px distance lattice cost at normal scroll speed', () => {
     const counters = createPrototypeZapperCollisionWorkCounters();
 
