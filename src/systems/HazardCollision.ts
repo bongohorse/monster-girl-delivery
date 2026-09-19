@@ -535,11 +535,7 @@ const evaluateStaticZapperOneAxisSweep = (
       workCounters.secondaryNarrowphaseCheckCount += 1;
     }
     if (
-      doesHitboxOverlapPrototypeZapperOnValidatedPath(
-        sweptPlayerHitbox,
-        geometry,
-        secondaryPadding,
-      )
+      doesHitboxOverlapPrototypeZapperOnValidatedPath(sweptPlayerHitbox, geometry, secondaryPadding)
     ) {
       return PROTOTYPE_ZAPPER_SECONDARY_ONLY_CONTACT;
     }
