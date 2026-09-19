@@ -459,6 +459,11 @@ describe('DirectorPerformanceHud', () => {
     expect(wireframeCheckbox.checked).toBe(false);
     expect(sampler.createSnapshot().sampleCount).toBe(0);
     expect(zapperWorkCounters.candidateSampleCount).toBe(0);
+
+    hud.update(80, 10, false);
+    expect(sampler.createSnapshot().sampleCount).toBe(0);
+    hud.update(16, 60, false);
+    expect(sampler.createSnapshot().sampleCount).toBe(1);
   });
 
   it('blocks gameplay and suppresses DOM control events without queuing thrust', () => {
