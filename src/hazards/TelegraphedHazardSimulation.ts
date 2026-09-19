@@ -61,7 +61,9 @@ export interface PrototypeMissileCollisionContext extends PrototypeMissileHorizo
 
 const EMPTY_TELEGRAPHED_INSTANCE_INDEX: Readonly<
   Record<string, Readonly<TelegraphedHazardLifecycleInstance>>
-> = Object.freeze(Object.create(null) as Record<string, Readonly<TelegraphedHazardLifecycleInstance>>);
+> = Object.freeze(
+  Object.create(null) as Record<string, Readonly<TelegraphedHazardLifecycleInstance>>,
+);
 const EMPTY_TELEGRAPHED_HAZARD_SIMULATION_STATE: Readonly<TelegraphedHazardSimulationState> =
   Object.freeze({
     instanceByIdentity: EMPTY_TELEGRAPHED_INSTANCE_INDEX,
@@ -158,10 +160,7 @@ const createTelegraphedInstanceIndex = (
     return EMPTY_TELEGRAPHED_INSTANCE_INDEX;
   }
 
-  const index = Object.create(null) as Record<
-    string,
-    Readonly<TelegraphedHazardLifecycleInstance>
-  >;
+  const index = Object.create(null) as Record<string, Readonly<TelegraphedHazardLifecycleInstance>>;
   for (const instance of instances) {
     index[instance.spawnIdentity] = instance;
   }
