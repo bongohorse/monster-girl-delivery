@@ -570,8 +570,7 @@ const evaluatePrototypeZapperPaddingPairDuringStep = (
       seconds <= trajectorySegment.endSeconds
         ? evaluateFlightSegmentPosition(trajectorySegment, seconds)
         : evaluateFlightTrajectoryPosition(trajectory, seconds);
-    const playerDistance =
-      initialRunState.distance + runMotionTuning.baseScrollSpeed * seconds;
+    const playerDistance = initialRunState.distance + runMotionTuning.baseScrollSpeed * seconds;
     let playerHitbox: Readonly<LogicalHitbox>;
     if (canReusePlayerHitboxScratch) {
       if (!Number.isFinite(playerDistance) || !Number.isFinite(playerPositionY)) {
