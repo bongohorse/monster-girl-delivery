@@ -1,7 +1,10 @@
 import type { FlightTuningValues } from '../config/FlightTuningConfig';
 import type { RunMotionValues } from '../config/RunMotionConfig';
 import type { LogicalCollectibleSpawnInstance } from '../generation/GeneratedCollectibles';
-import type { LogicalHazard } from './HazardCollision';
+import type {
+  LogicalHazard,
+  PrototypeZapperCollisionWorkCounters,
+} from './HazardCollision';
 import {
   EMPTY_PROTOTYPE_COLLECTIBLE_RUN_STATE,
   evaluatePrototypeCollectibleStep,
@@ -46,6 +49,8 @@ export interface PrototypeRunStepContext {
   resultTotals?: Readonly<PrototypeRunResultTotals>;
   runMotionTuning: Readonly<RunMotionValues>;
   thrustHeld: boolean;
+  /** Optional read-only instrumentation sink; never consulted by gameplay decisions. */
+  zapperCollisionWorkCounters?: PrototypeZapperCollisionWorkCounters;
 }
 
 export interface PrototypeRunStepResult {
@@ -103,6 +108,7 @@ export const stepPrototypeRun = (
     elapsedSeconds,
     context.runMotionTuning,
     context.hazards,
+    context.zapperCollisionWorkCounters,
   );
   const graze =
     state.graze || grazeResult.state.count > 0 || grazeResult.state.pendingOccurrenceIds.length > 0
@@ -117,6 +123,7 @@ export const stepPrototypeRun = (
     context.collectibles ?? [],
     context.hazards,
     grazeResult.resolvedLethalHazards,
+    context.zapperCollisionWorkCounters,
   );
   const collectibles =
     state.collectibles ||
