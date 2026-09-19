@@ -1014,9 +1014,7 @@ export class Foundation extends Scene {
     return context;
   }
 
-  private getCachedRunMotionTuning(
-    baseScrollSpeed: number,
-  ): Readonly<{ baseScrollSpeed: number }> {
+  private getCachedRunMotionTuning(baseScrollSpeed: number): Readonly<{ baseScrollSpeed: number }> {
     if (
       this.cachedRunMotionTuning &&
       Object.is(this.cachedRunMotionTuning.baseScrollSpeed, baseScrollSpeed)
