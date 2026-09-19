@@ -33,24 +33,77 @@ export interface PatternSpawnScheduleRequest {
   readonly transition?: Readonly<EncounterTransitionContext>;
 }
 
-export interface LogicalHazardSpawnInstance extends LogicalHazard {
-  readonly behavior: Readonly<HazardBehavior>;
+export interface LogicalHazardSpawnIdentityFields {
   readonly entryId: string;
-  readonly hitbox: Readonly<LogicalHitbox>;
   /** Authored entry position retained as a deterministic tie-breaker and diagnostic. */
   readonly patternEntryIndex: number;
   readonly patternId: string;
-  /** Optional authored override; omission uses the shared default hazard reaction policy. */
-  readonly reactionPolicy?: Readonly<HazardReactionPolicy>;
   /** Absolute leading-edge position in logical run-distance space. */
   readonly runDistance: number;
+}
+
+export interface LogicalHazardSpawnInstance
+  extends LogicalHazard,
+    LogicalHazardSpawnIdentityFields {
+  readonly behavior: Readonly<HazardBehavior>;
+  readonly hitbox: Readonly<LogicalHitbox>;
+  /** Optional authored override; omission uses the shared default hazard reaction policy. */
+  readonly reactionPolicy?: Readonly<HazardReactionPolicy>;
   readonly type: HazardPatternEntryType;
 }
 
-/** Stable serializable identity shared by logical runtime state and Phaser presentation. */
+const LOGICAL_HAZARD_SPAWN_IDENTITY_CACHE = new WeakMap<
+  Readonly<LogicalHazardSpawnIdentityFields>,
+  string
+>();
+
+const LOGICAL_HAZARD_IDENTITY_KEYS = [
+  'patternId',
+  'patternEntryIndex',
+  'entryId',
+  'runDistance',
+] as const;
+
+const canCacheLogicalHazardSpawnIdentity = (
+  spawn: Readonly<LogicalHazardSpawnIdentityFields>,
+): boolean => {
+  if (!Object.isFrozen(spawn)) {
+    return false;
+  }
+
+  return LOGICAL_HAZARD_IDENTITY_KEYS.every((key) => {
+    const descriptor = Object.getOwnPropertyDescriptor(spawn, key);
+    return (
+      descriptor !== undefined &&
+      'value' in descriptor &&
+      descriptor.writable === false &&
+      descriptor.configurable === false
+    );
+  });
+};
+
+/**
+ * Stable serializable identity shared by logical runtime state and Phaser presentation.
+ *
+ * Authoritative spawns and collision adapters publish frozen own data properties, so their
+ * composite string is cached by object identity after the first request. Mutable carriers and frozen
+ * accessor-based fixtures deliberately bypass caching so changing logical values cannot expose a
+ * stale identity.
+ */
 export const getLogicalHazardSpawnIdentity = (
-  spawn: Readonly<LogicalHazardSpawnInstance>,
-): string => `${spawn.patternId}:${spawn.patternEntryIndex}:${spawn.entryId}:${spawn.runDistance}`;
+  spawn: Readonly<LogicalHazardSpawnIdentityFields>,
+): string => {
+  const cached = LOGICAL_HAZARD_SPAWN_IDENTITY_CACHE.get(spawn);
+  if (cached !== undefined) {
+    return cached;
+  }
+
+  const identity = `${spawn.patternId}:${spawn.patternEntryIndex}:${spawn.entryId}:${spawn.runDistance}`;
+  if (canCacheLogicalHazardSpawnIdentity(spawn)) {
+    LOGICAL_HAZARD_SPAWN_IDENTITY_CACHE.set(spawn, identity);
+  }
+  return identity;
+};
 
 export interface RejectedPatternCandidate {
   /** One-based position of this candidate within the current scheduling call. */
@@ -124,7 +177,7 @@ const mapPatternToAbsoluteSpawns = (
           throw new RangeError('Mapped hazard run distances must remain finite.');
         }
 
-        return Object.freeze({
+        const spawn = Object.freeze({
           behavior: entry.behavior,
           entryId: entry.id,
           hitbox: Object.freeze({
@@ -139,6 +192,10 @@ const mapPatternToAbsoluteSpawns = (
           runDistance: left,
           type: entry.type,
         });
+        // Generation is the cold ownership boundary; prewarm the identity so runtime consumers only
+        // pay the WeakMap lookup for long-lived authoritative spawns.
+        getLogicalHazardSpawnIdentity(spawn);
+        return spawn;
       })
       .sort(
         (first, second) =>

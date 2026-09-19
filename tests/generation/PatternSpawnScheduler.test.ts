@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { PROTOTYPE_FLIGHT_TUNING_DEFAULTS } from '../../src/config/FlightTuningConfig';
 import { PROTOTYPE_PATTERN_REACHABILITY_CONTEXT } from '../../src/generation/FlightReachability';
 import { createHazardPattern, type HazardPattern } from '../../src/generation/HazardPattern';
-import { scheduleNextPattern } from '../../src/generation/PatternSpawnScheduler';
+import {
+  getLogicalHazardSpawnIdentity,
+  scheduleNextPattern,
+} from '../../src/generation/PatternSpawnScheduler';
 import {
   PROTOTYPE_CORRIDOR_PATTERN,
   PROTOTYPE_HAZARD_PATTERN_FIXTURES,
@@ -110,6 +113,71 @@ const collectAcceptedSequence = (
 };
 
 describe('scheduleNextPattern', () => {
+  it('caches composite identity for immutable data carriers without changing serialized identity', () => {
+    let fieldReads = 0;
+    const target = Object.freeze({
+      entryId: 'cached-entry',
+      patternEntryIndex: 2,
+      patternId: 'cached-pattern',
+      runDistance: 1_234,
+    });
+    const spawn = new Proxy(target, {
+      get(current, property, receiver) {
+        if (
+          property === 'entryId' ||
+          property === 'patternEntryIndex' ||
+          property === 'patternId' ||
+          property === 'runDistance'
+        ) {
+          fieldReads += 1;
+        }
+        return Reflect.get(current, property, receiver);
+      },
+    });
+
+    const first = getLogicalHazardSpawnIdentity(spawn);
+    const readsAfterFirst = fieldReads;
+    const second = getLogicalHazardSpawnIdentity(spawn);
+    const third = getLogicalHazardSpawnIdentity(spawn);
+
+    expect(first).toBe('cached-pattern:2:cached-entry:1234');
+    expect(second).toBe(first);
+    expect(third).toBe(first);
+    expect(readsAfterFirst).toBe(4);
+    expect(fieldReads).toBe(readsAfterFirst);
+    expect(JSON.stringify(spawn)).not.toContain(first);
+  });
+
+  it('does not cache mutable or accessor-backed identity carriers', () => {
+    const mutable = {
+      entryId: 'mutable-entry',
+      patternEntryIndex: 0,
+      patternId: 'mutable-pattern',
+      runDistance: 100,
+    };
+
+    expect(getLogicalHazardSpawnIdentity(mutable)).toBe('mutable-pattern:0:mutable-entry:100');
+    mutable.runDistance = 200;
+    expect(getLogicalHazardSpawnIdentity(mutable)).toBe('mutable-pattern:0:mutable-entry:200');
+
+    let accessorDistance = 300;
+    const accessorBacked = Object.freeze({
+      entryId: 'accessor-entry',
+      patternEntryIndex: 1,
+      patternId: 'accessor-pattern',
+      get runDistance(): number {
+        return accessorDistance;
+      },
+    });
+    expect(getLogicalHazardSpawnIdentity(accessorBacked)).toBe(
+      'accessor-pattern:1:accessor-entry:300',
+    );
+    accessorDistance = 400;
+    expect(getLogicalHazardSpawnIdentity(accessorBacked)).toBe(
+      'accessor-pattern:1:accessor-entry:400',
+    );
+  });
+
   it('produces the same accepted spawn sequence from the same explicit inputs', () => {
     const first = collectAcceptedSequence(
       createRunGenerationState('spawn-replay'),
