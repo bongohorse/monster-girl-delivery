@@ -132,16 +132,42 @@ describe('M5 Zapper collision work evidence', () => {
     ).toBe(false);
 
     expect(staticCounters).toMatchObject({
-      candidateSampleCount: 73,
-      evaluatedSampleCount: 73,
+      candidateSampleCount: 1,
+      evaluatedSampleCount: 1,
       geometryResolutionCount: 1,
-      primaryNarrowphaseCheckCount: 73,
+      primaryNarrowphaseCheckCount: 1,
     });
     expect(rotatingCounters).toMatchObject({
       candidateSampleCount: 73,
       evaluatedSampleCount: 73,
       geometryResolutionCount: 73,
       primaryNarrowphaseCheckCount: 73,
+    });
+  });
+
+  it('uses one exact swept-AABB check for static horizontal-only motion at normal scroll', () => {
+    const counters = createPrototypeZapperCollisionWorkCounters();
+
+    expect(
+      isPlayerCollidingWithPrototypeZapperDuringStep(
+        { distance: -120, simulationSeconds: 0 },
+        createStationaryTrajectory(0, 1),
+        1,
+        NORMAL_SCROLL,
+        createZapper(false),
+        undefined,
+        undefined,
+        counters,
+      ),
+    ).toBe(true);
+
+    expect(counters).toMatchObject({
+      broadphaseRejectedCallCount: 0,
+      candidateSampleCount: 1,
+      collisionCallCount: 1,
+      evaluatedSampleCount: 1,
+      geometryResolutionCount: 1,
+      primaryNarrowphaseCheckCount: 1,
     });
   });
 
@@ -225,9 +251,10 @@ describe('M5 Zapper collision work evidence', () => {
       true,
     );
 
-    expect(staticCounters.candidateSampleCount).toBe(829);
-    expect(staticCounters.evaluatedSampleCount).toBe(829);
+    expect(staticCounters.candidateSampleCount).toBe(60);
+    expect(staticCounters.evaluatedSampleCount).toBe(60);
     expect(staticCounters.geometryResolutionCount).toBe(60);
+    expect(staticCounters.primaryNarrowphaseCheckCount).toBe(60);
     expect(rotatingCounters.candidateSampleCount).toBe(829);
     expect(rotatingCounters.geometryResolutionCount).toBe(829);
   });
