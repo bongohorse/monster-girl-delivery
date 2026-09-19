@@ -268,6 +268,38 @@ describe('PrototypeCollectibles', () => {
     });
   });
 
+  it('reuses Graze lethal contacts instead of repeating full-step hazard collision', () => {
+    let horizontalVelocityReads = 0;
+    const lethalHazard: Readonly<LogicalHazard> = Object.freeze({
+      hitbox: Object.freeze({ left: 150, right: 170, top: 180, bottom: 210 }),
+      get horizontalVelocity(): number {
+        horizontalVelocityReads += 1;
+        if (horizontalVelocityReads > 2) {
+          throw new Error('full-step lethal collision was evaluated more than once');
+        }
+        return 0;
+      },
+    });
+    const beforeDeath = Object.freeze({
+      ...COLLECTIBLE,
+      pathId: 'shared-contact-before-death',
+      runDistance: 50,
+    });
+
+    const result = stepPrototypeRun(createPrototypeRunState(FLIGHT_BOUNDS), 2, {
+      collectibles: [beforeDeath],
+      flightBounds: FLIGHT_BOUNDS,
+      flightTuning: FLIGHT_TUNING,
+      hazards: [lethalHazard],
+      runMotionTuning: RUN_MOTION,
+      thrustHeld: false,
+    });
+
+    expect(result.enteredDead).toBe(true);
+    expect(result.state.collectibles?.collectedCount).toBe(1);
+    expect(horizontalVelocityReads).toBe(2);
+  });
+
   it('keeps only pickups contacted before a lethal collision in a coarse terminal step', () => {
     const lethalHazard: Readonly<LogicalHazard> = Object.freeze({
       hitbox: Object.freeze({ left: 150, right: 170, top: 180, bottom: 210 }),
