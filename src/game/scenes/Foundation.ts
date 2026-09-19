@@ -727,6 +727,7 @@ export class Foundation extends Scene {
         renderScale: this.cameras.main.zoom,
         runDistance: this.runState.motion.distance,
         runSeed: this.hazardStream?.generationState.seed ?? null,
+        userAgent: typeof navigator === 'undefined' ? 'unknown' : navigator.userAgent,
         viewportHeight: viewport.height,
         viewportWidth: viewport.width,
       },
