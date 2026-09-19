@@ -79,9 +79,7 @@ const getGrazeOccurrenceId = (hazard: Readonly<LogicalHazard>): string | null =>
     typeof identified.runDistance === 'number' &&
     Number.isFinite(identified.runDistance)
   ) {
-    return getLogicalHazardSpawnIdentity(
-      identified as Readonly<LogicalHazardSpawnIdentityFields>,
-    );
+    return getLogicalHazardSpawnIdentity(identified as Readonly<LogicalHazardSpawnIdentityFields>);
   }
 
   return null;
