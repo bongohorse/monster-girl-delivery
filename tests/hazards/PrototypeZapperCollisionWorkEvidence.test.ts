@@ -10,6 +10,7 @@ import {
   createPrototypeZapperCollisionWorkCounters,
   evaluatePlayerPrototypeZapperCoreAndGrazeDuringStep,
   isPlayerCollidingWithPrototypeZapperDuringStep,
+  PROTOTYPE_PLAYER_COLLISION_EXTENTS,
   type PrototypeZapperCollisionWorkCounters,
 } from '../../src/systems/HazardCollision';
 import { createVerticalFlightTrajectory } from '../../src/systems/VerticalFlightSimulation';
@@ -28,6 +29,15 @@ const NORMAL_SCROLL = Object.freeze({ baseScrollSpeed: 350 });
 const createStationaryTrajectory = (positionY: number, elapsedSeconds: number) =>
   createVerticalFlightTrajectory(
     { positionY, velocityY: 0 },
+    elapsedSeconds,
+    false,
+    FLIGHT_TUNING,
+    FLIGHT_BOUNDS,
+  );
+
+const createLinearTrajectory = (positionY: number, velocityY: number, elapsedSeconds: number) =>
+  createVerticalFlightTrajectory(
+    { positionY, velocityY },
     elapsedSeconds,
     false,
     FLIGHT_TUNING,
@@ -132,16 +142,191 @@ describe('M5 Zapper collision work evidence', () => {
     ).toBe(false);
 
     expect(staticCounters).toMatchObject({
-      candidateSampleCount: 73,
-      evaluatedSampleCount: 73,
+      candidateSampleCount: 0,
+      evaluatedSampleCount: 0,
       geometryResolutionCount: 1,
-      primaryNarrowphaseCheckCount: 73,
+      primaryNarrowphaseCheckCount: 1,
     });
     expect(rotatingCounters).toMatchObject({
       candidateSampleCount: 73,
       evaluatedSampleCount: 73,
       geometryResolutionCount: 73,
       primaryNarrowphaseCheckCount: 73,
+    });
+  });
+
+  it('uses one exact swept-AABB check for static vertical-only flight', () => {
+    const counters = createPrototypeZapperCollisionWorkCounters();
+
+    expect(
+      isPlayerCollidingWithPrototypeZapperDuringStep(
+        { distance: 0, simulationSeconds: 0 },
+        createLinearTrajectory(-100, 200, 1),
+        1,
+        NO_SCROLL,
+        createZapper(false),
+        undefined,
+        undefined,
+        counters,
+      ),
+    ).toBe(true);
+
+    expect(counters).toMatchObject({
+      broadphaseRejectedCallCount: 0,
+      candidateSampleCount: 0,
+      collisionCallCount: 1,
+      evaluatedSampleCount: 0,
+      geometryResolutionCount: 1,
+      primaryNarrowphaseCheckCount: 1,
+    });
+  });
+
+  it('matches the historical dense path for static one-axis core and Graze outcomes', () => {
+    const scenarios = [
+      {
+        initialRunState: { distance: 0, simulationSeconds: 0 },
+        trajectory: createLinearTrajectory(-100, 200, 1),
+        elapsedSeconds: 1,
+        runMotionTuning: NO_SCROLL,
+      },
+      {
+        initialRunState: { distance: -120, simulationSeconds: 0 },
+        trajectory: createStationaryTrajectory(0, 1),
+        elapsedSeconds: 1,
+        runMotionTuning: NORMAL_SCROLL,
+      },
+      {
+        initialRunState: { distance: 0, simulationSeconds: 0 },
+        trajectory: createStationaryTrajectory(39, 0.1),
+        elapsedSeconds: 0.1,
+        runMotionTuning: NO_SCROLL,
+      },
+    ] as const;
+    const customStableExtents = { ...PROTOTYPE_PLAYER_COLLISION_EXTENTS };
+    const hazard = createZapper(false);
+
+    for (const scenario of scenarios) {
+      const exactCore = isPlayerCollidingWithPrototypeZapperDuringStep(
+        scenario.initialRunState,
+        scenario.trajectory,
+        scenario.elapsedSeconds,
+        scenario.runMotionTuning,
+        hazard,
+      );
+      const denseCore = isPlayerCollidingWithPrototypeZapperDuringStep(
+        scenario.initialRunState,
+        scenario.trajectory,
+        scenario.elapsedSeconds,
+        scenario.runMotionTuning,
+        hazard,
+        customStableExtents,
+      );
+      expect(exactCore).toBe(denseCore);
+
+      const exactGraze = evaluatePlayerPrototypeZapperCoreAndGrazeDuringStep(
+        scenario.initialRunState,
+        scenario.trajectory,
+        scenario.elapsedSeconds,
+        scenario.runMotionTuning,
+        hazard,
+        PROTOTYPE_ZAPPER_GRAZE_PADDING,
+      );
+      const denseGraze = evaluatePlayerPrototypeZapperCoreAndGrazeDuringStep(
+        scenario.initialRunState,
+        scenario.trajectory,
+        scenario.elapsedSeconds,
+        scenario.runMotionTuning,
+        hazard,
+        PROTOTYPE_ZAPPER_GRAZE_PADDING,
+        customStableExtents,
+      );
+      expect(exactGraze).toEqual(denseGraze);
+    }
+  });
+
+  it('keeps genuine two-axis static motion on the dense lattice fallback', () => {
+    const counters = createPrototypeZapperCollisionWorkCounters();
+
+    isPlayerCollidingWithPrototypeZapperDuringStep(
+      { distance: -70, simulationSeconds: 0 },
+      createLinearTrajectory(39, 20, 0.1),
+      0.1,
+      NORMAL_SCROLL,
+      createZapper(false),
+      undefined,
+      undefined,
+      counters,
+    );
+
+    expect(counters.collisionCallCount).toBe(1);
+    expect(counters.candidateSampleCount).toBeGreaterThan(1);
+    expect(counters.evaluatedSampleCount).toBeGreaterThan(1);
+    expect(counters.geometryResolutionCount).toBe(1);
+  });
+
+  it('keeps gapped static trajectories on the historical dense fallback', () => {
+    const counters = createPrototypeZapperCollisionWorkCounters();
+    const trajectory = Object.freeze({
+      finalState: Object.freeze({ positionY: 39, velocityY: 0 }),
+      segments: Object.freeze([
+        Object.freeze({
+          accelerationY: 0,
+          endSeconds: 0.04,
+          positionY: 39,
+          startSeconds: 0,
+          velocityY: 0,
+        }),
+        Object.freeze({
+          accelerationY: 0,
+          endSeconds: 0.1,
+          positionY: 39,
+          startSeconds: 0.06,
+          velocityY: 0,
+        }),
+      ]),
+    });
+
+    expect(
+      isPlayerCollidingWithPrototypeZapperDuringStep(
+        { distance: 0, simulationSeconds: 0 },
+        trajectory,
+        0.1,
+        NO_SCROLL,
+        createZapper(false),
+        undefined,
+        undefined,
+        counters,
+      ),
+    ).toBe(false);
+
+    expect(counters.candidateSampleCount).toBeGreaterThan(1);
+    expect(counters.evaluatedSampleCount).toBe(counters.candidateSampleCount);
+    expect(counters.geometryResolutionCount).toBe(1);
+  });
+
+  it('uses one exact swept-AABB check for static horizontal-only motion at normal scroll', () => {
+    const counters = createPrototypeZapperCollisionWorkCounters();
+
+    expect(
+      isPlayerCollidingWithPrototypeZapperDuringStep(
+        { distance: -120, simulationSeconds: 0 },
+        createStationaryTrajectory(0, 1),
+        1,
+        NORMAL_SCROLL,
+        createZapper(false),
+        undefined,
+        undefined,
+        counters,
+      ),
+    ).toBe(true);
+
+    expect(counters).toMatchObject({
+      broadphaseRejectedCallCount: 0,
+      candidateSampleCount: 0,
+      collisionCallCount: 1,
+      evaluatedSampleCount: 0,
+      geometryResolutionCount: 1,
+      primaryNarrowphaseCheckCount: 1,
     });
   });
 
@@ -225,9 +410,10 @@ describe('M5 Zapper collision work evidence', () => {
       true,
     );
 
-    expect(staticCounters.candidateSampleCount).toBe(829);
-    expect(staticCounters.evaluatedSampleCount).toBe(829);
+    expect(staticCounters.candidateSampleCount).toBe(0);
+    expect(staticCounters.evaluatedSampleCount).toBe(0);
     expect(staticCounters.geometryResolutionCount).toBe(60);
+    expect(staticCounters.primaryNarrowphaseCheckCount).toBe(60);
     expect(rotatingCounters.candidateSampleCount).toBe(829);
     expect(rotatingCounters.geometryResolutionCount).toBe(829);
   });

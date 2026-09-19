@@ -424,6 +424,120 @@ const canFlightTrajectoryOverlapVerticalRange = (
   return maximum > minimumCenterY && minimum < maximumCenterY;
 };
 
+const evaluateStaticZapperOneAxisSweep = (
+  initialRunState: Readonly<RunMotionState>,
+  trajectory: Readonly<VerticalFlightTrajectory>,
+  runMotionTuning: Readonly<RunMotionValues>,
+  hazard: Readonly<LogicalHazard>,
+  interval: Readonly<LogicalHazardCollisionInterval>,
+  primaryPadding: Readonly<PrototypeZapperGeometryPadding>,
+  secondaryPadding: Readonly<PrototypeZapperGeometryPadding> | undefined,
+  workCounters: PrototypeZapperCollisionWorkCounters | undefined,
+): Readonly<PrototypeZapperPaddingPairContacts> | null => {
+  if (!isPrototypeZapperHazard(hazard) || hazard.behavior.rotation !== undefined) {
+    return null;
+  }
+
+  let minimumPositionY = Number.POSITIVE_INFINITY;
+  let maximumPositionY = Number.NEGATIVE_INFINITY;
+  let coveredUntilSeconds = interval.startSeconds;
+  let previousEndPositionY: number | undefined;
+  let foundSegment = false;
+
+  for (const segment of trajectory.segments) {
+    const startSeconds = Math.max(interval.startSeconds, segment.startSeconds);
+    const endSeconds = Math.min(interval.endSeconds, segment.endSeconds);
+    if (endSeconds < startSeconds) {
+      continue;
+    }
+
+    if (foundSegment && startSeconds !== coveredUntilSeconds) {
+      return null;
+    }
+    if (!foundSegment && startSeconds !== interval.startSeconds) {
+      return null;
+    }
+
+    const startPositionY = evaluateFlightSegmentPosition(segment, startSeconds);
+    const endPositionY = evaluateFlightSegmentPosition(segment, endSeconds);
+    if (!Number.isFinite(startPositionY) || !Number.isFinite(endPositionY)) {
+      return null;
+    }
+    if (previousEndPositionY !== undefined && startPositionY !== previousEndPositionY) {
+      return null;
+    }
+
+    foundSegment = true;
+    minimumPositionY = Math.min(minimumPositionY, startPositionY, endPositionY);
+    maximumPositionY = Math.max(maximumPositionY, startPositionY, endPositionY);
+
+    if (segment.accelerationY !== 0) {
+      const vertexSeconds = segment.startSeconds - segment.velocityY / segment.accelerationY;
+      if (vertexSeconds > startSeconds && vertexSeconds < endSeconds) {
+        const vertexPositionY = evaluateFlightSegmentPosition(segment, vertexSeconds);
+        if (!Number.isFinite(vertexPositionY)) {
+          return null;
+        }
+        minimumPositionY = Math.min(minimumPositionY, vertexPositionY);
+        maximumPositionY = Math.max(maximumPositionY, vertexPositionY);
+      }
+    }
+
+    coveredUntilSeconds = endSeconds;
+    previousEndPositionY = endPositionY;
+    if (coveredUntilSeconds === interval.endSeconds) {
+      break;
+    }
+  }
+
+  if (!foundSegment || coveredUntilSeconds !== interval.endSeconds) {
+    return null;
+  }
+
+  const scrollSpeed = runMotionTuning.baseScrollSpeed;
+  const verticalOnly = scrollSpeed === 0;
+  const horizontalOnly = minimumPositionY === maximumPositionY;
+  if (!verticalOnly && !horizontalOnly) {
+    return null;
+  }
+
+  const startDistance = initialRunState.distance + scrollSpeed * interval.startSeconds;
+  const endDistance = initialRunState.distance + scrollSpeed * interval.endSeconds;
+  if (!Number.isFinite(startDistance) || !Number.isFinite(endDistance)) {
+    return null;
+  }
+
+  const sweptPlayerHitbox: LogicalHitbox = {
+    bottom: maximumPositionY + PROTOTYPE_PLAYER_COLLISION_EXTENTS.bottom,
+    left: Math.min(startDistance, endDistance) - PROTOTYPE_PLAYER_COLLISION_EXTENTS.left,
+    right: Math.max(startDistance, endDistance) + PROTOTYPE_PLAYER_COLLISION_EXTENTS.right,
+    top: minimumPositionY - PROTOTYPE_PLAYER_COLLISION_EXTENTS.top,
+  };
+  const geometry = resolvePrototypeZapperGeometry(hazard, initialRunState.simulationSeconds ?? 0);
+  if (!geometry) {
+    return null;
+  }
+
+  if (workCounters) {
+    workCounters.geometryResolutionCount += 1;
+    workCounters.primaryNarrowphaseCheckCount += 1;
+  }
+  if (doesHitboxOverlapPrototypeZapper(sweptPlayerHitbox, geometry, primaryPadding)) {
+    return PROTOTYPE_ZAPPER_PRIMARY_CONTACT;
+  }
+
+  if (secondaryPadding) {
+    if (workCounters) {
+      workCounters.secondaryNarrowphaseCheckCount += 1;
+    }
+    if (doesHitboxOverlapPrototypeZapper(sweptPlayerHitbox, geometry, secondaryPadding)) {
+      return PROTOTYPE_ZAPPER_SECONDARY_ONLY_CONTACT;
+    }
+  }
+
+  return NO_PROTOTYPE_ZAPPER_PADDING_PAIR_CONTACT;
+};
+
 const ZAPPER_MAX_COLLISION_SAMPLE_DISTANCE = 0.5;
 const ZAPPER_MAX_COLLISION_SAMPLE_SECONDS = 1 / 720;
 
@@ -663,6 +777,22 @@ const evaluatePrototypeZapperPaddingPairDuringStep = (
     }
   }
 
+  if (playerExtents === PROTOTYPE_PLAYER_COLLISION_EXTENTS) {
+    const staticOneAxisContacts = evaluateStaticZapperOneAxisSweep(
+      initialRunState,
+      trajectory,
+      runMotionTuning,
+      hazard,
+      interval,
+      primaryPadding,
+      secondaryPadding,
+      workCounters,
+    );
+    if (staticOneAxisContacts !== null) {
+      return staticOneAxisContacts;
+    }
+  }
+
   const sampleTimes = createZapperCollisionSampleTimes(
     trajectory,
     initialRunState.distance,
@@ -768,7 +898,10 @@ const evaluatePrototypeZapperPaddingPairDuringStep = (
  * conservative horizontal envelope; rotating Zappers reserve their full angular sweep. Cheap
  * horizontal plus exact canonical-extents vertical trajectory broadphases reject envelopes that
  * cannot reach the player during the active interval before dense sample times or geometry are
- * created. Custom extents retain the historical path. Samples remain anchored to absolute world
+ * created. Static Zappers also collapse canonical one-axis player motion into one exact swept AABB:
+ * vertical-only continuous flight or horizontal-only scrolling therefore needs one geometry check
+ * instead of the dense lattice. Two-axis motion and unusual/gapped trajectories retain the lattice.
+ * Custom extents retain the historical path. Samples remain anchored to absolute world
  * distance plus an authoritative 1/720-second simulation-time lattice. Sorted samples advance one
  * monotonic flight-segment cursor instead of linearly searching the trajectory again per sample.
  * The canonical frozen player extents reuse one local hitbox scratch instead of allocating transient
