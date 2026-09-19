@@ -1,6 +1,8 @@
 import type { RunMotionValues } from '../config/RunMotionConfig';
-import type { LogicalHazardSpawnIdentityFields } from '../generation/PatternSpawnScheduler';
-import { getLogicalHazardSpawnIdentity } from '../generation/PatternSpawnScheduler';
+import {
+  getLogicalHazardSpawnIdentity,
+  type LogicalHazardSpawnIdentityFields,
+} from '../generation/PatternSpawnScheduler';
 import {
   getPrototypeZapperGrazePadding,
   isPrototypeZapperHazard,
