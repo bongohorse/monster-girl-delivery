@@ -365,7 +365,7 @@ describe('M5 rotating Zapper', () => {
     const segments = Object.freeze([
       Object.freeze({
         accelerationY: 0,
-        endSeconds: 0.5,
+        endSeconds: 0.25,
         positionY: 255,
         startSeconds: 0,
         velocityY: 0,
@@ -374,7 +374,7 @@ describe('M5 rotating Zapper', () => {
         accelerationY: 0,
         endSeconds: 1,
         positionY: 255,
-        startSeconds: 0.5,
+        startSeconds: 0.25,
         velocityY: 0,
       }),
     ]);
