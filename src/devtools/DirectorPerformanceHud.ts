@@ -1,5 +1,9 @@
 import type { ViewportSnapshot } from '../core/ViewportService';
 import type { InputService } from '../input/InputService';
+import {
+  type PrototypeZapperCollisionWorkCounters,
+  resetPrototypeZapperCollisionWorkCounters,
+} from '../systems/HazardCollision';
 import { createDirectorResponsiveLayout } from './DirectorResponsiveLayout';
 import { PerformanceSampler, type PerformanceSnapshot } from './PerformanceSampler';
 
@@ -79,6 +83,7 @@ export class DirectorPerformanceHud {
   private readonly fpsValue: HTMLButtonElement;
   private readonly frameTimeValue: HTMLSpanElement;
   private readonly statisticsValue: HTMLSpanElement;
+  private readonly zapperWorkValue: HTMLSpanElement;
   private readonly wireframeLabel: HTMLLabelElement;
   private readonly wireframeCheckbox: HTMLInputElement;
   private readonly playgroundControls: HTMLSpanElement;
@@ -106,6 +111,7 @@ export class DirectorPerformanceHud {
     private readonly inputService: InputService,
     private readonly sampler: PerformanceSampler = new PerformanceSampler(),
     private readonly controls?: Readonly<DirectorPerformanceHudControls>,
+    private readonly zapperCollisionWorkCounters?: PrototypeZapperCollisionWorkCounters,
   ) {
     const ownerDocument = container.ownerDocument;
     this.root = ownerDocument.createElement('div');
@@ -128,7 +134,16 @@ export class DirectorPerformanceHud {
     this.fpsValue.type = 'button';
     this.frameTimeValue = ownerDocument.createElement('span');
     this.statisticsValue = ownerDocument.createElement('span');
-    this.values.append(this.fpsValue, this.frameTimeValue, this.statisticsValue);
+    this.zapperWorkValue = ownerDocument.createElement('span');
+    this.zapperWorkValue.hidden = this.zapperCollisionWorkCounters === undefined;
+    this.zapperWorkValue.title =
+      'Zapper work: calls, broadphase rejects, evaluated/candidate samples, geometry resolutions, core/Graze narrowphase checks';
+    this.values.append(
+      this.fpsValue,
+      this.frameTimeValue,
+      this.statisticsValue,
+      this.zapperWorkValue,
+    );
 
     this.wireframeLabel = ownerDocument.createElement('label');
     this.wireframeLabel.className = 'director-performance-hud__toggle';
@@ -190,8 +205,11 @@ export class DirectorPerformanceHud {
     this.resetButton.className = 'director-performance-hud__button';
     this.resetButton.type = 'button';
     this.resetButton.textContent = '↻';
-    this.resetButton.title = 'Reset performance statistics';
-    this.resetButton.setAttribute('aria-label', 'Reset performance statistics');
+    this.resetButton.title = 'Reset performance statistics and Zapper work counters';
+    this.resetButton.setAttribute(
+      'aria-label',
+      'Reset performance statistics and Zapper work counters',
+    );
 
     this.root.append(
       this.visibilityButton,
@@ -415,6 +433,9 @@ export class DirectorPerformanceHud {
   private readonly handleResetClick = (event: Event): void => {
     this.stopControlEvent(event);
     this.sampler.reset();
+    if (this.zapperCollisionWorkCounters) {
+      resetPrototypeZapperCollisionWorkCounters(this.zapperCollisionWorkCounters);
+    }
     this.elapsedSinceRefreshMilliseconds = 0;
     this.refreshVisibleValues();
   };
@@ -476,6 +497,12 @@ export class DirectorPerformanceHud {
       ` | ${formatMilliseconds(snapshot.currentFrameTimeMilliseconds)} ms`,
     );
     setTextIfChanged(this.statisticsValue, this.formatStatistics(snapshot));
+    if (this.zapperCollisionWorkCounters) {
+      setTextIfChanged(
+        this.zapperWorkValue,
+        this.formatZapperWorkCounters(this.zapperCollisionWorkCounters),
+      );
+    }
     setHealthIfChanged(this.fpsValue, getFpsHealth(this.latestFramesPerSecond));
     setHealthIfChanged(
       this.frameTimeValue,
@@ -490,6 +517,18 @@ export class DirectorPerformanceHud {
       ` | P99 ${formatMilliseconds(snapshot.p99FrameTimeMilliseconds)}` +
       ` | M ${formatMilliseconds(snapshot.worstFrameTimeMilliseconds)}` +
       ` | S ${snapshot.slowFrameCount}`
+    );
+  }
+
+  private formatZapperWorkCounters(
+    counters: Readonly<PrototypeZapperCollisionWorkCounters>,
+  ): string {
+    return (
+      ` | Z C ${counters.collisionCallCount}` +
+      ` B ${counters.broadphaseRejectedCallCount}` +
+      ` Sm ${counters.evaluatedSampleCount}/${counters.candidateSampleCount}` +
+      ` G ${counters.geometryResolutionCount}` +
+      ` N ${counters.primaryNarrowphaseCheckCount}/${counters.secondaryNarrowphaseCheckCount}`
     );
   }
 }

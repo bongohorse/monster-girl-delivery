@@ -60,7 +60,9 @@ import {
 import { PhaserInputAdapter } from '../../input/PhaserInputAdapter';
 import {
   createPrototypePlayerHitbox,
+  createPrototypeZapperCollisionWorkCounters,
   PROTOTYPE_PLAYER_COLLISION_EXTENTS,
+  type PrototypeZapperCollisionWorkCounters,
 } from '../../systems/HazardCollision';
 import {
   createPrototypeDeathRetryState,
@@ -190,6 +192,7 @@ export class Foundation extends Scene {
   private directorDebugOverlay?: DirectorDebugOverlay;
   private directorPanel?: DirectorPanel;
   private directorPerformanceHud?: DirectorPerformanceHud;
+  private directorZapperCollisionWorkCounters?: PrototypeZapperCollisionWorkCounters;
   private directorRunControls?: DirectorRunControls;
   private directorTuningControls?: DirectorTuningControls;
   private inputAdapter?: PhaserInputAdapter;
@@ -247,6 +250,7 @@ export class Foundation extends Scene {
 
   create() {
     this.shutdownHandled = false;
+    this.directorZapperCollisionWorkCounters = undefined;
     this.clearRuntimeCaches();
     this.deathRetryState = createPrototypeDeathRetryState();
     this.retainedGeneratedTelegraphedHazards = Object.freeze([]);
@@ -273,6 +277,7 @@ export class Foundation extends Scene {
         throw new Error('Director performance HUD requires the game container.');
       }
 
+      this.directorZapperCollisionWorkCounters = createPrototypeZapperCollisionWorkCounters();
       this.directorDebugOverlay = new DirectorDebugOverlay(this);
       this.directorPerformanceHud = new DirectorPerformanceHud(
         gameContainer,
@@ -291,6 +296,7 @@ export class Foundation extends Scene {
           setSimulationFrozen: this.handleDirectorFreeze,
           triggerDeath: this.handleDirectorDeath,
         },
+        this.directorZapperCollisionWorkCounters,
       );
       this.directorPanel = new DirectorPanel(this, this.services.input);
       this.directorTuningControls = new DirectorTuningControls(
@@ -507,6 +513,7 @@ export class Foundation extends Scene {
           ),
           runMotionTuning,
           thrustHeld,
+          zapperCollisionWorkCounters: this.directorZapperCollisionWorkCounters,
         });
         const godModePreventedDeath = result.enteredDead && this.directorGodModeEnabled;
         if (godModePreventedDeath) {
@@ -1138,6 +1145,7 @@ export class Foundation extends Scene {
     this.directorTuningControls = undefined;
     this.directorPerformanceHud?.destroy();
     this.directorPerformanceHud = undefined;
+    this.directorZapperCollisionWorkCounters = undefined;
     this.directorPanel?.destroy();
     this.directorPanel = undefined;
     this.directorDebugOverlay?.destroy();

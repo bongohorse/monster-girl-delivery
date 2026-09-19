@@ -207,6 +207,7 @@ describe('Foundation Director mode boundary', () => {
     expect(Reflect.get(foundation, 'directorDebugOverlay')).toBeUndefined();
     expect(Reflect.get(foundation, 'directorPanel')).toBeUndefined();
     expect(Reflect.get(foundation, 'directorPerformanceHud')).toBeUndefined();
+    expect(Reflect.get(foundation, 'directorZapperCollisionWorkCounters')).toBeUndefined();
     expect(Reflect.get(foundation, 'directorRunControls')).toBeUndefined();
     expect(Reflect.get(foundation, 'directorTuningControls')).toBeUndefined();
     expect(services.time.getDeltaSeconds()).toBeCloseTo(0.016);
@@ -224,6 +225,7 @@ describe('Foundation Director mode boundary', () => {
 
     expect(directorControlsDestroyed).not.toHaveBeenCalled();
     expect(directorPerformanceHudDestroyed).not.toHaveBeenCalled();
+    expect(Reflect.get(foundation, 'directorZapperCollisionWorkCounters')).toBeUndefined();
     expect(directorRunControlsDestroyed).not.toHaveBeenCalled();
     expect(services.input.getSnapshot().gameplayBlocked).toBe(false);
   });
@@ -245,6 +247,15 @@ describe('Foundation Director mode boundary', () => {
         spawnZapper: expect.any(Function),
         spawnZapperGroup: expect.any(Function),
       }),
+      expect.objectContaining({
+        broadphaseRejectedCallCount: 0,
+        candidateSampleCount: 0,
+        collisionCallCount: 0,
+        evaluatedSampleCount: 0,
+        geometryResolutionCount: 0,
+        primaryNarrowphaseCheckCount: 0,
+        secondaryNarrowphaseCheckCount: 0,
+      }),
     );
     expect(directorControlsConstructed).toHaveBeenCalledWith(
       foundation,
@@ -263,6 +274,8 @@ describe('Foundation Director mode boundary', () => {
     const performanceControls = directorPerformanceHudConstructed.mock.calls[0]?.[3] as
       | DirectorTestControls
       | undefined;
+    const zapperWorkCounters = Reflect.get(foundation, 'directorZapperCollisionWorkCounters');
+    expect(zapperWorkCounters).toBe(directorPerformanceHudConstructed.mock.calls[0]?.[4]);
     performanceControls?.setFpsLimit?.(90);
     expect(setFpsLimit).toHaveBeenCalledWith(90);
 
