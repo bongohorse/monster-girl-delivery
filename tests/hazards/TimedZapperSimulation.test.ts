@@ -138,6 +138,17 @@ describe('Timed Zapper simulation', () => {
     expect(
       getCollisionHazardsForTimedZapperSimulation(noLinearFindState, [spawn]),
     ).toHaveLength(1);
+
+    const missingSpawn = Object.freeze({
+      ...spawn,
+      entryId: 'missing-timed-zapper',
+      patternId: 'missing-timed-zapper-pattern',
+      runDistance: spawn.runDistance + 1_000,
+    });
+    expect(getTimedZapperLifecycle(noLinearFindState, missingSpawn)).toBeNull();
+    expect(
+      getCollisionHazardsForTimedZapperSimulation(noLinearFindState, [missingSpawn]),
+    ).toHaveLength(1);
   });
 
   it('uses only the true ON slice when a coarse step crosses CHARGE -> ON', () => {
