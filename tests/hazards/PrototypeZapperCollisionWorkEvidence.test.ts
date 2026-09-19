@@ -356,6 +356,33 @@ describe('M5 Zapper collision work evidence', () => {
     });
   });
 
+  it('keeps full planned candidate count when a core hit stops narrowphase early', () => {
+    const counters = createPrototypeZapperCollisionWorkCounters();
+    const hazard = createZapper(
+      true,
+      600,
+      PROTOTYPE_ZAPPER_ROTATION_SPEEDS.fast,
+    );
+
+    expect(
+      isPlayerCollidingWithPrototypeZapperDuringStep(
+        { distance: 660, simulationSeconds: 0 },
+        createStationaryTrajectory(255, 1),
+        1,
+        NO_SCROLL,
+        hazard,
+        undefined,
+        undefined,
+        counters,
+      ),
+    ).toBe(true);
+
+    expect(counters.candidateSampleCount).toBeGreaterThan(counters.evaluatedSampleCount);
+    expect(counters.evaluatedSampleCount).toBeGreaterThan(1);
+    expect(counters.geometryResolutionCount).toBe(counters.evaluatedSampleCount);
+    expect(counters.primaryNarrowphaseCheckCount).toBe(counters.evaluatedSampleCount);
+  });
+
   it('preserves the dual-lattice workload when scroll direction is reversed', () => {
     const positiveCounters = createPrototypeZapperCollisionWorkCounters();
     const negativeCounters = createPrototypeZapperCollisionWorkCounters();
