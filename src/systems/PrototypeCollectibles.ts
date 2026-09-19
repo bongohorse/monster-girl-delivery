@@ -315,18 +315,6 @@ export const evaluatePrototypeCollectibleStep = (
 
   const consumed = new Set(state.consumedCollectibleIds);
   let lethalHazards: ReadonlyArray<Readonly<LogicalHazard>> | undefined;
-  const getLethalHazards = (): ReadonlyArray<Readonly<LogicalHazard>> => {
-    lethalHazards ??= hazards.filter((hazard) =>
-      isPlayerCollidingWithHazardDuringStep(
-        initialRunState,
-        trajectory,
-        elapsedSeconds,
-        runMotionTuning,
-        hazard,
-      ),
-    );
-    return lethalHazards;
-  };
   const awarded: Array<Readonly<LogicalCollectibleSpawnInstance>> = [];
 
   for (let index = firstCandidateIndex; index < candidateEndIndex; index += 1) {
@@ -363,8 +351,17 @@ export const evaluatePrototypeCollectibleStep = (
     if (contactSeconds === null) {
       continue;
     }
+    lethalHazards ??= hazards.filter((hazard) =>
+      isPlayerCollidingWithHazardDuringStep(
+        initialRunState,
+        trajectory,
+        elapsedSeconds,
+        runMotionTuning,
+        hazard,
+      ),
+    );
     if (
-      getLethalHazards().some((hazard) =>
+      lethalHazards.some((hazard) =>
         hasLethalCollisionBy(
           initialRunState,
           trajectory,
