@@ -175,7 +175,6 @@ export const DIRECTOR_ZAPPER_GROUPS: ReadonlyArray<Readonly<DirectorZapperSelect
     }),
   ]);
 
-
 export const DIRECTOR_ZAPPER_PERFORMANCE_PRESET_ID = 'zapper-heavy-v1';
 
 export const DIRECTOR_ZAPPER_PERFORMANCE_PRESET: Readonly<DirectorZapperSelection> = Object.freeze({
