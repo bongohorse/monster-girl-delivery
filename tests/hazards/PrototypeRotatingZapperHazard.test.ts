@@ -360,6 +360,47 @@ describe('M5 rotating Zapper', () => {
     ).toEqual({ coreHit: true, grazeHit: false });
   });
 
+  it('walks sorted Zapper samples across flight segments without repeated linear find', () => {
+    const hazard = createRotatingZapper();
+    const segments = Object.freeze([
+      Object.freeze({
+        accelerationY: 0,
+        endSeconds: 0.25,
+        positionY: 255,
+        startSeconds: 0,
+        velocityY: 0,
+      }),
+      Object.freeze({
+        accelerationY: 0,
+        endSeconds: 1,
+        positionY: 255,
+        startSeconds: 0.25,
+        velocityY: 0,
+      }),
+    ]);
+    const trajectory = Object.freeze({
+      finalState: Object.freeze({ positionY: 255, velocityY: 0 }),
+      segments: new Proxy(segments, {
+        get(target, property, receiver) {
+          if (property === 'find') {
+            throw new Error('Zapper samples fell back to a repeated linear trajectory search');
+          }
+          return Reflect.get(target, property, receiver);
+        },
+      }),
+    });
+
+    expect(
+      isPlayerCollidingWithPrototypeZapperDuringStep(
+        { distance: 660, simulationSeconds: 0 },
+        trajectory,
+        1,
+        RUN_TUNING,
+        hazard,
+      ),
+    ).toBe(true);
+  });
+
   it('reports the same angular sweep collision across standard frame partitions', () => {
     const hazard = createRotatingZapper();
     const results: Record<string, boolean> = {};
