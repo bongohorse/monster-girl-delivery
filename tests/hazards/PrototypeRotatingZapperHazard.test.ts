@@ -638,6 +638,37 @@ describe('M5 rotating Zapper', () => {
     ).toThrow('Player run distance and vertical position must be finite.');
   });
 
+  it('keeps custom accessor padding on the historical per-check validation path', () => {
+    const hazard = createRotatingZapper();
+    let beamReads = 0;
+    let endpointReads = 0;
+    const customPadding = {
+      get beam(): number {
+        beamReads += 1;
+        return 0;
+      },
+      get endpoints(): number {
+        endpointReads += 1;
+        return 0;
+      },
+    };
+
+    expect(
+      isPlayerCollidingWithPrototypeZapperDuringStep(
+        { distance: 600, simulationSeconds: 0 },
+        createStationaryTrajectory(120, 0.1),
+        0.1,
+        RUN_TUNING,
+        hazard,
+        undefined,
+        customPadding,
+      ),
+    ).toBe(false);
+
+    expect(beamReads).toBeGreaterThan(3);
+    expect(endpointReads).toBeGreaterThan(3);
+  });
+
   it('reports the same angular sweep collision across standard frame partitions', () => {
     const hazard = createRotatingZapper();
     const results: Record<string, boolean> = {};
