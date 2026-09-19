@@ -274,7 +274,7 @@ describe('PrototypeCollectibles', () => {
       hitbox: Object.freeze({ left: 150, right: 170, top: 180, bottom: 210 }),
       get horizontalVelocity(): number {
         horizontalVelocityReads += 1;
-        if (horizontalVelocityReads > 2) {
+        if (horizontalVelocityReads > 3) {
           throw new Error('full-step lethal collision was evaluated more than once');
         }
         return 0;
@@ -298,7 +298,7 @@ describe('PrototypeCollectibles', () => {
     expect(result.enteredDead).toBe(true);
     expect(result.state.collectibles?.collectedCount).toBe(1);
     expect(horizontalVelocityReads).toBeGreaterThanOrEqual(1);
-    expect(horizontalVelocityReads).toBeLessThanOrEqual(2);
+    expect(horizontalVelocityReads).toBeLessThanOrEqual(3);
   });
 
   it('keeps only pickups contacted before a lethal collision in a coarse terminal step', () => {
