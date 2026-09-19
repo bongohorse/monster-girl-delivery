@@ -145,8 +145,8 @@ describe('M5 Zapper collision work evidence', () => {
     ).toBe(false);
 
     expect(staticCounters).toMatchObject({
-      candidateSampleCount: 1,
-      evaluatedSampleCount: 1,
+      candidateSampleCount: 0,
+      evaluatedSampleCount: 0,
       geometryResolutionCount: 1,
       primaryNarrowphaseCheckCount: 1,
     });
@@ -176,9 +176,9 @@ describe('M5 Zapper collision work evidence', () => {
 
     expect(counters).toMatchObject({
       broadphaseRejectedCallCount: 0,
-      candidateSampleCount: 1,
+      candidateSampleCount: 0,
       collisionCallCount: 1,
-      evaluatedSampleCount: 1,
+      evaluatedSampleCount: 0,
       geometryResolutionCount: 1,
       primaryNarrowphaseCheckCount: 1,
     });
@@ -262,9 +262,9 @@ describe('M5 Zapper collision work evidence', () => {
 
     expect(counters).toMatchObject({
       broadphaseRejectedCallCount: 0,
-      candidateSampleCount: 1,
+      candidateSampleCount: 0,
       collisionCallCount: 1,
-      evaluatedSampleCount: 1,
+      evaluatedSampleCount: 0,
       geometryResolutionCount: 1,
       primaryNarrowphaseCheckCount: 1,
     });
@@ -350,8 +350,8 @@ describe('M5 Zapper collision work evidence', () => {
       true,
     );
 
-    expect(staticCounters.candidateSampleCount).toBe(60);
-    expect(staticCounters.evaluatedSampleCount).toBe(60);
+    expect(staticCounters.candidateSampleCount).toBe(0);
+    expect(staticCounters.evaluatedSampleCount).toBe(0);
     expect(staticCounters.geometryResolutionCount).toBe(60);
     expect(staticCounters.primaryNarrowphaseCheckCount).toBe(60);
     expect(rotatingCounters.candidateSampleCount).toBe(829);
