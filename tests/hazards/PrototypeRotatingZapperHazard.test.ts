@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   createPrototypeZapperBehavior,
   createPrototypeZapperHitbox,
+  PROTOTYPE_ZAPPER_GRAZE_PADDING,
   PROTOTYPE_ZAPPER_LENGTHS,
   PROTOTYPE_ZAPPER_ROTATION_SPEEDS,
   resolvePrototypeZapperAngleDegrees,
@@ -97,6 +98,90 @@ describe('M5 rotating Zapper', () => {
         createStationaryTrajectory(255, 1),
         1,
         RUN_TUNING,
+        hazard,
+      ),
+    ).toBe(true);
+  });
+
+  it('rejects a far rotating Zapper before resolving rotation or sample geometry', () => {
+    const hazard = createRotatingZapper();
+    const poisonBehavior = Object.freeze({
+      ...hazard.behavior,
+      get rotation(): never {
+        throw new Error('far Zapper reached dense rotation sampling');
+      },
+    });
+    const farHazard = Object.freeze({
+      ...hazard,
+      behavior: poisonBehavior,
+    });
+
+    expect(
+      isPlayerCollidingWithPrototypeZapperDuringStep(
+        { distance: 0, simulationSeconds: 0 },
+        createStationaryTrajectory(195, 1),
+        1,
+        RUN_TUNING,
+        farHazard,
+      ),
+    ).toBe(false);
+  });
+
+  it('keeps Zapper Graze padding inside the conservative horizontal broadphase', () => {
+    const behavior = createPrototypeZapperBehavior(0, PROTOTYPE_ZAPPER_LENGTHS.short);
+    const hitbox = createPrototypeZapperHitbox(0, 195, behavior);
+    const hazard = Object.freeze({
+      behavior,
+      entryId: 'graze-broadphase-zapper',
+      hitbox,
+      patternEntryIndex: 0,
+      patternId: 'graze-broadphase-zapper-test',
+      runDistance: hitbox.left,
+      type: 'placeholder-barrier' as const,
+    });
+
+    expect(
+      isPlayerCollidingWithPrototypeZapperDuringStep(
+        { distance: 80, simulationSeconds: 0 },
+        createStationaryTrajectory(195, 0.1),
+        0.1,
+        RUN_TUNING,
+        hazard,
+      ),
+    ).toBe(false);
+    expect(
+      isPlayerCollidingWithPrototypeZapperDuringStep(
+        { distance: 80, simulationSeconds: 0 },
+        createStationaryTrajectory(195, 0.1),
+        0.1,
+        RUN_TUNING,
+        hazard,
+        undefined,
+        PROTOTYPE_ZAPPER_GRAZE_PADDING,
+      ),
+    ).toBe(true);
+  });
+
+  it('does not let generic horizontalVelocity metadata change current Zapper motion semantics', () => {
+    const behavior = createPrototypeZapperBehavior(0, PROTOTYPE_ZAPPER_LENGTHS.short);
+    const hitbox = createPrototypeZapperHitbox(100, 195, behavior);
+    const hazard = Object.freeze({
+      behavior,
+      entryId: 'velocity-metadata-zapper',
+      hitbox,
+      horizontalVelocity: 100,
+      patternEntryIndex: 0,
+      patternId: 'velocity-metadata-zapper-test',
+      runDistance: hitbox.left,
+      type: 'placeholder-barrier' as const,
+    });
+
+    expect(
+      isPlayerCollidingWithPrototypeZapperDuringStep(
+        { distance: 0, simulationSeconds: 0 },
+        createStationaryTrajectory(195, 1),
+        1,
+        { baseScrollSpeed: 100 },
         hazard,
       ),
     ).toBe(true);

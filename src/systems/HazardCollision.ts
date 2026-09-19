@@ -172,14 +172,19 @@ const getHorizontalOverlapRange = (
   hazard: Readonly<LogicalHazard>,
   playerExtents: Readonly<PrototypePlayerCollisionExtents>,
   interval: Readonly<LogicalHazardCollisionInterval>,
+  hazardHorizontalPadding = 0,
+  hazardHorizontalVelocity = hazard.horizontalVelocity ?? 0,
 ): Readonly<LogicalHazardCollisionInterval> | null => {
-  const hazardVelocity = hazard.horizontalVelocity ?? 0;
+  const hazardVelocity = hazardHorizontalVelocity;
   if (!Number.isFinite(hazardVelocity)) {
     throw new RangeError('Hazard horizontalVelocity must be finite when provided.');
   }
+  if (!Number.isFinite(hazardHorizontalPadding) || hazardHorizontalPadding < 0) {
+    throw new RangeError('Hazard horizontal broadphase padding must be finite and non-negative.');
+  }
   const relativeScrollSpeed = scrollSpeed - hazardVelocity;
-  const minimumPlayerDistance = hazard.hitbox.left - playerExtents.right;
-  const maximumPlayerDistance = hazard.hitbox.right + playerExtents.left;
+  const minimumPlayerDistance = hazard.hitbox.left - hazardHorizontalPadding - playerExtents.right;
+  const maximumPlayerDistance = hazard.hitbox.right + hazardHorizontalPadding + playerExtents.left;
 
   if (relativeScrollSpeed === 0) {
     return initialDistance > minimumPlayerDistance && initialDistance < maximumPlayerDistance
@@ -396,10 +401,15 @@ const createZapperCollisionSampleTimes = (
 };
 
 /**
- * Continuous-step authority for static and rotating Zappers. Samples are anchored to absolute world
- * distance plus an authoritative 1/720-second simulation-time lattice. Every sample resolves the
- * current beam/node pose from the same simulation clock used by presentation and Director HB, so a
- * rotating beam cannot tunnel between endpoint poses and remains deterministic across partitions.
+ * Continuous-step authority for static and rotating Zappers. The authored Zapper hitbox is a
+ * conservative horizontal envelope; rotating Zappers reserve their full angular sweep. A cheap
+ * player-sweep broadphase rejects envelopes that cannot reach the player during the active interval
+ * before any dense sample times or geometry are created. It deliberately mirrors current Zapper
+ * narrowphase semantics, where generic hazard horizontalVelocity metadata does not move Zapper
+ * geometry. Samples that remain are anchored to absolute world distance plus an authoritative
+ * 1/720-second simulation-time lattice. Every sample resolves the current beam/node pose from the
+ * same simulation clock used by presentation and Director HB, so a rotating beam cannot tunnel
+ * between endpoint poses and remains deterministic across partitions.
  */
 export const isPlayerCollidingWithPrototypeZapperDuringStep = (
   initialRunState: Readonly<RunMotionState>,
@@ -412,6 +422,9 @@ export const isPlayerCollidingWithPrototypeZapperDuringStep = (
 ): boolean => {
   if (!isPrototypeZapperHazard(hazard)) {
     return false;
+  }
+  if (!Number.isFinite(elapsedSeconds) || elapsedSeconds < 0) {
+    throw new RangeError('elapsedSeconds must be a non-negative finite number.');
   }
   const initialSimulationSeconds = initialRunState.simulationSeconds ?? 0;
   if (elapsedSeconds === 0) {
@@ -429,6 +442,39 @@ export const isPlayerCollidingWithPrototypeZapperDuringStep = (
   if (!interval) {
     return false;
   }
+  if (!Number.isFinite(initialRunState.distance)) {
+    throw new RangeError('Player run distance must be finite.');
+  }
+  assertValidPlayerCollisionExtents(playerExtents);
+  if (!Number.isFinite(initialSimulationSeconds) || initialSimulationSeconds < 0) {
+    throw new RangeError('Zapper initial simulation time must be non-negative and finite.');
+  }
+  if (!Number.isFinite(runMotionTuning.baseScrollSpeed)) {
+    throw new RangeError('Zapper scroll speed must be finite.');
+  }
+  if (
+    !Number.isFinite(padding.beam) ||
+    padding.beam < 0 ||
+    !Number.isFinite(padding.endpoints) ||
+    padding.endpoints < 0
+  ) {
+    throw new RangeError('Zapper geometry padding must be finite and non-negative.');
+  }
+  const maximumPadding = Math.max(padding.beam, padding.endpoints);
+  if (
+    !getHorizontalOverlapRange(
+      initialRunState.distance,
+      runMotionTuning.baseScrollSpeed,
+      hazard,
+      playerExtents,
+      interval,
+      maximumPadding,
+      0,
+    )
+  ) {
+    return false;
+  }
+
   const sampleTimes = createZapperCollisionSampleTimes(
     trajectory,
     initialRunState.distance,
