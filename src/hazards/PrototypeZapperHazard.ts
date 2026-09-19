@@ -432,13 +432,11 @@ const segmentToHitboxDistanceSquared = (
   );
 };
 
-/** Exact instantaneous AABB-vs-capsule/circle union test for one Zapper pose. */
-export const doesHitboxOverlapPrototypeZapper = (
+const doesHitboxOverlapPrototypeZapperUnchecked = (
   hitbox: Readonly<LogicalHitbox>,
   geometry: Readonly<PrototypeZapperGeometry>,
-  padding: Readonly<PrototypeZapperGeometryPadding> = PROTOTYPE_ZAPPER_LETHAL_PADDING,
+  padding: Readonly<PrototypeZapperGeometryPadding>,
 ): boolean => {
-  assertPadding(padding);
   const beamRadius = geometry.beam.radius + padding.beam;
   const endpointARadius = geometry.endpointA.radius + padding.endpoints;
   const endpointBRadius = geometry.endpointB.radius + padding.endpoints;
@@ -451,6 +449,31 @@ export const doesHitboxOverlapPrototypeZapper = (
     pointToHitboxDistanceSquared(geometry.endpointB.center, hitbox) <
       endpointBRadius * endpointBRadius
   );
+};
+
+/** Exact instantaneous AABB-vs-capsule/circle union test for one Zapper pose. */
+export const doesHitboxOverlapPrototypeZapper = (
+  hitbox: Readonly<LogicalHitbox>,
+  geometry: Readonly<PrototypeZapperGeometry>,
+  padding: Readonly<PrototypeZapperGeometryPadding> = PROTOTYPE_ZAPPER_LETHAL_PADDING,
+): boolean => {
+  assertPadding(padding);
+  return doesHitboxOverlapPrototypeZapperUnchecked(hitbox, geometry, padding);
+};
+
+/**
+ * Hot-path overlap for the two trusted frozen prototype paddings. Runtime identity is checked so a
+ * custom/frozen accessor object can never bypass the public per-call validation contract.
+ */
+export const doesHitboxOverlapPrototypeZapperWithCanonicalPadding = (
+  hitbox: Readonly<LogicalHitbox>,
+  geometry: Readonly<PrototypeZapperGeometry>,
+  padding: Readonly<PrototypeZapperGeometryPadding>,
+): boolean => {
+  if (padding !== PROTOTYPE_ZAPPER_LETHAL_PADDING && padding !== PROTOTYPE_ZAPPER_GRAZE_PADDING) {
+    throw new TypeError('Canonical Zapper overlap requires a prototype padding constant.');
+  }
+  return doesHitboxOverlapPrototypeZapperUnchecked(hitbox, geometry, padding);
 };
 
 export const getPrototypeZapperGrazePadding = (
