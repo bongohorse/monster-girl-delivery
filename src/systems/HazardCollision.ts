@@ -7,7 +7,9 @@ import {
 import {
   createPrototypeZapperGeometryScratch,
   doesHitboxOverlapPrototypeZapper,
+  doesHitboxOverlapPrototypeZapperWithCanonicalPadding,
   isPrototypeZapperHazard,
+  PROTOTYPE_ZAPPER_GRAZE_PADDING,
   PROTOTYPE_ZAPPER_LETHAL_PADDING,
   type PrototypeZapperGeometryPadding,
   resolvePrototypeZapperGeometry,
@@ -522,7 +524,7 @@ const evaluateStaticZapperOneAxisSweep = (
     workCounters.geometryResolutionCount += 1;
     workCounters.primaryNarrowphaseCheckCount += 1;
   }
-  if (doesHitboxOverlapPrototypeZapper(sweptPlayerHitbox, geometry, primaryPadding)) {
+  if (doesHitboxOverlapPrototypeZapperOnValidatedPath(sweptPlayerHitbox, geometry, primaryPadding)) {
     return PROTOTYPE_ZAPPER_PRIMARY_CONTACT;
   }
 
@@ -530,7 +532,7 @@ const evaluateStaticZapperOneAxisSweep = (
     if (workCounters) {
       workCounters.secondaryNarrowphaseCheckCount += 1;
     }
-    if (doesHitboxOverlapPrototypeZapper(sweptPlayerHitbox, geometry, secondaryPadding)) {
+    if (doesHitboxOverlapPrototypeZapperOnValidatedPath(sweptPlayerHitbox, geometry, secondaryPadding)) {
       return PROTOTYPE_ZAPPER_SECONDARY_ONLY_CONTACT;
     }
   }
@@ -716,6 +718,15 @@ const assertValidPrototypeZapperPadding = (
     throw new RangeError('Zapper geometry padding must be finite and non-negative.');
   }
 };
+
+const doesHitboxOverlapPrototypeZapperOnValidatedPath = (
+  hitbox: Readonly<LogicalHitbox>,
+  geometry: NonNullable<ReturnType<typeof resolvePrototypeZapperGeometry>>,
+  padding: Readonly<PrototypeZapperGeometryPadding>,
+): boolean =>
+  padding === PROTOTYPE_ZAPPER_LETHAL_PADDING || padding === PROTOTYPE_ZAPPER_GRAZE_PADDING
+    ? doesHitboxOverlapPrototypeZapperWithCanonicalPadding(hitbox, geometry, padding)
+    : doesHitboxOverlapPrototypeZapper(hitbox, geometry, padding);
 
 const evaluatePrototypeZapperPaddingPairDuringStep = (
   initialRunState: Readonly<RunMotionState>,
@@ -931,14 +942,14 @@ const evaluatePrototypeZapperPaddingPairDuringStep = (
     if (workCounters) {
       workCounters.primaryNarrowphaseCheckCount += 1;
     }
-    if (doesHitboxOverlapPrototypeZapper(playerHitbox, geometry, primaryPadding)) {
+    if (doesHitboxOverlapPrototypeZapperOnValidatedPath(playerHitbox, geometry, primaryPadding)) {
       return PROTOTYPE_ZAPPER_PRIMARY_CONTACT;
     }
     if (secondaryPadding && !secondaryHit) {
       if (workCounters) {
         workCounters.secondaryNarrowphaseCheckCount += 1;
       }
-      if (doesHitboxOverlapPrototypeZapper(playerHitbox, geometry, secondaryPadding)) {
+      if (doesHitboxOverlapPrototypeZapperOnValidatedPath(playerHitbox, geometry, secondaryPadding)) {
         secondaryHit = true;
       }
     }
