@@ -79,7 +79,8 @@ export const createPrototypeRunState = (
  * inspect the same continuous player trajectory. Positive-step lethal-core contacts resolved by
  * Graze are reused by collectible ordering, avoiding a second full-step collision pass. One
  * conservative horizontal hazard candidate set is shared by Graze and collectible death ordering so
- * retained hazards that cannot reach the player this step never enter identity/contact work. Pickup
+ * retained hazards that cannot reach the player this step never enter exact contact/narrowphase work.
+ * Graze retention still observes the full stream for occurrence history. Pickup
  * qualification still resolves prefix ordering before the immutable terminal result is created, so
  * presentation never owns collection and a coarse terminal step cannot award a pickup after death.
  */
