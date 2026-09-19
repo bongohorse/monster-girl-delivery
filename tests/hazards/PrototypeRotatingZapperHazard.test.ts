@@ -11,9 +11,11 @@ import {
   resolvePrototypeZapperGeometryInto,
 } from '../../src/hazards/PrototypeZapperHazard';
 import {
+  createPrototypeZapperCollisionWorkCounters,
   evaluatePlayerPrototypeZapperCoreAndGrazeDuringStep,
   isPlayerCollidingWithHazard,
   isPlayerCollidingWithPrototypeZapperDuringStep,
+  resetPrototypeZapperCollisionWorkCounters,
 } from '../../src/systems/HazardCollision';
 import { type RunMotionState, stepRunMotion } from '../../src/systems/RunMotionSimulation';
 import { createVerticalFlightTrajectory } from '../../src/systems/VerticalFlightSimulation';
@@ -205,6 +207,80 @@ describe('M5 rotating Zapper', () => {
         farHazard,
       ),
     ).toBe(false);
+  });
+
+  it('counts broadphase rejection without inventing sample or geometry work', () => {
+    const counters = createPrototypeZapperCollisionWorkCounters();
+    const hazard = createRotatingZapper();
+
+    expect(
+      isPlayerCollidingWithPrototypeZapperDuringStep(
+        { distance: 0, simulationSeconds: 0 },
+        createStationaryTrajectory(195, 1),
+        1,
+        RUN_TUNING,
+        hazard,
+        undefined,
+        undefined,
+        counters,
+      ),
+    ).toBe(false);
+    expect(counters).toEqual({
+      broadphaseRejectedCallCount: 1,
+      candidateSampleCount: 0,
+      collisionCallCount: 1,
+      evaluatedSampleCount: 0,
+      geometryResolutionCount: 0,
+      primaryNarrowphaseCheckCount: 0,
+      secondaryNarrowphaseCheckCount: 0,
+    });
+
+    resetPrototypeZapperCollisionWorkCounters(counters);
+    expect(counters).toEqual({
+      broadphaseRejectedCallCount: 0,
+      candidateSampleCount: 0,
+      collisionCallCount: 0,
+      evaluatedSampleCount: 0,
+      geometryResolutionCount: 0,
+      primaryNarrowphaseCheckCount: 0,
+      secondaryNarrowphaseCheckCount: 0,
+    });
+  });
+
+  it('reports actual static core + Graze sample work from one shared pass', () => {
+    const behavior = createPrototypeZapperBehavior(0, PROTOTYPE_ZAPPER_LENGTHS.short);
+    const hitbox = createPrototypeZapperHitbox(0, 0, behavior);
+    const hazard = Object.freeze({
+      behavior,
+      entryId: 'work-counter-static',
+      hitbox,
+      patternEntryIndex: 0,
+      patternId: 'work-counter-static-pattern',
+      runDistance: hitbox.left,
+      type: 'placeholder-barrier' as const,
+    });
+    const counters = createPrototypeZapperCollisionWorkCounters();
+
+    expect(
+      evaluatePlayerPrototypeZapperCoreAndGrazeDuringStep(
+        { distance: 0, simulationSeconds: 0 },
+        createStationaryTrajectory(100, 0.1),
+        0.1,
+        RUN_TUNING,
+        hazard,
+        PROTOTYPE_ZAPPER_GRAZE_PADDING,
+        undefined,
+        counters,
+      ),
+    ).toEqual({ coreHit: false, grazeHit: false });
+
+    expect(counters.collisionCallCount).toBe(1);
+    expect(counters.broadphaseRejectedCallCount).toBe(0);
+    expect(counters.candidateSampleCount).toBeGreaterThan(2);
+    expect(counters.evaluatedSampleCount).toBe(counters.candidateSampleCount);
+    expect(counters.geometryResolutionCount).toBe(1);
+    expect(counters.primaryNarrowphaseCheckCount).toBe(counters.evaluatedSampleCount);
+    expect(counters.secondaryNarrowphaseCheckCount).toBe(counters.evaluatedSampleCount);
   });
 
   it('keeps Zapper Graze padding inside the conservative horizontal broadphase', () => {
