@@ -35,11 +35,7 @@ const createStationaryTrajectory = (positionY: number, elapsedSeconds: number) =
     FLIGHT_BOUNDS,
   );
 
-const createLinearTrajectory = (
-  positionY: number,
-  velocityY: number,
-  elapsedSeconds: number,
-) =>
+const createLinearTrajectory = (positionY: number, velocityY: number, elapsedSeconds: number) =>
   createVerticalFlightTrajectory(
     { positionY, velocityY },
     elapsedSeconds,
