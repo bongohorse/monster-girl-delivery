@@ -358,11 +358,7 @@ describe('M5 Zapper collision work evidence', () => {
 
   it('keeps full planned candidate count when a core hit stops narrowphase early', () => {
     const counters = createPrototypeZapperCollisionWorkCounters();
-    const hazard = createZapper(
-      true,
-      600,
-      PROTOTYPE_ZAPPER_ROTATION_SPEEDS.fast,
-    );
+    const hazard = createZapper(true, 600, PROTOTYPE_ZAPPER_ROTATION_SPEEDS.fast);
 
     expect(
       isPlayerCollidingWithPrototypeZapperDuringStep(
