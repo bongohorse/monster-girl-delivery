@@ -277,11 +277,12 @@ export const evaluatePrototypeGrazeStep = (
 
   for (const hazard of hazards) {
     const occurrenceId = getGrazeOccurrenceId(hazard);
-    const canResolveGraze = occurrenceId !== null && !consumed.has(occurrenceId);
+    const grazeOccurrenceId =
+      occurrenceId !== null && !consumed.has(occurrenceId) ? occurrenceId : null;
     let coreHit: boolean;
     let preResolvedZapperGrazeHit: boolean | null = null;
 
-    if (isPrototypeZapperHazard(hazard) && canResolveGraze) {
+    if (isPrototypeZapperHazard(hazard) && grazeOccurrenceId !== null) {
       const contacts = evaluatePlayerPrototypeZapperCoreAndGrazeDuringStep(
         initialRunState,
         trajectory,
@@ -312,7 +313,7 @@ export const evaluatePrototypeGrazeStep = (
       continue;
     }
 
-    if (!canResolveGraze || occurrenceId === null) {
+    if (grazeOccurrenceId === null) {
       continue;
     }
 
@@ -326,10 +327,10 @@ export const evaluatePrototypeGrazeStep = (
         hazard,
       );
     if (grazeHit) {
-      pending.add(occurrenceId);
+      pending.add(grazeOccurrenceId);
     }
 
-    if (pending.has(occurrenceId)) {
+    if (pending.has(grazeOccurrenceId)) {
       const resolutionSeconds = getGrazeResolutionSeconds(
         initialRunState.distance,
         runMotionTuning.baseScrollSpeed,
@@ -337,7 +338,7 @@ export const evaluatePrototypeGrazeStep = (
         elapsedSeconds,
       );
       if (resolutionSeconds !== null) {
-        resolvedCandidates.set(occurrenceId, resolutionSeconds);
+        resolvedCandidates.set(grazeOccurrenceId, resolutionSeconds);
       }
     }
   }
