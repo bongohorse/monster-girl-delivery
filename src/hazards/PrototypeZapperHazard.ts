@@ -212,8 +212,9 @@ const pointToHitboxDistanceSquared = (
   return dx * dx + dy * dy;
 };
 
-const pointToSegmentDistanceSquared = (
-  point: Readonly<LogicalPoint>,
+const pointCoordinatesToSegmentDistanceSquared = (
+  pointX: number,
+  pointY: number,
   start: Readonly<LogicalPoint>,
   end: Readonly<LogicalPoint>,
 ): number => {
@@ -221,19 +222,19 @@ const pointToSegmentDistanceSquared = (
   const dy = end.y - start.y;
   const lengthSquared = dx * dx + dy * dy;
   if (lengthSquared === 0) {
-    const px = point.x - start.x;
-    const py = point.y - start.y;
+    const px = pointX - start.x;
+    const py = pointY - start.y;
     return px * px + py * py;
   }
 
   const projection = Math.max(
     0,
-    Math.min(1, ((point.x - start.x) * dx + (point.y - start.y) * dy) / lengthSquared),
+    Math.min(1, ((pointX - start.x) * dx + (pointY - start.y) * dy) / lengthSquared),
   );
   const nearestX = start.x + projection * dx;
   const nearestY = start.y + projection * dy;
-  const px = point.x - nearestX;
-  const py = point.y - nearestY;
+  const px = pointX - nearestX;
+  const py = pointY - nearestY;
   return px * px + py * py;
 };
 
@@ -246,19 +247,72 @@ const segmentIntersectsHitbox = (
   let upper = 1;
   const dx = end.x - start.x;
   const dy = end.y - start.y;
-  const constraints = [
-    [-dx, start.x - hitbox.left],
-    [dx, hitbox.right - start.x],
-    [-dy, start.y - hitbox.top],
-    [dy, hitbox.bottom - start.y],
-  ] as const;
 
-  for (const [p, q] of constraints) {
+  {
+    const p = -dx;
+    const q = start.x - hitbox.left;
     if (p === 0) {
       if (q < 0) {
         return false;
       }
-      continue;
+    } else {
+      const ratio = q / p;
+      if (p < 0) {
+        lower = Math.max(lower, ratio);
+      } else {
+        upper = Math.min(upper, ratio);
+      }
+      if (lower > upper) {
+        return false;
+      }
+    }
+  }
+
+  {
+    const p = dx;
+    const q = hitbox.right - start.x;
+    if (p === 0) {
+      if (q < 0) {
+        return false;
+      }
+    } else {
+      const ratio = q / p;
+      if (p < 0) {
+        lower = Math.max(lower, ratio);
+      } else {
+        upper = Math.min(upper, ratio);
+      }
+      if (lower > upper) {
+        return false;
+      }
+    }
+  }
+
+  {
+    const p = -dy;
+    const q = start.y - hitbox.top;
+    if (p === 0) {
+      if (q < 0) {
+        return false;
+      }
+    } else {
+      const ratio = q / p;
+      if (p < 0) {
+        lower = Math.max(lower, ratio);
+      } else {
+        upper = Math.min(upper, ratio);
+      }
+      if (lower > upper) {
+        return false;
+      }
+    }
+  }
+
+  {
+    const p = dy;
+    const q = hitbox.bottom - start.y;
+    if (p === 0) {
+      return q >= 0;
     }
     const ratio = q / p;
     if (p < 0) {
@@ -266,11 +320,8 @@ const segmentIntersectsHitbox = (
     } else {
       upper = Math.min(upper, ratio);
     }
-    if (lower > upper) {
-      return false;
-    }
+    return lower <= upper;
   }
-  return true;
 };
 
 const segmentToHitboxDistanceSquared = (
@@ -282,17 +333,13 @@ const segmentToHitboxDistanceSquared = (
     return 0;
   }
 
-  const corners = [
-    { x: hitbox.left, y: hitbox.top },
-    { x: hitbox.right, y: hitbox.top },
-    { x: hitbox.right, y: hitbox.bottom },
-    { x: hitbox.left, y: hitbox.bottom },
-  ];
-
   return Math.min(
     pointToHitboxDistanceSquared(start, hitbox),
     pointToHitboxDistanceSquared(end, hitbox),
-    ...corners.map((corner) => pointToSegmentDistanceSquared(corner, start, end)),
+    pointCoordinatesToSegmentDistanceSquared(hitbox.left, hitbox.top, start, end),
+    pointCoordinatesToSegmentDistanceSquared(hitbox.right, hitbox.top, start, end),
+    pointCoordinatesToSegmentDistanceSquared(hitbox.right, hitbox.bottom, start, end),
+    pointCoordinatesToSegmentDistanceSquared(hitbox.left, hitbox.bottom, start, end),
   );
 };
 
