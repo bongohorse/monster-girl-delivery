@@ -31,6 +31,7 @@ const createZapperEntry = (
   length: number,
   options: Readonly<{
     rotationDirection?: 'clockwise' | 'counterclockwise';
+    rotationSpeedDegreesPerSecond?: number;
     timed?: boolean;
   }> = {},
 ) => {
@@ -40,7 +41,8 @@ const createZapperEntry = (
     options.rotationDirection
       ? {
           direction: options.rotationDirection,
-          speedDegreesPerSecond: PROTOTYPE_ZAPPER_ROTATION_SPEEDS.slow,
+          speedDegreesPerSecond:
+            options.rotationSpeedDegreesPerSecond ?? PROTOTYPE_ZAPPER_ROTATION_SPEEDS.slow,
         }
       : undefined,
   );
@@ -172,3 +174,74 @@ export const DIRECTOR_ZAPPER_GROUPS: ReadonlyArray<Readonly<DirectorZapperSelect
       }),
     }),
   ]);
+
+
+export const DIRECTOR_ZAPPER_PERFORMANCE_PRESET_ID = 'zapper-heavy-v1';
+
+export const DIRECTOR_ZAPPER_PERFORMANCE_PRESET: Readonly<DirectorZapperSelection> = Object.freeze({
+  label: 'ZPERF',
+  pattern: createHazardPattern({
+    id: 'director-zapper-performance-v1',
+    runLength: 2_320,
+    profile: createProfile('moving-barrier', 4),
+    entries: [
+      createZapperEntry('perf-static-top', 280, 90, 0, PROTOTYPE_ZAPPER_LENGTHS.long),
+      createZapperEntry('perf-static-bottom', 280, 300, 0, PROTOTYPE_ZAPPER_LENGTHS.long),
+      createZapperEntry('perf-rotate-slow-top', 560, 110, 0, PROTOTYPE_ZAPPER_LENGTHS.long, {
+        rotationDirection: 'clockwise',
+      }),
+      createZapperEntry('perf-rotate-slow-bottom', 560, 280, 0, PROTOTYPE_ZAPPER_LENGTHS.long, {
+        rotationDirection: 'counterclockwise',
+      }),
+      createZapperEntry('perf-rotate-fast-top', 840, 125, 0, PROTOTYPE_ZAPPER_LENGTHS.long, {
+        rotationDirection: 'clockwise',
+        rotationSpeedDegreesPerSecond: PROTOTYPE_ZAPPER_ROTATION_SPEEDS.fast,
+      }),
+      createZapperEntry('perf-rotate-fast-bottom', 840, 265, 0, PROTOTYPE_ZAPPER_LENGTHS.long, {
+        rotationDirection: 'counterclockwise',
+        rotationSpeedDegreesPerSecond: PROTOTYPE_ZAPPER_ROTATION_SPEEDS.fast,
+      }),
+      createZapperEntry(
+        'perf-diagonal-top',
+        1_120,
+        105,
+        45,
+        PROTOTYPE_ZAPPER_LENGTHS.medium,
+      ),
+      createZapperEntry(
+        'perf-diagonal-bottom',
+        1_120,
+        285,
+        -45,
+        PROTOTYPE_ZAPPER_LENGTHS.medium,
+      ),
+      createZapperEntry('perf-rotate-medium-top', 1_400, 100, 0, PROTOTYPE_ZAPPER_LENGTHS.long, {
+        rotationDirection: 'counterclockwise',
+        rotationSpeedDegreesPerSecond: PROTOTYPE_ZAPPER_ROTATION_SPEEDS.medium,
+      }),
+      createZapperEntry(
+        'perf-rotate-medium-bottom',
+        1_400,
+        290,
+        0,
+        PROTOTYPE_ZAPPER_LENGTHS.long,
+        {
+          rotationDirection: 'clockwise',
+          rotationSpeedDegreesPerSecond: PROTOTYPE_ZAPPER_ROTATION_SPEEDS.medium,
+        },
+      ),
+      createZapperEntry('perf-timed', 1_680, 195, 0, PROTOTYPE_ZAPPER_LENGTHS.medium, {
+        timed: true,
+      }),
+      createZapperEntry('perf-vertical', 1_680, 195, 90, PROTOTYPE_ZAPPER_LENGTHS.medium),
+      createZapperEntry('perf-rotate-fast-high', 1_960, 90, 0, PROTOTYPE_ZAPPER_LENGTHS.medium, {
+        rotationDirection: 'clockwise',
+        rotationSpeedDegreesPerSecond: PROTOTYPE_ZAPPER_ROTATION_SPEEDS.fast,
+      }),
+      createZapperEntry('perf-rotate-fast-low', 1_960, 300, 0, PROTOTYPE_ZAPPER_LENGTHS.medium, {
+        rotationDirection: 'counterclockwise',
+        rotationSpeedDegreesPerSecond: PROTOTYPE_ZAPPER_ROTATION_SPEEDS.fast,
+      }),
+    ],
+  }),
+});
