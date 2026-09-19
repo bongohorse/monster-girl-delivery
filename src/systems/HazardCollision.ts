@@ -547,13 +547,28 @@ const evaluateStaticZapperOneAxisSweep = (
 const ZAPPER_MAX_COLLISION_SAMPLE_DISTANCE = 0.5;
 const ZAPPER_MAX_COLLISION_SAMPLE_SECONDS = 1 / 720;
 
-const createZapperCollisionSampleTimes = (
+interface ZapperCollisionSampleCursor {
+  readonly eventCandidates: number[];
+  readonly initialDistance: number;
+  readonly initialSimulationSeconds: number;
+  readonly interval: Readonly<LogicalHazardCollisionInterval>;
+  readonly scrollSpeed: number;
+  distanceIndex: number;
+  distanceLastIndex: number;
+  distanceStep: number;
+  eventIndex: number;
+  previousCandidate: number | undefined;
+  timeIndex: number;
+  readonly timeLastIndex: number;
+}
+
+const createZapperCollisionSampleCursor = (
   trajectory: Readonly<VerticalFlightTrajectory>,
   initialDistance: number,
   initialSimulationSeconds: number,
   scrollSpeed: number,
   interval: Readonly<LogicalHazardCollisionInterval>,
-): number[] => {
+): ZapperCollisionSampleCursor => {
   if (!Number.isFinite(initialSimulationSeconds) || initialSimulationSeconds < 0) {
     throw new RangeError('Zapper initial simulation time must be non-negative and finite.');
   }
@@ -596,7 +611,6 @@ const createZapperCollisionSampleTimes = (
     if (scrollSpeed > 0) {
       distanceIndex = firstIndex;
       distanceLastIndex = lastIndex;
-      distanceStep = 1;
     } else {
       distanceIndex = lastIndex;
       distanceLastIndex = firstIndex;
@@ -604,69 +618,92 @@ const createZapperCollisionSampleTimes = (
     }
   }
 
-  // A global simulation-time lattice makes angular sweep sampling partition-stable even when the
-  // world scroll is zero or changes independently of Zapper rotation.
   const absoluteStartSeconds = initialSimulationSeconds + interval.startSeconds;
   const absoluteEndSeconds = initialSimulationSeconds + interval.endSeconds;
-  let timeIndex = Math.ceil(absoluteStartSeconds / ZAPPER_MAX_COLLISION_SAMPLE_SECONDS);
-  const timeLastIndex = Math.floor(absoluteEndSeconds / ZAPPER_MAX_COLLISION_SAMPLE_SECONDS);
 
-  const candidates: number[] = [];
-  let eventIndex = 0;
-  let previousCandidate: number | undefined;
+  return {
+    distanceIndex,
+    distanceLastIndex,
+    distanceStep,
+    eventCandidates,
+    eventIndex: 0,
+    initialDistance,
+    initialSimulationSeconds,
+    interval,
+    previousCandidate: undefined,
+    scrollSpeed,
+    timeIndex: Math.ceil(absoluteStartSeconds / ZAPPER_MAX_COLLISION_SAMPLE_SECONDS),
+    timeLastIndex: Math.floor(absoluteEndSeconds / ZAPPER_MAX_COLLISION_SAMPLE_SECONDS),
+  };
+};
 
+const getNextZapperCollisionSampleTime = (
+  cursor: ZapperCollisionSampleCursor,
+): number | null => {
   while (true) {
     const eventSeconds =
-      eventIndex < eventCandidates.length
-        ? (eventCandidates[eventIndex] ?? Number.POSITIVE_INFINITY)
+      cursor.eventIndex < cursor.eventCandidates.length
+        ? (cursor.eventCandidates[cursor.eventIndex] ?? Number.POSITIVE_INFINITY)
         : Number.POSITIVE_INFINITY;
 
     let distanceSeconds = Number.POSITIVE_INFINITY;
     while (
-      scrollSpeed !== 0 &&
-      (distanceStep > 0 ? distanceIndex <= distanceLastIndex : distanceIndex >= distanceLastIndex)
+      cursor.scrollSpeed !== 0 &&
+      (cursor.distanceStep > 0
+        ? cursor.distanceIndex <= cursor.distanceLastIndex
+        : cursor.distanceIndex >= cursor.distanceLastIndex)
     ) {
       const candidate =
-        (distanceIndex * ZAPPER_MAX_COLLISION_SAMPLE_DISTANCE - initialDistance) / scrollSpeed;
-      if (candidate >= interval.startSeconds && candidate <= interval.endSeconds) {
+        (cursor.distanceIndex * ZAPPER_MAX_COLLISION_SAMPLE_DISTANCE - cursor.initialDistance) /
+        cursor.scrollSpeed;
+      if (candidate >= cursor.interval.startSeconds && candidate <= cursor.interval.endSeconds) {
         distanceSeconds = candidate;
         break;
       }
-      distanceIndex += distanceStep;
+      cursor.distanceIndex += cursor.distanceStep;
     }
 
     let timeSeconds = Number.POSITIVE_INFINITY;
-    while (timeIndex <= timeLastIndex) {
-      const candidate = timeIndex * ZAPPER_MAX_COLLISION_SAMPLE_SECONDS - initialSimulationSeconds;
-      if (candidate >= interval.startSeconds && candidate <= interval.endSeconds) {
+    while (cursor.timeIndex <= cursor.timeLastIndex) {
+      const candidate =
+        cursor.timeIndex * ZAPPER_MAX_COLLISION_SAMPLE_SECONDS - cursor.initialSimulationSeconds;
+      if (candidate >= cursor.interval.startSeconds && candidate <= cursor.interval.endSeconds) {
         timeSeconds = candidate;
         break;
       }
-      timeIndex += 1;
+      cursor.timeIndex += 1;
     }
 
     const nextCandidate = Math.min(eventSeconds, distanceSeconds, timeSeconds);
     if (nextCandidate === Number.POSITIVE_INFINITY) {
-      break;
-    }
-
-    if (previousCandidate === undefined || nextCandidate !== previousCandidate) {
-      candidates.push(nextCandidate);
-      previousCandidate = nextCandidate;
+      return null;
     }
 
     if (eventSeconds === nextCandidate) {
-      eventIndex += 1;
+      cursor.eventIndex += 1;
     }
     if (distanceSeconds === nextCandidate) {
-      distanceIndex += distanceStep;
+      cursor.distanceIndex += cursor.distanceStep;
     }
     if (timeSeconds === nextCandidate) {
-      timeIndex += 1;
+      cursor.timeIndex += 1;
+    }
+
+    if (cursor.previousCandidate === undefined || nextCandidate !== cursor.previousCandidate) {
+      cursor.previousCandidate = nextCandidate;
+      return nextCandidate;
     }
   }
+};
 
-  return candidates;
+const countRemainingZapperCollisionSamples = (
+  cursor: ZapperCollisionSampleCursor,
+): number => {
+  let count = 0;
+  while (getNextZapperCollisionSampleTime(cursor) !== null) {
+    count += 1;
+  }
+  return count;
 };
 
 interface PrototypeZapperPaddingPairContacts {
@@ -864,16 +901,13 @@ const evaluatePrototypeZapperPaddingPairDuringStep = (
     }
   }
 
-  const sampleTimes = createZapperCollisionSampleTimes(
+  const sampleCursor = createZapperCollisionSampleCursor(
     trajectory,
     initialRunState.distance,
     initialSimulationSeconds,
     runMotionTuning.baseScrollSpeed,
     interval,
   );
-  if (workCounters) {
-    workCounters.candidateSampleCount += sampleTimes.length;
-  }
   const rotatingGeometryScratch =
     hazard.behavior.rotation === undefined ? null : createPrototypeZapperGeometryScratch();
   let staticGeometry: ReturnType<typeof resolvePrototypeZapperGeometry> | undefined;
@@ -883,8 +917,13 @@ const evaluatePrototypeZapperPaddingPairDuringStep = (
   const canReusePlayerHitboxScratch = playerExtents === PROTOTYPE_PLAYER_COLLISION_EXTENTS;
   const playerHitboxScratch: LogicalHitbox = { bottom: 0, left: 0, right: 0, top: 0 };
 
-  for (const seconds of sampleTimes) {
+  while (true) {
+    const seconds = getNextZapperCollisionSampleTime(sampleCursor);
+    if (seconds === null) {
+      break;
+    }
     if (workCounters) {
+      workCounters.candidateSampleCount += 1;
       workCounters.evaluatedSampleCount += 1;
     }
     let trajectorySegment = trajectorySegments[trajectorySegmentIndex];
@@ -947,6 +986,9 @@ const evaluatePrototypeZapperPaddingPairDuringStep = (
       workCounters.primaryNarrowphaseCheckCount += 1;
     }
     if (doesHitboxOverlapPrototypeZapperOnValidatedPath(playerHitbox, geometry, primaryPadding)) {
+      if (workCounters) {
+        workCounters.candidateSampleCount += countRemainingZapperCollisionSamples(sampleCursor);
+      }
       return PROTOTYPE_ZAPPER_PRIMARY_CONTACT;
     }
     if (secondaryPadding && !secondaryHit) {
@@ -975,8 +1017,11 @@ const evaluatePrototypeZapperPaddingPairDuringStep = (
  * vertical-only continuous flight or horizontal-only scrolling therefore needs one geometry check
  * instead of the dense lattice. Two-axis motion and unusual/gapped trajectories retain the lattice.
  * Custom extents retain the historical path. Samples remain anchored to absolute world
- * distance plus an authoritative 1/720-second simulation-time lattice. Sorted samples advance one
- * monotonic flight-segment cursor instead of linearly searching the trajectory again per sample.
+ * distance plus an authoritative 1/720-second simulation-time lattice. The ordered event/time/
+ * distance sources are consumed through one local cursor instead of materializing a dense sample
+ * array; Director counters drain only the remaining cursor after an early core hit so planned-sample
+ * accounting stays unchanged. Sorted samples advance one monotonic flight-segment cursor instead of
+ * linearly searching the trajectory again per sample.
  * The canonical frozen player extents reuse one local hitbox scratch instead of allocating transient
  * run-state, flight-state, and hitbox objects per sample. Custom extents keep the historical
  * per-sample validation/allocation path so dynamic runtime inputs preserve their previous contract.
