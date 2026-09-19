@@ -177,7 +177,7 @@ const mapPatternToAbsoluteSpawns = (
           throw new RangeError('Mapped hazard run distances must remain finite.');
         }
 
-        return Object.freeze({
+        const spawn = Object.freeze({
           behavior: entry.behavior,
           entryId: entry.id,
           hitbox: Object.freeze({
@@ -192,6 +192,10 @@ const mapPatternToAbsoluteSpawns = (
           runDistance: left,
           type: entry.type,
         });
+        // Generation is the cold ownership boundary; prewarm the identity so runtime consumers only
+        // pay the WeakMap lookup for long-lived authoritative spawns.
+        getLogicalHazardSpawnIdentity(spawn);
+        return spawn;
       })
       .sort(
         (first, second) =>
