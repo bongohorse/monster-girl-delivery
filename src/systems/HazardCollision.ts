@@ -551,6 +551,7 @@ const evaluatePrototypeZapperPaddingPairDuringStep = (
   let secondaryHit = false;
   let trajectorySegmentIndex = 0;
   const trajectorySegments = trajectory.segments;
+  const playerHitbox: LogicalHitbox = { bottom: 0, left: 0, right: 0, top: 0 };
 
   for (const seconds of sampleTimes) {
     let trajectorySegment = trajectorySegments[trajectorySegmentIndex];
@@ -568,11 +569,15 @@ const evaluatePrototypeZapperPaddingPairDuringStep = (
       seconds <= trajectorySegment.endSeconds
         ? evaluateFlightSegmentPosition(trajectorySegment, seconds)
         : evaluateFlightTrajectoryPosition(trajectory, seconds);
-    const playerHitbox = createPrototypePlayerHitbox(
-      { distance: initialRunState.distance + runMotionTuning.baseScrollSpeed * seconds },
-      { positionY: playerPositionY, velocityY: 0 },
-      playerExtents,
-    );
+    const playerDistance =
+      initialRunState.distance + runMotionTuning.baseScrollSpeed * seconds;
+    if (!Number.isFinite(playerDistance) || !Number.isFinite(playerPositionY)) {
+      throw new RangeError('Player run distance and vertical position must be finite.');
+    }
+    playerHitbox.left = playerDistance - playerExtents.left;
+    playerHitbox.right = playerDistance + playerExtents.right;
+    playerHitbox.top = playerPositionY - playerExtents.top;
+    playerHitbox.bottom = playerPositionY + playerExtents.bottom;
     let geometry: ReturnType<typeof resolvePrototypeZapperGeometry>;
     if (rotating) {
       geometry = resolvePrototypeZapperGeometry(hazard, initialSimulationSeconds + seconds);
@@ -610,8 +615,10 @@ const evaluatePrototypeZapperPaddingPairDuringStep = (
  * before any dense sample times or geometry are created. Samples remain anchored to absolute world
  * distance plus an authoritative 1/720-second simulation-time lattice. Sorted samples advance one
  * monotonic flight-segment cursor instead of linearly searching the trajectory again per sample.
- * Static Zappers resolve their immutable geometry once per step; rotating Zappers resolve each
- * sample from authoritative simulation time so a beam cannot tunnel between endpoint poses.
+ * One local player hitbox scratch is rewritten for each sample instead of allocating transient
+ * run-state, flight-state, and hitbox objects. Static Zappers resolve their immutable geometry once
+ * per step; rotating Zappers resolve each sample from authoritative simulation time so a beam cannot
+ * tunnel between endpoint poses.
  */
 export const isPlayerCollidingWithPrototypeZapperDuringStep = (
   initialRunState: Readonly<RunMotionState>,
