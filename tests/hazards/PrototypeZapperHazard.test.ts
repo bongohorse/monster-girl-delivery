@@ -3,6 +3,7 @@ import {
   createPrototypeZapperBehavior,
   createPrototypeZapperHitbox,
   doesHitboxOverlapPrototypeZapper,
+  doesHitboxOverlapPrototypeZapperWithCanonicalPadding,
   type LogicalPoint,
   PROTOTYPE_ZAPPER_GRAZE_PADDING,
   PROTOTYPE_ZAPPER_LENGTHS,
@@ -222,6 +223,37 @@ describe('M5 static Zapper geometry', () => {
         }
       }
     }
+  });
+
+  it('keeps public padding validation and rejects custom padding on the canonical-only seam', () => {
+    const zapper = createZapper(0, PROTOTYPE_ZAPPER_LENGTHS.medium, 280, 195);
+    const geometry = resolvePrototypeZapperGeometry(zapper);
+    if (!geometry) {
+      throw new Error('Expected Zapper geometry.');
+    }
+    const hitbox = { left: 270, right: 290, top: 190, bottom: 200 };
+
+    expect(() =>
+      doesHitboxOverlapPrototypeZapper(hitbox, geometry, {
+        beam: Number.NaN,
+        endpoints: 0,
+      }),
+    ).toThrow('Zapper geometry padding must be finite and non-negative.');
+
+    expect(() =>
+      doesHitboxOverlapPrototypeZapperWithCanonicalPadding(hitbox, geometry, {
+        beam: 0,
+        endpoints: 0,
+      }),
+    ).toThrow('Canonical Zapper overlap requires a prototype padding constant.');
+
+    expect(
+      doesHitboxOverlapPrototypeZapperWithCanonicalPadding(
+        hitbox,
+        geometry,
+        PROTOTYPE_ZAPPER_GRAZE_PADDING,
+      ),
+    ).toBe(doesHitboxOverlapPrototypeZapper(hitbox, geometry, PROTOTYPE_ZAPPER_GRAZE_PADDING));
   });
 
   it('does not turn a diagonal Zapper bounding box corner into a false lethal hit', () => {
