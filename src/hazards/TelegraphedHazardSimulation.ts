@@ -172,8 +172,9 @@ const getTelegraphedInstanceByIdentity = (
   state: Readonly<TelegraphedHazardSimulationState>,
   identity: string,
 ): Readonly<TelegraphedHazardLifecycleInstance> | undefined =>
-  state.instanceByIdentity?.[identity] ??
-  state.instances.find((instance) => instance.spawnIdentity === identity);
+  state.instanceByIdentity
+    ? state.instanceByIdentity[identity]
+    : state.instances.find((instance) => instance.spawnIdentity === identity);
 
 /**
  * Synchronizes all lifecycle-owned hazards to the generated spawn window. The M5 Laser uses its own
