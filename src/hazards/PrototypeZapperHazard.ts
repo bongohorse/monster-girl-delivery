@@ -49,6 +49,34 @@ export interface PrototypeZapperGeometry {
   readonly endpointB: Readonly<LogicalCircle>;
 }
 
+interface MutableLogicalPoint {
+  x: number;
+  y: number;
+}
+
+interface MutableLogicalCircle {
+  center: MutableLogicalPoint;
+  radius: number;
+}
+
+interface MutableLogicalCapsule {
+  end: MutableLogicalPoint;
+  radius: number;
+  start: MutableLogicalPoint;
+}
+
+/**
+ * Caller-owned mutable geometry used only on allocation-sensitive collision paths. Public immutable
+ * geometry consumers should continue using resolvePrototypeZapperGeometry().
+ */
+export interface PrototypeZapperGeometryScratch {
+  angleDegrees: number;
+  beam: MutableLogicalCapsule;
+  bounds: LogicalHitbox;
+  endpointA: MutableLogicalCircle;
+  endpointB: MutableLogicalCircle;
+}
+
 export interface PrototypeZapperGeometryPadding {
   readonly beam: number;
   readonly endpoints: number;
@@ -120,37 +148,78 @@ export const resolvePrototypeZapperAngleDegrees = (
   );
 };
 
-const resolveGeometryFromCenter = (
+export const createPrototypeZapperGeometryScratch = (): PrototypeZapperGeometryScratch => {
+  const endpointA: MutableLogicalPoint = { x: 0, y: 0 };
+  const endpointB: MutableLogicalPoint = { x: 0, y: 0 };
+  return {
+    angleDegrees: 0,
+    beam: { end: endpointB, radius: 0, start: endpointA },
+    bounds: { bottom: 0, left: 0, right: 0, top: 0 },
+    endpointA: { center: endpointA, radius: 0 },
+    endpointB: { center: endpointB, radius: 0 },
+  };
+};
+
+const writeGeometryFromCenter = (
+  scratch: PrototypeZapperGeometryScratch,
   center: Readonly<LogicalPoint>,
   behavior: Readonly<ZapperHazardBehavior>,
   simulationSeconds = 0,
-): Readonly<PrototypeZapperGeometry> => {
+): PrototypeZapperGeometryScratch => {
   assertFinitePoint(center, 'Zapper center');
   const angleDegrees = resolvePrototypeZapperAngleDegrees(behavior, simulationSeconds);
   const radians = degreesToRadians(angleDegrees);
   const halfLength = behavior.length / 2;
   const dx = Math.cos(radians) * halfLength;
   const dy = Math.sin(radians) * halfLength;
-  const endpointA = Object.freeze({ x: center.x - dx, y: center.y - dy });
-  const endpointB = Object.freeze({ x: center.x + dx, y: center.y + dy });
+  const endpointAX = center.x - dx;
+  const endpointAY = center.y - dy;
+  const endpointBX = center.x + dx;
+  const endpointBY = center.y + dy;
   const beamRadius = behavior.beamThickness / 2;
   const endpointRadius = behavior.endpointDiameter / 2;
   const maximumRadius = Math.max(beamRadius, endpointRadius);
-  const bounds = Object.freeze({
-    left: Math.min(endpointA.x, endpointB.x) - maximumRadius,
-    right: Math.max(endpointA.x, endpointB.x) + maximumRadius,
-    top: Math.min(endpointA.y, endpointB.y) - maximumRadius,
-    bottom: Math.max(endpointA.y, endpointB.y) + maximumRadius,
-  });
 
-  return Object.freeze({
-    angleDegrees,
-    beam: Object.freeze({ end: endpointB, radius: beamRadius, start: endpointA }),
-    bounds,
-    endpointA: Object.freeze({ center: endpointA, radius: endpointRadius }),
-    endpointB: Object.freeze({ center: endpointB, radius: endpointRadius }),
-  });
+  scratch.angleDegrees = angleDegrees;
+  scratch.beam.start.x = endpointAX;
+  scratch.beam.start.y = endpointAY;
+  scratch.beam.end.x = endpointBX;
+  scratch.beam.end.y = endpointBY;
+  scratch.beam.radius = beamRadius;
+  scratch.endpointA.radius = endpointRadius;
+  scratch.endpointB.radius = endpointRadius;
+  scratch.bounds.left = Math.min(endpointAX, endpointBX) - maximumRadius;
+  scratch.bounds.right = Math.max(endpointAX, endpointBX) + maximumRadius;
+  scratch.bounds.top = Math.min(endpointAY, endpointBY) - maximumRadius;
+  scratch.bounds.bottom = Math.max(endpointAY, endpointBY) + maximumRadius;
+  return scratch;
 };
+
+const freezePrototypeZapperGeometryScratch = (
+  scratch: PrototypeZapperGeometryScratch,
+): Readonly<PrototypeZapperGeometry> => {
+  Object.freeze(scratch.beam.start);
+  Object.freeze(scratch.beam.end);
+  Object.freeze(scratch.beam);
+  Object.freeze(scratch.bounds);
+  Object.freeze(scratch.endpointA);
+  Object.freeze(scratch.endpointB);
+  return Object.freeze(scratch);
+};
+
+const resolveGeometryFromCenter = (
+  center: Readonly<LogicalPoint>,
+  behavior: Readonly<ZapperHazardBehavior>,
+  simulationSeconds = 0,
+): Readonly<PrototypeZapperGeometry> =>
+  freezePrototypeZapperGeometryScratch(
+    writeGeometryFromCenter(
+      createPrototypeZapperGeometryScratch(),
+      center,
+      behavior,
+      simulationSeconds,
+    ),
+  );
 
 /** Creates the authored scheduling box around one Zapper. Rotating Zappers reserve their full sweep. */
 export const createPrototypeZapperHitbox = (
@@ -199,6 +268,26 @@ export const resolvePrototypeZapperGeometry = (
     y: (hazard.hitbox.top + hazard.hitbox.bottom) / 2,
   };
   return resolveGeometryFromCenter(center, hazard.behavior, simulationSeconds);
+};
+
+/**
+ * Rewrites caller-owned geometry without allocating or freezing a new geometry tree. Intended for
+ * dense collision sampling only; presentation and diagnostics should use the immutable resolver.
+ */
+export const resolvePrototypeZapperGeometryInto = (
+  hazard: Readonly<LogicalHazard>,
+  simulationSeconds: number,
+  scratch: PrototypeZapperGeometryScratch,
+): PrototypeZapperGeometryScratch | null => {
+  if (!isPrototypeZapperHazard(hazard)) {
+    return null;
+  }
+
+  const center = {
+    x: (hazard.hitbox.left + hazard.hitbox.right) / 2,
+    y: (hazard.hitbox.top + hazard.hitbox.bottom) / 2,
+  };
+  return writeGeometryFromCenter(scratch, center, hazard.behavior, simulationSeconds);
 };
 
 const pointToHitboxDistanceSquared = (
