@@ -162,6 +162,31 @@ describe('M5 rotating Zapper', () => {
     ).toBe(true);
   });
 
+  it('does not let generic horizontalVelocity metadata change current Zapper motion semantics', () => {
+    const behavior = createPrototypeZapperBehavior(0, PROTOTYPE_ZAPPER_LENGTHS.short);
+    const hitbox = createPrototypeZapperHitbox(100, 195, behavior);
+    const hazard = Object.freeze({
+      behavior,
+      entryId: 'velocity-metadata-zapper',
+      hitbox,
+      horizontalVelocity: 100,
+      patternEntryIndex: 0,
+      patternId: 'velocity-metadata-zapper-test',
+      runDistance: hitbox.left,
+      type: 'placeholder-barrier' as const,
+    });
+
+    expect(
+      isPlayerCollidingWithPrototypeZapperDuringStep(
+        { distance: 0, simulationSeconds: 0 },
+        createStationaryTrajectory(195, 1),
+        1,
+        { baseScrollSpeed: 100 },
+        hazard,
+      ),
+    ).toBe(true);
+  });
+
   it('reports the same angular sweep collision across standard frame partitions', () => {
     const hazard = createRotatingZapper();
     const results: Record<string, boolean> = {};
