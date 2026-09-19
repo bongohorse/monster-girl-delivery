@@ -627,7 +627,6 @@ export const evaluatePlayerPrototypeZapperCoreAndGrazeDuringStep = (
   grazePadding: Readonly<PrototypeZapperGeometryPadding>,
   playerExtents: Readonly<PrototypePlayerCollisionExtents> = PROTOTYPE_PLAYER_COLLISION_EXTENTS,
 ): Readonly<PrototypeZapperCoreGrazeContacts> => {
-  assertValidPrototypeZapperPadding(grazePadding);
   const contacts = evaluatePrototypeZapperPaddingPairDuringStep(
     initialRunState,
     trajectory,
