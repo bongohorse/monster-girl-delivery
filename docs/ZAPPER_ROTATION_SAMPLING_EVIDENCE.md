@@ -50,6 +50,12 @@ The middle pose overlaps. Both neighboring `1/360 s` poses do not. The automated
 
 So changing `1/720 s` to `1/360 s` can create a real false negative without changing any gameplay geometry.
 
+### Deterministic adversarial phase sweep
+
+The test suite also sweeps many odd `1/720` indices from roughly 20 to 70 degrees. Every tested target is deliberately placed halfway between neighboring `1/360` samples and receives the same tiny positive endpoint penetration.
+
+This keeps the evidence reproducible while covering many lattice phases instead of relying on one hand-picked angle. A deterministic adversarial sweep is more useful here than unconstrained random fuzzing because the failure condition is specifically phase alignment between two fixed lattices.
+
 ## Why this also matters for the current 1/720 s lattice
 
 The same construction can be repeated between any two fixed samples.
