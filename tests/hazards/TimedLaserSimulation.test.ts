@@ -71,8 +71,8 @@ describe('Timed Laser telegraph integration', () => {
       ...state,
       instances: new Proxy(state.instances, {
         get(target, property, receiver) {
-          if (property === 'find') {
-            throw new Error('telegraphed lifecycle lookup fell back to linear find');
+          if (property === 'find' || property === 'map') {
+            throw new Error('telegraphed lifecycle state fell back to array indexing work');
           }
           return Reflect.get(target, property, receiver);
         },
@@ -98,6 +98,9 @@ describe('Timed Laser telegraph integration', () => {
         collisionContext,
       ),
     ).toEqual([]);
+    expect(() =>
+      stepTelegraphedHazardSimulation(noLinearFindState, [spawn], 0.1, playerTarget),
+    ).not.toThrow();
   });
 
   it('keeps OFF, TELEGRAPH and CHARGE out of collision and exposes the real phase', () => {
