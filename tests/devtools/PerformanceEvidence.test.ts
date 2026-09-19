@@ -5,7 +5,7 @@ import {
 } from '../../src/devtools/PerformanceEvidence';
 
 describe('PerformanceEvidence', () => {
-  it('captures immutable build, display, run, frame-time, and Zapper evidence', () => {
+  it('captures immutable build, device, tuning, benchmark, frame-time, and Zapper evidence', () => {
     const counters = {
       broadphaseRejectedCallCount: 2,
       candidateSampleCount: 50,
@@ -18,6 +18,7 @@ describe('PerformanceEvidence', () => {
 
     const report = createPerformanceEvidenceReport(
       {
+        baseScrollSpeed: 350,
         buildCommit: 'abc123def456',
         buildMode: 'development',
         canvasBackingHeight: 780,
@@ -26,12 +27,20 @@ describe('PerformanceEvidence', () => {
         devicePixelRatio: 2,
         directorAutoHazardsEnabled: false,
         directorGodModeEnabled: true,
+        directorSimulationFrozen: false,
+        effectiveScrollSpeed: 350,
+        flightGravity: 1_600,
+        flightMaxFallVelocity: 700,
+        flightMaxRiseVelocity: 550,
+        flightThrust: 2_600,
+        performancePresetId: 'zapper-heavy-v1',
         renderScale: 2,
         runDistance: 1234.5,
         runSeed: 12_345,
         userAgent: 'Test Browser/1.0',
         viewportHeight: 390,
         viewportWidth: 844,
+        wireframesEnabled: false,
       },
       {
         averageFrameTimeMilliseconds: 16.4,
@@ -78,8 +87,19 @@ describe('PerformanceEvidence', () => {
       context: {
         directorAutoHazardsEnabled: false,
         directorGodModeEnabled: true,
+        directorSimulationFrozen: false,
+        performancePresetId: 'zapper-heavy-v1',
         runDistance: 1234.5,
         runSeed: 12_345,
+        tuning: {
+          baseScrollSpeed: 350,
+          effectiveScrollSpeed: 350,
+          flightGravity: 1_600,
+          flightMaxFallVelocity: 700,
+          flightMaxRiseVelocity: 550,
+          flightThrust: 2_600,
+        },
+        wireframesEnabled: false,
       },
       display: {
         canvasBackingHeight: 780,
@@ -91,16 +111,18 @@ describe('PerformanceEvidence', () => {
         viewportWidth: 844,
       },
       capturedAtIso: '2026-09-19T18:00:00.000Z',
-      schemaVersion: 1,
+      schemaVersion: 2,
     });
     expect(Object.isFrozen(report)).toBe(true);
     expect(Object.isFrozen(report.capture.frameTime)).toBe(true);
     expect(Object.isFrozen(report.capture.zapperWork)).toBe(true);
+    expect(Object.isFrozen(report.context.tuning)).toBe(true);
   });
 
   it('normalizes invalid FPS and serializes stable readable JSON', () => {
     const report = createPerformanceEvidenceReport(
       {
+        baseScrollSpeed: 350,
         buildCommit: 'unknown',
         buildMode: 'production',
         canvasBackingHeight: 390,
@@ -109,12 +131,20 @@ describe('PerformanceEvidence', () => {
         devicePixelRatio: 1,
         directorAutoHazardsEnabled: true,
         directorGodModeEnabled: false,
+        directorSimulationFrozen: false,
+        effectiveScrollSpeed: 350,
+        flightGravity: 1_600,
+        flightMaxFallVelocity: 700,
+        flightMaxRiseVelocity: 550,
+        flightThrust: 2_600,
+        performancePresetId: null,
         renderScale: 1,
         runDistance: 0,
         runSeed: null,
         userAgent: 'Test Browser/2.0',
         viewportHeight: 390,
         viewportWidth: 844,
+        wireframesEnabled: false,
       },
       {
         averageFrameTimeMilliseconds: null,
@@ -133,7 +163,7 @@ describe('PerformanceEvidence', () => {
     expect(report.capture.actualFps).toBeNull();
     expect(report.capture.zapperWork).toBeNull();
     const serialized = serializePerformanceEvidenceReport(report);
-    expect(serialized).toContain('"schemaVersion": 1');
+    expect(serialized).toContain('"schemaVersion": 2');
     expect(JSON.parse(serialized)).toEqual(report);
   });
 });

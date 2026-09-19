@@ -22,6 +22,7 @@ export interface DirectorPerformanceHudControls {
   readonly clearHazards?: () => void;
   readonly setSimulationFrozen?: (frozen: boolean) => void;
   readonly triggerDeath?: () => void;
+  readonly startZapperPerformancePreset?: () => void;
   readonly exportPerformanceEvidence?: (
     snapshot: Readonly<PerformanceSnapshot>,
     framesPerSecond: number,
@@ -104,7 +105,9 @@ export class DirectorPerformanceHud {
   private readonly deathButton: HTMLButtonElement;
   private readonly resetButton: HTMLButtonElement;
   private readonly evidenceButton: HTMLButtonElement;
+  private readonly zapperPerformanceButton: HTMLButtonElement;
   private destroyed = false;
+  private discardNextPerformanceSample = false;
   private elapsedSinceRefreshMilliseconds = Number.POSITIVE_INFINITY;
   private fpsLimitIndex = 0;
   private hidden = false;
@@ -193,6 +196,11 @@ export class DirectorPerformanceHud {
       '☠',
       'Trigger normal death / fail-state flow',
     );
+    this.zapperPerformanceButton = this.createButton(
+      ownerDocument,
+      'ZP',
+      'Start deterministic Zapper performance preset',
+    );
     this.playgroundControls.append(
       this.godModeButton,
       this.autoHazardsButton,
@@ -203,6 +211,7 @@ export class DirectorPerformanceHud {
       this.clearButton,
       this.freezeButton,
       this.deathButton,
+      this.zapperPerformanceButton,
     );
     this.setToggleState(this.godModeButton, false);
     this.setToggleState(this.autoHazardsButton, true);
@@ -245,6 +254,7 @@ export class DirectorPerformanceHud {
     this.addControlListeners(this.clearButton, this.handleClearClick);
     this.addControlListeners(this.freezeButton, this.handleFreezeClick);
     this.addControlListeners(this.deathButton, this.handleDeathClick);
+    this.addControlListeners(this.zapperPerformanceButton, this.handleZapperPerformanceClick);
     this.addControlListeners(this.resetButton, this.handleResetClick);
     this.addControlListeners(this.evidenceButton, this.handleEvidenceClick);
     this.addTogglePointerListeners(this.wireframeLabel);
@@ -264,10 +274,12 @@ export class DirectorPerformanceHud {
     }
 
     this.latestFramesPerSecond = framesPerSecond;
+    const discardPresetSetupSample = this.discardNextPerformanceSample;
+    this.discardNextPerformanceSample = false;
     const accepted = this.sampler.sample(
       rawFrameTimeMilliseconds,
       lifecyclePaused,
-      discardCurrentSample,
+      discardCurrentSample || discardPresetSetupSample,
     );
 
     if (!accepted || this.hidden) {
@@ -313,6 +325,7 @@ export class DirectorPerformanceHud {
     this.removeControlListeners(this.clearButton, this.handleClearClick);
     this.removeControlListeners(this.freezeButton, this.handleFreezeClick);
     this.removeControlListeners(this.deathButton, this.handleDeathClick);
+    this.removeControlListeners(this.zapperPerformanceButton, this.handleZapperPerformanceClick);
     this.removeControlListeners(this.resetButton, this.handleResetClick);
     this.removeControlListeners(this.evidenceButton, this.handleEvidenceClick);
     this.removeTogglePointerListeners(this.wireframeLabel);
@@ -447,14 +460,49 @@ export class DirectorPerformanceHud {
     this.controls?.triggerDeath?.();
   };
 
-  private readonly handleResetClick = (event: Event): void => {
-    this.stopControlEvent(event);
+  private resetPerformanceMeasurements(): void {
     this.sampler.reset();
     if (this.zapperCollisionWorkCounters) {
       resetPrototypeZapperCollisionWorkCounters(this.zapperCollisionWorkCounters);
     }
     this.elapsedSinceRefreshMilliseconds = 0;
     this.refreshVisibleValues();
+  }
+
+  private readonly handleResetClick = (event: Event): void => {
+    this.stopControlEvent(event);
+    this.resetPerformanceMeasurements();
+  };
+
+  private readonly handleZapperPerformanceClick = (event: Event): void => {
+    this.stopControlEvent(event);
+
+    if (!this.godModeEnabled) {
+      this.godModeEnabled = true;
+      this.setToggleState(this.godModeButton, true);
+      this.controls?.setGodModeEnabled?.(true);
+    }
+    if (this.autoHazardsEnabled) {
+      this.autoHazardsEnabled = false;
+      this.setToggleState(this.autoHazardsButton, false);
+      this.controls?.setAutoHazardsEnabled?.(false);
+    }
+    if (this.simulationFrozen) {
+      this.simulationFrozen = false;
+      this.setToggleState(this.freezeButton, false);
+      this.freezeButton.textContent = '⏸';
+      this.freezeButton.title = 'Freeze gameplay simulation';
+      this.freezeButton.setAttribute('aria-label', this.freezeButton.title);
+      this.controls?.setSimulationFrozen?.(false);
+    }
+    if (this.wireframeCheckbox.checked) {
+      this.wireframeCheckbox.checked = false;
+      this.controls?.setWireframesEnabled(false);
+    }
+
+    this.resetPerformanceMeasurements();
+    this.discardNextPerformanceSample = true;
+    this.controls?.startZapperPerformancePreset?.();
   };
 
   private readonly handleEvidenceClick = (event: Event): void => {
