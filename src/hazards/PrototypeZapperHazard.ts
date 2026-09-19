@@ -95,8 +95,8 @@ const degreesToRadians = (degrees: number): number => (degrees * Math.PI) / 180;
 const positiveModulo = (value: number, modulus: number): number =>
   ((value % modulus) + modulus) % modulus;
 
-const assertFinitePoint = (point: Readonly<LogicalPoint>, name: string): void => {
-  if (!Number.isFinite(point.x) || !Number.isFinite(point.y)) {
+const assertFiniteCoordinates = (x: number, y: number, name: string): void => {
+  if (!Number.isFinite(x) || !Number.isFinite(y)) {
     throw new RangeError(`${name} must contain finite coordinates.`);
   }
 };
@@ -162,20 +162,21 @@ export const createPrototypeZapperGeometryScratch = (): PrototypeZapperGeometryS
 
 const writeGeometryFromCenter = (
   scratch: PrototypeZapperGeometryScratch,
-  center: Readonly<LogicalPoint>,
+  centerX: number,
+  centerY: number,
   behavior: Readonly<ZapperHazardBehavior>,
   simulationSeconds = 0,
 ): PrototypeZapperGeometryScratch => {
-  assertFinitePoint(center, 'Zapper center');
+  assertFiniteCoordinates(centerX, centerY, 'Zapper center');
   const angleDegrees = resolvePrototypeZapperAngleDegrees(behavior, simulationSeconds);
   const radians = degreesToRadians(angleDegrees);
   const halfLength = behavior.length / 2;
   const dx = Math.cos(radians) * halfLength;
   const dy = Math.sin(radians) * halfLength;
-  const endpointAX = center.x - dx;
-  const endpointAY = center.y - dy;
-  const endpointBX = center.x + dx;
-  const endpointBY = center.y + dy;
+  const endpointAX = centerX - dx;
+  const endpointAY = centerY - dy;
+  const endpointBX = centerX + dx;
+  const endpointBY = centerY + dy;
   const beamRadius = behavior.beamThickness / 2;
   const endpointRadius = behavior.endpointDiameter / 2;
   const maximumRadius = Math.max(beamRadius, endpointRadius);
@@ -215,7 +216,8 @@ const resolveGeometryFromCenter = (
   freezePrototypeZapperGeometryScratch(
     writeGeometryFromCenter(
       createPrototypeZapperGeometryScratch(),
-      center,
+      center.x,
+      center.y,
       behavior,
       simulationSeconds,
     ),
@@ -283,11 +285,15 @@ export const resolvePrototypeZapperGeometryInto = (
     return null;
   }
 
-  const center = {
-    x: (hazard.hitbox.left + hazard.hitbox.right) / 2,
-    y: (hazard.hitbox.top + hazard.hitbox.bottom) / 2,
-  };
-  return writeGeometryFromCenter(scratch, center, hazard.behavior, simulationSeconds);
+  const centerX = (hazard.hitbox.left + hazard.hitbox.right) / 2;
+  const centerY = (hazard.hitbox.top + hazard.hitbox.bottom) / 2;
+  return writeGeometryFromCenter(
+    scratch,
+    centerX,
+    centerY,
+    hazard.behavior,
+    simulationSeconds,
+  );
 };
 
 const pointToHitboxDistanceSquared = (
