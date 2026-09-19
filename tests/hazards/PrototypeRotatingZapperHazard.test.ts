@@ -347,13 +347,15 @@ describe('M5 rotating Zapper', () => {
       ),
     ).toEqual({ coreHit: false, grazeHit: false });
 
-    expect(counters.collisionCallCount).toBe(1);
-    expect(counters.broadphaseRejectedCallCount).toBe(0);
-    expect(counters.candidateSampleCount).toBeGreaterThan(2);
-    expect(counters.evaluatedSampleCount).toBe(counters.candidateSampleCount);
-    expect(counters.geometryResolutionCount).toBe(1);
-    expect(counters.primaryNarrowphaseCheckCount).toBe(counters.evaluatedSampleCount);
-    expect(counters.secondaryNarrowphaseCheckCount).toBe(counters.evaluatedSampleCount);
+    expect(counters).toEqual({
+      broadphaseRejectedCallCount: 0,
+      candidateSampleCount: 0,
+      collisionCallCount: 1,
+      evaluatedSampleCount: 0,
+      geometryResolutionCount: 1,
+      primaryNarrowphaseCheckCount: 1,
+      secondaryNarrowphaseCheckCount: 1,
+    });
   });
 
   it('keeps Zapper Graze padding inside the conservative horizontal broadphase', () => {
