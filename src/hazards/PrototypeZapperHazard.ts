@@ -482,12 +482,6 @@ export const getPrototypeZapperGrazePadding = (
   if (!isPrototypeZapperHazard(hazard)) {
     return PROTOTYPE_ZAPPER_LETHAL_PADDING;
   }
-  if (
-    hazard.behavior.grazeBeamPadding === PROTOTYPE_ZAPPER_GRAZE_PADDING.beam &&
-    hazard.behavior.grazeEndpointPadding === PROTOTYPE_ZAPPER_GRAZE_PADDING.endpoints
-  ) {
-    return PROTOTYPE_ZAPPER_GRAZE_PADDING;
-  }
   return Object.freeze({
     beam: hazard.behavior.grazeBeamPadding,
     endpoints: hazard.behavior.grazeEndpointPadding,
