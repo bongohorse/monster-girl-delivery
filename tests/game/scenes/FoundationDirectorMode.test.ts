@@ -164,6 +164,7 @@ import { Foundation } from '../../../src/game/scenes/Foundation';
 
 interface DirectorTestControls {
   clearHazards?: () => void;
+  exportPerformanceEvidence?: (...args: unknown[]) => void;
   setFpsLimit?: (limit: number) => void;
   spawnZapper?: () => void;
   spawnZapperGroup?: () => void;
@@ -242,6 +243,7 @@ describe('Foundation Director mode boundary', () => {
       services.input,
       undefined,
       expect.objectContaining({
+        exportPerformanceEvidence: expect.any(Function),
         setFpsLimit: expect.any(Function),
         setWireframesEnabled: expect.any(Function),
         spawnZapper: expect.any(Function),
