@@ -37,7 +37,7 @@ const createStationaryTrajectory = (positionY: number, elapsedSeconds: number) =
 const createZapper = (
   rotating: boolean,
   centerX = 0,
-  rotationSpeedDegreesPerSecond = PROTOTYPE_ZAPPER_ROTATION_SPEEDS.fast,
+  rotationSpeedDegreesPerSecond: number = PROTOTYPE_ZAPPER_ROTATION_SPEEDS.fast,
 ) => {
   const behavior = createPrototypeZapperBehavior(
     0,
