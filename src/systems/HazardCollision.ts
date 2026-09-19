@@ -406,8 +406,7 @@ const canFlightTrajectoryOverlapVerticalRange = (
     maximum = Math.max(maximum, startPositionY, endPositionY);
 
     if (segment.accelerationY !== 0) {
-      const vertexSeconds =
-        segment.startSeconds - segment.velocityY / segment.accelerationY;
+      const vertexSeconds = segment.startSeconds - segment.velocityY / segment.accelerationY;
       if (vertexSeconds > startSeconds && vertexSeconds < endSeconds) {
         const vertexPositionY = evaluateFlightSegmentPosition(segment, vertexSeconds);
         if (!Number.isFinite(vertexPositionY)) {
