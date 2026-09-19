@@ -83,6 +83,21 @@ describe('Timed Laser telegraph integration', () => {
     expect(
       getCollisionHazardsForTelegraphedSimulation(noLinearFindState, [spawn], collisionContext),
     ).toHaveLength(1);
+
+    const missingSpawn = Object.freeze({
+      ...spawn,
+      entryId: 'missing-laser',
+      patternId: 'missing-laser-pattern',
+      runDistance: spawn.runDistance + 1_000,
+    });
+    expect(getTimedLaserLifecycle(noLinearFindState, missingSpawn)).toBeNull();
+    expect(
+      getCollisionHazardsForTelegraphedSimulation(
+        noLinearFindState,
+        [missingSpawn],
+        collisionContext,
+      ),
+    ).toEqual([]);
   });
 
   it('keeps OFF, TELEGRAPH and CHARGE out of collision and exposes the real phase', () => {
