@@ -176,13 +176,50 @@ describe('M5 rotating Zapper', () => {
     expect(
       isPlayerCollidingWithPrototypeZapperDuringStep(
         { distance: 0, simulationSeconds: 0 },
-        createStationaryTrajectory(500, 0.1),
+        createStationaryTrajectory(230, 0.1),
         0.1,
         RUN_TUNING,
         hazard,
       ),
     ).toBe(false);
     expect(angleReads).toBe(1);
+  });
+
+  it('rejects a vertically unreachable Zapper before creating dense samples or geometry', () => {
+    const behavior = createPrototypeZapperBehavior(0, PROTOTYPE_ZAPPER_LENGTHS.short);
+    const hitbox = createPrototypeZapperHitbox(0, 0, behavior);
+    const hazard = Object.freeze({
+      behavior,
+      entryId: 'vertical-broadphase-zapper',
+      hitbox,
+      patternEntryIndex: 0,
+      patternId: 'vertical-broadphase-zapper-test',
+      runDistance: hitbox.left,
+      type: 'placeholder-barrier' as const,
+    });
+    const counters = createPrototypeZapperCollisionWorkCounters();
+
+    expect(
+      isPlayerCollidingWithPrototypeZapperDuringStep(
+        { distance: 0, simulationSeconds: 0 },
+        createStationaryTrajectory(500, 0.1),
+        0.1,
+        RUN_TUNING,
+        hazard,
+        undefined,
+        undefined,
+        counters,
+      ),
+    ).toBe(false);
+    expect(counters).toEqual({
+      broadphaseRejectedCallCount: 1,
+      candidateSampleCount: 0,
+      collisionCallCount: 1,
+      evaluatedSampleCount: 0,
+      geometryResolutionCount: 0,
+      primaryNarrowphaseCheckCount: 0,
+      secondaryNarrowphaseCheckCount: 0,
+    });
   });
 
   it('rejects a far rotating Zapper before resolving rotation or sample geometry', () => {
@@ -264,7 +301,7 @@ describe('M5 rotating Zapper', () => {
     expect(
       evaluatePlayerPrototypeZapperCoreAndGrazeDuringStep(
         { distance: 0, simulationSeconds: 0 },
-        createStationaryTrajectory(100, 0.1),
+        createStationaryTrajectory(47, 0.1),
         0.1,
         RUN_TUNING,
         hazard,
