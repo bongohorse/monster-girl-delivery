@@ -74,6 +74,20 @@ describe('M5 rotating Zapper sampling safety evidence', () => {
     expect(doesFixedTimeLatticeObserveContact(hazard, playerHitbox, 720)).toBe(true);
   });
 
+  it('sweeps adversarial half-phase contacts across the first quadrant', () => {
+    const hazard = createFastLongRotatingZapper();
+
+    // Odd 1/720 indices are exactly halfway between neighboring 1/360 samples at 90 deg/s.
+    // Sweep many such phases instead of relying on one hand-picked angle.
+    for (let fineIndex = 161; fineIndex <= 559; fineIndex += 26) {
+      const targetAngleDegrees = fineIndex / 8;
+      const playerHitbox = createNearTangentPlayerHitbox(targetAngleDegrees, 0.0005);
+
+      expect(doesFixedTimeLatticeObserveContact(hazard, playerHitbox, 360)).toBe(false);
+      expect(doesFixedTimeLatticeObserveContact(hazard, playerHitbox, 720)).toBe(true);
+    }
+  });
+
   it('records that any fixed-rate pose lattice is a tolerance, not an exact continuous proof', () => {
     const hazard = createFastLongRotatingZapper();
 
