@@ -356,6 +356,43 @@ describe('M5 Zapper collision work evidence', () => {
     });
   });
 
+  it('preserves the dual-lattice workload when scroll direction is reversed', () => {
+    const positiveCounters = createPrototypeZapperCollisionWorkCounters();
+    const negativeCounters = createPrototypeZapperCollisionWorkCounters();
+
+    expect(
+      isPlayerCollidingWithPrototypeZapperDuringStep(
+        { distance: 0, simulationSeconds: 0 },
+        createStationaryTrajectory(47, 0.1),
+        0.1,
+        NORMAL_SCROLL,
+        createZapper(true, 17.5),
+        undefined,
+        undefined,
+        positiveCounters,
+      ),
+    ).toBe(false);
+    expect(
+      isPlayerCollidingWithPrototypeZapperDuringStep(
+        { distance: 0, simulationSeconds: 0 },
+        createStationaryTrajectory(47, 0.1),
+        0.1,
+        { baseScrollSpeed: -350 },
+        createZapper(true, -17.5),
+        undefined,
+        undefined,
+        negativeCounters,
+      ),
+    ).toBe(false);
+
+    expect(negativeCounters.candidateSampleCount).toBe(positiveCounters.candidateSampleCount);
+    expect(negativeCounters.evaluatedSampleCount).toBe(positiveCounters.evaluatedSampleCount);
+    expect(negativeCounters.geometryResolutionCount).toBe(positiveCounters.geometryResolutionCount);
+    expect(negativeCounters.primaryNarrowphaseCheckCount).toBe(
+      positiveCounters.primaryNarrowphaseCheckCount,
+    );
+  });
+
   it('pins the current shared core + Graze miss cost without a second geometry pass', () => {
     const counters = createPrototypeZapperCollisionWorkCounters();
 
