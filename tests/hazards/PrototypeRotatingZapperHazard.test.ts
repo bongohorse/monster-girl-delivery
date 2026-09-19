@@ -278,10 +278,7 @@ describe('M5 rotating Zapper', () => {
     ] as const;
 
     for (const testCase of cases) {
-      const trajectory = createStationaryTrajectory(
-        testCase.positionY,
-        testCase.elapsedSeconds,
-      );
+      const trajectory = createStationaryTrajectory(testCase.positionY, testCase.elapsedSeconds);
       const coreHit = isPlayerCollidingWithPrototypeZapperDuringStep(
         testCase.initialRunState,
         trajectory,
