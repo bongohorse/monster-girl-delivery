@@ -12,6 +12,7 @@ import {
   PROTOTYPE_ZAPPER_GRAZE_PADDING,
   PROTOTYPE_ZAPPER_LETHAL_PADDING,
   type PrototypeZapperGeometryPadding,
+  resolvePrototypeZapperAngleDegrees,
   resolvePrototypeZapperGeometry,
   resolvePrototypeZapperGeometryInto,
 } from '../hazards/PrototypeZapperHazard';
@@ -426,6 +427,166 @@ const canFlightTrajectoryOverlapVerticalRange = (
   return maximum > minimumCenterY && minimum < maximumCenterY;
 };
 
+interface VerticalFlightIntervalRange {
+  readonly maximum: number;
+  readonly minimum: number;
+}
+
+const resolveCoveredFlightTrajectoryVerticalRange = (
+  trajectory: Readonly<VerticalFlightTrajectory>,
+  interval: Readonly<LogicalHazardCollisionInterval>,
+): Readonly<VerticalFlightIntervalRange> | null => {
+  let minimum = Number.POSITIVE_INFINITY;
+  let maximum = Number.NEGATIVE_INFINITY;
+  let coveredUntilSeconds = interval.startSeconds;
+  let previousEndPositionY: number | undefined;
+  let foundSegment = false;
+
+  for (const segment of trajectory.segments) {
+    const startSeconds = Math.max(interval.startSeconds, segment.startSeconds);
+    const endSeconds = Math.min(interval.endSeconds, segment.endSeconds);
+    if (endSeconds < startSeconds) {
+      continue;
+    }
+
+    if (foundSegment && startSeconds !== coveredUntilSeconds) {
+      return null;
+    }
+    if (!foundSegment && startSeconds !== interval.startSeconds) {
+      return null;
+    }
+
+    const startPositionY = evaluateFlightSegmentPosition(segment, startSeconds);
+    const endPositionY = evaluateFlightSegmentPosition(segment, endSeconds);
+    if (!Number.isFinite(startPositionY) || !Number.isFinite(endPositionY)) {
+      return null;
+    }
+    if (previousEndPositionY !== undefined && startPositionY !== previousEndPositionY) {
+      return null;
+    }
+
+    foundSegment = true;
+    minimum = Math.min(minimum, startPositionY, endPositionY);
+    maximum = Math.max(maximum, startPositionY, endPositionY);
+
+    if (segment.accelerationY !== 0) {
+      const vertexSeconds = segment.startSeconds - segment.velocityY / segment.accelerationY;
+      if (vertexSeconds > startSeconds && vertexSeconds < endSeconds) {
+        const vertexPositionY = evaluateFlightSegmentPosition(segment, vertexSeconds);
+        if (!Number.isFinite(vertexPositionY)) {
+          return null;
+        }
+        minimum = Math.min(minimum, vertexPositionY);
+        maximum = Math.max(maximum, vertexPositionY);
+      }
+    }
+
+    coveredUntilSeconds = endSeconds;
+    previousEndPositionY = endPositionY;
+    if (coveredUntilSeconds === interval.endSeconds) {
+      break;
+    }
+  }
+
+  return foundSegment && coveredUntilSeconds === interval.endSeconds ? { maximum, minimum } : null;
+};
+
+const intervalContainsPeriodicPhase = (
+  minimum: number,
+  maximum: number,
+  phase: number,
+  period: number,
+): boolean => {
+  const firstIndex = Math.ceil((minimum - phase) / period);
+  return phase + firstIndex * period <= maximum;
+};
+
+const getMaximumAbsoluteCosine = (minimumRadians: number, maximumRadians: number): number =>
+  intervalContainsPeriodicPhase(minimumRadians, maximumRadians, 0, Math.PI)
+    ? 1
+    : Math.max(Math.abs(Math.cos(minimumRadians)), Math.abs(Math.cos(maximumRadians)));
+
+const getMaximumAbsoluteSine = (minimumRadians: number, maximumRadians: number): number =>
+  intervalContainsPeriodicPhase(minimumRadians, maximumRadians, Math.PI / 2, Math.PI)
+    ? 1
+    : Math.max(Math.abs(Math.sin(minimumRadians)), Math.abs(Math.sin(maximumRadians)));
+
+const canRotatingZapperAngularSweepReachPlayer = (
+  initialRunState: Readonly<RunMotionState>,
+  trajectory: Readonly<VerticalFlightTrajectory>,
+  runMotionTuning: Readonly<RunMotionValues>,
+  hazard: Readonly<LogicalHazard>,
+  interval: Readonly<LogicalHazardCollisionInterval>,
+  maximumPadding: number,
+): boolean => {
+  if (!isPrototypeZapperHazard(hazard) || hazard.behavior.rotation === undefined) {
+    return true;
+  }
+
+  const verticalRange = resolveCoveredFlightTrajectoryVerticalRange(trajectory, interval);
+  if (!verticalRange) {
+    return true;
+  }
+
+  const startDistance =
+    initialRunState.distance + runMotionTuning.baseScrollSpeed * interval.startSeconds;
+  const endDistance =
+    initialRunState.distance + runMotionTuning.baseScrollSpeed * interval.endSeconds;
+  if (!Number.isFinite(startDistance) || !Number.isFinite(endDistance)) {
+    return true;
+  }
+
+  const playerBottom = verticalRange.maximum + PROTOTYPE_PLAYER_COLLISION_EXTENTS.bottom;
+  const playerLeft = Math.min(startDistance, endDistance) - PROTOTYPE_PLAYER_COLLISION_EXTENTS.left;
+  const playerRight =
+    Math.max(startDistance, endDistance) + PROTOTYPE_PLAYER_COLLISION_EXTENTS.right;
+  const playerTop = verticalRange.minimum - PROTOTYPE_PLAYER_COLLISION_EXTENTS.top;
+
+  const centerX = (hazard.hitbox.left + hazard.hitbox.right) / 2;
+  const centerY = (hazard.hitbox.top + hazard.hitbox.bottom) / 2;
+  if (!Number.isFinite(centerX) || !Number.isFinite(centerY)) {
+    return true;
+  }
+
+  const rotation = hazard.behavior.rotation;
+  const direction = rotation.direction === 'clockwise' ? 1 : -1;
+  const initialSimulationSeconds = initialRunState.simulationSeconds ?? 0;
+  const startDegrees = resolvePrototypeZapperAngleDegrees(
+    hazard.behavior,
+    initialSimulationSeconds + interval.startSeconds,
+  );
+  const sweepDegrees =
+    direction * rotation.speedDegreesPerSecond * (interval.endSeconds - interval.startSeconds);
+  if (!Number.isFinite(startDegrees) || !Number.isFinite(sweepDegrees)) {
+    return true;
+  }
+
+  const firstRadians = (startDegrees * Math.PI) / 180;
+  const secondRadians = ((startDegrees + sweepDegrees) * Math.PI) / 180;
+  const minimumRadians = Math.min(firstRadians, secondRadians);
+  const maximumRadians = Math.max(firstRadians, secondRadians);
+  const halfLength = hazard.behavior.length / 2;
+  const maximumRadius =
+    Math.max(hazard.behavior.beamThickness / 2, hazard.behavior.endpointDiameter / 2) +
+    maximumPadding;
+  const horizontalExtent =
+    halfLength * getMaximumAbsoluteCosine(minimumRadians, maximumRadians) + maximumRadius;
+  const verticalExtent =
+    halfLength * getMaximumAbsoluteSine(minimumRadians, maximumRadians) + maximumRadius;
+
+  const zapperBottom = centerY + verticalExtent;
+  const zapperLeft = centerX - horizontalExtent;
+  const zapperRight = centerX + horizontalExtent;
+  const zapperTop = centerY - verticalExtent;
+
+  return (
+    playerLeft < zapperRight &&
+    playerRight > zapperLeft &&
+    playerTop < zapperBottom &&
+    playerBottom > zapperTop
+  );
+};
+
 const evaluateStaticZapperOneAxisSweep = (
   initialRunState: Readonly<RunMotionState>,
   trajectory: Readonly<VerticalFlightTrajectory>,
@@ -739,6 +900,11 @@ const assertValidPrototypeZapperPadding = (
   }
 };
 
+const isCanonicalPrototypeZapperPadding = (
+  padding: Readonly<PrototypeZapperGeometryPadding>,
+): boolean =>
+  padding === PROTOTYPE_ZAPPER_LETHAL_PADDING || padding === PROTOTYPE_ZAPPER_GRAZE_PADDING;
+
 const doesHitboxOverlapPrototypeZapperOnValidatedPath = (
   hitbox: Readonly<LogicalHitbox>,
   geometry: NonNullable<ReturnType<typeof resolvePrototypeZapperGeometry>>,
@@ -862,6 +1028,29 @@ const evaluatePrototypeZapperPaddingPairDuringStep = (
       }
       return NO_PROTOTYPE_ZAPPER_PADDING_PAIR_CONTACT;
     }
+  }
+
+  const canUseCanonicalAngularBroadphase =
+    isCanonicalPrototypeZapperPadding(primaryPadding) &&
+    (secondaryPadding === undefined || isCanonicalPrototypeZapperPadding(secondaryPadding));
+
+  if (
+    playerExtents === PROTOTYPE_PLAYER_COLLISION_EXTENTS &&
+    hazard.behavior.rotation !== undefined &&
+    canUseCanonicalAngularBroadphase &&
+    !canRotatingZapperAngularSweepReachPlayer(
+      initialRunState,
+      trajectory,
+      runMotionTuning,
+      hazard,
+      interval,
+      maximumPadding,
+    )
+  ) {
+    if (workCounters) {
+      workCounters.broadphaseRejectedCallCount += 1;
+    }
+    return NO_PROTOTYPE_ZAPPER_PADDING_PAIR_CONTACT;
   }
 
   if (playerExtents === PROTOTYPE_PLAYER_COLLISION_EXTENTS) {
@@ -992,7 +1181,9 @@ const evaluatePrototypeZapperPaddingPairDuringStep = (
  * conservative horizontal envelope; rotating Zappers reserve their full angular sweep. Cheap
  * horizontal plus exact canonical-extents vertical trajectory broadphases reject envelopes that
  * cannot reach the player during the active interval before dense sample times or geometry are
- * created. Static Zappers also collapse canonical one-axis player motion into one exact swept AABB:
+ * created. Rotating Zappers then use the actual authoritative angle arc to build a conservative
+ * swept geometry AABB, rejecting parts of the authored full-rotation reservation box that the active
+ * arc cannot reach. Static Zappers also collapse canonical one-axis player motion into one exact swept AABB:
  * vertical-only continuous flight or horizontal-only scrolling therefore needs one geometry check
  * instead of the dense lattice. Two-axis motion and unusual/gapped trajectories retain the lattice.
  * Custom extents retain the historical path. Samples remain anchored to absolute world

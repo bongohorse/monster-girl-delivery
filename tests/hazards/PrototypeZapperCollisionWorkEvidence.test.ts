@@ -81,7 +81,7 @@ const collectOneSecondPartitionedWork = (
     rotating ? PROTOTYPE_ZAPPER_ROTATION_SPEEDS.slow : PROTOTYPE_ZAPPER_ROTATION_SPEEDS.fast,
   );
   const counters = createPrototypeZapperCollisionWorkCounters();
-  const playerPositionY = rotating ? 120 : 39;
+  const playerPositionY = rotating ? 60 : 39;
   let elapsedSeconds = 0;
   let stepIndex = 0;
 
@@ -357,6 +357,95 @@ describe('M5 Zapper collision work evidence', () => {
     });
   });
 
+  it('rejects a rotating Zapper when the active angle arc cannot reach the player', () => {
+    const counters = createPrototypeZapperCollisionWorkCounters();
+
+    expect(
+      isPlayerCollidingWithPrototypeZapperDuringStep(
+        { distance: 0, simulationSeconds: 0 },
+        createStationaryTrajectory(100, 0.01),
+        0.01,
+        NO_SCROLL,
+        createZapper(true),
+        undefined,
+        undefined,
+        counters,
+      ),
+    ).toBe(false);
+
+    expect(counters).toMatchObject({
+      broadphaseRejectedCallCount: 1,
+      candidateSampleCount: 0,
+      collisionCallCount: 1,
+      evaluatedSampleCount: 0,
+      geometryResolutionCount: 0,
+      primaryNarrowphaseCheckCount: 0,
+    });
+  });
+
+  it('keeps a rotating Zapper on the dense path when the active angle arc can reach the player', () => {
+    const counters = createPrototypeZapperCollisionWorkCounters();
+
+    expect(
+      isPlayerCollidingWithPrototypeZapperDuringStep(
+        { distance: 0, simulationSeconds: 0 },
+        createStationaryTrajectory(100, 1),
+        1,
+        NO_SCROLL,
+        createZapper(true),
+        undefined,
+        undefined,
+        counters,
+      ),
+    ).toBe(true);
+
+    expect(counters.broadphaseRejectedCallCount).toBe(0);
+    expect(counters.candidateSampleCount).toBeGreaterThan(1);
+    expect(counters.evaluatedSampleCount).toBeGreaterThan(0);
+    expect(counters.geometryResolutionCount).toBe(counters.evaluatedSampleCount);
+  });
+
+  it('falls back to dense rotating sampling when trajectory coverage is gapped', () => {
+    const counters = createPrototypeZapperCollisionWorkCounters();
+    const trajectory = Object.freeze({
+      finalState: Object.freeze({ positionY: 100, velocityY: 0 }),
+      segments: Object.freeze([
+        Object.freeze({
+          accelerationY: 0,
+          endSeconds: 0.004,
+          positionY: 100,
+          startSeconds: 0,
+          velocityY: 0,
+        }),
+        Object.freeze({
+          accelerationY: 0,
+          endSeconds: 0.01,
+          positionY: 100,
+          startSeconds: 0.006,
+          velocityY: 0,
+        }),
+      ]),
+    });
+
+    expect(
+      isPlayerCollidingWithPrototypeZapperDuringStep(
+        { distance: 0, simulationSeconds: 0 },
+        trajectory,
+        0.01,
+        NO_SCROLL,
+        createZapper(true),
+        undefined,
+        undefined,
+        counters,
+      ),
+    ).toBe(false);
+
+    expect(counters.broadphaseRejectedCallCount).toBe(0);
+    expect(counters.candidateSampleCount).toBeGreaterThan(1);
+    expect(counters.evaluatedSampleCount).toBe(counters.candidateSampleCount);
+    expect(counters.geometryResolutionCount).toBe(counters.evaluatedSampleCount);
+  });
+
   it('pins the current dual time + 0.5px distance lattice cost at normal scroll speed', () => {
     const counters = createPrototypeZapperCollisionWorkCounters();
 
@@ -447,12 +536,12 @@ describe('M5 Zapper collision work evidence', () => {
 
   it('records the current one-second rotating workload across the #143 frame schedules', () => {
     const expectedCandidateSamples = {
-      '30hz': 771,
-      '60hz': 829,
-      '90hz': 887,
-      '120hz': 948,
-      '144hz': 1_005,
-      jittered: 835,
+      '30hz': 491,
+      '60hz': 516,
+      '90hz': 559,
+      '120hz': 590,
+      '144hz': 623,
+      jittered: 519,
     } as const;
 
     for (const [name, schedule] of Object.entries(STANDARD_FRAME_SCHEDULES)) {
@@ -467,7 +556,7 @@ describe('M5 Zapper collision work evidence', () => {
     }
   });
 
-  it('shows static geometry reuse removes geometry churn but not the dense time lattice', () => {
+  it('shows exact static sweep and rotating arc rejection remove different classes of dense work', () => {
     const staticCounters = collectOneSecondPartitionedWork(STANDARD_FRAME_SCHEDULES['60hz'], false);
     const rotatingCounters = collectOneSecondPartitionedWork(
       STANDARD_FRAME_SCHEDULES['60hz'],
@@ -478,7 +567,7 @@ describe('M5 Zapper collision work evidence', () => {
     expect(staticCounters.evaluatedSampleCount).toBe(0);
     expect(staticCounters.geometryResolutionCount).toBe(60);
     expect(staticCounters.primaryNarrowphaseCheckCount).toBe(60);
-    expect(rotatingCounters.candidateSampleCount).toBe(829);
-    expect(rotatingCounters.geometryResolutionCount).toBe(829);
+    expect(rotatingCounters.candidateSampleCount).toBe(516);
+    expect(rotatingCounters.geometryResolutionCount).toBe(516);
   });
 });
