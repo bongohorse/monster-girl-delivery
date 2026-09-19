@@ -53,6 +53,46 @@ const createCollectibleHitbox = (
     }),
   });
 
+const findFirstCollectibleAtOrAfterRunDistance = (
+  collectibles: ReadonlyArray<Readonly<LogicalCollectibleSpawnInstance>>,
+  runDistance: number,
+): number => {
+  let low = 0;
+  let high = collectibles.length;
+
+  while (low < high) {
+    const middle = low + Math.floor((high - low) / 2);
+    const collectible = collectibles[middle];
+    if (collectible !== undefined && collectible.runDistance < runDistance) {
+      low = middle + 1;
+    } else {
+      high = middle;
+    }
+  }
+
+  return low;
+};
+
+const findFirstCollectibleAfterRunDistance = (
+  collectibles: ReadonlyArray<Readonly<LogicalCollectibleSpawnInstance>>,
+  runDistance: number,
+): number => {
+  let low = 0;
+  let high = collectibles.length;
+
+  while (low < high) {
+    const middle = low + Math.floor((high - low) / 2);
+    const collectible = collectibles[middle];
+    if (collectible !== undefined && collectible.runDistance <= runDistance) {
+      low = middle + 1;
+    } else {
+      high = middle;
+    }
+  }
+
+  return low;
+};
+
 const evaluateSegmentPosition = (
   segment: Readonly<VerticalFlightTrajectorySegment>,
   elapsedSeconds: number,
@@ -230,6 +270,11 @@ const hasLethalCollisionBy = (
  * A valid first overlap is awarded in the same simulation step, so presentation can remove the coin
  * immediately. If that step is also terminal, collision authority is queried only up to the exact
  * pickup contact boundary so a coin after an earlier lethal hit is never awarded.
+ *
+ * The generated collectible stream is ordered by nondecreasing runDistance. A binary-search
+ * broadphase narrows exact pickup work to the conservative swept horizontal interaction window;
+ * boundary-touching entries are deliberately retained as false positives so broadphase cannot hide
+ * a positive-area contact from the existing continuous collision authority.
  */
 export const evaluatePrototypeCollectibleStep = (
   state: Readonly<PrototypeCollectibleRunState>,
@@ -244,22 +289,40 @@ export const evaluatePrototypeCollectibleStep = (
     return state;
   }
 
-  const retainedIds = new Set(collectibles.map(getLogicalCollectibleSpawnIdentity));
-  const consumed = new Set(
-    state.consumedCollectibleIds.filter((identity) => retainedIds.has(identity)),
+  const finalDistance = initialRunState.distance + runMotionTuning.baseScrollSpeed * elapsedSeconds;
+  const minimumPlayerDistance = Math.min(initialRunState.distance, finalDistance);
+  const maximumPlayerDistance = Math.max(initialRunState.distance, finalDistance);
+  const minimumCandidateRunDistance =
+    minimumPlayerDistance -
+    PROTOTYPE_PLAYER_COLLISION_EXTENTS.left -
+    PROTOTYPE_COLLECTIBLE_HALF_SIZE;
+  const maximumCandidateRunDistance =
+    maximumPlayerDistance +
+    PROTOTYPE_PLAYER_COLLISION_EXTENTS.right +
+    PROTOTYPE_COLLECTIBLE_HALF_SIZE;
+  const firstCandidateIndex = findFirstCollectibleAtOrAfterRunDistance(
+    collectibles,
+    minimumCandidateRunDistance,
   );
-  const lethalHazards = hazards.filter((hazard) =>
-    isPlayerCollidingWithHazardDuringStep(
-      initialRunState,
-      trajectory,
-      elapsedSeconds,
-      runMotionTuning,
-      hazard,
-    ),
+  const candidateEndIndex = findFirstCollectibleAfterRunDistance(
+    collectibles,
+    maximumCandidateRunDistance,
   );
+
+  if (firstCandidateIndex === candidateEndIndex) {
+    return state;
+  }
+
+  const consumed = new Set(state.consumedCollectibleIds);
+  let lethalHazards: ReadonlyArray<Readonly<LogicalHazard>> | undefined;
   const awarded: Array<Readonly<LogicalCollectibleSpawnInstance>> = [];
 
-  for (const collectible of collectibles) {
+  for (let index = firstCandidateIndex; index < candidateEndIndex; index += 1) {
+    const collectible = collectibles[index];
+    if (collectible === undefined) {
+      continue;
+    }
+
     const identity = getLogicalCollectibleSpawnIdentity(collectible);
     if (consumed.has(identity)) {
       continue;
@@ -285,8 +348,19 @@ export const evaluatePrototypeCollectibleStep = (
       collectible,
       elapsedSeconds,
     );
+    if (contactSeconds === null) {
+      continue;
+    }
+    lethalHazards ??= hazards.filter((hazard) =>
+      isPlayerCollidingWithHazardDuringStep(
+        initialRunState,
+        trajectory,
+        elapsedSeconds,
+        runMotionTuning,
+        hazard,
+      ),
+    );
     if (
-      contactSeconds === null ||
       lethalHazards.some((hazard) =>
         hasLethalCollisionBy(
           initialRunState,
@@ -307,6 +381,13 @@ export const evaluatePrototypeCollectibleStep = (
 
   if (awarded.length === 0) {
     return state;
+  }
+
+  const retainedIds = new Set(collectibles.map(getLogicalCollectibleSpawnIdentity));
+  for (const identity of consumed) {
+    if (!retainedIds.has(identity)) {
+      consumed.delete(identity);
+    }
   }
 
   awarded.sort((first, second) =>
