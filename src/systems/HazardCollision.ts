@@ -379,6 +379,52 @@ const getRelativeVerticalRange = (
   return { maximum, minimum };
 };
 
+const getFlightVerticalRange = (
+  trajectory: Readonly<VerticalFlightTrajectory>,
+  interval: Readonly<LogicalHazardCollisionInterval>,
+): Readonly<{ maximum: number; minimum: number }> | null => {
+  let minimum = Number.POSITIVE_INFINITY;
+  let maximum = Number.NEGATIVE_INFINITY;
+
+  const includePosition = (positionY: number): boolean => {
+    if (!Number.isFinite(positionY)) {
+      return false;
+    }
+    minimum = Math.min(minimum, positionY);
+    maximum = Math.max(maximum, positionY);
+    return true;
+  };
+
+  for (const segment of trajectory.segments) {
+    const startSeconds = Math.max(interval.startSeconds, segment.startSeconds);
+    const endSeconds = Math.min(interval.endSeconds, segment.endSeconds);
+    if (endSeconds < startSeconds) {
+      continue;
+    }
+
+    if (
+      !includePosition(evaluateFlightSegmentPosition(segment, startSeconds)) ||
+      !includePosition(evaluateFlightSegmentPosition(segment, endSeconds))
+    ) {
+      return null;
+    }
+
+    if (segment.accelerationY !== 0) {
+      const vertexSeconds =
+        segment.startSeconds - segment.velocityY / segment.accelerationY;
+      if (
+        vertexSeconds > startSeconds &&
+        vertexSeconds < endSeconds &&
+        !includePosition(evaluateFlightSegmentPosition(segment, vertexSeconds))
+      ) {
+        return null;
+      }
+    }
+  }
+
+  return Number.isFinite(minimum) && Number.isFinite(maximum) ? { maximum, minimum } : null;
+};
+
 const ZAPPER_MAX_COLLISION_SAMPLE_DISTANCE = 0.5;
 const ZAPPER_MAX_COLLISION_SAMPLE_SECONDS = 1 / 720;
 
@@ -598,6 +644,25 @@ const evaluatePrototypeZapperPaddingPairDuringStep = (
     return NO_PROTOTYPE_ZAPPER_PADDING_PAIR_CONTACT;
   }
 
+  if (playerExtents === PROTOTYPE_PLAYER_COLLISION_EXTENTS) {
+    const verticalRange = getFlightVerticalRange(trajectory, interval);
+    if (verticalRange) {
+      const minimumPlayerCenterY =
+        hazard.hitbox.top - maximumPadding - PROTOTYPE_PLAYER_COLLISION_EXTENTS.bottom;
+      const maximumPlayerCenterY =
+        hazard.hitbox.bottom + maximumPadding + PROTOTYPE_PLAYER_COLLISION_EXTENTS.top;
+      if (
+        verticalRange.maximum <= minimumPlayerCenterY ||
+        verticalRange.minimum >= maximumPlayerCenterY
+      ) {
+        if (workCounters) {
+          workCounters.broadphaseRejectedCallCount += 1;
+        }
+        return NO_PROTOTYPE_ZAPPER_PADDING_PAIR_CONTACT;
+      }
+    }
+  }
+
   const sampleTimes = createZapperCollisionSampleTimes(
     trajectory,
     initialRunState.distance,
@@ -700,9 +765,10 @@ const evaluatePrototypeZapperPaddingPairDuringStep = (
 
 /**
  * Continuous-step authority for static and rotating Zappers. The authored Zapper hitbox is a
- * conservative horizontal envelope; rotating Zappers reserve their full angular sweep. A cheap
- * player-sweep broadphase rejects envelopes that cannot reach the player during the active interval
- * before any dense sample times or geometry are created. Samples remain anchored to absolute world
+ * conservative horizontal envelope; rotating Zappers reserve their full angular sweep. Cheap
+ * horizontal plus exact canonical-extents vertical trajectory broadphases reject envelopes that
+ * cannot reach the player during the active interval before dense sample times or geometry are
+ * created. Custom extents retain the historical path. Samples remain anchored to absolute world
  * distance plus an authoritative 1/720-second simulation-time lattice. Sorted samples advance one
  * monotonic flight-segment cursor instead of linearly searching the trajectory again per sample.
  * The canonical frozen player extents reuse one local hitbox scratch instead of allocating transient
