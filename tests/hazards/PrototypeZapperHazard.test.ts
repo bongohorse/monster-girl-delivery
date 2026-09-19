@@ -3,8 +3,11 @@ import {
   createPrototypeZapperBehavior,
   createPrototypeZapperHitbox,
   doesHitboxOverlapPrototypeZapper,
+  type LogicalPoint,
   PROTOTYPE_ZAPPER_GRAZE_PADDING,
   PROTOTYPE_ZAPPER_LENGTHS,
+  type PrototypeZapperGeometry,
+  type PrototypeZapperGeometryPadding,
   resolvePrototypeZapperGeometry,
 } from '../../src/hazards/PrototypeZapperHazard';
 import {
@@ -36,6 +39,120 @@ const expectHitboxClose = (
   expect(actual.right).toBeCloseTo(expected.right, 9);
   expect(actual.top).toBeCloseTo(expected.top, 9);
   expect(actual.bottom).toBeCloseTo(expected.bottom, 9);
+};
+
+const legacyPointToHitboxDistanceSquared = (
+  point: Readonly<LogicalPoint>,
+  hitbox: Readonly<LogicalHitbox>,
+): number => {
+  const nearestX = Math.max(hitbox.left, Math.min(hitbox.right, point.x));
+  const nearestY = Math.max(hitbox.top, Math.min(hitbox.bottom, point.y));
+  const dx = point.x - nearestX;
+  const dy = point.y - nearestY;
+  return dx * dx + dy * dy;
+};
+
+const legacyPointToSegmentDistanceSquared = (
+  point: Readonly<LogicalPoint>,
+  start: Readonly<LogicalPoint>,
+  end: Readonly<LogicalPoint>,
+): number => {
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  const lengthSquared = dx * dx + dy * dy;
+  if (lengthSquared === 0) {
+    const px = point.x - start.x;
+    const py = point.y - start.y;
+    return px * px + py * py;
+  }
+
+  const projection = Math.max(
+    0,
+    Math.min(1, ((point.x - start.x) * dx + (point.y - start.y) * dy) / lengthSquared),
+  );
+  const nearestX = start.x + projection * dx;
+  const nearestY = start.y + projection * dy;
+  const px = point.x - nearestX;
+  const py = point.y - nearestY;
+  return px * px + py * py;
+};
+
+const legacySegmentIntersectsHitbox = (
+  start: Readonly<LogicalPoint>,
+  end: Readonly<LogicalPoint>,
+  hitbox: Readonly<LogicalHitbox>,
+): boolean => {
+  let lower = 0;
+  let upper = 1;
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  const constraints = [
+    [-dx, start.x - hitbox.left],
+    [dx, hitbox.right - start.x],
+    [-dy, start.y - hitbox.top],
+    [dy, hitbox.bottom - start.y],
+  ] as const;
+
+  for (const [p, q] of constraints) {
+    if (p === 0) {
+      if (q < 0) {
+        return false;
+      }
+      continue;
+    }
+    const ratio = q / p;
+    if (p < 0) {
+      lower = Math.max(lower, ratio);
+    } else {
+      upper = Math.min(upper, ratio);
+    }
+    if (lower > upper) {
+      return false;
+    }
+  }
+  return true;
+};
+
+const legacySegmentToHitboxDistanceSquared = (
+  start: Readonly<LogicalPoint>,
+  end: Readonly<LogicalPoint>,
+  hitbox: Readonly<LogicalHitbox>,
+): number => {
+  if (legacySegmentIntersectsHitbox(start, end, hitbox)) {
+    return 0;
+  }
+
+  const corners = [
+    { x: hitbox.left, y: hitbox.top },
+    { x: hitbox.right, y: hitbox.top },
+    { x: hitbox.right, y: hitbox.bottom },
+    { x: hitbox.left, y: hitbox.bottom },
+  ];
+
+  return Math.min(
+    legacyPointToHitboxDistanceSquared(start, hitbox),
+    legacyPointToHitboxDistanceSquared(end, hitbox),
+    ...corners.map((corner) => legacyPointToSegmentDistanceSquared(corner, start, end)),
+  );
+};
+
+const legacyDoesHitboxOverlapPrototypeZapper = (
+  hitbox: Readonly<LogicalHitbox>,
+  geometry: Readonly<PrototypeZapperGeometry>,
+  padding: Readonly<PrototypeZapperGeometryPadding>,
+): boolean => {
+  const beamRadius = geometry.beam.radius + padding.beam;
+  const endpointARadius = geometry.endpointA.radius + padding.endpoints;
+  const endpointBRadius = geometry.endpointB.radius + padding.endpoints;
+
+  return (
+    legacySegmentToHitboxDistanceSquared(geometry.beam.start, geometry.beam.end, hitbox) <
+      beamRadius * beamRadius ||
+    legacyPointToHitboxDistanceSquared(geometry.endpointA.center, hitbox) <
+      endpointARadius * endpointARadius ||
+    legacyPointToHitboxDistanceSquared(geometry.endpointB.center, hitbox) <
+      endpointBRadius * endpointBRadius
+  );
 };
 
 describe('M5 static Zapper geometry', () => {
@@ -72,6 +189,41 @@ describe('M5 static Zapper geometry', () => {
     expect(geometry.endpointB.center.y).toBeCloseTo(250, 9);
   });
 
+  it('matches the legacy narrowphase across angle, hitbox, and padding grids', () => {
+    const lethalPadding = Object.freeze({ beam: 0, endpoints: 0 });
+    const paddings = [lethalPadding, PROTOTYPE_ZAPPER_GRAZE_PADDING] as const;
+    const angles = [0, 15, 30, 45, 60, 89, 90, 135, 179] as const;
+    const offsets = [-120, -80, -40, 0, 40, 80, 120] as const;
+    const halfSizes = [1, 8, 24] as const;
+
+    for (const angle of angles) {
+      const zapper = createZapper(angle, PROTOTYPE_ZAPPER_LENGTHS.long, 200, 200);
+      const geometry = resolvePrototypeZapperGeometry(zapper);
+      if (!geometry) {
+        throw new Error('Expected Zapper geometry.');
+      }
+
+      for (const offsetX of offsets) {
+        for (const offsetY of offsets) {
+          for (const halfSize of halfSizes) {
+            const hitbox = {
+              bottom: 200 + offsetY + halfSize,
+              left: 200 + offsetX - halfSize,
+              right: 200 + offsetX + halfSize,
+              top: 200 + offsetY - halfSize,
+            };
+
+            for (const padding of paddings) {
+              expect(doesHitboxOverlapPrototypeZapper(hitbox, geometry, padding)).toBe(
+                legacyDoesHitboxOverlapPrototypeZapper(hitbox, geometry, padding),
+              );
+            }
+          }
+        }
+      }
+    }
+  });
+
   it('does not turn a diagonal Zapper bounding box corner into a false lethal hit', () => {
     const zapper = createZapper(45, PROTOTYPE_ZAPPER_LENGTHS.long, 200, 200);
     const geometry = resolvePrototypeZapperGeometry(zapper);
@@ -90,6 +242,26 @@ describe('M5 static Zapper geometry', () => {
 
     expect(
       doesHitboxOverlapPrototypeZapper({ left: 193, right: 207, top: 193, bottom: 207 }, geometry),
+    ).toBe(true);
+  });
+
+  it('keeps exact beam and endpoint tangency outside positive-area lethal overlap', () => {
+    const zapper = createZapper(0, PROTOTYPE_ZAPPER_LENGTHS.medium, 280, 195);
+    const geometry = resolvePrototypeZapperGeometry(zapper);
+    if (!geometry) {
+      throw new Error('Expected Zapper geometry.');
+    }
+
+    const beamTangent = { left: 270, right: 290, top: 202, bottom: 210 };
+    expect(doesHitboxOverlapPrototypeZapper(beamTangent, geometry)).toBe(false);
+    expect(
+      doesHitboxOverlapPrototypeZapper(beamTangent, geometry, PROTOTYPE_ZAPPER_GRAZE_PADDING),
+    ).toBe(true);
+
+    const endpointTangent = { left: 184, right: 194, top: 187, bottom: 203 };
+    expect(doesHitboxOverlapPrototypeZapper(endpointTangent, geometry)).toBe(false);
+    expect(
+      doesHitboxOverlapPrototypeZapper(endpointTangent, geometry, PROTOTYPE_ZAPPER_GRAZE_PADDING),
     ).toBe(true);
   });
 
