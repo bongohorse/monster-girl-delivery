@@ -13,6 +13,7 @@ export interface PerformanceEvidenceContext {
   readonly renderScale: number;
   readonly runDistance: number;
   readonly runSeed: number | null;
+  readonly userAgent: string;
   readonly viewportHeight: number;
   readonly viewportWidth: number;
 }
@@ -39,6 +40,7 @@ export interface PerformanceEvidenceReport {
     readonly canvasBackingWidth: number;
     readonly devicePixelRatio: number;
     readonly renderScale: number;
+    readonly userAgent: string;
     readonly viewportHeight: number;
     readonly viewportWidth: number;
   };
@@ -75,6 +77,7 @@ export const createPerformanceEvidenceReport = (
       canvasBackingWidth: context.canvasBackingWidth,
       devicePixelRatio: context.devicePixelRatio,
       renderScale: context.renderScale,
+      userAgent: context.userAgent,
       viewportHeight: context.viewportHeight,
       viewportWidth: context.viewportWidth,
     }),
