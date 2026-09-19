@@ -12,6 +12,7 @@ import {
   PROTOTYPE_ZAPPER_GRAZE_PADDING,
   PROTOTYPE_ZAPPER_LETHAL_PADDING,
   type PrototypeZapperGeometryPadding,
+  resolvePrototypeZapperAngleDegrees,
   resolvePrototypeZapperGeometry,
   resolvePrototypeZapperGeometryInto,
 } from '../hazards/PrototypeZapperHazard';
@@ -553,22 +554,20 @@ const canRotatingZapperAngularSweepReachPlayer = (
   const rotation = hazard.behavior.rotation;
   const direction = rotation.direction === 'clockwise' ? 1 : -1;
   const initialSimulationSeconds = initialRunState.simulationSeconds ?? 0;
-  const startDegrees =
-    hazard.behavior.angleDegrees +
+  const startDegrees = resolvePrototypeZapperAngleDegrees(
+    hazard.behavior,
+    initialSimulationSeconds + interval.startSeconds,
+  );
+  const sweepDegrees =
     direction *
-      rotation.speedDegreesPerSecond *
-      (initialSimulationSeconds + interval.startSeconds);
-  const endDegrees =
-    hazard.behavior.angleDegrees +
-    direction *
-      rotation.speedDegreesPerSecond *
-      (initialSimulationSeconds + interval.endSeconds);
-  if (!Number.isFinite(startDegrees) || !Number.isFinite(endDegrees)) {
+    rotation.speedDegreesPerSecond *
+    (interval.endSeconds - interval.startSeconds);
+  if (!Number.isFinite(startDegrees) || !Number.isFinite(sweepDegrees)) {
     return true;
   }
 
   const firstRadians = (startDegrees * Math.PI) / 180;
-  const secondRadians = (endDegrees * Math.PI) / 180;
+  const secondRadians = ((startDegrees + sweepDegrees) * Math.PI) / 180;
   const minimumRadians = Math.min(firstRadians, secondRadians);
   const maximumRadians = Math.max(firstRadians, secondRadians);
   const halfLength = hazard.behavior.length / 2;
