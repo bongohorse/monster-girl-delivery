@@ -163,7 +163,7 @@ describe('prototype run simulation', () => {
     const state: PrototypeRunState = {
       phase: 'running',
       motion: { distance: 0, simulationSeconds: 0 },
-      flight: { positionY: 100, velocityY: 0 },
+      flight: { positionY: 47, velocityY: 0 },
     };
 
     const result = stepPrototypeRun(state, 0.05, {
