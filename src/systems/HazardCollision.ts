@@ -173,8 +173,9 @@ const getHorizontalOverlapRange = (
   playerExtents: Readonly<PrototypePlayerCollisionExtents>,
   interval: Readonly<LogicalHazardCollisionInterval>,
   hazardHorizontalPadding = 0,
+  useHazardHorizontalVelocity = true,
 ): Readonly<LogicalHazardCollisionInterval> | null => {
-  const hazardVelocity = hazard.horizontalVelocity ?? 0;
+  const hazardVelocity = useHazardHorizontalVelocity ? (hazard.horizontalVelocity ?? 0) : 0;
   if (!Number.isFinite(hazardVelocity)) {
     throw new RangeError('Hazard horizontalVelocity must be finite when provided.');
   }
@@ -404,8 +405,10 @@ const createZapperCollisionSampleTimes = (
 /**
  * Continuous-step authority for static and rotating Zappers. The authored Zapper hitbox is a
  * conservative horizontal envelope; rotating Zappers reserve their full angular sweep. A cheap
- * relative-motion broadphase rejects envelopes that cannot reach the player during the active
- * interval before any dense sample times or geometry are created. Samples that remain are anchored
+ * player-sweep broadphase rejects envelopes that cannot reach the player during the active interval
+ * before any dense sample times or geometry are created. It deliberately mirrors current Zapper
+ * narrowphase semantics, where generic hazard horizontalVelocity metadata does not move Zapper
+ * geometry. Samples that remain are anchored
  * to absolute world distance plus an authoritative 1/720-second simulation-time lattice. Every
  * sample resolves the current beam/node pose from the same simulation clock used by presentation and
  * Director HB, so a rotating beam cannot tunnel between endpoint poses and remains deterministic
@@ -423,7 +426,17 @@ export const isPlayerCollidingWithPrototypeZapperDuringStep = (
   if (!isPrototypeZapperHazard(hazard)) {
     return false;
   }
+  if (!Number.isFinite(elapsedSeconds) || elapsedSeconds < 0) {
+    throw new RangeError('elapsedSeconds must be a non-negative finite number.');
+  }
+  if (!Number.isFinite(initialRunState.distance)) {
+    throw new RangeError('Player run distance must be finite.');
+  }
+  assertValidPlayerCollisionExtents(playerExtents);
   const initialSimulationSeconds = initialRunState.simulationSeconds ?? 0;
+  if (!Number.isFinite(initialSimulationSeconds) || initialSimulationSeconds < 0) {
+    throw new RangeError('Zapper initial simulation time must be non-negative and finite.');
+  }
   if (elapsedSeconds === 0) {
     const geometry = resolvePrototypeZapperGeometry(hazard, initialSimulationSeconds);
     return geometry
@@ -456,6 +469,7 @@ export const isPlayerCollidingWithPrototypeZapperDuringStep = (
       playerExtents,
       interval,
       maximumPadding,
+      false,
     )
   ) {
     return false;
