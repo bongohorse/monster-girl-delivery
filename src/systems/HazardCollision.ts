@@ -524,7 +524,9 @@ const evaluateStaticZapperOneAxisSweep = (
     workCounters.geometryResolutionCount += 1;
     workCounters.primaryNarrowphaseCheckCount += 1;
   }
-  if (doesHitboxOverlapPrototypeZapperOnValidatedPath(sweptPlayerHitbox, geometry, primaryPadding)) {
+  if (
+    doesHitboxOverlapPrototypeZapperOnValidatedPath(sweptPlayerHitbox, geometry, primaryPadding)
+  ) {
     return PROTOTYPE_ZAPPER_PRIMARY_CONTACT;
   }
 
@@ -532,7 +534,13 @@ const evaluateStaticZapperOneAxisSweep = (
     if (workCounters) {
       workCounters.secondaryNarrowphaseCheckCount += 1;
     }
-    if (doesHitboxOverlapPrototypeZapperOnValidatedPath(sweptPlayerHitbox, geometry, secondaryPadding)) {
+    if (
+      doesHitboxOverlapPrototypeZapperOnValidatedPath(
+        sweptPlayerHitbox,
+        geometry,
+        secondaryPadding,
+      )
+    ) {
       return PROTOTYPE_ZAPPER_SECONDARY_ONLY_CONTACT;
     }
   }
@@ -949,7 +957,9 @@ const evaluatePrototypeZapperPaddingPairDuringStep = (
       if (workCounters) {
         workCounters.secondaryNarrowphaseCheckCount += 1;
       }
-      if (doesHitboxOverlapPrototypeZapperOnValidatedPath(playerHitbox, geometry, secondaryPadding)) {
+      if (
+        doesHitboxOverlapPrototypeZapperOnValidatedPath(playerHitbox, geometry, secondaryPadding)
+      ) {
         secondaryHit = true;
       }
     }
