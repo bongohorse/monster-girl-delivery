@@ -200,35 +200,16 @@ export const DIRECTOR_ZAPPER_PERFORMANCE_PRESET: Readonly<DirectorZapperSelectio
         rotationDirection: 'counterclockwise',
         rotationSpeedDegreesPerSecond: PROTOTYPE_ZAPPER_ROTATION_SPEEDS.fast,
       }),
-      createZapperEntry(
-        'perf-diagonal-top',
-        1_120,
-        105,
-        45,
-        PROTOTYPE_ZAPPER_LENGTHS.medium,
-      ),
-      createZapperEntry(
-        'perf-diagonal-bottom',
-        1_120,
-        285,
-        -45,
-        PROTOTYPE_ZAPPER_LENGTHS.medium,
-      ),
+      createZapperEntry('perf-diagonal-top', 1_120, 105, 45, PROTOTYPE_ZAPPER_LENGTHS.medium),
+      createZapperEntry('perf-diagonal-bottom', 1_120, 285, -45, PROTOTYPE_ZAPPER_LENGTHS.medium),
       createZapperEntry('perf-rotate-medium-top', 1_400, 100, 0, PROTOTYPE_ZAPPER_LENGTHS.long, {
         rotationDirection: 'counterclockwise',
         rotationSpeedDegreesPerSecond: PROTOTYPE_ZAPPER_ROTATION_SPEEDS.medium,
       }),
-      createZapperEntry(
-        'perf-rotate-medium-bottom',
-        1_400,
-        290,
-        0,
-        PROTOTYPE_ZAPPER_LENGTHS.long,
-        {
-          rotationDirection: 'clockwise',
-          rotationSpeedDegreesPerSecond: PROTOTYPE_ZAPPER_ROTATION_SPEEDS.medium,
-        },
-      ),
+      createZapperEntry('perf-rotate-medium-bottom', 1_400, 290, 0, PROTOTYPE_ZAPPER_LENGTHS.long, {
+        rotationDirection: 'clockwise',
+        rotationSpeedDegreesPerSecond: PROTOTYPE_ZAPPER_ROTATION_SPEEDS.medium,
+      }),
       createZapperEntry('perf-timed', 1_680, 195, 0, PROTOTYPE_ZAPPER_LENGTHS.medium, {
         timed: true,
       }),
