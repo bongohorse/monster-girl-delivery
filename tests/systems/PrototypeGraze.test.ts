@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { LogicalHazard } from '../../src/systems/HazardCollision';
+import { filterPrototypeHazardCandidatesForStep } from '../../src/systems/PrototypeGraze';
 import {
   createPrototypeRunState,
   type PrototypeRunState,
@@ -85,6 +86,62 @@ const LATER_VERTICAL_LETHAL_SCHEDULES: ReadonlyArray<readonly [string, ReadonlyA
 ];
 
 describe('prototype Graze skill layer', () => {
+  it('preserves the original hazard array when every retained hazard can reach the player', () => {
+    const hazards = [
+      hazard('near-a', 25, 30, 20, 30),
+      hazard('near-b', -30, -25, 70, 80),
+    ] as const;
+
+    expect(filterPrototypeHazardCandidatesForStep(START.motion, 1, MOTION, hazards)).toBe(hazards);
+  });
+
+  it('rejects far hazards before Graze identity/contact work', () => {
+    const farHazard = Object.freeze({
+      get grazeOccurrenceId(): never {
+        throw new Error('far hazard reached Graze identity resolution');
+      },
+      hitbox: Object.freeze({ left: 1_000, right: 1_020, top: 20, bottom: 30 }),
+    }) as Readonly<LogicalHazard>;
+
+    expect(() => stepPrototypeRun(START, 0.1, context([farHazard]))).not.toThrow();
+    expect(stepPrototypeRun(START, 0.1, context([farHazard])).state.graze).toBeUndefined();
+  });
+
+  it('accounts for hazard horizontal velocity and active collision intervals', () => {
+    const movingCandidate = Object.freeze({
+      collisionInterval: Object.freeze({ startSeconds: 0.5, endSeconds: 0.6 }),
+      grazeOccurrenceId: 'moving-candidate',
+      hitbox: Object.freeze({ left: 50, right: 60, top: 25, bottom: 30 }),
+      horizontalVelocity: 50,
+    }) as Readonly<LogicalHazard>;
+    const inactiveWindow = Object.freeze({
+      ...movingCandidate,
+      collisionInterval: Object.freeze({ startSeconds: 0.1, endSeconds: 0.2 }),
+      grazeOccurrenceId: 'inactive-window',
+    }) as Readonly<LogicalHazard>;
+
+    expect(
+      filterPrototypeHazardCandidatesForStep(START.motion, 1, MOTION, [
+        movingCandidate,
+        inactiveWindow,
+      ]),
+    ).toEqual([movingCandidate]);
+  });
+
+  it('keeps malformed collision intervals on the historical exact-validation path', () => {
+    const malformed = Object.freeze({
+      collisionInterval: Object.freeze({ startSeconds: 0.8, endSeconds: 0.2 }),
+      grazeOccurrenceId: 'malformed-interval',
+      hitbox: Object.freeze({ left: 1_000, right: 1_020, top: 20, bottom: 30 }),
+    }) as Readonly<LogicalHazard>;
+    const hazards = [malformed] as const;
+
+    expect(filterPrototypeHazardCandidatesForStep(START.motion, 1, MOTION, hazards)).toBe(hazards);
+    expect(() => stepPrototypeRun(START, 1, context(hazards))).toThrow(
+      'Hazard collision interval must fall within the current simulation step.',
+    );
+  });
+
   it('bounds occurrence history to the retained hazard window without losing run totals', () => {
     let state = START;
     for (let index = 0; index < 100; index += 1) {
