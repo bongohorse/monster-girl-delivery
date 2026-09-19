@@ -1,4 +1,6 @@
 import type { RunMotionValues } from '../config/RunMotionConfig';
+import type { LogicalHazardSpawnIdentityFields } from '../generation/PatternSpawnScheduler';
+import { getLogicalHazardSpawnIdentity } from '../generation/PatternSpawnScheduler';
 import {
   getPrototypeZapperGrazePadding,
   isPrototypeZapperHazard,
@@ -75,7 +77,9 @@ const getGrazeOccurrenceId = (hazard: Readonly<LogicalHazard>): string | null =>
     typeof identified.runDistance === 'number' &&
     Number.isFinite(identified.runDistance)
   ) {
-    return `${identified.patternId}:${identified.patternEntryIndex}:${identified.entryId}:${identified.runDistance}`;
+    return getLogicalHazardSpawnIdentity(
+      identified as Readonly<LogicalHazardSpawnIdentityFields>,
+    );
   }
 
   return null;
