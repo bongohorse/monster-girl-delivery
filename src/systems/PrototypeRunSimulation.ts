@@ -38,6 +38,7 @@ export interface PrototypeRunState {
 }
 
 export interface PrototypeRunStepContext {
+  /** Generated collectible stream ordered by nondecreasing runDistance. */
   collectibles?: ReadonlyArray<Readonly<LogicalCollectibleSpawnInstance>>;
   flightBounds: Readonly<VerticalFlightBounds>;
   flightTuning: Readonly<FlightTuningValues>;
