@@ -143,6 +143,99 @@ const getHorizontalOpportunityBounds = (
  * a physical TOI, and deliberately cannot use the earlier end of the smaller lethal-core window as
  * proof that a vertically later Graze happened before another hazard's lethal contact.
  */
+const canHazardReachPlayerHorizontallyDuringStep = (
+  initialDistance: number,
+  scrollSpeed: number,
+  hazard: Readonly<LogicalHazard>,
+  elapsedSeconds: number,
+): boolean => {
+  if (elapsedSeconds === 0) {
+    return true;
+  }
+
+  const interval = hazard.collisionInterval ?? { startSeconds: 0, endSeconds: elapsedSeconds };
+  if (
+    !Number.isFinite(interval.startSeconds) ||
+    !Number.isFinite(interval.endSeconds) ||
+    interval.startSeconds < 0 ||
+    interval.endSeconds < interval.startSeconds ||
+    interval.endSeconds > elapsedSeconds
+  ) {
+    // Keep malformed inputs on the historical exact path so collision owns the validation error.
+    return true;
+  }
+  if (interval.endSeconds === interval.startSeconds) {
+    return true;
+  }
+
+  const opportunity = getHorizontalOpportunityBounds(
+    initialDistance,
+    scrollSpeed,
+    hazard,
+    getGrazeOpportunityExtents(hazard),
+  );
+  if (!opportunity) {
+    return false;
+  }
+
+  return (
+    Math.min(opportunity.endSeconds, interval.endSeconds) >
+    Math.max(opportunity.startSeconds, interval.startSeconds)
+  );
+};
+
+/**
+ * Conservatively narrows the current collision stream before identity/Graze/contact work.
+ *
+ * Returns the original array by identity when every retained hazard is still a candidate. A new
+ * array is allocated only after the first definite horizontal reject. Zero-delta and malformed
+ * interval inputs retain the historical exact path.
+ */
+export const filterPrototypeHazardCandidatesForStep = (
+  initialRunState: Readonly<RunMotionState>,
+  elapsedSeconds: number,
+  runMotionTuning: Readonly<RunMotionValues>,
+  hazards: ReadonlyArray<Readonly<LogicalHazard>>,
+): ReadonlyArray<Readonly<LogicalHazard>> => {
+  if (
+    elapsedSeconds === 0 ||
+    hazards.length === 0 ||
+    !Number.isFinite(initialRunState.distance) ||
+    !Number.isFinite(runMotionTuning.baseScrollSpeed)
+  ) {
+    return hazards;
+  }
+
+  let filtered: Array<Readonly<LogicalHazard>> | undefined;
+
+  for (let index = 0; index < hazards.length; index += 1) {
+    const hazard = hazards[index];
+    if (hazard === undefined) {
+      continue;
+    }
+
+    const candidate = canHazardReachPlayerHorizontallyDuringStep(
+      initialRunState.distance,
+      runMotionTuning.baseScrollSpeed,
+      hazard,
+      elapsedSeconds,
+    );
+
+    if (filtered) {
+      if (candidate) {
+        filtered.push(hazard);
+      }
+      continue;
+    }
+
+    if (!candidate) {
+      filtered = hazards.slice(0, index);
+    }
+  }
+
+  return filtered ?? hazards;
+};
+
 const getGrazeResolutionSeconds = (
   initialDistance: number,
   scrollSpeed: number,
