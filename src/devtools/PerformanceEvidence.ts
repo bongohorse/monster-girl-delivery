@@ -2,6 +2,7 @@ import type { PrototypeZapperCollisionWorkCounters } from '../systems/HazardColl
 import type { PerformanceSnapshot } from './PerformanceSampler';
 
 export interface PerformanceEvidenceContext {
+  readonly baseScrollSpeed: number;
   readonly buildCommit: string;
   readonly buildMode: 'development' | 'production';
   readonly canvasBackingHeight: number;
@@ -10,12 +11,20 @@ export interface PerformanceEvidenceContext {
   readonly devicePixelRatio: number;
   readonly directorAutoHazardsEnabled: boolean;
   readonly directorGodModeEnabled: boolean;
+  readonly directorSimulationFrozen: boolean;
+  readonly effectiveScrollSpeed: number;
+  readonly flightGravity: number;
+  readonly flightMaxFallVelocity: number;
+  readonly flightMaxRiseVelocity: number;
+  readonly flightThrust: number;
+  readonly performancePresetId: string | null;
   readonly renderScale: number;
   readonly runDistance: number;
   readonly runSeed: number | null;
   readonly userAgent: string;
   readonly viewportHeight: number;
   readonly viewportWidth: number;
+  readonly wireframesEnabled: boolean;
 }
 
 export interface PerformanceEvidenceReport {
@@ -32,8 +41,19 @@ export interface PerformanceEvidenceReport {
   readonly context: {
     readonly directorAutoHazardsEnabled: boolean;
     readonly directorGodModeEnabled: boolean;
+    readonly directorSimulationFrozen: boolean;
+    readonly performancePresetId: string | null;
     readonly runDistance: number;
     readonly runSeed: number | null;
+    readonly tuning: {
+      readonly baseScrollSpeed: number;
+      readonly effectiveScrollSpeed: number;
+      readonly flightGravity: number;
+      readonly flightMaxFallVelocity: number;
+      readonly flightMaxRiseVelocity: number;
+      readonly flightThrust: number;
+    };
+    readonly wireframesEnabled: boolean;
   };
   readonly display: {
     readonly canvasBackingHeight: number;
@@ -45,7 +65,7 @@ export interface PerformanceEvidenceReport {
     readonly viewportWidth: number;
   };
   readonly capturedAtIso: string;
-  readonly schemaVersion: 1;
+  readonly schemaVersion: 2;
 }
 
 export const createPerformanceEvidenceReport = (
@@ -69,8 +89,19 @@ export const createPerformanceEvidenceReport = (
     context: Object.freeze({
       directorAutoHazardsEnabled: context.directorAutoHazardsEnabled,
       directorGodModeEnabled: context.directorGodModeEnabled,
+      directorSimulationFrozen: context.directorSimulationFrozen,
+      performancePresetId: context.performancePresetId,
       runDistance: context.runDistance,
       runSeed: context.runSeed,
+      tuning: Object.freeze({
+        baseScrollSpeed: context.baseScrollSpeed,
+        effectiveScrollSpeed: context.effectiveScrollSpeed,
+        flightGravity: context.flightGravity,
+        flightMaxFallVelocity: context.flightMaxFallVelocity,
+        flightMaxRiseVelocity: context.flightMaxRiseVelocity,
+        flightThrust: context.flightThrust,
+      }),
+      wireframesEnabled: context.wireframesEnabled,
     }),
     display: Object.freeze({
       canvasBackingHeight: context.canvasBackingHeight,
@@ -82,7 +113,7 @@ export const createPerformanceEvidenceReport = (
       viewportWidth: context.viewportWidth,
     }),
     capturedAtIso: context.capturedAtIso,
-    schemaVersion: 1,
+    schemaVersion: 2,
   });
 
 export const serializePerformanceEvidenceReport = (
