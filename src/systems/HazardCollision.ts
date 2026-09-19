@@ -397,7 +397,16 @@ const createZapperCollisionSampleTimes = (
     );
   }
 
-  return [...new Set(candidates)].sort((first, second) => first - second);
+  candidates.sort((first, second) => first - second);
+  let uniqueCount = 0;
+  for (const candidate of candidates) {
+    if (uniqueCount === 0 || candidate !== candidates[uniqueCount - 1]) {
+      candidates[uniqueCount] = candidate;
+      uniqueCount += 1;
+    }
+  }
+  candidates.length = uniqueCount;
+  return candidates;
 };
 
 /**
@@ -407,9 +416,9 @@ const createZapperCollisionSampleTimes = (
  * before any dense sample times or geometry are created. It deliberately mirrors current Zapper
  * narrowphase semantics, where generic hazard horizontalVelocity metadata does not move Zapper
  * geometry. Samples that remain are anchored to absolute world distance plus an authoritative
- * 1/720-second simulation-time lattice. Every sample resolves the current beam/node pose from the
- * same simulation clock used by presentation and Director HB, so a rotating beam cannot tunnel
- * between endpoint poses and remains deterministic across partitions.
+ * 1/720-second simulation-time lattice. Static Zappers resolve their immutable beam/node geometry
+ * once per step; rotating Zappers still resolve each sample from authoritative simulation time so a
+ * beam cannot tunnel between endpoint poses and remains deterministic across partitions.
  */
 export const isPlayerCollidingWithPrototypeZapperDuringStep = (
   initialRunState: Readonly<RunMotionState>,
@@ -482,13 +491,24 @@ export const isPlayerCollidingWithPrototypeZapperDuringStep = (
     runMotionTuning.baseScrollSpeed,
     interval,
   );
+  const rotating = hazard.behavior.rotation !== undefined;
+  let staticGeometry: ReturnType<typeof resolvePrototypeZapperGeometry> | undefined;
+
   return sampleTimes.some((seconds) => {
     const playerHitbox = createPrototypePlayerHitbox(
       { distance: initialRunState.distance + runMotionTuning.baseScrollSpeed * seconds },
       { positionY: evaluateFlightTrajectoryPosition(trajectory, seconds), velocityY: 0 },
       playerExtents,
     );
-    const geometry = resolvePrototypeZapperGeometry(hazard, initialSimulationSeconds + seconds);
+    let geometry: ReturnType<typeof resolvePrototypeZapperGeometry>;
+    if (rotating) {
+      geometry = resolvePrototypeZapperGeometry(hazard, initialSimulationSeconds + seconds);
+    } else {
+      if (staticGeometry === undefined) {
+        staticGeometry = resolvePrototypeZapperGeometry(hazard, initialSimulationSeconds);
+      }
+      geometry = staticGeometry;
+    }
     return geometry ? doesHitboxOverlapPrototypeZapper(playerHitbox, geometry, padding) : false;
   });
 };
