@@ -144,11 +144,11 @@ describe('PrototypeCollectibles', () => {
       earnedReward: 1,
       pendingCollectibleIds: Object.freeze([]),
     });
-    const poisonHazard = Object.freeze({
-      get hitbox() {
+    const poisonHazard: Readonly<LogicalHazard> = Object.freeze({
+      get hitbox(): never {
         throw new Error('lethal hazard collision should stay deferred without a pickup contact');
       },
-    }) as Readonly<LogicalHazard>;
+    });
     const trajectory = createVerticalFlightTrajectory(
       initial.flight,
       0.1,
