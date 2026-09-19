@@ -65,8 +65,9 @@ const getTimedZapperInstanceByIdentity = (
   state: Readonly<TimedZapperSimulationState>,
   identity: string,
 ): Readonly<TimedZapperLifecycleInstance> | undefined =>
-  state.instanceByIdentity?.[identity] ??
-  state.instances.find((instance) => instance.spawnIdentity === identity);
+  state.instanceByIdentity
+    ? state.instanceByIdentity[identity]
+    : state.instances.find((instance) => instance.spawnIdentity === identity);
 
 /**
  * Synchronizes per-spawn Timed Zapper lifecycle state to the currently retained spawn set. Timing is
