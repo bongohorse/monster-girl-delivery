@@ -289,8 +289,7 @@ export const evaluatePrototypeCollectibleStep = (
     return state;
   }
 
-  const finalDistance =
-    initialRunState.distance + runMotionTuning.baseScrollSpeed * elapsedSeconds;
+  const finalDistance = initialRunState.distance + runMotionTuning.baseScrollSpeed * elapsedSeconds;
   const minimumPlayerDistance = Math.min(initialRunState.distance, finalDistance);
   const maximumPlayerDistance = Math.max(initialRunState.distance, finalDistance);
   const minimumCandidateRunDistance =
