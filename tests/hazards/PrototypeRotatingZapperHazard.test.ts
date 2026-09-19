@@ -222,6 +222,42 @@ describe('M5 rotating Zapper', () => {
     });
   });
 
+  it('keeps an internal quadratic flight extremum inside the vertical broadphase', () => {
+    const behavior = createPrototypeZapperBehavior(0, PROTOTYPE_ZAPPER_LENGTHS.short);
+    const hitbox = createPrototypeZapperHitbox(0, 0, behavior);
+    const hazard = Object.freeze({
+      behavior,
+      entryId: 'vertical-broadphase-extremum',
+      hitbox,
+      patternEntryIndex: 0,
+      patternId: 'vertical-broadphase-extremum-test',
+      runDistance: hitbox.left,
+      type: 'placeholder-barrier' as const,
+    });
+    const trajectory = Object.freeze({
+      finalState: Object.freeze({ positionY: 100, velocityY: 320 }),
+      segments: Object.freeze([
+        Object.freeze({
+          accelerationY: 640,
+          endSeconds: 1,
+          positionY: 100,
+          startSeconds: 0,
+          velocityY: -320,
+        }),
+      ]),
+    });
+
+    expect(
+      isPlayerCollidingWithPrototypeZapperDuringStep(
+        { distance: 0, simulationSeconds: 0 },
+        trajectory,
+        1,
+        RUN_TUNING,
+        hazard,
+      ),
+    ).toBe(true);
+  });
+
   it('rejects a far rotating Zapper before resolving rotation or sample geometry', () => {
     const hazard = createRotatingZapper();
     const poisonBehavior = Object.freeze({
