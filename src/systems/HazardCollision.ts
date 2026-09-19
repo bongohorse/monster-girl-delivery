@@ -409,15 +409,36 @@ const createZapperCollisionSampleTimes = (
   return candidates;
 };
 
-interface PrototypeZapperCoreGrazeContacts {
+interface PrototypeZapperPaddingPairContacts {
+  readonly primaryHit: boolean;
+  readonly secondaryHitWithoutPrimary: boolean;
+}
+
+export interface PrototypeZapperCoreGrazeContacts {
   readonly coreHit: boolean;
   readonly grazeHit: boolean;
 }
 
-const NO_PROTOTYPE_ZAPPER_CONTACT: Readonly<PrototypeZapperCoreGrazeContacts> = Object.freeze({
-  coreHit: false,
-  grazeHit: false,
+const NO_PROTOTYPE_ZAPPER_PADDING_PAIR_CONTACT: Readonly<PrototypeZapperPaddingPairContacts> =
+  Object.freeze({
+    primaryHit: false,
+    secondaryHitWithoutPrimary: false,
+  });
+const PROTOTYPE_ZAPPER_SECONDARY_ONLY_CONTACT: Readonly<PrototypeZapperPaddingPairContacts> =
+  Object.freeze({
+    primaryHit: false,
+    secondaryHitWithoutPrimary: true,
+  });
+const PROTOTYPE_ZAPPER_PRIMARY_CONTACT: Readonly<PrototypeZapperPaddingPairContacts> = Object.freeze({
+  primaryHit: true,
+  secondaryHitWithoutPrimary: false,
 });
+
+const NO_PROTOTYPE_ZAPPER_CORE_GRAZE_CONTACT: Readonly<PrototypeZapperCoreGrazeContacts> =
+  Object.freeze({
+    coreHit: false,
+    grazeHit: false,
+  });
 const PROTOTYPE_ZAPPER_GRAZE_ONLY_CONTACT: Readonly<PrototypeZapperCoreGrazeContacts> =
   Object.freeze({
     coreHit: false,
@@ -450,9 +471,9 @@ const evaluatePrototypeZapperPaddingPairDuringStep = (
   playerExtents: Readonly<PrototypePlayerCollisionExtents>,
   primaryPadding: Readonly<PrototypeZapperGeometryPadding>,
   secondaryPadding?: Readonly<PrototypeZapperGeometryPadding>,
-): Readonly<PrototypeZapperCoreGrazeContacts> => {
+): Readonly<PrototypeZapperPaddingPairContacts> => {
   if (!isPrototypeZapperHazard(hazard)) {
-    return NO_PROTOTYPE_ZAPPER_CONTACT;
+    return NO_PROTOTYPE_ZAPPER_PADDING_PAIR_CONTACT;
   }
   if (!Number.isFinite(elapsedSeconds) || elapsedSeconds < 0) {
     throw new RangeError('elapsedSeconds must be a non-negative finite number.');
@@ -462,7 +483,7 @@ const evaluatePrototypeZapperPaddingPairDuringStep = (
   if (elapsedSeconds === 0) {
     const geometry = resolvePrototypeZapperGeometry(hazard, initialSimulationSeconds);
     if (!geometry) {
-      return NO_PROTOTYPE_ZAPPER_CONTACT;
+      return NO_PROTOTYPE_ZAPPER_PADDING_PAIR_CONTACT;
     }
     const playerHitbox = createPrototypePlayerHitbox(
       initialRunState,
@@ -470,7 +491,7 @@ const evaluatePrototypeZapperPaddingPairDuringStep = (
       playerExtents,
     );
     if (doesHitboxOverlapPrototypeZapper(playerHitbox, geometry, primaryPadding)) {
-      return PROTOTYPE_ZAPPER_CORE_CONTACT;
+      return PROTOTYPE_ZAPPER_PRIMARY_CONTACT;
     }
     return secondaryPadding &&
       doesHitboxOverlapPrototypeZapper(playerHitbox, geometry, secondaryPadding)
@@ -480,7 +501,7 @@ const evaluatePrototypeZapperPaddingPairDuringStep = (
 
   const interval = getCollisionTimeRange(hazard, elapsedSeconds);
   if (!interval) {
-    return NO_PROTOTYPE_ZAPPER_CONTACT;
+    return NO_PROTOTYPE_ZAPPER_PADDING_PAIR_CONTACT;
   }
   if (!Number.isFinite(initialRunState.distance)) {
     throw new RangeError('Player run distance must be finite.');
@@ -514,7 +535,7 @@ const evaluatePrototypeZapperPaddingPairDuringStep = (
       0,
     )
   ) {
-    return NO_PROTOTYPE_ZAPPER_CONTACT;
+    return NO_PROTOTYPE_ZAPPER_PADDING_PAIR_CONTACT;
   }
 
   const sampleTimes = createZapperCollisionSampleTimes(
@@ -548,7 +569,7 @@ const evaluatePrototypeZapperPaddingPairDuringStep = (
     }
 
     if (doesHitboxOverlapPrototypeZapper(playerHitbox, geometry, primaryPadding)) {
-      return PROTOTYPE_ZAPPER_CORE_CONTACT;
+      return PROTOTYPE_ZAPPER_PRIMARY_CONTACT;
     }
     if (
       secondaryPadding &&
@@ -590,7 +611,7 @@ export const isPlayerCollidingWithPrototypeZapperDuringStep = (
     hazard,
     playerExtents,
     padding,
-  ).coreHit;
+  ).primaryHit;
 
 /**
  * Resolves lethal core and Zapper Graze-padding contact from one shared sample/geometry pass.
@@ -604,8 +625,9 @@ export const evaluatePlayerPrototypeZapperCoreAndGrazeDuringStep = (
   hazard: Readonly<LogicalHazard>,
   grazePadding: Readonly<PrototypeZapperGeometryPadding>,
   playerExtents: Readonly<PrototypePlayerCollisionExtents> = PROTOTYPE_PLAYER_COLLISION_EXTENTS,
-): Readonly<PrototypeZapperCoreGrazeContacts> =>
-  evaluatePrototypeZapperPaddingPairDuringStep(
+): Readonly<PrototypeZapperCoreGrazeContacts> => {
+  assertValidPrototypeZapperPadding(grazePadding);
+  const contacts = evaluatePrototypeZapperPaddingPairDuringStep(
     initialRunState,
     trajectory,
     elapsedSeconds,
@@ -615,6 +637,13 @@ export const evaluatePlayerPrototypeZapperCoreAndGrazeDuringStep = (
     PROTOTYPE_ZAPPER_LETHAL_PADDING,
     grazePadding,
   );
+  if (contacts.primaryHit) {
+    return PROTOTYPE_ZAPPER_CORE_CONTACT;
+  }
+  return contacts.secondaryHitWithoutPrimary
+    ? PROTOTYPE_ZAPPER_GRAZE_ONLY_CONTACT
+    : NO_PROTOTYPE_ZAPPER_CORE_GRAZE_CONTACT;
+};
 
 /**
  * Tests continuous positive-area overlap during one authoritative run step. Horizontal relative
