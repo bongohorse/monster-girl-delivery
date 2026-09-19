@@ -103,6 +103,42 @@ describe('M5 rotating Zapper', () => {
     ).toBe(true);
   });
 
+  it('resolves static Zapper geometry once even when the step scans many samples', () => {
+    const baseBehavior = createPrototypeZapperBehavior(0, PROTOTYPE_ZAPPER_LENGTHS.short);
+    const hitbox = createPrototypeZapperHitbox(0, 195, baseBehavior);
+    let angleReads = 0;
+    const behavior = Object.freeze({
+      ...baseBehavior,
+      get angleDegrees(): number {
+        angleReads += 1;
+        if (angleReads > 1) {
+          throw new Error('static Zapper geometry was recomputed for another collision sample');
+        }
+        return baseBehavior.angleDegrees;
+      },
+    });
+    const hazard = Object.freeze({
+      behavior,
+      entryId: 'static-geometry-reuse',
+      hitbox,
+      patternEntryIndex: 0,
+      patternId: 'static-geometry-reuse-test',
+      runDistance: hitbox.left,
+      type: 'placeholder-barrier' as const,
+    });
+
+    expect(
+      isPlayerCollidingWithPrototypeZapperDuringStep(
+        { distance: 0, simulationSeconds: 0 },
+        createStationaryTrajectory(500, 0.1),
+        0.1,
+        RUN_TUNING,
+        hazard,
+      ),
+    ).toBe(false);
+    expect(angleReads).toBe(1);
+  });
+
   it('rejects a far rotating Zapper before resolving rotation or sample geometry', () => {
     const hazard = createRotatingZapper();
     const poisonBehavior = Object.freeze({
