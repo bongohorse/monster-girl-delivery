@@ -96,6 +96,39 @@ describe('PrototypeCollectibles', () => {
     expect(result.state.collectibles?.consumedCollectibleIds).toHaveLength(1);
   });
 
+  it('rejects far sorted collectibles before exact pickup geometry is evaluated', () => {
+    const createPoisonCollectible = (
+      pathId: string,
+      runDistance: number,
+    ): Readonly<LogicalCollectibleSpawnInstance> =>
+      Object.freeze({
+        ...COLLECTIBLE,
+        pathId,
+        runDistance,
+        get y(): number {
+          throw new Error(`far collectible ${pathId} reached exact pickup geometry`);
+        },
+      });
+
+    const farBehind = createPoisonCollectible('far-behind', -10_000);
+    const farAhead = createPoisonCollectible('far-ahead', 10_000);
+
+    const result = stepPrototypeRun(createPrototypeRunState(FLIGHT_BOUNDS), 1.7, {
+      collectibles: [farBehind, COLLECTIBLE, farAhead],
+      flightBounds: FLIGHT_BOUNDS,
+      flightTuning: FLIGHT_TUNING,
+      hazards: [],
+      runMotionTuning: RUN_MOTION,
+      thrustHeld: false,
+    });
+
+    expect(result.state.collectibles).toMatchObject({
+      collectedCount: 1,
+      collectedValue: 1,
+      earnedReward: 1,
+    });
+  });
+
   it('uses a forgiving pickup footprint while preserving a real miss outside its edge', () => {
     const nearEdge = Object.freeze({ ...COLLECTIBLE, pathId: 'near-edge', y: 232 });
     const visibleMiss = Object.freeze({ ...COLLECTIBLE, pathId: 'visible-miss', y: 234 });
