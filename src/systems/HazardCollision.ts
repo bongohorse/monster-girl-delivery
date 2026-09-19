@@ -173,9 +173,9 @@ const getHorizontalOverlapRange = (
   playerExtents: Readonly<PrototypePlayerCollisionExtents>,
   interval: Readonly<LogicalHazardCollisionInterval>,
   hazardHorizontalPadding = 0,
-  useHazardHorizontalVelocity = true,
+  hazardHorizontalVelocity = hazard.horizontalVelocity ?? 0,
 ): Readonly<LogicalHazardCollisionInterval> | null => {
-  const hazardVelocity = useHazardHorizontalVelocity ? (hazard.horizontalVelocity ?? 0) : 0;
+  const hazardVelocity = hazardHorizontalVelocity;
   if (!Number.isFinite(hazardVelocity)) {
     throw new RangeError('Hazard horizontalVelocity must be finite when provided.');
   }
@@ -408,9 +408,8 @@ const createZapperCollisionSampleTimes = (
  * narrowphase semantics, where generic hazard horizontalVelocity metadata does not move Zapper
  * geometry. Samples that remain are anchored to absolute world distance plus an authoritative
  * 1/720-second simulation-time lattice. Every sample resolves the current beam/node pose from the
- * same simulation clock used by presentation and
- * Director HB, so a rotating beam cannot tunnel between endpoint poses and remains deterministic
- * across partitions.
+ * same simulation clock used by presentation and Director HB, so a rotating beam cannot tunnel
+ * between endpoint poses and remains deterministic across partitions.
  */
 export const isPlayerCollidingWithPrototypeZapperDuringStep = (
   initialRunState: Readonly<RunMotionState>,
@@ -470,7 +469,7 @@ export const isPlayerCollidingWithPrototypeZapperDuringStep = (
       playerExtents,
       interval,
       maximumPadding,
-      false,
+      0,
     )
   ) {
     return false;
