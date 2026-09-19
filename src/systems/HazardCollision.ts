@@ -379,21 +379,15 @@ const getRelativeVerticalRange = (
   return { maximum, minimum };
 };
 
-const getFlightVerticalRange = (
+const canFlightTrajectoryOverlapVerticalRange = (
   trajectory: Readonly<VerticalFlightTrajectory>,
   interval: Readonly<LogicalHazardCollisionInterval>,
-): Readonly<{ maximum: number; minimum: number }> | null => {
+  minimumCenterY: number,
+  maximumCenterY: number,
+): boolean => {
   let minimum = Number.POSITIVE_INFINITY;
   let maximum = Number.NEGATIVE_INFINITY;
-
-  const includePosition = (positionY: number): boolean => {
-    if (!Number.isFinite(positionY)) {
-      return false;
-    }
-    minimum = Math.min(minimum, positionY);
-    maximum = Math.max(maximum, positionY);
-    return true;
-  };
+  let foundSegment = false;
 
   for (const segment of trajectory.segments) {
     const startSeconds = Math.max(interval.startSeconds, segment.startSeconds);
@@ -402,27 +396,33 @@ const getFlightVerticalRange = (
       continue;
     }
 
-    if (
-      !includePosition(evaluateFlightSegmentPosition(segment, startSeconds)) ||
-      !includePosition(evaluateFlightSegmentPosition(segment, endSeconds))
-    ) {
-      return null;
+    const startPositionY = evaluateFlightSegmentPosition(segment, startSeconds);
+    const endPositionY = evaluateFlightSegmentPosition(segment, endSeconds);
+    if (!Number.isFinite(startPositionY) || !Number.isFinite(endPositionY)) {
+      return true;
     }
+    foundSegment = true;
+    minimum = Math.min(minimum, startPositionY, endPositionY);
+    maximum = Math.max(maximum, startPositionY, endPositionY);
 
     if (segment.accelerationY !== 0) {
       const vertexSeconds =
         segment.startSeconds - segment.velocityY / segment.accelerationY;
-      if (
-        vertexSeconds > startSeconds &&
-        vertexSeconds < endSeconds &&
-        !includePosition(evaluateFlightSegmentPosition(segment, vertexSeconds))
-      ) {
-        return null;
+      if (vertexSeconds > startSeconds && vertexSeconds < endSeconds) {
+        const vertexPositionY = evaluateFlightSegmentPosition(segment, vertexSeconds);
+        if (!Number.isFinite(vertexPositionY)) {
+          return true;
+        }
+        minimum = Math.min(minimum, vertexPositionY);
+        maximum = Math.max(maximum, vertexPositionY);
       }
     }
   }
 
-  return Number.isFinite(minimum) && Number.isFinite(maximum) ? { maximum, minimum } : null;
+  if (!foundSegment) {
+    return true;
+  }
+  return maximum > minimumCenterY && minimum < maximumCenterY;
 };
 
 const ZAPPER_MAX_COLLISION_SAMPLE_DISTANCE = 0.5;
@@ -645,21 +645,22 @@ const evaluatePrototypeZapperPaddingPairDuringStep = (
   }
 
   if (playerExtents === PROTOTYPE_PLAYER_COLLISION_EXTENTS) {
-    const verticalRange = getFlightVerticalRange(trajectory, interval);
-    if (verticalRange) {
-      const minimumPlayerCenterY =
-        hazard.hitbox.top - maximumPadding - PROTOTYPE_PLAYER_COLLISION_EXTENTS.bottom;
-      const maximumPlayerCenterY =
-        hazard.hitbox.bottom + maximumPadding + PROTOTYPE_PLAYER_COLLISION_EXTENTS.top;
-      if (
-        verticalRange.maximum <= minimumPlayerCenterY ||
-        verticalRange.minimum >= maximumPlayerCenterY
-      ) {
-        if (workCounters) {
-          workCounters.broadphaseRejectedCallCount += 1;
-        }
-        return NO_PROTOTYPE_ZAPPER_PADDING_PAIR_CONTACT;
+    const minimumPlayerCenterY =
+      hazard.hitbox.top - maximumPadding - PROTOTYPE_PLAYER_COLLISION_EXTENTS.bottom;
+    const maximumPlayerCenterY =
+      hazard.hitbox.bottom + maximumPadding + PROTOTYPE_PLAYER_COLLISION_EXTENTS.top;
+    if (
+      !canFlightTrajectoryOverlapVerticalRange(
+        trajectory,
+        interval,
+        minimumPlayerCenterY,
+        maximumPlayerCenterY,
+      )
+    ) {
+      if (workCounters) {
+        workCounters.broadphaseRejectedCallCount += 1;
       }
+      return NO_PROTOTYPE_ZAPPER_PADDING_PAIR_CONTACT;
     }
   }
 
