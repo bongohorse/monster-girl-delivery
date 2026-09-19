@@ -29,14 +29,13 @@ describe('Director Zapper catalog', () => {
     }
   });
 
-  it('keeps all authored Director patterns inside existing fairness validation', () => {
+  it('keeps regular authored Director patterns inside existing fairness validation', () => {
     for (const selection of [...DIRECTOR_ZAPPER_VARIANTS, ...DIRECTOR_ZAPPER_GROUPS]) {
       const result = validatePattern(selection.pattern);
       expect(result.issues, selection.label).toEqual([]);
       expect(result.valid, selection.label).toBe(true);
     }
   });
-
 
   it('defines one bounded stress preset with real static, timed, and rotating Zappers', () => {
     expect(DIRECTOR_ZAPPER_PERFORMANCE_PRESET_ID).toBe('zapper-heavy-v1');
