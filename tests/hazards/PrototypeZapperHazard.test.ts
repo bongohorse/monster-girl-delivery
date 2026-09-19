@@ -245,6 +245,26 @@ describe('M5 static Zapper geometry', () => {
     ).toBe(true);
   });
 
+  it('keeps exact beam and endpoint tangency outside positive-area lethal overlap', () => {
+    const zapper = createZapper(0, PROTOTYPE_ZAPPER_LENGTHS.medium, 280, 195);
+    const geometry = resolvePrototypeZapperGeometry(zapper);
+    if (!geometry) {
+      throw new Error('Expected Zapper geometry.');
+    }
+
+    const beamTangent = { left: 270, right: 290, top: 202, bottom: 210 };
+    expect(doesHitboxOverlapPrototypeZapper(beamTangent, geometry)).toBe(false);
+    expect(
+      doesHitboxOverlapPrototypeZapper(beamTangent, geometry, PROTOTYPE_ZAPPER_GRAZE_PADDING),
+    ).toBe(true);
+
+    const endpointTangent = { left: 184, right: 194, top: 187, bottom: 203 };
+    expect(doesHitboxOverlapPrototypeZapper(endpointTangent, geometry)).toBe(false);
+    expect(
+      doesHitboxOverlapPrototypeZapper(endpointTangent, geometry, PROTOTYPE_ZAPPER_GRAZE_PADDING),
+    ).toBe(true);
+  });
+
   it('treats endpoint nodes as lethal and gives beam/nodes the configured Graze shell', () => {
     const zapper = createZapper(0, PROTOTYPE_ZAPPER_LENGTHS.medium, 280, 195);
     const geometry = resolvePrototypeZapperGeometry(zapper);
