@@ -277,8 +277,7 @@ export class Foundation extends Scene {
         throw new Error('Director performance HUD requires the game container.');
       }
 
-      this.directorZapperCollisionWorkCounters =
-        createPrototypeZapperCollisionWorkCounters();
+      this.directorZapperCollisionWorkCounters = createPrototypeZapperCollisionWorkCounters();
       this.directorDebugOverlay = new DirectorDebugOverlay(this);
       this.directorPerformanceHud = new DirectorPerformanceHud(
         gameContainer,
