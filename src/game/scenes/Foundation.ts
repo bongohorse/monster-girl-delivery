@@ -4,7 +4,12 @@ import { PhaserLifecycleAdapter } from '../../core/PhaserLifecycleAdapter';
 import { readSafeAreaInsets, ViewportService } from '../../core/ViewportService';
 import { DirectorDebugOverlay } from '../../devtools/DirectorDebugOverlay';
 import { DirectorPanel } from '../../devtools/DirectorPanel';
+import {
+  createPerformanceEvidenceReport,
+  serializePerformanceEvidenceReport,
+} from '../../devtools/PerformanceEvidence';
 import { DirectorPerformanceHud } from '../../devtools/DirectorPerformanceHud';
+import type { PerformanceSnapshot } from '../../devtools/PerformanceSampler';
 import { createDirectorResponsiveLayout } from '../../devtools/DirectorResponsiveLayout';
 import { DirectorRunControls } from '../../devtools/DirectorRunControls';
 import { DirectorTuningControls } from '../../devtools/DirectorTuningControls';
@@ -295,6 +300,7 @@ export class Foundation extends Scene {
           clearHazards: this.clearDirectorHazards,
           setSimulationFrozen: this.handleDirectorFreeze,
           triggerDeath: this.handleDirectorDeath,
+          exportPerformanceEvidence: this.handleDirectorPerformanceEvidenceExport,
         },
         this.directorZapperCollisionWorkCounters,
       );
@@ -695,6 +701,51 @@ export class Foundation extends Scene {
   private readonly handleDirectorFreeze = (frozen: boolean): void => {
     this.directorSimulationFrozen = frozen;
     this.services.input.releaseAll();
+  };
+
+  private readonly handleDirectorPerformanceEvidenceExport = (
+    snapshot: Readonly<PerformanceSnapshot>,
+    framesPerSecond: number,
+    fpsLimit: number,
+    zapperWork?: Readonly<PrototypeZapperCollisionWorkCounters>,
+  ): void => {
+    if (!this.viewportService) {
+      return;
+    }
+
+    const viewport = this.viewportService.getSnapshot();
+    const report = createPerformanceEvidenceReport(
+      {
+        buildCommit: __MGD_BUILD_COMMIT__,
+        buildMode: import.meta.env.DEV ? 'development' : 'production',
+        canvasBackingHeight: this.game.canvas.height,
+        canvasBackingWidth: this.game.canvas.width,
+        capturedAtIso: new Date().toISOString(),
+        devicePixelRatio: typeof window === 'undefined' ? 1 : window.devicePixelRatio,
+        directorAutoHazardsEnabled: this.directorAutoHazardsEnabled,
+        directorGodModeEnabled: this.directorGodModeEnabled,
+        renderScale: this.cameras.main.zoom,
+        runDistance: this.runState.motion.distance,
+        runSeed: this.hazardStream?.generationState.seed ?? null,
+        viewportHeight: viewport.height,
+        viewportWidth: viewport.width,
+      },
+      snapshot,
+      framesPerSecond,
+      fpsLimit,
+      zapperWork,
+    );
+    const serialized = serializePerformanceEvidenceReport(report);
+    const clipboard = typeof navigator === 'undefined' ? undefined : navigator.clipboard;
+
+    if (clipboard?.writeText) {
+      void clipboard.writeText(serialized).catch(() => {
+        console.info('MGD performance evidence', serialized);
+      });
+      return;
+    }
+
+    console.info('MGD performance evidence', serialized);
   };
 
   private readonly clearDirectorHazards = (): void => {
