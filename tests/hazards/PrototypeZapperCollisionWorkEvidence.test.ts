@@ -81,7 +81,7 @@ const collectOneSecondPartitionedWork = (
     rotating ? PROTOTYPE_ZAPPER_ROTATION_SPEEDS.slow : PROTOTYPE_ZAPPER_ROTATION_SPEEDS.fast,
   );
   const counters = createPrototypeZapperCollisionWorkCounters();
-  const playerPositionY = rotating ? 120 : 39;
+  const playerPositionY = rotating ? 60 : 39;
   let elapsedSeconds = 0;
   let stepIndex = 0;
 
