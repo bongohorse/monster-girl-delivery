@@ -287,13 +287,7 @@ export const resolvePrototypeZapperGeometryInto = (
 
   const centerX = (hazard.hitbox.left + hazard.hitbox.right) / 2;
   const centerY = (hazard.hitbox.top + hazard.hitbox.bottom) / 2;
-  return writeGeometryFromCenter(
-    scratch,
-    centerX,
-    centerY,
-    hazard.behavior,
-    simulationSeconds,
-  );
+  return writeGeometryFromCenter(scratch, centerX, centerY, hazard.behavior, simulationSeconds);
 };
 
 const pointToHitboxDistanceSquared = (
