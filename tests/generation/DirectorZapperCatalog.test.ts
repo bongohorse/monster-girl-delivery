@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   DIRECTOR_ZAPPER_GROUPS,
+  DIRECTOR_ZAPPER_PERFORMANCE_PRESET,
+  DIRECTOR_ZAPPER_PERFORMANCE_PRESET_ID,
   DIRECTOR_ZAPPER_VARIANTS,
 } from '../../src/generation/DirectorZapperCatalog';
 import { validatePattern } from '../../src/generation/PatternValidator';
@@ -27,12 +29,37 @@ describe('Director Zapper catalog', () => {
     }
   });
 
-  it('keeps all authored Director patterns inside existing fairness validation', () => {
+  it('keeps regular authored Director patterns inside existing fairness validation', () => {
     for (const selection of [...DIRECTOR_ZAPPER_VARIANTS, ...DIRECTOR_ZAPPER_GROUPS]) {
       const result = validatePattern(selection.pattern);
       expect(result.issues, selection.label).toEqual([]);
       expect(result.valid, selection.label).toBe(true);
     }
+  });
+
+  it('defines one bounded stress preset with real static, timed, and rotating Zappers', () => {
+    expect(DIRECTOR_ZAPPER_PERFORMANCE_PRESET_ID).toBe('zapper-heavy-v1');
+    expect(DIRECTOR_ZAPPER_PERFORMANCE_PRESET.label).toBe('ZPERF');
+    expect(DIRECTOR_ZAPPER_PERFORMANCE_PRESET.pattern.runLength).toBe(2_320);
+    expect(DIRECTOR_ZAPPER_PERFORMANCE_PRESET.pattern.entries).toHaveLength(14);
+
+    const behaviors = DIRECTOR_ZAPPER_PERFORMANCE_PRESET.pattern.entries.map(
+      (entry) => entry.behavior,
+    );
+    expect(behaviors.every((behavior) => behavior.kind === 'zapper')).toBe(true);
+
+    const rotationSpeeds = behaviors.flatMap((behavior) =>
+      behavior.kind === 'zapper' && behavior.rotation
+        ? [behavior.rotation.speedDegreesPerSecond]
+        : [],
+    );
+    expect(new Set(rotationSpeeds)).toEqual(new Set([30, 60, 90]));
+    expect(
+      behaviors.some((behavior) => behavior.kind === 'zapper' && behavior.timing !== undefined),
+    ).toBe(true);
+    expect(
+      behaviors.some((behavior) => behavior.kind === 'zapper' && behavior.rotation === undefined),
+    ).toBe(true);
   });
 
   it('keeps clockwise, counterclockwise, and timed behavior distinct', () => {

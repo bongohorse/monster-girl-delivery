@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite';
+import { createBuildDefines } from './buildMetadata.mjs';
 
 const phasermsg = () => {
   return {
@@ -20,6 +21,8 @@ const phasermsg = () => {
 
 export default defineConfig({
   base: './',
+
+  define: createBuildDefines(),
 
   logLevel: 'warning',
 
