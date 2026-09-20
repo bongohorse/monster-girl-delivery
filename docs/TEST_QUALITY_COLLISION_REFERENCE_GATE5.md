@@ -125,3 +125,72 @@ The valid claim is therefore narrow:
 > Within the analytical Gate 5A reference set, the exact collision precheck and first-contact solver agree on pickup existence and ordering.
 
 Gate 5A does **not** prove the `contactSeconds === null` guard unreachable for every valid trajectory. Mutants 54/56 remain deferred until the reference domain is widened across flight-bound transitions, multi-segment trajectories and other independently solvable collision cases.
+
+
+## Gate 5B — manually specified multi-segment references
+
+Gate 5B widens the reference domain without asking the production flight integrator to generate the expected path.
+
+The tests pass manually constructed, position-continuous trajectory segments directly to Collectibles authority.
+
+### Contact begins in a later segment
+
+- segment 1: Y=195, stationary, t=0..0.5;
+- segment 2: starts continuously at Y=195, velocity +40, t=0.5..1.5;
+- coin Y=250 => open-overlap edge at player Y=212.
+
+Independent onset:
+
+`0.5 + (212 - 195) / 40 = 0.925 s`
+
+The lethal lifecycle bracket is checked just before, exactly at, and just after 0.925 s.
+
+### Segment-boundary entry after a velocity reset
+
+Coin Y=112 gives the open player-center interval `(74, 150)`.
+
+- segment 1 reaches exactly Y=150 at t=0.5: edge-only;
+- segment 2 starts at the same Y=150 but with velocity -20 and immediately moves inside.
+
+The positive-area onset is therefore exactly the segment boundary, `t=0.5`.
+
+### Segment-boundary touch followed by retreat
+
+The same first segment reaches Y=150 at t=0.5. The second segment instead moves back toward Y>150.
+
+The trajectory never enters the open interval; its only contact is zero-area edge touch. Expected result: no pickup.
+
+These cases extend the oracle to contiguous multi-segment paths and a boundary-like velocity discontinuity while keeping the expected geometry analytically inspectable.
+
+
+## Gate 5B accepted evidence
+
+Validated PR head:
+
+`a73dc40018beae72825f54cfc477beb66119554e`
+
+Mutation workflow:
+
+- **Collectibles mutation audit #21**
+- run ID: `35530317254`
+- merge-ref/report commit: `4ce05af3fb0a30601729d6ad42fb3d08ded77963`
+- focused baseline: **31 assertions**
+- 65 mutants per pass
+- Run 1: **49 Killed / 16 Survived**
+- Run 2: **49 Killed / 16 Survived**
+- NoCoverage / Timeout / CompileError / RuntimeError / Ignored: **0**
+- verdict changes: **0**
+- artifact ID: `10610703718`
+- artifact digest: `sha256:84d6312429f4e84bfe70ef4e580d2a1eb7ba6f3fe97fb4b4c842d00cc4eb3fdf`
+
+Normal CI #1004 also passed with **113 test files / 827 tests** and the production build.
+
+### Survivor result
+
+The final survivor set is unchanged at 16. In particular, contact-solver guard mutants **54/56** still survive.
+
+That result is useful: the new independent multi-segment examples broaden the domain in which exact collision and first-contact ordering agree, but they do not justify deleting the defensive `contactSeconds === null` guard or calling it globally unreachable.
+
+Gate 5B therefore closes as **reference-domain expansion**, not as proof that 54/56 are equivalent.
+
+The next reference slice should use an independent solver/oracle over a bounded, explicitly stated trajectory domain rather than accumulating more implementation-shaped examples.
