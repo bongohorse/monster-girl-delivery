@@ -23,6 +23,7 @@ export interface DirectorPerformanceHudControls {
   readonly clearHazards?: () => void;
   readonly setSimulationFrozen?: (frozen: boolean) => void;
   readonly triggerDeath?: () => void;
+  readonly startCollectiblePerformancePreset?: () => void;
   readonly startNormalPerformancePreset?: () => void;
   readonly startZapperPerformancePreset?: () => void;
   readonly readRuntimeMetrics?: () => Readonly<PerformanceRuntimeMetrics>;
@@ -110,6 +111,7 @@ export class DirectorPerformanceHud {
   private readonly deathButton: HTMLButtonElement;
   private readonly resetButton: HTMLButtonElement;
   private readonly evidenceButton: HTMLButtonElement;
+  private readonly collectiblePerformanceButton: HTMLButtonElement;
   private readonly normalPerformanceButton: HTMLButtonElement;
   private readonly zapperPerformanceButton: HTMLButtonElement;
   private destroyed = false;
@@ -207,6 +209,11 @@ export class DirectorPerformanceHud {
       '☠',
       'Trigger normal death / fail-state flow',
     );
+    this.collectiblePerformanceButton = this.createButton(
+      ownerDocument,
+      'CH',
+      'Start deterministic collectible-heavy performance preset',
+    );
     this.normalPerformanceButton = this.createButton(
       ownerDocument,
       'NP',
@@ -227,6 +234,7 @@ export class DirectorPerformanceHud {
       this.clearButton,
       this.freezeButton,
       this.deathButton,
+      this.collectiblePerformanceButton,
       this.normalPerformanceButton,
       this.zapperPerformanceButton,
     );
@@ -271,6 +279,10 @@ export class DirectorPerformanceHud {
     this.addControlListeners(this.clearButton, this.handleClearClick);
     this.addControlListeners(this.freezeButton, this.handleFreezeClick);
     this.addControlListeners(this.deathButton, this.handleDeathClick);
+    this.addControlListeners(
+      this.collectiblePerformanceButton,
+      this.handleCollectiblePerformanceClick,
+    );
     this.addControlListeners(this.normalPerformanceButton, this.handleNormalPerformanceClick);
     this.addControlListeners(this.zapperPerformanceButton, this.handleZapperPerformanceClick);
     this.addControlListeners(this.resetButton, this.handleResetClick);
@@ -343,6 +355,10 @@ export class DirectorPerformanceHud {
     this.removeControlListeners(this.clearButton, this.handleClearClick);
     this.removeControlListeners(this.freezeButton, this.handleFreezeClick);
     this.removeControlListeners(this.deathButton, this.handleDeathClick);
+    this.removeControlListeners(
+      this.collectiblePerformanceButton,
+      this.handleCollectiblePerformanceClick,
+    );
     this.removeControlListeners(this.normalPerformanceButton, this.handleNormalPerformanceClick);
     this.removeControlListeners(this.zapperPerformanceButton, this.handleZapperPerformanceClick);
     this.removeControlListeners(this.resetButton, this.handleResetClick);
@@ -520,6 +536,12 @@ export class DirectorPerformanceHud {
     this.resetPerformanceMeasurements();
     this.discardNextPerformanceSample = true;
   }
+
+  private readonly handleCollectiblePerformanceClick = (event: Event): void => {
+    this.stopControlEvent(event);
+    this.preparePerformancePreset(false);
+    this.controls?.startCollectiblePerformancePreset?.();
+  };
 
   private readonly handleNormalPerformanceClick = (event: Event): void => {
     this.stopControlEvent(event);
