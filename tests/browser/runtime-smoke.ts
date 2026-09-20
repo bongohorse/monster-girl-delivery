@@ -208,6 +208,7 @@ const run = async (): Promise<SmokeEvidence> => {
 
   assert(game.scene.isActive('Foundation'), 'Foundation stopped after browser resize.');
   assert(runtimeErrors.length === 0, `Browser runtime errors: ${runtimeErrors.join(' | ')}`);
+  const rendererType = game.renderer.type;
 
   game.destroy(true);
   await waitFor(
@@ -219,7 +220,7 @@ const run = async (): Promise<SmokeEvidence> => {
 
   return {
     initialCanvas: '640x360',
-    rendererType: game.renderer.type,
+    rendererType,
     scene: 'Foundation',
     keyboardInput,
     pointerInput,
@@ -242,7 +243,4 @@ void run()
   })
   .finally(() => {
     controller?.destroy();
-    if (game && !game.isBooted) {
-      return;
-    }
   });
