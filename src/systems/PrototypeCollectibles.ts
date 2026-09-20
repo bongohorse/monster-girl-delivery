@@ -337,7 +337,7 @@ export const evaluatePrototypeCollectibleStep = (
   }
 
   const consumed = new Set(state.consumedCollectibleIds);
-  let lethalHazards: ReadonlyArray<Readonly<LogicalHazard>> | undefined =
+  let hazardsToCheck: ReadonlyArray<Readonly<LogicalHazard>> | undefined =
     resolvedLethalHazards ?? undefined;
   const awarded: Array<Readonly<LogicalCollectibleSpawnInstance>> = [];
 
@@ -381,22 +381,12 @@ export const evaluatePrototypeCollectibleStep = (
     if (contactSeconds === null) {
       continue;
     }
-    lethalHazards ??= hazards.filter((hazard) => {
-      if (broadphaseWorkCounters) {
-        broadphaseWorkCounters.hazardCollisionEvaluationCount += 1;
-      }
-      return isPlayerCollidingWithHazardDuringStep(
-        initialRunState,
-        trajectory,
-        elapsedSeconds,
-        runMotionTuning,
-        hazard,
-        PROTOTYPE_PLAYER_COLLISION_EXTENTS,
-        workCounters,
-      );
-    });
+    // Graze can provide the already-resolved lethal set. Standalone callers instead
+    // check the retained hazards directly against the pickup prefix; a full-step
+    // prefilter would repeat collision authority and can only add work.
+    hazardsToCheck ??= hazards;
     if (
-      lethalHazards.some((hazard) =>
+      hazardsToCheck.some((hazard) =>
         hasLethalCollisionBy(
           initialRunState,
           trajectory,
