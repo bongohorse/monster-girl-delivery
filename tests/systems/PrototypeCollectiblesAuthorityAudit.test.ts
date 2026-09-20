@@ -135,6 +135,47 @@ describe('PrototypeCollectibles Gate 2 authority rules', () => {
     expect(result.collectibles?.collectedCount).toBe(1);
   });
 
+  it('keeps the horizontal overlap window correct for valid sub-unit run speeds', () => {
+    /*
+     * RunMotionConfig accepts every non-negative finite speed, including 0.5.
+     * Start at distance 10 with a coin centered at the same X. Horizontal positive
+     * overlap remains valid until player-center distance 42:
+     *   (42 - 10) / 0.5 = 64 s.
+     *
+     * The vertical path starts at Y=0 and moves downward at 9 units/s, entering the
+     * coin's positive-overlap band (player center > 157) after 157 / 9 ~= 17.44 s.
+     * During a 20 s step, the two overlap windows therefore intersect and pickup
+     * must occur. Replacing division by multiplication would incorrectly end the
+     * horizontal window at 16 s and miss the pickup.
+     */
+    const slowRunMotion = Object.freeze({ baseScrollSpeed: 0.5 });
+    const delayedVerticalTrajectory = Object.freeze({
+      finalState: Object.freeze({ positionY: 180, velocityY: 9 }),
+      segments: Object.freeze([
+        Object.freeze({
+          accelerationY: 0,
+          endSeconds: 20,
+          positionY: 0,
+          startSeconds: 0,
+          velocityY: 9,
+        }),
+      ]),
+    });
+
+    const result = evaluatePrototypeCollectibleStep(
+      EMPTY_PROTOTYPE_COLLECTIBLE_RUN_STATE,
+      Object.freeze({ distance: 10 }),
+      delayedVerticalTrajectory,
+      20,
+      slowRunMotion,
+      [collectible('slow-overlap-window', 10)],
+      [],
+    );
+
+    expect(result.collectedCount).toBe(1);
+    expect(result.earnedReward).toBe(1);
+  });
+
   it('awards one logical collectible identity only once across multiple simulation updates', () => {
     /*
      * The authoritative pickup occurrence is the first successful transition of a
