@@ -16,6 +16,17 @@ describe('PerformanceEvidence', () => {
       secondaryNarrowphaseCheckCount: 9,
     };
 
+    const runtime = {
+      activeCollectibleCount: 9,
+      activeHazardCount: 14,
+      laserPresentationCount: 2,
+      presentedCollectibleCount: 9,
+      presentedHazardCount: 14,
+      primitiveHazardPresentationCount: 3,
+      sceneGameObjectCount: 17,
+      zapperPresentationCount: 9,
+    };
+
     const report = createPerformanceEvidenceReport(
       {
         baseScrollSpeed: 350,
@@ -55,9 +66,11 @@ describe('PerformanceEvidence', () => {
       60.1,
       60,
       counters,
+      runtime,
     );
 
     counters.evaluatedSampleCount = 999;
+    runtime.activeHazardCount = 999;
 
     expect(report).toEqual({
       build: { commit: 'abc123def456', mode: 'development' },
@@ -73,6 +86,16 @@ describe('PerformanceEvidence', () => {
           slowFrameCount: 4,
           windowCapacity: 300,
           worstFrameTimeMilliseconds: 41.2,
+        },
+        runtime: {
+          activeCollectibleCount: 9,
+          activeHazardCount: 14,
+          laserPresentationCount: 2,
+          presentedCollectibleCount: 9,
+          presentedHazardCount: 14,
+          primitiveHazardPresentationCount: 3,
+          sceneGameObjectCount: 17,
+          zapperPresentationCount: 9,
         },
         zapperWork: {
           broadphaseRejectedCallCount: 2,
@@ -111,10 +134,11 @@ describe('PerformanceEvidence', () => {
         viewportWidth: 844,
       },
       capturedAtIso: '2026-09-19T18:00:00.000Z',
-      schemaVersion: 2,
+      schemaVersion: 3,
     });
     expect(Object.isFrozen(report)).toBe(true);
     expect(Object.isFrozen(report.capture.frameTime)).toBe(true);
+    expect(Object.isFrozen(report.capture.runtime)).toBe(true);
     expect(Object.isFrozen(report.capture.zapperWork)).toBe(true);
     expect(Object.isFrozen(report.context.tuning)).toBe(true);
   });
@@ -161,9 +185,10 @@ describe('PerformanceEvidence', () => {
     );
 
     expect(report.capture.actualFps).toBeNull();
+    expect(report.capture.runtime).toBeNull();
     expect(report.capture.zapperWork).toBeNull();
     const serialized = serializePerformanceEvidenceReport(report);
-    expect(serialized).toContain('"schemaVersion": 2');
+    expect(serialized).toContain('"schemaVersion": 3');
     expect(JSON.parse(serialized)).toEqual(report);
   });
 });

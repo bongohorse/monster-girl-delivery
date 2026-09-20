@@ -104,6 +104,16 @@ const createHarness = () => {
   const setSimulationFrozen = vi.fn();
   const triggerDeath = vi.fn();
   const startZapperPerformancePreset = vi.fn();
+  const readRuntimeMetrics = vi.fn(() => ({
+    activeCollectibleCount: 5,
+    activeHazardCount: 7,
+    laserPresentationCount: 1,
+    presentedCollectibleCount: 5,
+    presentedHazardCount: 7,
+    primitiveHazardPresentationCount: 2,
+    sceneGameObjectCount: 12,
+    zapperPresentationCount: 4,
+  }));
   const exportPerformanceEvidence = vi.fn();
   const hud = new DirectorPerformanceHud(
     container as unknown as HTMLElement,
@@ -122,6 +132,7 @@ const createHarness = () => {
       setSimulationFrozen,
       triggerDeath,
       startZapperPerformancePreset,
+      readRuntimeMetrics,
       exportPerformanceEvidence,
     },
     zapperWorkCounters,
@@ -135,6 +146,7 @@ const createHarness = () => {
   const evidenceButton = root?.children[5];
   const fpsButton = values?.children[0];
   const zapperWorkValue = values?.children[3];
+  const runtimeValue = values?.children[4];
   const wireframeCheckbox = wireframeLabel?.children[0];
   const godModeButton = playgroundControls?.children[0];
   const autoHazardsButton = playgroundControls?.children[1];
@@ -157,6 +169,7 @@ const createHarness = () => {
     !evidenceButton ||
     !fpsButton ||
     !zapperWorkValue ||
+    !runtimeValue ||
     !wireframeCheckbox ||
     !godModeButton ||
     !autoHazardsButton ||
@@ -188,8 +201,10 @@ const createHarness = () => {
     laserButton,
     missileButton,
     playgroundControls,
+    readRuntimeMetrics,
     resetButton,
     root,
+    runtimeValue,
     sampler,
     setAutoHazardsEnabled,
     setFpsLimit,
@@ -229,7 +244,7 @@ describe('DirectorPerformanceHud', () => {
     expect(container.children).toHaveLength(1);
     expect(root.className).toBe('director-performance-hud');
     expect(root.style).toMatchObject({ left: '52px', top: '20px', maxWidth: '740px' });
-    expect(values.children).toHaveLength(4);
+    expect(values.children).toHaveLength(5);
     expect(wireframeLabel.children).toHaveLength(2);
     expect(playgroundControls.children).toHaveLength(10);
   });
@@ -276,6 +291,23 @@ describe('DirectorPerformanceHud', () => {
     hud.update(16, 60, false);
     expect(zapperWorkValue.textContent).toContain('Sm 99/40');
     expect(zapperWorkValue.textWriteCount).toBe(writesAfterRefresh + 1);
+  });
+
+  it('reads and formats runtime counts only on the existing HUD cadence', () => {
+    const { hud, readRuntimeMetrics, runtimeValue } = createHarness();
+    expect(readRuntimeMetrics).toHaveBeenCalledTimes(1);
+
+    hud.update(16, 60, false);
+    expect(readRuntimeMetrics).toHaveBeenCalledTimes(2);
+    expect(runtimeValue.textContent).toBe(' | R H 7/7 C 5/5 P 2 L 1 Z 4 GO 12');
+
+    for (let frame = 0; frame < 15; frame += 1) {
+      hud.update(16, 60, false);
+    }
+    expect(readRuntimeMetrics).toHaveBeenCalledTimes(2);
+
+    hud.update(16, 60, false);
+    expect(readRuntimeMetrics).toHaveBeenCalledTimes(3);
   });
 
   it('cycles runtime FPS limits from unlimited through all requested presets', () => {
@@ -519,6 +551,11 @@ describe('DirectorPerformanceHud', () => {
         candidateSampleCount: 40,
         collisionCallCount: 3,
         evaluatedSampleCount: 12,
+      }),
+      expect.objectContaining({
+        activeCollectibleCount: 5,
+        activeHazardCount: 7,
+        sceneGameObjectCount: 12,
       }),
     );
 

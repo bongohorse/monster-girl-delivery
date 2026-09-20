@@ -5,6 +5,7 @@ import {
   resetPrototypeZapperCollisionWorkCounters,
 } from '../systems/HazardCollision';
 import { createDirectorResponsiveLayout } from './DirectorResponsiveLayout';
+import type { PerformanceRuntimeMetrics } from './PerformanceEvidence';
 import { PerformanceSampler, type PerformanceSnapshot } from './PerformanceSampler';
 
 export const DIRECTOR_PERFORMANCE_HUD_REFRESH_MILLISECONDS = 250;
@@ -23,11 +24,13 @@ export interface DirectorPerformanceHudControls {
   readonly setSimulationFrozen?: (frozen: boolean) => void;
   readonly triggerDeath?: () => void;
   readonly startZapperPerformancePreset?: () => void;
+  readonly readRuntimeMetrics?: () => Readonly<PerformanceRuntimeMetrics>;
   readonly exportPerformanceEvidence?: (
     snapshot: Readonly<PerformanceSnapshot>,
     framesPerSecond: number,
     fpsLimit: number,
     zapperWork?: Readonly<PrototypeZapperCollisionWorkCounters>,
+    runtime?: Readonly<PerformanceRuntimeMetrics>,
   ) => void;
 }
 
@@ -91,6 +94,7 @@ export class DirectorPerformanceHud {
   private readonly frameTimeValue: HTMLSpanElement;
   private readonly statisticsValue: HTMLSpanElement;
   private readonly zapperWorkValue: HTMLSpanElement;
+  private readonly runtimeValue: HTMLSpanElement;
   private readonly wireframeLabel: HTMLLabelElement;
   private readonly wireframeCheckbox: HTMLInputElement;
   private readonly playgroundControls: HTMLSpanElement;
@@ -148,11 +152,16 @@ export class DirectorPerformanceHud {
     this.zapperWorkValue.hidden = this.zapperCollisionWorkCounters === undefined;
     this.zapperWorkValue.title =
       'Zapper work: calls, broadphase rejects, evaluated/candidate samples, geometry resolutions, core/Graze narrowphase checks';
+    this.runtimeValue = ownerDocument.createElement('span');
+    this.runtimeValue.hidden = this.controls?.readRuntimeMetrics === undefined;
+    this.runtimeValue.title =
+      'Runtime counts: active/presented hazards, active/presented collectibles, primitive/Laser/Zapper presentations, Phaser Scene Game Objects';
     this.values.append(
       this.fpsValue,
       this.frameTimeValue,
       this.statisticsValue,
       this.zapperWorkValue,
+      this.runtimeValue,
     );
 
     this.wireframeLabel = ownerDocument.createElement('label');
@@ -511,11 +520,13 @@ export class DirectorPerformanceHud {
     const zapperWork = this.zapperCollisionWorkCounters
       ? Object.freeze({ ...this.zapperCollisionWorkCounters })
       : undefined;
+    const runtime = this.controls?.readRuntimeMetrics?.();
     this.controls?.exportPerformanceEvidence?.(
       this.sampler.createSnapshot(),
       this.latestFramesPerSecond,
       limit,
       zapperWork,
+      runtime,
     );
   };
 
@@ -582,6 +593,10 @@ export class DirectorPerformanceHud {
         this.formatZapperWorkCounters(this.zapperCollisionWorkCounters),
       );
     }
+    const runtime = this.controls?.readRuntimeMetrics?.();
+    if (runtime) {
+      setTextIfChanged(this.runtimeValue, this.formatRuntimeMetrics(runtime));
+    }
     setHealthIfChanged(this.fpsValue, getFpsHealth(this.latestFramesPerSecond));
     setHealthIfChanged(
       this.frameTimeValue,
@@ -596,6 +611,17 @@ export class DirectorPerformanceHud {
       ` | P99 ${formatMilliseconds(snapshot.p99FrameTimeMilliseconds)}` +
       ` | M ${formatMilliseconds(snapshot.worstFrameTimeMilliseconds)}` +
       ` | S ${snapshot.slowFrameCount}`
+    );
+  }
+
+  private formatRuntimeMetrics(runtime: Readonly<PerformanceRuntimeMetrics>): string {
+    return (
+      ` | R H ${runtime.activeHazardCount}/${runtime.presentedHazardCount}` +
+      ` C ${runtime.activeCollectibleCount}/${runtime.presentedCollectibleCount}` +
+      ` P ${runtime.primitiveHazardPresentationCount}` +
+      ` L ${runtime.laserPresentationCount}` +
+      ` Z ${runtime.zapperPresentationCount}` +
+      ` GO ${runtime.sceneGameObjectCount}`
     );
   }
 
