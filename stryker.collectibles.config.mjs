@@ -41,6 +41,6 @@ export default {
     'src/systems/PrototypeCollectibles.ts:200-235',
     'src/systems/PrototypeCollectibles.ts:350-353',
     'src/systems/PrototypeCollectibles.ts:359-369',
-    'src/systems/PrototypeCollectibles.ts:374-416',
+    'src/systems/PrototypeCollectibles.ts:374-406',
   ],
 };
