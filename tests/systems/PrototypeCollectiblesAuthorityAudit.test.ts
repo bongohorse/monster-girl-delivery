@@ -23,6 +23,18 @@ const FLIGHT_TUNING = Object.freeze({
 const FLIGHT_BOUNDS = Object.freeze({ ceilingY: 0, floorY: 390 });
 const RUN_MOTION = Object.freeze({ baseScrollSpeed: 100 });
 const STATIONARY_RUN_MOTION = Object.freeze({ baseScrollSpeed: 0 });
+const LINEAR_VERTICAL_TUNING = Object.freeze({
+  gravity: 0,
+  thrust: 0,
+  maxFallVelocity: 1_000,
+  maxRiseVelocity: 1_000,
+});
+const QUADRATIC_VERTICAL_TUNING = Object.freeze({
+  gravity: 40,
+  thrust: 0,
+  maxFallVelocity: 1_000,
+  maxRiseVelocity: 1_000,
+});
 
 const collectible = (
   pathId: string,
@@ -47,6 +59,162 @@ const lethalHazard: Readonly<LogicalHazard> = Object.freeze({
     top: 180,
     bottom: 210,
   }),
+});
+
+describe('PrototypeCollectibles Gate 5 analytical contact references', () => {
+  const createLifecycleHazard = (
+    startSeconds: number,
+    endSeconds: number,
+  ): Readonly<LogicalHazard> =>
+    Object.freeze({
+      collisionInterval: Object.freeze({ startSeconds, endSeconds }),
+      hitbox: Object.freeze({ left: -10_000, right: 10_000, top: -10_000, bottom: 10_000 }),
+    });
+
+  const evaluate = (
+    spawn: Readonly<LogicalCollectibleSpawnInstance>,
+    elapsedSeconds: number,
+    runMotionTuning: Readonly<{ baseScrollSpeed: number }>,
+    trajectory: ReturnType<typeof createVerticalFlightTrajectory>,
+    hazardStartSeconds?: number,
+  ) =>
+    evaluatePrototypeCollectibleStep(
+      EMPTY_PROTOTYPE_COLLECTIBLE_RUN_STATE,
+      Object.freeze({ distance: 0 }),
+      trajectory,
+      elapsedSeconds,
+      runMotionTuning,
+      [spawn],
+      hazardStartSeconds === undefined
+        ? []
+        : [createLifecycleHazard(hazardStartSeconds, elapsedSeconds)],
+    );
+
+  it('matches the analytical horizontal-only contact boundary at 0.68 s', () => {
+    /*
+     * Combined horizontal pickup half-width is 18 + 14 = 32.
+     * Coin center X=100, player starts X=0 and moves at 100 units/s.
+     * Edge touch occurs at player center X=68 => t = 68 / 100 = 0.68 s.
+     *
+     * A lifecycle hazard already overlapping the player therefore:
+     * - blocks pickup if it becomes lethal just before 0.68 s;
+     * - ties and loses to pickup at exactly 0.68 s;
+     * - does not block if it starts just after 0.68 s.
+     */
+    const elapsedSeconds = 1;
+    const trajectory = createVerticalFlightTrajectory(
+      { positionY: 195, velocityY: 0 },
+      elapsedSeconds,
+      false,
+      LINEAR_VERTICAL_TUNING,
+      FLIGHT_BOUNDS,
+    );
+    const spawn = collectible('gate5-horizontal-reference', 100);
+
+    expect(evaluate(spawn, elapsedSeconds, RUN_MOTION, trajectory, 0.68 - 1e-6).collectedCount).toBe(
+      0,
+    );
+    expect(evaluate(spawn, elapsedSeconds, RUN_MOTION, trajectory, 0.68).collectedCount).toBe(1);
+    expect(evaluate(spawn, elapsedSeconds, RUN_MOTION, trajectory, 0.68 + 1e-6).collectedCount).toBe(
+      1,
+    );
+  });
+
+  it('matches the analytical vertical-only linear contact boundary at 0.85 s', () => {
+    /*
+     * Combined vertical pickup half-height is 24 + 14 = 38.
+     * Coin center Y=250, so downward-moving player center first reaches edge touch at Y=212.
+     * Starting at Y=195 with v=20 and zero acceleration:
+     *   t = (212 - 195) / 20 = 17 / 20 = 0.85 s.
+     */
+    const elapsedSeconds = 1.2;
+    const trajectory = createVerticalFlightTrajectory(
+      { positionY: 195, velocityY: 20 },
+      elapsedSeconds,
+      false,
+      LINEAR_VERTICAL_TUNING,
+      FLIGHT_BOUNDS,
+    );
+    const spawn = collectible('gate5-vertical-linear-reference', 0, 250);
+
+    expect(
+      evaluate(spawn, elapsedSeconds, STATIONARY_RUN_MOTION, trajectory, 0.85 - 1e-6)
+        .collectedCount,
+    ).toBe(0);
+    expect(evaluate(spawn, elapsedSeconds, STATIONARY_RUN_MOTION, trajectory, 0.85).collectedCount).toBe(
+      1,
+    );
+    expect(
+      evaluate(spawn, elapsedSeconds, STATIONARY_RUN_MOTION, trajectory, 0.85 + 1e-6)
+        .collectedCount,
+    ).toBe(1);
+  });
+
+  it('matches an independently solved quadratic vertical contact boundary', () => {
+    /*
+     * Same Y=212 edge boundary, but start at Y=195 with v0=0 and a=40.
+     * 17 = 0.5 * 40 * t^2 => t = sqrt(17 / 20).
+     */
+    const elapsedSeconds = 1.2;
+    const expectedContactSeconds = Math.sqrt(17 / 20);
+    const trajectory = createVerticalFlightTrajectory(
+      { positionY: 195, velocityY: 0 },
+      elapsedSeconds,
+      false,
+      QUADRATIC_VERTICAL_TUNING,
+      FLIGHT_BOUNDS,
+    );
+    const spawn = collectible('gate5-vertical-quadratic-reference', 0, 250);
+
+    expect(
+      evaluate(
+        spawn,
+        elapsedSeconds,
+        STATIONARY_RUN_MOTION,
+        trajectory,
+        expectedContactSeconds - 1e-6,
+      ).collectedCount,
+    ).toBe(0);
+    expect(
+      evaluate(spawn, elapsedSeconds, STATIONARY_RUN_MOTION, trajectory, expectedContactSeconds)
+        .collectedCount,
+    ).toBe(1);
+    expect(
+      evaluate(
+        spawn,
+        elapsedSeconds,
+        STATIONARY_RUN_MOTION,
+        trajectory,
+        expectedContactSeconds + 1e-6,
+      ).collectedCount,
+    ).toBe(1);
+  });
+
+  it('requires the analytical horizontal and vertical overlap windows to intersect', () => {
+    /*
+     * Coin X=100 gives horizontal open overlap (0.68, 1.32).
+     * Coin Y=250 needs player center Y>212. At v=10, that begins only after 1.7 s.
+     * The windows never intersect, so there is no pickup despite each axis overlapping
+     * at some point during the 2 s step.
+     */
+    const elapsedSeconds = 2;
+    const trajectory = createVerticalFlightTrajectory(
+      { positionY: 195, velocityY: 10 },
+      elapsedSeconds,
+      false,
+      LINEAR_VERTICAL_TUNING,
+      FLIGHT_BOUNDS,
+    );
+
+    const result = evaluate(
+      collectible('gate5-disjoint-axis-windows', 100, 250),
+      elapsedSeconds,
+      RUN_MOTION,
+      trajectory,
+    );
+
+    expect(result).toBe(EMPTY_PROTOTYPE_COLLECTIBLE_RUN_STATE);
+  });
 });
 
 describe('PrototypeCollectibles Gate 2 authority rules', () => {
