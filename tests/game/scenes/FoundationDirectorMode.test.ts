@@ -169,6 +169,7 @@ interface DirectorTestControls {
   setAutoHazardsEnabled?: (enabled: boolean) => void;
   setFpsLimit?: (limit: number) => void;
   setGodModeEnabled?: (enabled: boolean) => void;
+  startCollectiblePerformancePreset?: () => void;
   startNormalPerformancePreset?: () => void;
   startZapperPerformancePreset?: () => void;
   spawnZapper?: () => void;
@@ -251,6 +252,7 @@ describe('Foundation Director mode boundary', () => {
         exportPerformanceEvidence: expect.any(Function),
         readRuntimeMetrics: expect.any(Function),
         setFpsLimit: expect.any(Function),
+        startCollectiblePerformancePreset: expect.any(Function),
         startNormalPerformancePreset: expect.any(Function),
         startZapperPerformancePreset: expect.any(Function),
         setWireframesEnabled: expect.any(Function),
@@ -409,6 +411,51 @@ describe('Foundation Director mode boundary', () => {
     hazards = Reflect.get(foundation, 'directorManualHazards') as typeof hazards;
     expect(hazards).toHaveLength(1);
     expect(hazards[0]?.behavior).toMatchObject({ angleDegrees: 0, length: 80 });
+  });
+
+  it('restarts one fixed collectible-heavy workload through real authored collectible paths', () => {
+    const services = createAppServices();
+    const foundation = new Foundation(services, true);
+    foundation.create();
+    const controls = directorPerformanceHudConstructed.mock.calls[0]?.[3] as
+      | DirectorTestControls
+      | undefined;
+
+    expect(controls?.startCollectiblePerformancePreset).toBeTypeOf('function');
+    controls?.setGodModeEnabled?.(true);
+    controls?.setAutoHazardsEnabled?.(false);
+    controls?.startCollectiblePerformancePreset?.();
+
+    const firstHazards = structuredClone(
+      Reflect.get(foundation, 'directorManualHazards') as ReadonlyArray<unknown>,
+    );
+    const firstCollectibles = structuredClone(
+      Reflect.get(foundation, 'directorManualCollectibles') as ReadonlyArray<{
+        pathId: string;
+        runDistance: number;
+      }>,
+    );
+
+    expect(firstHazards).toHaveLength(3);
+    expect(firstCollectibles).toHaveLength(60);
+    expect(new Set(firstCollectibles.map((spawn) => spawn.pathId)).size).toBeGreaterThan(1);
+    expect(Reflect.get(foundation, 'collectibleSpawns')).toEqual([]);
+    expect(Reflect.get(foundation, 'directorPerformancePresetId')).toBe('collectible-heavy-v1');
+    expect(Reflect.get(foundation, 'directorGodModeEnabled')).toBe(true);
+    expect(Reflect.get(foundation, 'directorAutoHazardsEnabled')).toBe(false);
+    expect(Reflect.get(foundation, 'runState')).toMatchObject({ motion: { distance: 0 } });
+
+    foundation.update(0, 250);
+    controls?.startCollectiblePerformancePreset?.();
+
+    expect(Reflect.get(foundation, 'directorManualHazards')).toEqual(firstHazards);
+    expect(Reflect.get(foundation, 'directorManualCollectibles')).toEqual(firstCollectibles);
+    expect(Reflect.get(foundation, 'runState')).toMatchObject({ motion: { distance: 0 } });
+    expect(Reflect.get(foundation, 'directorPerformancePresetId')).toBe('collectible-heavy-v1');
+
+    controls?.clearHazards?.();
+    expect(Reflect.get(foundation, 'directorManualCollectibles')).toEqual([]);
+    expect(Reflect.get(foundation, 'directorPerformancePresetId')).toBeNull();
   });
 
   it('restarts one fixed normal generated run and records its preset identity', () => {
