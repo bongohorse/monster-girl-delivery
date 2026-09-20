@@ -167,6 +167,8 @@ For important killed mutants, confirm that the test failed for the expected game
 
 ## Collectibles audit procedure
 
+Detailed Gate 2 contract, executed fault-injection evidence, exact commits and remaining limits are recorded in [`TEST_QUALITY_COLLECTIBLES_GATE2.md`](TEST_QUALITY_COLLECTIBLES_GATE2.md).
+
 The first Gate 2 slice is intentionally small. Audit these rules before expanding scope:
 
 1. **pickup boundary** — define analytically what counts as outside, exactly on the boundary, and inside;
