@@ -27,6 +27,7 @@ const child = spawnSync(
     'run',
     'tests/systems/PrototypeCollectiblesAuthorityAudit.test.ts',
     'tests/systems/PrototypeCollectibles.test.ts',
+    'tests/systems/PrototypeBroadphaseWorkEvidence.test.ts',
     '--reporter=json',
     `--outputFile=${reportPath}`,
   ],
