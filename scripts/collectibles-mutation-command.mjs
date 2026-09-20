@@ -28,6 +28,7 @@ const child = spawnSync(
     'tests/systems/PrototypeCollectiblesAuthorityAudit.test.ts',
     'tests/systems/PrototypeCollectibles.test.ts',
     'tests/systems/PrototypeBroadphaseWorkEvidence.test.ts',
+    'tests/systems/PrototypeCollectiblesReferenceOracle.test.ts',
     '--reporter=json',
     `--outputFile=${reportPath}`,
   ],
