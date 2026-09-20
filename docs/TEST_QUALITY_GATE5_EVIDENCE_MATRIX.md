@@ -52,3 +52,31 @@ The shared-context run is diagnostic rather than a product-authority gate. If it
 Normal CI should remain fast and deterministic. Shuffle/isolation variation is an audit tool used after suspicious flakes, test-infrastructure changes, or before deliberately changing Vitest pool/isolation settings.
 
 The workflow is manual-only after Gate 5E validation and retains its logs plus exact commit/run metadata as an artifact.
+
+
+## Gate 5E accepted stability evidence
+
+Validated PR head:
+
+`50890c7d43215e2c646af8e66c246c7625139a1c`
+
+Test stability audit #1 / run `35533928158`:
+
+| Mode | Seed | Result | Suite |
+| --- | ---: | --- | --- |
+| isolated forks, shuffled files + tests | 37101 | PASS | 115 files / 832 tests |
+| isolated forks, shuffled files + tests | 37102 | PASS | 115 files / 832 tests |
+| shared-context forks, no file parallelism, shuffled files + tests | 37101 | PASS | 115 files / 832 tests |
+
+Observed test-run durations on the clean runner were approximately 14.65 s, 14.35 s and 2.88 s respectively. The shared-context result is diagnostic evidence only; its lower runtime is **not** a recommendation to disable isolation in normal CI.
+
+Evidence artifact:
+
+- artifact ID: `10612422401`;
+- artifact digest: `sha256:57ce78b03fdda660f8482b3f167ee3a1231e9c748c75e37925fba7b071709f95`;
+- report/checkout commit: `37cd89475b3a3c8d2614c7de7333b2f050d1c446`;
+- Bun: `1.4.2`;
+- Node: `v22.23.2`;
+- recorded shared-context outcome: `success`.
+
+The audit found no current ordering-dependent or cross-file isolation-dependent failure in this suite under the exercised seeds/configurations. This is bounded evidence, not proof that future tests can safely disable isolation.
