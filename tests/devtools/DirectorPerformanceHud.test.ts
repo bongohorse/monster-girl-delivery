@@ -103,6 +103,8 @@ const createHarness = () => {
   const clearHazards = vi.fn();
   const setSimulationFrozen = vi.fn();
   const triggerDeath = vi.fn();
+  const startZapperPerformancePreset = vi.fn();
+  const exportPerformanceEvidence = vi.fn();
   const hud = new DirectorPerformanceHud(
     container as unknown as HTMLElement,
     input,
@@ -119,6 +121,8 @@ const createHarness = () => {
       clearHazards,
       setSimulationFrozen,
       triggerDeath,
+      startZapperPerformancePreset,
+      exportPerformanceEvidence,
     },
     zapperWorkCounters,
   );
@@ -128,6 +132,7 @@ const createHarness = () => {
   const wireframeLabel = root?.children[2];
   const playgroundControls = root?.children[3];
   const resetButton = root?.children[4];
+  const evidenceButton = root?.children[5];
   const fpsButton = values?.children[0];
   const zapperWorkValue = values?.children[3];
   const wireframeCheckbox = wireframeLabel?.children[0];
@@ -140,6 +145,7 @@ const createHarness = () => {
   const clearButton = playgroundControls?.children[6];
   const freezeButton = playgroundControls?.children[7];
   const deathButton = playgroundControls?.children[8];
+  const zapperPerformanceButton = playgroundControls?.children[9];
 
   if (
     !root ||
@@ -148,6 +154,7 @@ const createHarness = () => {
     !wireframeLabel ||
     !playgroundControls ||
     !resetButton ||
+    !evidenceButton ||
     !fpsButton ||
     !zapperWorkValue ||
     !wireframeCheckbox ||
@@ -159,7 +166,8 @@ const createHarness = () => {
     !laserButton ||
     !clearButton ||
     !freezeButton ||
-    !deathButton
+    !deathButton ||
+    !zapperPerformanceButton
   ) {
     throw new Error('Expected the Director HUD structure.');
   }
@@ -170,6 +178,8 @@ const createHarness = () => {
     clearHazards,
     container,
     deathButton,
+    evidenceButton,
+    exportPerformanceEvidence,
     fpsButton,
     freezeButton,
     godModeButton,
@@ -190,6 +200,7 @@ const createHarness = () => {
     spawnMissile,
     spawnZapper,
     spawnZapperGroup,
+    startZapperPerformancePreset,
     triggerDeath,
     values,
     visibilityButton,
@@ -197,6 +208,7 @@ const createHarness = () => {
     wireframeLabel,
     zapperButton,
     zapperGroupButton,
+    zapperPerformanceButton,
     zapperWorkCounters,
     zapperWorkValue,
   };
@@ -219,7 +231,7 @@ describe('DirectorPerformanceHud', () => {
     expect(root.style).toMatchObject({ left: '52px', top: '20px', maxWidth: '740px' });
     expect(values.children).toHaveLength(4);
     expect(wireframeLabel.children).toHaveLength(2);
-    expect(playgroundControls.children).toHaveLength(9);
+    expect(playgroundControls.children).toHaveLength(10);
   });
 
   it('samples every frame but refreshes formatted values at most every 250 ms', () => {
@@ -304,6 +316,7 @@ describe('DirectorPerformanceHud', () => {
       hud,
       playgroundControls,
       resetButton,
+      evidenceButton,
       sampler,
       values,
       visibilityButton,
@@ -325,6 +338,7 @@ describe('DirectorPerformanceHud', () => {
     expect(wireframeLabel.hidden).toBe(true);
     expect(playgroundControls.hidden).toBe(true);
     expect(resetButton.hidden).toBe(true);
+    expect(evidenceButton.hidden).toBe(true);
     expect(sampler.createSnapshot().sampleCount).toBe(8);
     expect(values.children.reduce((total, child) => total + child.textWriteCount, 0)).toBe(
       writesBeforeHide,
@@ -336,6 +350,7 @@ describe('DirectorPerformanceHud', () => {
     expect(wireframeLabel.hidden).toBe(false);
     expect(playgroundControls.hidden).toBe(false);
     expect(resetButton.hidden).toBe(false);
+    expect(evidenceButton.hidden).toBe(false);
     expect(values.children[1]?.textContent).toBe(' | 30.0 ms');
     expect(values.children[2]?.textContent).toContain('S 20');
   });
@@ -407,6 +422,50 @@ describe('DirectorPerformanceHud', () => {
     expect(triggerDeath).toHaveBeenCalledOnce();
   });
 
+  it('starts the Zapper performance preset from one normalized measurement state', () => {
+    const {
+      autoHazardsButton,
+      freezeButton,
+      godModeButton,
+      hud,
+      sampler,
+      setAutoHazardsEnabled,
+      setGodModeEnabled,
+      setSimulationFrozen,
+      setWireframesEnabled,
+      startZapperPerformancePreset,
+      wireframeCheckbox,
+      zapperPerformanceButton,
+      zapperWorkCounters,
+    } = createHarness();
+
+    hud.update(30, 40, false);
+    zapperWorkCounters.candidateSampleCount = 50;
+    wireframeCheckbox.checked = true;
+    wireframeCheckbox.dispatch('change');
+    freezeButton.dispatch('click');
+
+    zapperPerformanceButton.dispatch('click');
+
+    expect(setGodModeEnabled).toHaveBeenLastCalledWith(true);
+    expect(setAutoHazardsEnabled).toHaveBeenLastCalledWith(false);
+    expect(setSimulationFrozen).toHaveBeenLastCalledWith(false);
+    expect(setWireframesEnabled).toHaveBeenLastCalledWith(false);
+    expect(startZapperPerformancePreset).toHaveBeenCalledOnce();
+    expect(godModeButton.dataset.active).toBe('true');
+    expect(autoHazardsButton.dataset.active).toBe('false');
+    expect(freezeButton.dataset.active).toBe('false');
+    expect(freezeButton.textContent).toBe('⏸');
+    expect(wireframeCheckbox.checked).toBe(false);
+    expect(sampler.createSnapshot().sampleCount).toBe(0);
+    expect(zapperWorkCounters.candidateSampleCount).toBe(0);
+
+    hud.update(80, 10, false);
+    expect(sampler.createSnapshot().sampleCount).toBe(0);
+    hud.update(16, 60, false);
+    expect(sampler.createSnapshot().sampleCount).toBe(1);
+  });
+
   it('blocks gameplay and suppresses DOM control events without queuing thrust', () => {
     const { godModeButton, input, visibilityButton, wireframeLabel } = createHarness();
     input.pressPointer(7, 'touch');
@@ -437,6 +496,37 @@ describe('DirectorPerformanceHud', () => {
     expect(input.getSnapshot().gameplayBlocked).toBe(true);
     godModeButton.dispatch('pointerup');
     expect(input.getSnapshot().gameplayBlocked).toBe(false);
+  });
+
+  it('exports one structured snapshot on demand without retaining live counter references', () => {
+    const { evidenceButton, exportPerformanceEvidence, hud, zapperWorkCounters } = createHarness();
+    hud.update(16, 58.5, false);
+    zapperWorkCounters.collisionCallCount = 3;
+    zapperWorkCounters.candidateSampleCount = 40;
+    zapperWorkCounters.evaluatedSampleCount = 12;
+
+    evidenceButton.dispatch('click');
+
+    expect(exportPerformanceEvidence).toHaveBeenCalledOnce();
+    expect(exportPerformanceEvidence).toHaveBeenCalledWith(
+      expect.objectContaining({
+        currentFrameTimeMilliseconds: 16,
+        sampleCount: 1,
+      }),
+      58.5,
+      0,
+      expect.objectContaining({
+        candidateSampleCount: 40,
+        collisionCallCount: 3,
+        evaluatedSampleCount: 12,
+      }),
+    );
+
+    const exportedCounters = exportPerformanceEvidence.mock.calls[0]?.[3] as
+      | { evaluatedSampleCount: number }
+      | undefined;
+    zapperWorkCounters.evaluatedSampleCount = 99;
+    expect(exportedCounters?.evaluatedSampleCount).toBe(12);
   });
 
   it('resets frame metrics and Zapper work without replacing either owner', () => {
@@ -480,6 +570,7 @@ describe('DirectorPerformanceHud', () => {
       harness.visibilityButton,
       harness.fpsButton,
       harness.resetButton,
+      harness.evidenceButton,
       harness.wireframeLabel,
       harness.wireframeCheckbox,
       harness.godModeButton,
@@ -491,6 +582,7 @@ describe('DirectorPerformanceHud', () => {
       harness.clearButton,
       harness.freezeButton,
       harness.deathButton,
+      harness.zapperPerformanceButton,
     ]) {
       expect([...element.listeners.values()].every((listeners) => listeners.size === 0)).toBe(true);
     }
