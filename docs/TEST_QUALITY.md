@@ -142,6 +142,8 @@ Randomized failures must preserve the failing seed. Where practical, minimize/sh
 
 ## Mutation-testing interpretation
 
+The bounded Collectibles pilot, exact mutation ranges, reproducibility check, result classification and evidence are documented in [`TEST_QUALITY_STRYKER_GATE3.md`](TEST_QUALITY_STRYKER_GATE3.md).
+
 Mutation testing measures whether tests detect changes; it does not prove that the expected behavior is correct.
 
 Every pilot report records separate counts for:
