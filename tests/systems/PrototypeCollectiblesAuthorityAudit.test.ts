@@ -130,9 +130,9 @@ describe('PrototypeCollectibles Gate 2 authority rules', () => {
     expect(
       (second.collectibles?.collectedCount ?? 0) - (first.collectibles?.collectedCount ?? 0),
     ).toBe(0);
-    expect(
-      (second.collectibles?.earnedReward ?? 0) - (first.collectibles?.earnedReward ?? 0),
-    ).toBe(0);
+    expect((second.collectibles?.earnedReward ?? 0) - (first.collectibles?.earnedReward ?? 0)).toBe(
+      0,
+    );
   });
 
   it('awards a pickup whose first positive-overlap boundary is strictly before lethal contact', () => {
