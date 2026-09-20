@@ -38,6 +38,8 @@ That transition is the pickup occurrence/event boundary for current M5. Presenta
 
 If the same retained logical identity is presented to later simulation updates, it must not produce a second pickup occurrence or reward increment.
 
+The current run state bounds deduplication memory by pruning consumed identities after their collectible occurrence leaves the retained logical stream. Therefore the contract also relies on the generation/lifecycle invariant that a retired occurrence is not later resurrected with the same stable identity. Gate 2 proves repeated-update idempotence inside that valid lifecycle; it does not claim safety for an invalid stream that reintroduces a retired occurrence identity.
+
 ## Rule 3 — pickup versus lethal ordering
 
 For the audit fixture:
@@ -72,7 +74,7 @@ Each rule must demonstrate this sequence independently:
 4. remove the temporary fault;
 5. run CI green again.
 
-Planned faults:
+Executed fault shapes:
 
 - boundary rule: temporarily expand the collectible pickup half-size by `1e-6`, turning the old exact-touch fixture into positive overlap;
 - exactly-once rule: temporarily bypass the consumed-identity guard;
@@ -83,6 +85,7 @@ These mutations are evidence only and must not be present in the final Gate 2 di
 ## Limits
 
 - This gate does not prove every collectible branch correct.
+- It does not prove deduplication against an invalid generator that resurrects a retired collectible occurrence after its bounded consumed-ID history has been pruned.
 - It does not introduce a new pickup event bus.
 - It does not claim numerical sampling is a correctness oracle.
 - It does not change collectible tuning or death/pickup semantics.
