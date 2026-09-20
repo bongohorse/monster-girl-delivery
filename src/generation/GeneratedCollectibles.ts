@@ -31,6 +31,52 @@ export const getNextGeneratedCollectiblePruneDistance = (
   return first === undefined ? null : first.runDistance + retainBehindDistance;
 };
 
+const compareCollectibleSpawns = (
+  first: Readonly<LogicalCollectibleSpawnInstance>,
+  second: Readonly<LogicalCollectibleSpawnInstance>,
+): number =>
+  first.runDistance - second.runDistance ||
+  first.patternStartDistance - second.patternStartDistance ||
+  first.patternId.localeCompare(second.patternId) ||
+  first.pathId.localeCompare(second.pathId) ||
+  first.pathPointIndex - second.pathPointIndex;
+
+/** Materializes one already-authored pattern occurrence without consuming PRNG or duplicating path logic. */
+export const materializePatternCollectibles = (
+  pattern: Readonly<HazardPattern>,
+  patternStartDistance: number,
+): ReadonlyArray<Readonly<LogicalCollectibleSpawnInstance>> => {
+  if (!Number.isFinite(patternStartDistance) || patternStartDistance < 0) {
+    throw new RangeError('Collectible pattern start distance must be non-negative and finite.');
+  }
+
+  const materialized: Array<Readonly<LogicalCollectibleSpawnInstance>> = [];
+  for (const path of pattern.collectiblePaths ?? []) {
+    path.points.forEach((point, pathPointIndex) => {
+      const runDistance = patternStartDistance + point.runDistance;
+      if (!Number.isFinite(runDistance)) {
+        throw new RangeError('Collectible run distance must remain finite.');
+      }
+
+      materialized.push(
+        Object.freeze({
+          intent: path.intent,
+          pathId: path.id,
+          pathPointIndex,
+          patternId: pattern.id,
+          patternStartDistance,
+          runDistance,
+          value: PROTOTYPE_COLLECTIBLE_VALUE,
+          y: point.y,
+        }),
+      );
+    });
+  }
+
+  materialized.sort(compareCollectibleSpawns);
+  return Object.freeze(materialized);
+};
+
 const materializeCurrentPatternOccurrences = (
   hazardSpawns: ReadonlyArray<Readonly<LogicalHazardSpawnInstance>>,
   catalog: ReadonlyArray<Readonly<HazardPattern>>,
@@ -58,37 +104,10 @@ const materializeCurrentPatternOccurrences = (
 
   const materialized: Array<Readonly<LogicalCollectibleSpawnInstance>> = [];
   for (const { pattern, start } of occurrenceStarts.values()) {
-    for (const path of pattern.collectiblePaths ?? []) {
-      path.points.forEach((point, pathPointIndex) => {
-        const runDistance = start + point.runDistance;
-        if (!Number.isFinite(runDistance)) {
-          throw new RangeError('Collectible run distance must remain finite.');
-        }
-
-        materialized.push(
-          Object.freeze({
-            intent: path.intent,
-            pathId: path.id,
-            pathPointIndex,
-            patternId: pattern.id,
-            patternStartDistance: start,
-            runDistance,
-            value: PROTOTYPE_COLLECTIBLE_VALUE,
-            y: point.y,
-          }),
-        );
-      });
-    }
+    materialized.push(...materializePatternCollectibles(pattern, start));
   }
 
-  materialized.sort(
-    (first, second) =>
-      first.runDistance - second.runDistance ||
-      first.patternStartDistance - second.patternStartDistance ||
-      first.patternId.localeCompare(second.patternId) ||
-      first.pathId.localeCompare(second.pathId) ||
-      first.pathPointIndex - second.pathPointIndex,
-  );
+  materialized.sort(compareCollectibleSpawns);
   return Object.freeze(materialized);
 };
 
