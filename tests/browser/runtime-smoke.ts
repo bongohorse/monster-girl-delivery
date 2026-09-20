@@ -41,14 +41,18 @@ window.addEventListener(
       runtimeErrors.push(`resource error: ${String((target as Element).tagName ?? target)}`);
       return;
     }
-    runtimeErrors.push(event.error instanceof Error ? event.error.stack ?? event.error.message : event.message);
+    runtimeErrors.push(
+      event.error instanceof Error ? (event.error.stack ?? event.error.message) : event.message,
+    );
   },
   true,
 );
 
 window.addEventListener('unhandledrejection', (event) => {
   runtimeErrors.push(
-    event.reason instanceof Error ? event.reason.stack ?? event.reason.message : String(event.reason),
+    event.reason instanceof Error
+      ? (event.reason.stack ?? event.reason.message)
+      : String(event.reason),
   );
 });
 
@@ -87,9 +91,7 @@ const dispatchSpace = (type: 'keydown' | 'keyup'): void => {
   window.dispatchEvent(event);
 };
 
-const readFoundation = (
-  game: ReturnType<typeof StartGame>,
-): FoundationRuntimeProbe =>
+const readFoundation = (game: ReturnType<typeof StartGame>): FoundationRuntimeProbe =>
   game.scene.getScene('Foundation') as unknown as FoundationRuntimeProbe;
 
 const readViewport = (probe: FoundationRuntimeProbe) => {
@@ -128,7 +130,10 @@ const run = async (): Promise<SmokeEvidence> => {
 
   const foundation = readFoundation(game);
   const initialViewport = readViewport(foundation);
-  assert(initialViewport.orientation === 'landscape', 'Initial Foundation viewport is not landscape.');
+  assert(
+    initialViewport.orientation === 'landscape',
+    'Initial Foundation viewport is not landscape.',
+  );
 
   dispatchSpace('keydown');
   await waitFor(
@@ -237,7 +242,7 @@ void run()
     resultElement.textContent = JSON.stringify(evidence);
   })
   .catch((error: unknown) => {
-    const message = error instanceof Error ? error.stack ?? error.message : String(error);
+    const message = error instanceof Error ? (error.stack ?? error.message) : String(error);
     document.body.dataset.smokeStatus = 'failed';
     resultElement.textContent = JSON.stringify({ error: message, runtimeErrors });
   })
