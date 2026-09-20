@@ -161,3 +161,36 @@ The same first segment reaches Y=150 at t=0.5. The second segment instead moves 
 The trajectory never enters the open interval; its only contact is zero-area edge touch. Expected result: no pickup.
 
 These cases extend the oracle to contiguous multi-segment paths and a boundary-like velocity discontinuity while keeping the expected geometry analytically inspectable.
+
+
+## Gate 5B accepted evidence
+
+Validated PR head:
+
+`a73dc40018beae72825f54cfc477beb66119554e`
+
+Mutation workflow:
+
+- **Collectibles mutation audit #21**
+- run ID: `35530317254`
+- merge-ref/report commit: `4ce05af3fb0a30601729d6ad42fb3d08ded77963`
+- focused baseline: **31 assertions**
+- 65 mutants per pass
+- Run 1: **49 Killed / 16 Survived**
+- Run 2: **49 Killed / 16 Survived**
+- NoCoverage / Timeout / CompileError / RuntimeError / Ignored: **0**
+- verdict changes: **0**
+- artifact ID: `10610703718`
+- artifact digest: `sha256:84d6312429f4e84bfe70ef4e580d2a1eb7ba6f3fe97fb4b4c842d00cc4eb3fdf`
+
+Normal CI #1004 also passed with **113 test files / 827 tests** and the production build.
+
+### Survivor result
+
+The final survivor set is unchanged at 16. In particular, contact-solver guard mutants **54/56** still survive.
+
+That result is useful: the new independent multi-segment examples broaden the domain in which exact collision and first-contact ordering agree, but they do not justify deleting the defensive `contactSeconds === null` guard or calling it globally unreachable.
+
+Gate 5B therefore closes as **reference-domain expansion**, not as proof that 54/56 are equivalent.
+
+The next reference slice should use an independent solver/oracle over a bounded, explicitly stated trajectory domain rather than accumulating more implementation-shaped examples.
