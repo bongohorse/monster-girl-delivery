@@ -2,11 +2,6 @@ name: Test stability audit
 
 on:
   workflow_dispatch:
-  # Gate 5E validation only. Remove this PR trigger before merge.
-  pull_request:
-    paths:
-      - '.github/workflows/test-stability-audit.yml'
-      - 'docs/TEST_QUALITY*'
 
 permissions:
   contents: read
