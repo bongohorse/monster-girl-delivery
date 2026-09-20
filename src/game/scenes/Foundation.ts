@@ -8,6 +8,11 @@ import { DirectorPerformanceHud } from '../../devtools/DirectorPerformanceHud';
 import { createDirectorResponsiveLayout } from '../../devtools/DirectorResponsiveLayout';
 import { DirectorRunControls } from '../../devtools/DirectorRunControls';
 import { DirectorTuningControls } from '../../devtools/DirectorTuningControls';
+import {
+  createPerformanceEvidenceReport,
+  serializePerformanceEvidenceReport,
+} from '../../devtools/PerformanceEvidence';
+import type { PerformanceSnapshot } from '../../devtools/PerformanceSampler';
 import { GeneratedCollectiblePresentation } from '../../entities/GeneratedCollectiblePresentation';
 import { GeneratedHazardPresentation } from '../../entities/GeneratedHazardPresentation';
 import { PrototypePlayerPresentation } from '../../entities/PrototypePlayerPresentation';
@@ -15,6 +20,8 @@ import { PrototypeScrollingWorldPresentation } from '../../entities/PrototypeScr
 import { DIRECTOR_LASER_VARIANTS } from '../../generation/DirectorLaserCatalog';
 import {
   DIRECTOR_ZAPPER_GROUPS,
+  DIRECTOR_ZAPPER_PERFORMANCE_PRESET,
+  DIRECTOR_ZAPPER_PERFORMANCE_PRESET_ID,
   DIRECTOR_ZAPPER_VARIANTS,
 } from '../../generation/DirectorZapperCatalog';
 import type { EncounterStreamObservation } from '../../generation/EncounterStreamObservation';
@@ -235,6 +242,8 @@ export class Foundation extends Scene {
   private directorGodModeEnabled = false;
   private directorAutoHazardsEnabled = true;
   private directorSimulationFrozen = false;
+  private directorWireframesEnabled = false;
+  private directorPerformancePresetId: string | null = null;
   private directorHazardSerial = 0;
   private directorLaserVariantIndex = 0;
   private directorZapperVariantIndex = 0;
@@ -285,7 +294,7 @@ export class Foundation extends Scene {
         undefined,
         {
           setFpsLimit: (limit) => this.game.loop.setFPSLimit(limit),
-          setWireframesEnabled: (enabled) => this.directorDebugOverlay?.setEnabled(enabled),
+          setWireframesEnabled: this.handleDirectorWireframes,
           setGodModeEnabled: this.handleDirectorGodMode,
           setAutoHazardsEnabled: this.handleDirectorAutoHazards,
           spawnMissile: () => this.spawnDirectorHazard('missile'),
@@ -295,6 +304,8 @@ export class Foundation extends Scene {
           clearHazards: this.clearDirectorHazards,
           setSimulationFrozen: this.handleDirectorFreeze,
           triggerDeath: this.handleDirectorDeath,
+          startZapperPerformancePreset: this.startDirectorZapperPerformancePreset,
+          exportPerformanceEvidence: this.handleDirectorPerformanceEvidenceExport,
         },
         this.directorZapperCollisionWorkCounters,
       );
@@ -685,19 +696,87 @@ export class Foundation extends Scene {
 
   private readonly handleDirectorGodMode = (enabled: boolean): void => {
     this.directorGodModeEnabled = enabled;
+    this.directorPerformancePresetId = null;
   };
 
   private readonly handleDirectorAutoHazards = (enabled: boolean): void => {
     this.directorAutoHazardsEnabled = enabled;
+    this.directorPerformancePresetId = null;
     this.clearDirectorHazards();
   };
 
   private readonly handleDirectorFreeze = (frozen: boolean): void => {
     this.directorSimulationFrozen = frozen;
+    this.directorPerformancePresetId = null;
     this.services.input.releaseAll();
   };
 
+  private readonly handleDirectorWireframes = (enabled: boolean): void => {
+    this.directorWireframesEnabled = enabled;
+    this.directorPerformancePresetId = null;
+    this.directorDebugOverlay?.setEnabled(enabled);
+  };
+
+  private readonly handleDirectorPerformanceEvidenceExport = (
+    snapshot: Readonly<PerformanceSnapshot>,
+    framesPerSecond: number,
+    fpsLimit: number,
+    zapperWork?: Readonly<PrototypeZapperCollisionWorkCounters>,
+  ): void => {
+    if (!this.viewportService) {
+      return;
+    }
+
+    const viewport = this.viewportService.getSnapshot();
+    const flightTuning = this.services.flightTuning.getSnapshot();
+    const runMotionTuning = this.services.runMotion.getSnapshot();
+    const report = createPerformanceEvidenceReport(
+      {
+        baseScrollSpeed: runMotionTuning.baseScrollSpeed,
+        buildCommit: __MGD_BUILD_COMMIT__,
+        buildMode: import.meta.env.DEV ? 'development' : 'production',
+        canvasBackingHeight: this.game.canvas.height,
+        canvasBackingWidth: this.game.canvas.width,
+        capturedAtIso: new Date().toISOString(),
+        devicePixelRatio: typeof window === 'undefined' ? 1 : window.devicePixelRatio,
+        directorAutoHazardsEnabled: this.directorAutoHazardsEnabled,
+        directorGodModeEnabled: this.directorGodModeEnabled,
+        directorSimulationFrozen: this.directorSimulationFrozen,
+        effectiveScrollSpeed:
+          this.hazardStream?.schedulingWindow.scrollSpeed ?? runMotionTuning.baseScrollSpeed,
+        flightGravity: flightTuning.gravity,
+        flightMaxFallVelocity: flightTuning.maxFallVelocity,
+        flightMaxRiseVelocity: flightTuning.maxRiseVelocity,
+        flightThrust: flightTuning.thrust,
+        performancePresetId: this.directorPerformancePresetId,
+        renderScale: this.cameras.main.zoom,
+        runDistance: this.runState.motion.distance,
+        runSeed: this.hazardStream?.generationState.seed ?? null,
+        userAgent: typeof navigator === 'undefined' ? 'unknown' : navigator.userAgent,
+        viewportHeight: viewport.height,
+        viewportWidth: viewport.width,
+        wireframesEnabled: this.directorWireframesEnabled,
+      },
+      snapshot,
+      framesPerSecond,
+      fpsLimit,
+      zapperWork,
+    );
+    const serialized = serializePerformanceEvidenceReport(report);
+    const clipboard = typeof navigator === 'undefined' ? undefined : navigator.clipboard;
+
+    if (clipboard?.writeText) {
+      void clipboard.writeText(serialized).catch(() => {
+        console.info('MGD performance evidence', serialized);
+      });
+      return;
+    }
+
+    console.info('MGD performance evidence', serialized);
+  };
+
   private readonly clearDirectorHazards = (): void => {
+    this.directorPerformancePresetId = null;
     this.retainedGeneratedTelegraphedHazards = Object.freeze([]);
     this.directorManualHazards = Object.freeze([]);
     this.collectibleSpawns = Object.freeze([]);
@@ -761,6 +840,21 @@ export class Foundation extends Scene {
       (this.directorZapperVariantIndex + 1) % DIRECTOR_ZAPPER_VARIANTS.length;
   };
 
+  private readonly startDirectorZapperPerformancePreset = (): void => {
+    if (!this.viewportService) {
+      return;
+    }
+
+    const viewport = this.viewportService.getSnapshot();
+    this.restartRun(viewport, PROTOTYPE_LIVE_RUN_SEED);
+    this.spawnDirectorPattern(
+      DIRECTOR_ZAPPER_PERFORMANCE_PRESET.pattern,
+      true,
+      this.hazardVerticalDomain.mapAuthoredCenterY,
+    );
+    this.directorPerformancePresetId = DIRECTOR_ZAPPER_PERFORMANCE_PRESET_ID;
+  };
+
   private readonly spawnDirectorZapperGroup = (): void => {
     if (!this.viewportService || this.runState.phase !== 'running') {
       return;
@@ -794,6 +888,7 @@ export class Foundation extends Scene {
     fullyOffscreen: boolean,
     mapCenterY: (centerY: number) => number = identityCenterMapper,
   ): void {
+    this.directorPerformancePresetId = null;
     if (!this.viewportService || this.runState.phase !== 'running') {
       return;
     }
@@ -942,6 +1037,7 @@ export class Foundation extends Scene {
     viewport: ReturnType<ViewportService['getSnapshot']>,
     seed: Parameters<typeof createGeneratedHazardStream>[0] = PROTOTYPE_LIVE_RUN_SEED,
   ): void {
+    this.directorPerformancePresetId = null;
     this.directorPanel?.reset();
     this.retainedGeneratedTelegraphedHazards = Object.freeze([]);
     this.directorManualHazards = Object.freeze([]);
