@@ -217,6 +217,153 @@ describe('PrototypeCollectibles Gate 5 analytical contact references', () => {
   });
 });
 
+describe('PrototypeCollectibles Gate 5B multi-segment references', () => {
+  const createLifecycleHazard = (
+    startSeconds: number,
+    endSeconds: number,
+  ): Readonly<LogicalHazard> =>
+    Object.freeze({
+      collisionInterval: Object.freeze({ startSeconds, endSeconds }),
+      hitbox: Object.freeze({ left: -10_000, right: 10_000, top: -10_000, bottom: 10_000 }),
+    });
+
+  const evaluateManualTrajectory = (
+    spawn: Readonly<LogicalCollectibleSpawnInstance>,
+    elapsedSeconds: number,
+    trajectory: ReturnType<typeof createVerticalFlightTrajectory>,
+    hazardStartSeconds?: number,
+  ) =>
+    evaluatePrototypeCollectibleStep(
+      EMPTY_PROTOTYPE_COLLECTIBLE_RUN_STATE,
+      Object.freeze({ distance: 0 }),
+      trajectory,
+      elapsedSeconds,
+      STATIONARY_RUN_MOTION,
+      [spawn],
+      hazardStartSeconds === undefined
+        ? []
+        : [createLifecycleHazard(hazardStartSeconds, elapsedSeconds)],
+    );
+
+  it('matches an analytically solved contact that begins in the second trajectory segment', () => {
+    /*
+     * Segment 1 is stationary at Y=195 from t=0..0.5.
+     * Segment 2 moves downward at 40 units/s from the same continuous Y=195.
+     *
+     * Coin Y=250 has first positive vertical overlap after the player reaches Y=212:
+     *   t = 0.5 + (212 - 195) / 40 = 0.925 s.
+     *
+     * The manually specified trajectory is the input oracle; no flight integrator is used
+     * to derive either segment or the expected contact time.
+     */
+    const elapsedSeconds = 1.5;
+    const trajectory = Object.freeze({
+      finalState: Object.freeze({ positionY: 235, velocityY: 40 }),
+      segments: Object.freeze([
+        Object.freeze({
+          accelerationY: 0,
+          endSeconds: 0.5,
+          positionY: 195,
+          startSeconds: 0,
+          velocityY: 0,
+        }),
+        Object.freeze({
+          accelerationY: 0,
+          endSeconds: 1.5,
+          positionY: 195,
+          startSeconds: 0.5,
+          velocityY: 40,
+        }),
+      ]),
+    });
+    const spawn = collectible('gate5b-second-segment-contact', 0, 250);
+
+    expect(
+      evaluateManualTrajectory(spawn, elapsedSeconds, trajectory, 0.925 - 1e-6).collectedCount,
+    ).toBe(0);
+    expect(evaluateManualTrajectory(spawn, elapsedSeconds, trajectory, 0.925).collectedCount).toBe(
+      1,
+    );
+    expect(
+      evaluateManualTrajectory(spawn, elapsedSeconds, trajectory, 0.925 + 1e-6).collectedCount,
+    ).toBe(1);
+  });
+
+  it('treats a continuous segment boundary as the onset when motion turns into the pickup region', () => {
+    /*
+     * Coin Y=112 yields an open player-center overlap interval (74, 150).
+     * Segment 1 rises from Y=195 to exactly Y=150 at t=0.5: edge touch only.
+     * Segment 2 is position-continuous but resets velocity to -20 and moves inside immediately.
+     * The analytically known positive-overlap onset is therefore exactly t=0.5.
+     */
+    const elapsedSeconds = 1;
+    const trajectory = Object.freeze({
+      finalState: Object.freeze({ positionY: 140, velocityY: -20 }),
+      segments: Object.freeze([
+        Object.freeze({
+          accelerationY: 0,
+          endSeconds: 0.5,
+          positionY: 195,
+          startSeconds: 0,
+          velocityY: -90,
+        }),
+        Object.freeze({
+          accelerationY: 0,
+          endSeconds: 1,
+          positionY: 150,
+          startSeconds: 0.5,
+          velocityY: -20,
+        }),
+      ]),
+    });
+    const spawn = collectible('gate5b-boundary-entry', 0, 112);
+
+    expect(
+      evaluateManualTrajectory(spawn, elapsedSeconds, trajectory, 0.5 - 1e-6).collectedCount,
+    ).toBe(0);
+    expect(evaluateManualTrajectory(spawn, elapsedSeconds, trajectory, 0.5).collectedCount).toBe(1);
+    expect(
+      evaluateManualTrajectory(spawn, elapsedSeconds, trajectory, 0.5 + 1e-6).collectedCount,
+    ).toBe(1);
+  });
+
+  it('does not turn an exact segment-boundary edge touch followed by retreat into pickup', () => {
+    /*
+     * The first segment reaches the same Y=150 boundary at t=0.5, but the second
+     * segment moves back downward and never enters the open interval Y<150.
+     * The only shared point is zero-area edge contact, so pickup must remain absent.
+     */
+    const elapsedSeconds = 1;
+    const trajectory = Object.freeze({
+      finalState: Object.freeze({ positionY: 160, velocityY: 20 }),
+      segments: Object.freeze([
+        Object.freeze({
+          accelerationY: 0,
+          endSeconds: 0.5,
+          positionY: 195,
+          startSeconds: 0,
+          velocityY: -90,
+        }),
+        Object.freeze({
+          accelerationY: 0,
+          endSeconds: 1,
+          positionY: 150,
+          startSeconds: 0.5,
+          velocityY: 20,
+        }),
+      ]),
+    });
+
+    const result = evaluateManualTrajectory(
+      collectible('gate5b-boundary-retreat', 0, 112),
+      elapsedSeconds,
+      trajectory,
+    );
+
+    expect(result).toBe(EMPTY_PROTOTYPE_COLLECTIBLE_RUN_STATE);
+  });
+});
+
 describe('PrototypeCollectibles Gate 2 authority rules', () => {
   it('requires positive-area pickup overlap: exact horizontal or vertical edge touch is not enough', () => {
     /*
