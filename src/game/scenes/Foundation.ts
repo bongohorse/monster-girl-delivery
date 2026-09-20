@@ -10,8 +10,8 @@ import { DirectorRunControls } from '../../devtools/DirectorRunControls';
 import { DirectorTuningControls } from '../../devtools/DirectorTuningControls';
 import {
   createPerformanceEvidenceReport,
-  serializePerformanceEvidenceReport,
   type PerformanceRuntimeMetrics,
+  serializePerformanceEvidenceReport,
 } from '../../devtools/PerformanceEvidence';
 import type { PerformanceSnapshot } from '../../devtools/PerformanceSampler';
 import { GeneratedCollectiblePresentation } from '../../entities/GeneratedCollectiblePresentation';
@@ -720,21 +720,22 @@ export class Foundation extends Scene {
     this.directorDebugOverlay?.setEnabled(enabled);
   };
 
-  private readonly readDirectorPerformanceRuntimeMetrics = (): Readonly<PerformanceRuntimeMetrics> => {
-    const hazardPresentation = this.generatedHazardPresentation;
-    const collectiblePresentation = this.generatedCollectiblePresentation;
+  private readonly readDirectorPerformanceRuntimeMetrics =
+    (): Readonly<PerformanceRuntimeMetrics> => {
+      const hazardPresentation = this.generatedHazardPresentation;
+      const collectiblePresentation = this.generatedCollectiblePresentation;
 
-    return Object.freeze({
-      activeCollectibleCount: this.getActiveCollectibleCount(),
-      activeHazardCount: this.getActiveHazardCount(),
-      laserPresentationCount: hazardPresentation?.getLaserPresentationCount() ?? 0,
-      presentedCollectibleCount: collectiblePresentation?.getPresentedCollectibleCount() ?? 0,
-      presentedHazardCount: hazardPresentation?.getPresentedHazardCount() ?? 0,
-      primitiveHazardPresentationCount: hazardPresentation?.getPrimitivePresentationCount() ?? 0,
-      sceneGameObjectCount: this.children.getChildren().length,
-      zapperPresentationCount: hazardPresentation?.getZapperPresentationCount() ?? 0,
-    });
-  };
+      return Object.freeze({
+        activeCollectibleCount: this.getActiveCollectibleCount(),
+        activeHazardCount: this.getActiveHazardCount(),
+        laserPresentationCount: hazardPresentation?.getLaserPresentationCount() ?? 0,
+        presentedCollectibleCount: collectiblePresentation?.getPresentedCollectibleCount() ?? 0,
+        presentedHazardCount: hazardPresentation?.getPresentedHazardCount() ?? 0,
+        primitiveHazardPresentationCount: hazardPresentation?.getPrimitivePresentationCount() ?? 0,
+        sceneGameObjectCount: this.children.getChildren().length,
+        zapperPresentationCount: hazardPresentation?.getZapperPresentationCount() ?? 0,
+      });
+    };
 
   private readonly handleDirectorPerformanceEvidenceExport = (
     snapshot: Readonly<PerformanceSnapshot>,
@@ -1017,7 +1018,9 @@ export class Foundation extends Scene {
   }
 
   private getActiveHazardCount(): number {
-    const generatedCount = this.directorAutoHazardsEnabled ? (this.hazardStream?.spawns.length ?? 0) : 0;
+    const generatedCount = this.directorAutoHazardsEnabled
+      ? (this.hazardStream?.spawns.length ?? 0)
+      : 0;
     const retainedGeneratedCount = this.directorAutoHazardsEnabled
       ? this.retainedGeneratedTelegraphedHazards.length
       : 0;
