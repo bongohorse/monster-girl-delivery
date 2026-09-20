@@ -7,6 +7,8 @@ on:
       - '.github/workflows/browser-runtime-smoke.yml'
       - 'index.html'
       - 'public/**'
+      - 'src/main.ts'
+      - 'src/main.ts'
       - 'src/core/**'
       - 'src/game/**'
       - 'src/input/**'
@@ -87,6 +89,30 @@ jobs:
 
           cat reports/browser-runtime-smoke/vite.log >&2
           exit 1
+
+      - name: Run root application boot smoke
+        run: |
+          set -o pipefail
+          CHROME="$(cat reports/browser-runtime-smoke/chrome-path.txt)"
+          timeout 30s "$CHROME" \
+            --headless=new \
+            --no-sandbox \
+            --disable-dev-shm-usage \
+            --disable-background-timer-throttling \
+            --disable-renderer-backgrounding \
+            --use-gl=swiftshader \
+            --enable-unsafe-swiftshader \
+            --window-size=1024,768 \
+            --virtual-time-budget=5000 \
+            --run-all-compositor-stages-before-draw \
+            --dump-dom \
+            http://127.0.0.1:4173/ \
+            > reports/browser-runtime-smoke/root-dom.html \
+            2> reports/browser-runtime-smoke/root-chrome.log
+
+          grep -F '<canvas' reports/browser-runtime-smoke/root-dom.html
+          grep -F 'data-mgd-logical-size=' reports/browser-runtime-smoke/root-dom.html
+          grep -F 'data-mgd-backing-size=' reports/browser-runtime-smoke/root-dom.html
 
       - name: Run real-browser Phaser smoke
         run: |
