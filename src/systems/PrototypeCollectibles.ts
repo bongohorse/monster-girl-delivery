@@ -348,6 +348,10 @@ export const evaluatePrototypeCollectibleStep = (
     }
 
     const identity = getLogicalCollectibleSpawnIdentity(collectible);
+    if (consumed.has(identity)) {
+      continue;
+    }
+
     const pickupHazard = createCollectibleHitbox(collectible);
     if (broadphaseWorkCounters) {
       broadphaseWorkCounters.collectibleCollisionEvaluationCount += 1;
