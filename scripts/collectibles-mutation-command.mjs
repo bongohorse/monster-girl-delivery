@@ -48,10 +48,7 @@ try {
 } catch (error) {
   evidence = { id, kind: 'RuntimeError', completed: 0, error: String(error) };
 }
-writeFileSync(
-  join(directory, `${id}.evidence.json`),
-  `${JSON.stringify(evidence, null, 2)}\n`,
-);
+writeFileSync(join(directory, `${id}.evidence.json`), `${JSON.stringify(evidence, null, 2)}\n`);
 if (evidence.kind !== 'Passed') {
   console.error(JSON.stringify(evidence));
   if (evidence.kind === 'RuntimeError') console.error(child.stderr, child.stdout);
