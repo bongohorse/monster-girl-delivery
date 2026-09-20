@@ -87,3 +87,23 @@ These mutations are evidence only and must not be present in the final Gate 2 di
 - It does not claim numerical sampling is a correctness oracle.
 - It does not change collectible tuning or death/pickup semantics.
 - Mutation evidence proves that the selected tests detect the selected rule violations; it does not prove the rules themselves beyond the independent contract stated above.
+
+## Executed mutation evidence
+
+All three faults were applied one at a time to the same Gate 2 branch. Each fault was removed before the next one began.
+
+| Rule | Green before | Temporary mutation | Red evidence | Restore / green |
+| --- | --- | --- | --- | --- |
+| Positive-area pickup boundary | CI #965 on `7b6abbbf487f7125aa0ec057bc36f43def3d2848` — 113 files / 814 tests PASS | `90be1900951fd32f5f05f5398acd9e10a9e6f3aa`: pickup half-size `14 -> 14.000001` | CI #966: Gate 2 exact-touch assertion failed because an exact-boundary pickup produced collectible state instead of `undefined`; two existing boundary/presentation tests also detected the geometry change | `efa86b04c16bd1acedd8846bcf092e41bfa6c5be`; CI #967 PASS |
+| Exactly-once logical identity | CI #967 | `c7828324408cf6ace85ea5b914a025910a9d2286`: consumed-ID guard removed | CI #968: Gate 2 test observed `collectedCount: 2` where `1` was required; existing partition/exactly-once tests also failed | `f119feca8391e9d71ebe53b6b18f2e208b651f80`; CI #969 PASS |
+| Exact death/pickup tie | CI #969 | `242b3cbde9a333698174eed6fcc880bc6dad5b1b`: lethal prefix extended by `1e-6` beyond pickup boundary | CI #970: exactly one test failed — the Gate 2 tie test expected one collected pickup but the mutated final result contained zero | `bc32b7c1fbdd7f3685c5c2695ca619324919e44a`; CI #971 PASS, 113 files / 814 tests |
+
+After the final restore, the `src/systems/PrototypeCollectibles.ts` blob on the Gate 2 branch is exactly `ac9a59e4d6b727351c82363ca5a25af172f5c2ea`, byte-identical to `main` before Gate 2. The final Gate 2 product diff therefore contains **no gameplay mutation**; only the independent contract documentation and permanent regression tests remain.
+
+### What the evidence establishes
+
+- the boundary test detects a concrete change that turns an exact touch into a pickup;
+- the identity test detects repeated count/reward production from the same logical occurrence across updates;
+- the ordering test distinguishes the explicit equal-time policy from a death-wins-ties implementation.
+
+The evidence does not claim that these three mutations exhaust all collectible defects. It demonstrates that the selected rules have independent expected results and that the permanent tests react to direct violations for the intended reason.
