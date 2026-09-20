@@ -27,6 +27,7 @@ The report records:
 - rolling average / P95 / P99 / current frame time;
 - session worst frame time and slow-frame count;
 - authoritative Zapper collision work counters;
+- cumulative run broadphase work: retained/candidate hazard and collectible counts plus exact contact evaluations;
 - active logical hazard and unconsumed collectible counts;
 - retained presentation counts for hazards and collectibles;
 - primitive-hazard, Laser, and Zapper presentation-family counts;
@@ -47,7 +48,7 @@ For before/after comparisons:
 7. preserve the raw JSON evidence rather than transcribing only the headline FPS;
 8. treat development/Director results as development evidence, not as a production-build certification.
 
-The current sampler window is 300 valid raw-frame samples. At 60 Hz that represents about five seconds; at higher refresh rates it covers a shorter wall-clock interval. The JSON explicitly records sample count/capacity so this is visible in the evidence. Schema version 3 also records benchmark identity, tuning/runtime state, and bounded workload/presentation counts required to reject mismatched captures.
+The current sampler window is 300 valid raw-frame samples. At 60 Hz that represents about five seconds; at higher refresh rates it covers a shorter wall-clock interval. The JSON explicitly records sample count/capacity so this is visible in the evidence. Schema version 4 also records benchmark identity, tuning/runtime state, bounded workload/presentation counts, and cumulative broadphase work required to reject mismatched captures.
 
 ## Runtime count semantics
 
@@ -57,7 +58,13 @@ Runtime counts are read only on the existing low-frequency Director HUD refresh 
 - **active collectibles** are retained logical collectible spawns that have not been consumed;
 - **presented hazards / collectibles** are the current entries retained by their presentation owners;
 - **primitive / Laser / Zapper** counts describe the hazard presentation families, not renderer draw calls;
-- **Scene Game Objects** is the size of Phaser's public Scene Display List returned by `children.getChildren()`.
+- **Scene Game Objects** is the size of Phaser's public Scene Display List returned by `children.getChildren()`;
+- **BP H candidate/retained** accumulates hazards admitted by the shared horizontal broadphase versus hazards presented to it;
+- **BP H E** accumulates top-level exact hazard contact-authority evaluations after broadphase;
+- **BP C candidate/retained** accumulates collectible candidates selected by the sorted run-distance window versus retained collectibles;
+- **BP C E** accumulates exact collectible continuous-overlap evaluations, while **T** counts first-contact time resolutions after an overlap.
+
+Broadphase work counters are additive evidence only. Gameplay never reads them. The Director reset button plus NP/ZP preset setup reset them together with the existing frame/Zapper measurements.
 
 These counters deliberately do **not** claim renderer batches, GPU draw calls, exact onscreen pixel visibility, JS heap, or GC activity. Those require dedicated trustworthy instrumentation or browser/renderer tooling.
 
@@ -81,7 +88,7 @@ NP normalizes the measurement setup in one action:
 - enables normal **AUTO** encounter generation;
 - resumes the simulation if it was frozen;
 - disables collision wireframes;
-- resets the bounded frame-time sampler and Zapper work counters;
+- resets the bounded frame-time sampler, Zapper work counters, and run broadphase work counters;
 - discards the first post-setup raw frame so synchronous restart/setup work is not measured;
 - restarts the real generated run at distance/time zero with the fixed live-run seed.
 
@@ -99,7 +106,7 @@ ZP normalizes the benchmark setup in one action:
 - disables **AUTO** generation;
 - resumes the simulation if it was frozen;
 - disables collision wireframes;
-- resets the bounded frame-time sampler and Zapper work counters;
+- resets the bounded frame-time sampler, Zapper work counters, and run broadphase work counters;
 - restarts the run at distance/time zero with the fixed live-run seed;
 - spawns the fixed `zapper-heavy-v1` pattern fully beyond the right edge.
 
