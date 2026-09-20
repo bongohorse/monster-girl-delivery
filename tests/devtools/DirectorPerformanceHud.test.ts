@@ -105,9 +105,19 @@ const createHarness = () => {
   const triggerDeath = vi.fn();
   const startNormalPerformancePreset = vi.fn();
   const startZapperPerformancePreset = vi.fn();
+  const resetWorkCounters = vi.fn();
   const readRuntimeMetrics = vi.fn(() => ({
     activeCollectibleCount: 5,
     activeHazardCount: 7,
+    broadphaseWork: {
+      collectibleCandidateCount: 8,
+      collectibleCollisionEvaluationCount: 6,
+      collectibleContactResolutionCount: 4,
+      collectibleRetainedCount: 50,
+      hazardCandidateCount: 10,
+      hazardCollisionEvaluationCount: 12,
+      hazardRetainedCount: 70,
+    },
     laserPresentationCount: 1,
     presentedCollectibleCount: 5,
     presentedHazardCount: 7,
@@ -135,6 +145,7 @@ const createHarness = () => {
       startNormalPerformancePreset,
       startZapperPerformancePreset,
       readRuntimeMetrics,
+      resetWorkCounters,
       exportPerformanceEvidence,
     },
     zapperWorkCounters,
@@ -208,6 +219,7 @@ const createHarness = () => {
     playgroundControls,
     readRuntimeMetrics,
     resetButton,
+    resetWorkCounters,
     root,
     runtimeValue,
     sampler,
@@ -305,7 +317,9 @@ describe('DirectorPerformanceHud', () => {
 
     hud.update(16, 60, false);
     expect(readRuntimeMetrics).toHaveBeenCalledTimes(2);
-    expect(runtimeValue.textContent).toBe(' | R H 7/7 C 5/5 P 2 L 1 Z 4 GO 12');
+    expect(runtimeValue.textContent).toBe(
+      ' | R H 7/7 C 5/5 P 2 L 1 Z 4 GO 12 | BP H 10/70 E 12 C 8/50 E 6 T 4',
+    );
 
     for (let frame = 0; frame < 15; frame += 1) {
       hud.update(16, 60, false);
@@ -606,6 +620,10 @@ describe('DirectorPerformanceHud', () => {
       expect.objectContaining({
         activeCollectibleCount: 5,
         activeHazardCount: 7,
+        broadphaseWork: expect.objectContaining({
+          collectibleCandidateCount: 8,
+          hazardCandidateCount: 10,
+        }),
         sceneGameObjectCount: 12,
       }),
     );
@@ -617,9 +635,16 @@ describe('DirectorPerformanceHud', () => {
     expect(exportedCounters?.evaluatedSampleCount).toBe(12);
   });
 
-  it('resets frame metrics and Zapper work without replacing either owner', () => {
-    const { hud, resetButton, sampler, values, zapperWorkCounters, zapperWorkValue } =
-      createHarness();
+  it('resets frame metrics and collision work without replacing either owner', () => {
+    const {
+      hud,
+      resetButton,
+      resetWorkCounters,
+      sampler,
+      values,
+      zapperWorkCounters,
+      zapperWorkValue,
+    } = createHarness();
     hud.update(30, 45, false);
     zapperWorkCounters.collisionCallCount = 4;
     zapperWorkCounters.candidateSampleCount = 80;
@@ -631,6 +656,7 @@ describe('DirectorPerformanceHud', () => {
     resetButton.dispatch('click');
 
     expect(sampler.createSnapshot().sampleCount).toBe(0);
+    expect(resetWorkCounters).toHaveBeenCalledOnce();
     expect(zapperWorkCounters).toEqual({
       broadphaseRejectedCallCount: 0,
       candidateSampleCount: 0,
