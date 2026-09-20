@@ -23,7 +23,8 @@
     "ci:check": "biome ci .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:coverage": "node ./node_modules/vitest/vitest.mjs run --coverage.enabled"
+    "test:coverage": "node ./node_modules/vitest/vitest.mjs run --coverage.enabled",
+    "test:mutation:collectibles": "stryker run stryker.collectibles.config.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.14",
@@ -31,7 +32,8 @@
     "terser": "^5.51.2",
     "typescript": "7.0.2",
     "vite": "^8.1.0",
-    "vitest": "5.0.1"
+    "vitest": "5.0.1",
+    "@stryker-mutator/core": "10.0.0"
   },
   "dependencies": {
     "phaser": "4.2.1"

@@ -5,9 +5,14 @@ import {
 } from '../../src/generation/GeneratedCollectibles';
 import type { LogicalHazard } from '../../src/systems/HazardCollision';
 import {
+  EMPTY_PROTOTYPE_COLLECTIBLE_RUN_STATE,
+  evaluatePrototypeCollectibleStep,
+} from '../../src/systems/PrototypeCollectibles';
+import {
   createPrototypeRunState,
   stepPrototypeRun,
 } from '../../src/systems/PrototypeRunSimulation';
+import { createVerticalFlightTrajectory } from '../../src/systems/VerticalFlightSimulation';
 
 const FLIGHT_TUNING = Object.freeze({
   gravity: 0,
@@ -64,9 +69,15 @@ describe('PrototypeCollectibles Gate 2 authority rules', () => {
     const horizontalTouch = collectible('horizontal-touch', 32);
     const horizontalInside = collectible('horizontal-inside', 32 - 1e-6);
     const horizontalOutside = collectible('horizontal-outside', 32 + 1e-6);
+    const horizontalTouchBehind = collectible('horizontal-touch-behind', -32);
+    const horizontalInsideBehind = collectible('horizontal-inside-behind', -32 + 1e-6);
+    const horizontalOutsideBehind = collectible('horizontal-outside-behind', -32 - 1e-6);
     const verticalTouch = collectible('vertical-touch', 0, 195 + 38);
     const verticalInside = collectible('vertical-inside', 0, 195 + 38 - 1e-6);
     const verticalOutside = collectible('vertical-outside', 0, 195 + 38 + 1e-6);
+    const verticalTouchAbove = collectible('vertical-touch-above', 0, 195 - 38);
+    const verticalInsideAbove = collectible('vertical-inside-above', 0, 195 - 38 + 1e-6);
+    const verticalOutsideAbove = collectible('vertical-outside-above', 0, 195 - 38 - 1e-6);
 
     const run = (spawn: Readonly<LogicalCollectibleSpawnInstance>) =>
       stepPrototypeRun(createPrototypeRunState(FLIGHT_BOUNDS), 0.1, {
@@ -81,10 +92,88 @@ describe('PrototypeCollectibles Gate 2 authority rules', () => {
     expect(run(horizontalTouch).collectibles).toBeUndefined();
     expect(run(horizontalInside).collectibles?.collectedCount).toBe(1);
     expect(run(horizontalOutside).collectibles).toBeUndefined();
+    expect(run(horizontalTouchBehind).collectibles).toBeUndefined();
+    expect(run(horizontalInsideBehind).collectibles?.collectedCount).toBe(1);
+    expect(run(horizontalOutsideBehind).collectibles).toBeUndefined();
 
     expect(run(verticalTouch).collectibles).toBeUndefined();
     expect(run(verticalInside).collectibles?.collectedCount).toBe(1);
     expect(run(verticalOutside).collectibles).toBeUndefined();
+    expect(run(verticalTouchAbove).collectibles).toBeUndefined();
+    expect(run(verticalInsideAbove).collectibles?.collectedCount).toBe(1);
+    expect(run(verticalOutsideAbove).collectibles).toBeUndefined();
+  });
+
+  it('preserves the same pickup boundary after translating the run origin', () => {
+    /*
+     * Contact geometry depends on relative distance, not on world-origin zero.
+     * Warm up to distance 100, then approach a coin at absolute distance 200.
+     * The first horizontal positive-overlap boundary is 200 - 32 = 168,
+     * so the translated step must still collect before ending at distance 200.
+     */
+    const warmed = stepPrototypeRun(createPrototypeRunState(FLIGHT_BOUNDS), 1, {
+      collectibles: [],
+      flightBounds: FLIGHT_BOUNDS,
+      flightTuning: FLIGHT_TUNING,
+      hazards: [],
+      runMotionTuning: RUN_MOTION,
+      thrustHeld: false,
+    }).state;
+
+    expect(warmed.motion.distance).toBe(100);
+
+    const result = stepPrototypeRun(warmed, 1, {
+      collectibles: [collectible('translated-origin', 200)],
+      flightBounds: FLIGHT_BOUNDS,
+      flightTuning: FLIGHT_TUNING,
+      hazards: [],
+      runMotionTuning: RUN_MOTION,
+      thrustHeld: false,
+    }).state;
+
+    expect(result.motion.distance).toBe(200);
+    expect(result.collectibles?.collectedCount).toBe(1);
+  });
+
+  it('keeps the horizontal overlap window correct for valid sub-unit run speeds', () => {
+    /*
+     * RunMotionConfig accepts every non-negative finite speed, including 0.5.
+     * Start at distance 10 with a coin centered at the same X. Horizontal positive
+     * overlap remains valid until player-center distance 42:
+     *   (42 - 10) / 0.5 = 64 s.
+     *
+     * The vertical path starts at Y=0 and moves downward at 9 units/s, entering the
+     * coin's positive-overlap band (player center > 157) after 157 / 9 ~= 17.44 s.
+     * During a 20 s step, the two overlap windows therefore intersect and pickup
+     * must occur. Replacing division by multiplication would incorrectly end the
+     * horizontal window at 16 s and miss the pickup.
+     */
+    const slowRunMotion = Object.freeze({ baseScrollSpeed: 0.5 });
+    const delayedVerticalTrajectory = Object.freeze({
+      finalState: Object.freeze({ positionY: 180, velocityY: 9 }),
+      segments: Object.freeze([
+        Object.freeze({
+          accelerationY: 0,
+          endSeconds: 20,
+          positionY: 0,
+          startSeconds: 0,
+          velocityY: 9,
+        }),
+      ]),
+    });
+
+    const result = evaluatePrototypeCollectibleStep(
+      EMPTY_PROTOTYPE_COLLECTIBLE_RUN_STATE,
+      Object.freeze({ distance: 10 }),
+      delayedVerticalTrajectory,
+      20,
+      slowRunMotion,
+      [collectible('slow-overlap-window', 10)],
+      [],
+    );
+
+    expect(result.collectedCount).toBe(1);
+    expect(result.earnedReward).toBe(1);
   });
 
   it('awards one logical collectible identity only once across multiple simulation updates', () => {
@@ -180,6 +269,74 @@ describe('PrototypeCollectibles Gate 2 authority rules', () => {
       collectedCount: 0,
       collectedValue: 0,
       earnedReward: 0,
+    });
+  });
+
+  it('preserves lethal-before-pickup ordering in the standalone lazy hazard fallback', () => {
+    /*
+     * The exported evaluator supports callers that do not provide pre-resolved lethal hazards.
+     * That fallback must implement the same ordering contract as the orchestrated run:
+     * hazard onset at distance 132 precedes the coin onset at distance 148.
+     */
+    const initial = createPrototypeRunState(FLIGHT_BOUNDS);
+    const trajectory = createVerticalFlightTrajectory(
+      initial.flight,
+      2,
+      false,
+      FLIGHT_TUNING,
+      FLIGHT_BOUNDS,
+    );
+
+    const result = evaluatePrototypeCollectibleStep(
+      EMPTY_PROTOTYPE_COLLECTIBLE_RUN_STATE,
+      initial.motion,
+      trajectory,
+      2,
+      RUN_MOTION,
+      [collectible('fallback-after-death', 180)],
+      [lethalHazard],
+    );
+
+    expect(result).toBe(EMPTY_PROTOTYPE_COLLECTIBLE_RUN_STATE);
+    expect(result.collectedCount).toBe(0);
+    expect(result.earnedReward).toBe(0);
+  });
+
+  it('treats the shared onset boundary itself as edge-only, then resolves the tie after positive overlap begins', () => {
+    /*
+     * Both the hazard and coin below have the same open-overlap onset boundary at t=1.32 s.
+     * At exactly that boundary the AABBs only touch, so positive-area collision/pickup has not
+     * happened yet. Immediately after the boundary, both have positive overlap; the ordering
+     * policy then awards the pickup while the enclosing step also becomes lethal.
+     */
+    const tiedCollectible = collectible('tie-onset-boundary', 164);
+
+    const boundaryOnly = stepPrototypeRun(createPrototypeRunState(FLIGHT_BOUNDS), 1.32, {
+      collectibles: [tiedCollectible],
+      flightBounds: FLIGHT_BOUNDS,
+      flightTuning: FLIGHT_TUNING,
+      hazards: [lethalHazard],
+      runMotionTuning: RUN_MOTION,
+      thrustHeld: false,
+    });
+
+    expect(boundaryOnly.enteredDead).toBe(false);
+    expect(boundaryOnly.state.collectibles).toBeUndefined();
+
+    const positiveOverlap = stepPrototypeRun(createPrototypeRunState(FLIGHT_BOUNDS), 1.320001, {
+      collectibles: [tiedCollectible],
+      flightBounds: FLIGHT_BOUNDS,
+      flightTuning: FLIGHT_TUNING,
+      hazards: [lethalHazard],
+      runMotionTuning: RUN_MOTION,
+      thrustHeld: false,
+    });
+
+    expect(positiveOverlap.enteredDead).toBe(true);
+    expect(positiveOverlap.state.finalResult).toMatchObject({
+      collectedCount: 1,
+      collectedValue: 1,
+      earnedReward: 1,
     });
   });
 
