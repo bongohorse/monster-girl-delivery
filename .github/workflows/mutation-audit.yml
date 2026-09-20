@@ -1,0 +1,160 @@
+name: Collectibles mutation audit
+
+on:
+  workflow_dispatch:
+  # Gate 3 validation only. Remove this PR trigger before merge.
+  pull_request:
+    paths:
+      - '.github/workflows/mutation-audit.yml'
+      - 'package.json'
+      - 'bun.lock'
+      - 'stryker.collectibles.config.mjs'
+      - 'src/systems/PrototypeCollectibles.ts'
+      - 'tests/systems/PrototypeCollectibles*.test.ts'
+      - 'docs/TEST_QUALITY*'
+
+permissions:
+  contents: read
+
+jobs:
+  mutation-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .bun-version
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24.21.0
+
+      - name: Install locked dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Verify focused baseline
+        run: bun run test -- tests/systems/PrototypeCollectiblesAuthorityAudit.test.ts tests/systems/PrototypeCollectibles.test.ts
+
+      - name: Prepare evidence directory
+        run: mkdir -p reports/mutation/collectibles
+
+      - name: Run mutation pilot 1
+        run: |
+          rm -f reports/mutation/collectibles/mutation.json
+          bun run test:mutation:collectibles
+          cp reports/mutation/collectibles/mutation.json reports/mutation/collectibles/run-1.json
+
+      - name: Run mutation pilot 2
+        run: |
+          rm -f reports/mutation/collectibles/mutation.json
+          bun run test:mutation:collectibles
+          cp reports/mutation/collectibles/mutation.json reports/mutation/collectibles/run-2.json
+
+      - name: Compare verdict stability and summarize states
+        shell: bash
+        run: |
+          node - <<'NODE'
+          import fs from 'node:fs';
+
+          const load = (path) => JSON.parse(fs.readFileSync(path, 'utf8'));
+          const flatten = (report) => {
+            const rows = [];
+            for (const [fileName, file] of Object.entries(report.files ?? {})) {
+              for (const mutant of file.mutants ?? []) {
+                rows.push({
+                  key: fileName + ':' + mutant.id,
+                  fileName,
+                  id: String(mutant.id),
+                  mutatorName: mutant.mutatorName ?? null,
+                  replacement: mutant.replacement ?? null,
+                  status: mutant.status,
+                  statusReason: mutant.statusReason ?? null,
+                  location: mutant.location ?? null,
+                  killedBy: mutant.killedBy ?? [],
+                  coveredBy: mutant.coveredBy ?? [],
+                });
+              }
+            }
+            rows.sort((a, b) => a.key.localeCompare(b.key));
+            return rows;
+          };
+
+          const first = flatten(load('reports/mutation/collectibles/run-1.json'));
+          const second = flatten(load('reports/mutation/collectibles/run-2.json'));
+          const firstMap = new Map(first.map((row) => [row.key, row]));
+          const secondMap = new Map(second.map((row) => [row.key, row]));
+          const keys = [...new Set([...firstMap.keys(), ...secondMap.keys()])].sort();
+
+          const changes = [];
+          for (const key of keys) {
+            const a = firstMap.get(key);
+            const b = secondMap.get(key);
+            if (!a || !b || a.status !== b.status) {
+              changes.push({
+                key,
+                first: a?.status ?? 'missing',
+                second: b?.status ?? 'missing',
+              });
+            }
+          }
+
+          const counts = (rows) => {
+            const result = {};
+            for (const row of rows) result[row.status] = (result[row.status] ?? 0) + 1;
+            return result;
+          };
+
+          const summary = {
+            commit: process.env.GITHUB_SHA,
+            workflowRunId: process.env.GITHUB_RUN_ID,
+            node: process.version,
+            runtime: process.release.name,
+            mutantCountRun1: first.length,
+            mutantCountRun2: second.length,
+            statusCountsRun1: counts(first),
+            statusCountsRun2: counts(second),
+            verdictChanges: changes,
+          };
+
+          fs.writeFileSync(
+            'reports/mutation/collectibles/stability-summary.json',
+            JSON.stringify(summary, null, 2) + '\n',
+          );
+          fs.writeFileSync(
+            'reports/mutation/collectibles/mutants-run-1.normalized.json',
+            JSON.stringify(first, null, 2) + '\n',
+          );
+
+          console.log(JSON.stringify(summary, null, 2));
+          if (changes.length > 0) {
+            console.error('Mutation verdicts were not stable across the two identical pilot runs.');
+            process.exit(1);
+          }
+          NODE
+
+      - name: Record tool versions
+        shell: bash
+        run: |
+          {
+            echo "commit=$GITHUB_SHA"
+            echo "workflow_run_id=$GITHUB_RUN_ID"
+            echo "node=$(node --version)"
+            echo "bun=$(bun --version)"
+            echo "vitest=$(node -p \"require('./node_modules/vitest/package.json').version\")"
+            echo "stryker_core=$(node -p \"require('./node_modules/@stryker-mutator/core/package.json').version\")"
+            echo "stryker_vitest_runner=$(node -p \"require('./node_modules/@stryker-mutator/vitest-runner/package.json').version\")"
+          } > reports/mutation/collectibles/run-metadata.txt
+
+      - name: Upload mutation evidence
+        uses: actions/upload-artifact@v7
+        with:
+          name: collectibles-mutation-${{ github.sha }}
+          path: reports/mutation/collectibles/
+          if-no-files-found: error
+          retention-days: 14
