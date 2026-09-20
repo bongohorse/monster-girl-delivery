@@ -118,6 +118,22 @@ export class GeneratedHazardPresentation {
     }
   }
 
+  getPrimitivePresentationCount(): number {
+    return this.active.size;
+  }
+
+  getLaserPresentationCount(): number {
+    return this.laserActive.size;
+  }
+
+  getZapperPresentationCount(): number {
+    return this.zapperSpawns.length;
+  }
+
+  getPresentedHazardCount(): number {
+    return this.active.size + this.laserActive.size + this.zapperSpawns.length;
+  }
+
   destroy(): void {
     if (this.destroyed) {
       return;
