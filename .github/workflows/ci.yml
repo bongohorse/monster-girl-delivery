@@ -26,6 +26,34 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      # Temporary #371 bootstrap: capture the reproducible package/lock update and
+      # prove which runtime executes Vitest. Remove after applying the captured files.
+      - name: Gate 1 correction bootstrap
+        run: |
+          bun add --dev --exact @vitest/coverage-istanbul@5.0.1
+          cat > tests/VitestRuntimeEvidence.test.ts <<'EOF'
+          import { test } from 'vitest';
+
+          test('reports the actual Vitest runtime', () => {
+            console.log(
+              'MGD_VITEST_RUNTIME ' +
+                JSON.stringify({
+                  bun: process.versions.bun ?? null,
+                  node: process.versions.node ?? null,
+                  release: process.release.name,
+                }),
+            );
+          });
+          EOF
+          ./node_modules/.bin/vitest run tests/VitestRuntimeEvidence.test.ts --reporter=verbose
+          rm tests/VitestRuntimeEvidence.test.ts
+          echo '--- BEGIN_PACKAGE_JSON ---'
+          cat package.json
+          echo '--- END_PACKAGE_JSON ---'
+          echo '--- BEGIN_BUN_LOCK ---'
+          cat bun.lock
+          echo '--- END_BUN_LOCK ---'
+
       - name: Check formatting and lint
         run: bun run ci:check
 
