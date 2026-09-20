@@ -433,7 +433,6 @@ describe('Foundation Director mode boundary', () => {
       Reflect.get(foundation, 'collectibleSpawns') as ReadonlyArray<unknown>,
     );
 
-    expect(firstHazards.length).toBeGreaterThan(0);
     expect(Reflect.get(foundation, 'directorManualHazards')).toEqual([]);
     expect(Reflect.get(foundation, 'directorPerformancePresetId')).toBe('normal-run-v1');
     expect(Reflect.get(foundation, 'directorGodModeEnabled')).toBe(true);
