@@ -10,6 +10,7 @@ import {
   PROTOTYPE_PLAYER_COLLISION_EXTENTS,
   type PrototypeZapperCollisionWorkCounters,
 } from './HazardCollision';
+import type { PrototypeBroadphaseWorkCounters } from './PrototypeBroadphaseWork';
 import type { RunMotionState } from './RunMotionSimulation';
 import type {
   VerticalFlightTrajectory,
@@ -241,6 +242,7 @@ const hasLethalCollisionBy = (
   hazard: Readonly<LogicalHazard>,
   boundarySeconds: number,
   workCounters?: PrototypeZapperCollisionWorkCounters,
+  broadphaseWorkCounters?: PrototypeBroadphaseWorkCounters,
 ): boolean => {
   if (boundarySeconds <= 0) {
     return false;
@@ -252,6 +254,9 @@ const hasLethalCollisionBy = (
     return false;
   }
 
+  if (broadphaseWorkCounters) {
+    broadphaseWorkCounters.hazardCollisionEvaluationCount += 1;
+  }
   return isPlayerCollidingWithHazardDuringStep(
     initialRunState,
     trajectory,
@@ -294,9 +299,14 @@ export const evaluatePrototypeCollectibleStep = (
   hazards: ReadonlyArray<Readonly<LogicalHazard>>,
   resolvedLethalHazards: ReadonlyArray<Readonly<LogicalHazard>> | null = null,
   workCounters?: PrototypeZapperCollisionWorkCounters,
+  broadphaseWorkCounters?: PrototypeBroadphaseWorkCounters,
 ): Readonly<PrototypeCollectibleRunState> => {
   if (elapsedSeconds === 0) {
     return state;
+  }
+
+  if (broadphaseWorkCounters) {
+    broadphaseWorkCounters.collectibleRetainedCount += collectibles.length;
   }
 
   const finalDistance = initialRunState.distance + runMotionTuning.baseScrollSpeed * elapsedSeconds;
@@ -318,6 +328,9 @@ export const evaluatePrototypeCollectibleStep = (
     collectibles,
     maximumCandidateRunDistance,
   );
+  if (broadphaseWorkCounters) {
+    broadphaseWorkCounters.collectibleCandidateCount += candidateEndIndex - firstCandidateIndex;
+  }
 
   if (firstCandidateIndex === candidateEndIndex) {
     return state;
@@ -340,6 +353,9 @@ export const evaluatePrototypeCollectibleStep = (
     }
 
     const pickupHazard = createCollectibleHitbox(collectible);
+    if (broadphaseWorkCounters) {
+      broadphaseWorkCounters.collectibleCollisionEvaluationCount += 1;
+    }
     if (
       !isPlayerCollidingWithHazardDuringStep(
         initialRunState,
@@ -352,6 +368,9 @@ export const evaluatePrototypeCollectibleStep = (
       continue;
     }
 
+    if (broadphaseWorkCounters) {
+      broadphaseWorkCounters.collectibleContactResolutionCount += 1;
+    }
     const contactSeconds = getFirstCollectibleContactSeconds(
       initialRunState.distance,
       runMotionTuning.baseScrollSpeed,
@@ -362,8 +381,11 @@ export const evaluatePrototypeCollectibleStep = (
     if (contactSeconds === null) {
       continue;
     }
-    lethalHazards ??= hazards.filter((hazard) =>
-      isPlayerCollidingWithHazardDuringStep(
+    lethalHazards ??= hazards.filter((hazard) => {
+      if (broadphaseWorkCounters) {
+        broadphaseWorkCounters.hazardCollisionEvaluationCount += 1;
+      }
+      return isPlayerCollidingWithHazardDuringStep(
         initialRunState,
         trajectory,
         elapsedSeconds,
@@ -371,8 +393,8 @@ export const evaluatePrototypeCollectibleStep = (
         hazard,
         PROTOTYPE_PLAYER_COLLISION_EXTENTS,
         workCounters,
-      ),
-    );
+      );
+    });
     if (
       lethalHazards.some((hazard) =>
         hasLethalCollisionBy(
@@ -383,6 +405,7 @@ export const evaluatePrototypeCollectibleStep = (
           hazard,
           contactSeconds,
           workCounters,
+          broadphaseWorkCounters,
         ),
       )
     ) {
