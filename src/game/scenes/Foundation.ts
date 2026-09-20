@@ -31,6 +31,7 @@ import {
   getLogicalCollectibleSpawnIdentity,
   getNextGeneratedCollectiblePruneDistance,
   type LogicalCollectibleSpawnInstance,
+  materializePatternCollectibles,
   reconcileGeneratedCollectibles,
 } from '../../generation/GeneratedCollectibles';
 import {
@@ -42,6 +43,7 @@ import {
   planGeneratedHazardMotion,
 } from '../../generation/GeneratedHazardStream';
 import type { HazardPattern } from '../../generation/HazardPattern';
+import { M5_TEACHING_FLIGHT_ARC_PATTERN } from '../../generation/M5CollectibleMovementPatterns';
 import { PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG } from '../../generation/LiveEncounterPolicy';
 import {
   getLogicalHazardSpawnIdentity,
@@ -102,6 +104,7 @@ import { getLogicalViewportFromBacking } from '../RenderResolution';
 const RUNNING_INSTRUCTIONS =
   'M5 in progress — hazards, Graze + collectibles\nHold touch, mouse, or Space to thrust.';
 const RETRY_READY_INSTRUCTIONS = 'Tap, click, or press Space to retry.';
+const DIRECTOR_COLLECTIBLE_PERFORMANCE_PRESET_ID = 'collectible-heavy-v1';
 const DIRECTOR_NORMAL_PERFORMANCE_PRESET_ID = 'normal-run-v1';
 const DIRECTOR_ZAPPER_OFFSCREEN_PADDING = 24;
 const formatDeadInstructions = (
@@ -209,6 +212,8 @@ export class Foundation extends Scene {
   private lifecycleAdapter?: PhaserLifecycleAdapter;
   private collectibleSpawns: ReadonlyArray<Readonly<LogicalCollectibleSpawnInstance>> =
     Object.freeze([]);
+  private directorManualCollectibles: ReadonlyArray<Readonly<LogicalCollectibleSpawnInstance>> =
+    Object.freeze([]);
   private collectibleScheduledPatternCount = -1;
   private nextCollectiblePruneDistance: number | null = null;
   private generatedCollectiblePresentation?: GeneratedCollectiblePresentation;
@@ -263,6 +268,7 @@ export class Foundation extends Scene {
   create() {
     this.shutdownHandled = false;
     this.directorZapperCollisionWorkCounters = undefined;
+    this.directorManualCollectibles = Object.freeze([]);
     this.clearRuntimeCaches();
     this.deathRetryState = createPrototypeDeathRetryState();
     this.retainedGeneratedTelegraphedHazards = Object.freeze([]);
@@ -307,6 +313,7 @@ export class Foundation extends Scene {
           clearHazards: this.clearDirectorHazards,
           setSimulationFrozen: this.handleDirectorFreeze,
           triggerDeath: this.handleDirectorDeath,
+          startCollectiblePerformancePreset: this.startDirectorCollectiblePerformancePreset,
           startNormalPerformancePreset: this.startDirectorNormalPerformancePreset,
           startZapperPerformancePreset: this.startDirectorZapperPerformancePreset,
           readRuntimeMetrics: this.readDirectorPerformanceRuntimeMetrics,
@@ -520,7 +527,7 @@ export class Foundation extends Scene {
           },
         );
         const result = stepPrototypeRun(this.runState, motionSegment.durationSeconds, {
-          collectibles: this.collectibleSpawns,
+          collectibles: this.getActiveCollectibleSpawns(),
           flightBounds,
           flightTuning: activeFlightTuning,
           hazards: getCollisionHazardsForTimedZapperSimulation(
@@ -803,6 +810,7 @@ export class Foundation extends Scene {
     this.directorPerformancePresetId = null;
     this.retainedGeneratedTelegraphedHazards = Object.freeze([]);
     this.directorManualHazards = Object.freeze([]);
+    this.directorManualCollectibles = Object.freeze([]);
     this.collectibleSpawns = Object.freeze([]);
     this.collectibleScheduledPatternCount = this.hazardStream?.scheduledPatternCount ?? -1;
     this.nextCollectiblePruneDistance = null;
@@ -864,6 +872,30 @@ export class Foundation extends Scene {
       (this.directorZapperVariantIndex + 1) % DIRECTOR_ZAPPER_VARIANTS.length;
   };
 
+  private readonly startDirectorCollectiblePerformancePreset = (): void => {
+    if (!this.viewportService) {
+      return;
+    }
+
+    const pattern = this.hazardVerticalDomain.catalog.find(
+      (candidate) => candidate.id === M5_TEACHING_FLIGHT_ARC_PATTERN.id,
+    );
+    if (!pattern) {
+      throw new TypeError('Director collectible performance pattern is unavailable.');
+    }
+
+    const viewport = this.viewportService.getSnapshot();
+    this.restartRun(viewport, PROTOTYPE_LIVE_RUN_SEED);
+    const patternStartDistance = this.spawnDirectorPattern(pattern, true);
+    if (patternStartDistance === null) {
+      throw new TypeError('Director collectible performance pattern could not be spawned.');
+    }
+
+    this.directorManualCollectibles = materializePatternCollectibles(pattern, patternStartDistance);
+    this.directorPerformancePresetId = DIRECTOR_COLLECTIBLE_PERFORMANCE_PRESET_ID;
+    this.renderRun(viewport);
+  };
+
   private readonly startDirectorNormalPerformancePreset = (): void => {
     if (!this.viewportService) {
       return;
@@ -920,10 +952,10 @@ export class Foundation extends Scene {
     pattern: Readonly<HazardPattern>,
     fullyOffscreen: boolean,
     mapCenterY: (centerY: number) => number = identityCenterMapper,
-  ): void {
+  ): number | null {
     this.directorPerformancePresetId = null;
     if (!this.viewportService || this.runState.phase !== 'running') {
-      return;
+      return null;
     }
     if (pattern.entries.length === 0) {
       throw new TypeError(`Director hazard pattern has no entries: ${pattern.id}`);
@@ -955,6 +987,7 @@ export class Foundation extends Scene {
     );
     this.timedZapperState = stepTimedZapperSimulation(this.timedZapperState, activeHazards, 0);
     this.renderRun(viewport);
+    return patternStartDistance;
   }
 
   private reconcileRetainedGeneratedTelegraphedHazards(
@@ -1013,14 +1046,26 @@ export class Foundation extends Scene {
     }
   }
 
+  private getActiveCollectibleSpawns(): ReadonlyArray<Readonly<LogicalCollectibleSpawnInstance>> {
+    const generated = this.directorAutoHazardsEnabled ? this.collectibleSpawns : [];
+    if (this.directorManualCollectibles.length === 0) {
+      return generated;
+    }
+    if (generated.length === 0) {
+      return this.directorManualCollectibles;
+    }
+    return Object.freeze([...generated, ...this.directorManualCollectibles]);
+  }
+
   private getActiveCollectibleCount(): number {
+    const activeCollectibles = this.getActiveCollectibleSpawns();
     const consumedIds = this.runState.collectibles?.consumedCollectibleIds ?? [];
     if (consumedIds.length === 0) {
-      return this.collectibleSpawns.length;
+      return activeCollectibles.length;
     }
 
     let count = 0;
-    for (const spawn of this.collectibleSpawns) {
+    for (const spawn of activeCollectibles) {
       if (!consumedIds.includes(getLogicalCollectibleSpawnIdentity(spawn))) {
         count += 1;
       }
@@ -1062,7 +1107,7 @@ export class Foundation extends Scene {
         this.services.runMotion.getSnapshot().baseScrollSpeed,
     );
     const forcedDeath = stepPrototypeRun(this.runState, 0, {
-      collectibles: this.collectibleSpawns,
+      collectibles: this.getActiveCollectibleSpawns(),
       flightBounds: this.getCachedFlightBounds(viewport),
       flightTuning,
       hazards: [
@@ -1099,6 +1144,7 @@ export class Foundation extends Scene {
     this.directorPanel?.reset();
     this.retainedGeneratedTelegraphedHazards = Object.freeze([]);
     this.directorManualHazards = Object.freeze([]);
+    this.directorManualCollectibles = Object.freeze([]);
     this.directorHazardSerial = 0;
     this.directorLaserVariantIndex = 0;
     this.directorZapperVariantIndex = 0;
@@ -1238,6 +1284,7 @@ export class Foundation extends Scene {
     const playerScreenX = getPrototypePlayerX(viewport);
     const projection = getPrototypeVerticalProjection(viewport);
     const activeHazards = this.getActiveHazardSpawns();
+    const activeCollectibles = this.getActiveCollectibleSpawns();
 
     this.scrollingWorldPresentation?.render(this.runState.motion.distance, viewport);
     if (this.timedZapperState.instances.length > 0) {
@@ -1259,7 +1306,7 @@ export class Foundation extends Scene {
       );
     }
     this.generatedCollectiblePresentation?.sync(
-      this.collectibleSpawns,
+      activeCollectibles,
       this.runState.collectibles?.consumedCollectibleIds ?? [],
       this.runState.motion,
       playerScreenX,
@@ -1274,7 +1321,7 @@ export class Foundation extends Scene {
       getPrototypeFailStateProgress(this.deathRetryState) * Math.PI * 0.7,
     );
     this.directorDebugOverlay?.render({
-      collectibles: this.collectibleSpawns,
+      collectibles: activeCollectibles,
       consumedCollectibleIds: this.runState.collectibles?.consumedCollectibleIds ?? [],
       flight: this.runState.flight,
       hazards: activeHazards,
@@ -1311,6 +1358,7 @@ export class Foundation extends Scene {
     this.generatedHazardPresentation?.destroy();
     this.generatedHazardPresentation = undefined;
     this.collectibleSpawns = Object.freeze([]);
+    this.directorManualCollectibles = Object.freeze([]);
     this.collectibleScheduledPatternCount = -1;
     this.nextCollectiblePruneDistance = null;
     this.retainedGeneratedTelegraphedHazards = Object.freeze([]);
