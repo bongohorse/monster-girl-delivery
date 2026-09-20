@@ -50,8 +50,7 @@ const collectible = (
 
 const sortedIdentities = (
   spawns: ReadonlyArray<Readonly<LogicalCollectibleSpawnInstance>>,
-): ReadonlyArray<string> =>
-  [...spawns.map(getLogicalCollectibleSpawnIdentity)].sort();
+): ReadonlyArray<string> => [...spawns.map(getLogicalCollectibleSpawnIdentity)].sort();
 
 describe('Gate 5D Collectibles frame-partition contract', () => {
   it('keeps discrete pickup identities and rewards exact across all standard schedules', () => {
@@ -209,7 +208,9 @@ describe('Gate 5D Collectibles frame-partition contract', () => {
       );
 
       expect(result.finalState.finalResult?.finalDistance).toBe(result.finalState.motion.distance);
-      expect(result.finalState.finalResult?.score).toBe(Math.floor(result.finalState.motion.distance));
+      expect(result.finalState.finalResult?.score).toBe(
+        Math.floor(result.finalState.motion.distance),
+      );
     }
   });
 });
