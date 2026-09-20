@@ -56,11 +56,11 @@ window.addEventListener('unhandledrejection', (event) => {
   );
 });
 
-const assert = (condition: unknown, message: string): asserts condition => {
+function assert(condition: unknown, message: string): asserts condition {
   if (!condition) {
     throw new Error(message);
   }
-};
+}
 
 const delay = (milliseconds: number): Promise<void> =>
   new Promise((resolve) => window.setTimeout(resolve, milliseconds));
