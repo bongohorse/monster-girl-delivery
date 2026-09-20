@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
 // TS 7 no longer exposes the compiler API used by Stryker's tsconfig rewriter.
 // This self-contained config needs no path rewriting; keep it intact in the sandbox.
@@ -7,12 +8,16 @@ if (/"(?:extends|references)"\s*:/.test(tsconfig)) {
   throw new Error('Reassess the Stryker TS 7 workaround before using tsconfig extends/references.');
 }
 
+process.env.MGD_MUTATION_EVIDENCE_DIR ??= resolve('reports/mutation/collectibles/test-results');
+
 /** @type {import('@stryker-mutator/api/core').PartialStrykerOptions} */
 export default {
-  testRunner: 'vitest',
+  testRunner: 'command',
+  plugins: [],
+  commandRunner: { command: 'node scripts/collectibles-mutation-command.mjs' },
   tsconfigFile: '',
   incremental: false,
-  coverageAnalysis: 'perTest',
+  coverageAnalysis: 'off',
   concurrency: 2,
   cleanTempDir: 'always',
   disableTypeChecks: true,
@@ -36,7 +41,4 @@ export default {
     'src/systems/PrototypeCollectibles.ts:147-275',
     'src/systems/PrototypeCollectibles.ts:350-416',
   ],
-  vitest: {
-    related: true,
-  },
 };

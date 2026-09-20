@@ -33,8 +33,7 @@
     "typescript": "7.0.2",
     "vite": "^8.1.0",
     "vitest": "5.0.1",
-    "@stryker-mutator/core": "10.0.0",
-    "@stryker-mutator/vitest-runner": "10.0.0"
+    "@stryker-mutator/core": "10.0.0"
   },
   "dependencies": {
     "phaser": "4.2.1"

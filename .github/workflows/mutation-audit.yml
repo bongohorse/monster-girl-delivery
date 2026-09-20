@@ -9,6 +9,7 @@ on:
       - 'package.json'
       - 'bun.lock'
       - 'stryker.collectibles.config.mjs'
+      - 'scripts/collectibles-mutation-command.mjs'
       - 'src/systems/PrototypeCollectibles.ts'
       - 'tests/systems/PrototypeCollectibles*.test.ts'
       - 'docs/TEST_QUALITY*'
@@ -58,11 +59,12 @@ jobs:
             bun: execFileSync('bun', ['--version'], { encoding: 'utf8' }).trim(),
             vitest: version('vitest'),
             strykerCore: version('@stryker-mutator/core'),
-            strykerVitestRunner: version('@stryker-mutator/vitest-runner'),
           }, null, 2) + '\n');
           NODE
 
       - name: Run mutation pilot 1
+        env:
+          MGD_MUTATION_EVIDENCE_DIR: ${{ github.workspace }}/reports/mutation/collectibles/evidence-1
         run: |
           rm -f reports/mutation/collectibles/mutation.json
           set -o pipefail
@@ -70,6 +72,8 @@ jobs:
           cp reports/mutation/collectibles/mutation.json reports/mutation/collectibles/run-1.json
 
       - name: Run mutation pilot 2
+        env:
+          MGD_MUTATION_EVIDENCE_DIR: ${{ github.workspace }}/reports/mutation/collectibles/evidence-2
         run: |
           rm -f reports/mutation/collectibles/mutation.json
           bun run test:mutation:collectibles
@@ -112,6 +116,18 @@ jobs:
           const terminalStates = new Set(['Killed', 'Survived', 'NoCoverage', 'Timeout', 'CompileError', 'RuntimeError', 'Ignored']);
           for (const row of [...first, ...second]) {
             if (!terminalStates.has(row.status)) throw new Error('Incomplete mutant: ' + row.key);
+          }
+          for (const [run, rows] of [[1, first], [2, second]]) {
+            for (const row of rows) {
+              if (!['Killed', 'Survived'].includes(row.status)) continue;
+              const evidence = load('reports/mutation/collectibles/evidence-' + run + '/' + row.id + '.evidence.json');
+              if (evidence.completed !== 17 || !['TestFailure', 'Passed'].includes(evidence.kind)) {
+                throw new Error('Unusable test execution for mutant ' + row.id + ': ' + evidence.kind);
+              }
+              if ((row.status === 'Survived') !== (evidence.kind === 'Passed')) {
+                throw new Error('Command verdict disagrees with Vitest evidence: ' + row.id);
+              }
+            }
           }
           const firstMap = new Map(first.map((row) => [row.key, row]));
           const secondMap = new Map(second.map((row) => [row.key, row]));
