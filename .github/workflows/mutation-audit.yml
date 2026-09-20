@@ -47,15 +47,20 @@ jobs:
       - name: Record tool versions
         shell: bash
         run: |
-          {
-            echo "commit=$GITHUB_SHA"
-            echo "workflow_run_id=$GITHUB_RUN_ID"
-            echo "node=$(node --version)"
-            echo "bun=$(bun --version)"
-            echo "vitest=$(node -p \"require('./node_modules/vitest/package.json').version\")"
-            echo "stryker_core=$(node -p \"require('./node_modules/@stryker-mutator/core/package.json').version\")"
-            echo "stryker_vitest_runner=$(node -p \"require('./node_modules/@stryker-mutator/vitest-runner/package.json').version\")"
-          } > reports/mutation/collectibles/run-metadata.txt
+          node --input-type=module - <<'NODE'
+          import { readFileSync, writeFileSync } from 'node:fs';
+          import { execFileSync } from 'node:child_process';
+          const version = (name) => JSON.parse(readFileSync('node_modules/' + name + '/package.json', 'utf8')).version;
+          writeFileSync('reports/mutation/collectibles/run-metadata.json', JSON.stringify({
+            commit: execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(),
+            workflowRunId: process.env.GITHUB_RUN_ID,
+            node: process.version,
+            bun: execFileSync('bun', ['--version'], { encoding: 'utf8' }).trim(),
+            vitest: version('vitest'),
+            strykerCore: version('@stryker-mutator/core'),
+            strykerVitestRunner: version('@stryker-mutator/vitest-runner'),
+          }, null, 2) + '\n');
+          NODE
 
       - name: Run mutation pilot 1
         run: |
