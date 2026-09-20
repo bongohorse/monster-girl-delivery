@@ -71,6 +71,24 @@ The optimized reference is current `main` after the #332 mechanical gates.
 
 For a trustworthy device comparison, use equivalent evidence instrumentation on both refs. Do not compare a Director-instrumented build against a different production/tooling configuration and attribute the difference to Zapper collision.
 
+## Normal-run benchmark preset
+
+The Director HUD exposes **NP** for the reproducible `normal-run-v1` workload.
+
+NP normalizes the measurement setup in one action:
+
+- enables **GOD** so a representative run is not truncated by a lethal contact;
+- enables normal **AUTO** encounter generation;
+- resumes the simulation if it was frozen;
+- disables collision wireframes;
+- resets the bounded frame-time sampler and Zapper work counters;
+- discards the first post-setup raw frame so synchronous restart/setup work is not measured;
+- restarts the real generated run at distance/time zero with the fixed live-run seed.
+
+Unlike ZP, NP does not inject manual hazards. It uses the normal generated hazard, collectible, lifecycle, collision, Graze, presentation, pruning, and run-motion paths. Current tuning values are intentionally not rewritten; they are recorded in the evidence so captures with mismatched tuning can be rejected rather than silently compared.
+
+A valid normal-run capture should report `performancePresetId: "normal-run-v1"`, AUTO true, GOD true, frozen false, and wireframes false.
+
 ## Zapper benchmark preset
 
 The Director HUD exposes **ZP** for the bounded `zapper-heavy-v1` workload.

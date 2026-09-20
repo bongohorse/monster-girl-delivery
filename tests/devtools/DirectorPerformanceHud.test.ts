@@ -103,6 +103,7 @@ const createHarness = () => {
   const clearHazards = vi.fn();
   const setSimulationFrozen = vi.fn();
   const triggerDeath = vi.fn();
+  const startNormalPerformancePreset = vi.fn();
   const startZapperPerformancePreset = vi.fn();
   const readRuntimeMetrics = vi.fn(() => ({
     activeCollectibleCount: 5,
@@ -131,6 +132,7 @@ const createHarness = () => {
       clearHazards,
       setSimulationFrozen,
       triggerDeath,
+      startNormalPerformancePreset,
       startZapperPerformancePreset,
       readRuntimeMetrics,
       exportPerformanceEvidence,
@@ -157,7 +159,8 @@ const createHarness = () => {
   const clearButton = playgroundControls?.children[6];
   const freezeButton = playgroundControls?.children[7];
   const deathButton = playgroundControls?.children[8];
-  const zapperPerformanceButton = playgroundControls?.children[9];
+  const normalPerformanceButton = playgroundControls?.children[9];
+  const zapperPerformanceButton = playgroundControls?.children[10];
 
   if (
     !root ||
@@ -180,6 +183,7 @@ const createHarness = () => {
     !clearButton ||
     !freezeButton ||
     !deathButton ||
+    !normalPerformanceButton ||
     !zapperPerformanceButton
   ) {
     throw new Error('Expected the Director HUD structure.');
@@ -200,6 +204,7 @@ const createHarness = () => {
     input,
     laserButton,
     missileButton,
+    normalPerformanceButton,
     playgroundControls,
     readRuntimeMetrics,
     resetButton,
@@ -215,6 +220,7 @@ const createHarness = () => {
     spawnMissile,
     spawnZapper,
     spawnZapperGroup,
+    startNormalPerformancePreset,
     startZapperPerformancePreset,
     triggerDeath,
     values,
@@ -246,7 +252,7 @@ describe('DirectorPerformanceHud', () => {
     expect(root.style).toMatchObject({ left: '52px', top: '20px', maxWidth: '740px' });
     expect(values.children).toHaveLength(5);
     expect(wireframeLabel.children).toHaveLength(2);
-    expect(playgroundControls.children).toHaveLength(10);
+    expect(playgroundControls.children).toHaveLength(11);
   });
 
   it('samples every frame but refreshes formatted values at most every 250 ms', () => {
@@ -454,6 +460,51 @@ describe('DirectorPerformanceHud', () => {
     expect(triggerDeath).toHaveBeenCalledOnce();
   });
 
+  it('starts the normal-run performance preset from one normalized measurement state', () => {
+    const {
+      autoHazardsButton,
+      freezeButton,
+      godModeButton,
+      hud,
+      normalPerformanceButton,
+      sampler,
+      setAutoHazardsEnabled,
+      setGodModeEnabled,
+      setSimulationFrozen,
+      setWireframesEnabled,
+      startNormalPerformancePreset,
+      wireframeCheckbox,
+      zapperWorkCounters,
+    } = createHarness();
+
+    hud.update(30, 40, false);
+    zapperWorkCounters.candidateSampleCount = 50;
+    autoHazardsButton.dispatch('click');
+    wireframeCheckbox.checked = true;
+    wireframeCheckbox.dispatch('change');
+    freezeButton.dispatch('click');
+
+    normalPerformanceButton.dispatch('click');
+
+    expect(setGodModeEnabled).toHaveBeenLastCalledWith(true);
+    expect(setAutoHazardsEnabled).toHaveBeenLastCalledWith(true);
+    expect(setSimulationFrozen).toHaveBeenLastCalledWith(false);
+    expect(setWireframesEnabled).toHaveBeenLastCalledWith(false);
+    expect(startNormalPerformancePreset).toHaveBeenCalledOnce();
+    expect(godModeButton.dataset.active).toBe('true');
+    expect(autoHazardsButton.dataset.active).toBe('true');
+    expect(freezeButton.dataset.active).toBe('false');
+    expect(freezeButton.textContent).toBe('⏸');
+    expect(wireframeCheckbox.checked).toBe(false);
+    expect(sampler.createSnapshot().sampleCount).toBe(0);
+    expect(zapperWorkCounters.candidateSampleCount).toBe(0);
+
+    hud.update(80, 10, false);
+    expect(sampler.createSnapshot().sampleCount).toBe(0);
+    hud.update(16, 60, false);
+    expect(sampler.createSnapshot().sampleCount).toBe(1);
+  });
+
   it('starts the Zapper performance preset from one normalized measurement state', () => {
     const {
       autoHazardsButton,
@@ -619,6 +670,7 @@ describe('DirectorPerformanceHud', () => {
       harness.clearButton,
       harness.freezeButton,
       harness.deathButton,
+      harness.normalPerformanceButton,
       harness.zapperPerformanceButton,
     ]) {
       expect([...element.listeners.values()].every((listeners) => listeners.size === 0)).toBe(true);
