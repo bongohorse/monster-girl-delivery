@@ -36,6 +36,7 @@ The deeper browser fixture must establish all of the following before it reports
 7. A second live resize to 800x450 follows the same browser event path and reconciles back to landscape without losing the active Foundation scene.
 
 The render-resolution controller also owns a real `ResizeObserver` path in production. Its callback behavior remains covered by the focused render-resolution tests; the headless smoke uses the browser `resize` listener because Chrome's `--virtual-time-budget` mode does not reliably deliver layout-observer callbacks before DOM dumping.
+
 8. `Game.destroy(true)` removes the canvas without a captured browser error or unhandled rejection.
 
 The fixture also checks the render-resolution metadata written onto the actual canvas.
@@ -72,9 +73,9 @@ The smoke only claims that the exercised DOM, Phaser, canvas, input, resize and 
 
 Validated browser-smoke head:
 
-`a6ed36cc1b87cefaeddd739341d75b5fba727486`
+`7f39d96679516fc8d45edb84f707f5b6426c837e`
 
-Browser runtime smoke #7 / run `35534998835` passed on GitHub Ubuntu 24.04 with:
+Browser runtime smoke #10 / run `35535203558` passed on GitHub Ubuntu 24.04 with:
 
 - Google Chrome **152.0.7977.82**;
 - Bun **1.4.2**;
@@ -83,7 +84,9 @@ Browser runtime smoke #7 / run `35534998835` passed on GitHub Ubuntu 24.04 with:
 
 Observed browser evidence:
 
-- initial logical canvas: **640x360**;
+- real root `index.html -> src/main.ts` bootstrap created a canvas with logical/backing metadata;
+- root smoke canvas was **1024x681** on the recorded runner viewport;
+- initial deep-fixture logical canvas: **640x360**;
 - active scene: **Foundation** after Boot/Preloader;
 - DOM Space input reached gameplay input: **true**;
 - DOM primary-mouse input reached gameplay input: **true**;
@@ -95,10 +98,10 @@ Observed browser evidence:
 
 Evidence artifact:
 
-- artifact ID: `10612635070`;
-- artifact digest: `sha256:227f3a9e8fbbd8501601f13c57f9f7536f22d24351d6e9da04ab910401197bfe`.
+- artifact ID: `10612229966`;
+- artifact digest: `sha256:7ac2a0d912c13b104d603f59b8dbed3d7f1b6d3b2a6f76548994b1ad6d9c374c`.
 
-The matching normal CI #1025 passed Biome, TypeScript, **115 test files / 832 tests**, and the production build.
+The matching normal CI #1028 passed Biome, TypeScript, **115 test files / 832 tests**, and the production build.
 
 ### Validation corrections retained as evidence
 
