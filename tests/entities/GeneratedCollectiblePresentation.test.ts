@@ -65,6 +65,7 @@ describe('GeneratedCollectiblePresentation', () => {
     expect(graphics.fillCircle).toHaveBeenNthCalledWith(2, 750, 195, 7);
     expect(graphics.setPosition).toHaveBeenCalledWith(0, 10);
     expect(graphics.setScale).toHaveBeenCalledWith(1, 0.5);
+    expect(presentation.getPresentedCollectibleCount()).toBe(2);
   });
 
   it('scrolls unchanged collectible geometry with one transform instead of redrawing coins', () => {
@@ -102,6 +103,7 @@ describe('GeneratedCollectiblePresentation', () => {
 
     expect(graphics.clear).toHaveBeenCalledOnce();
     expect(graphics.fillCircle).not.toHaveBeenCalled();
+    expect(presentation.getPresentedCollectibleCount()).toBe(0);
   });
 
   it('destroys the one bounded graphics object once and ignores later synchronization', () => {
@@ -116,5 +118,6 @@ describe('GeneratedCollectiblePresentation', () => {
 
     expect(graphics.destroy).toHaveBeenCalledOnce();
     expect(addGraphics).toHaveBeenCalledOnce();
+    expect(presentation.getPresentedCollectibleCount()).toBe(0);
   });
 });
