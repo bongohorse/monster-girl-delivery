@@ -75,8 +75,8 @@ import {
 } from '../../systems/HazardCollision';
 import {
   createPrototypeBroadphaseWorkCounters,
-  resetPrototypeBroadphaseWorkCounters,
   type PrototypeBroadphaseWorkCounters,
+  resetPrototypeBroadphaseWorkCounters,
 } from '../../systems/PrototypeBroadphaseWork';
 import {
   createPrototypeDeathRetryState,
