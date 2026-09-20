@@ -23,10 +23,11 @@
     "ci:check": "biome ci .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:coverage": "bun add --dev --no-save --exact @vitest/coverage-istanbul@5.0.1 && vitest run --coverage.enabled"
+    "test:coverage": "node ./node_modules/vitest/vitest.mjs run --coverage.enabled"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.14",
+    "@vitest/coverage-istanbul": "5.0.1",
     "terser": "^5.51.2",
     "typescript": "7.0.2",
     "vite": "^8.1.0",
