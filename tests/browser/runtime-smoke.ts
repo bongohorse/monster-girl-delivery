@@ -191,23 +191,25 @@ const run = async (): Promise<SmokeEvidence> => {
 
   container.style.width = '360px';
   container.style.height = '640px';
+  window.dispatchEvent(new Event('resize'));
   await waitFor(
     () =>
       controller?.getSnapshot().logicalWidth === 360 &&
       controller.getSnapshot().logicalHeight === 640 &&
       readViewport(foundation).orientation === 'portrait',
-    'ResizeObserver/Phaser resize did not reconcile the 360x640 portrait viewport.',
+    'Browser resize/Phaser resize did not reconcile the 360x640 portrait viewport.',
   );
   const portraitResize = canvas.dataset.mgdLogicalSize ?? '';
 
   container.style.width = '800px';
   container.style.height = '450px';
+  window.dispatchEvent(new Event('resize'));
   await waitFor(
     () =>
       controller?.getSnapshot().logicalWidth === 800 &&
       controller.getSnapshot().logicalHeight === 450 &&
       readViewport(foundation).orientation === 'landscape',
-    'ResizeObserver/Phaser resize did not reconcile the 800x450 landscape viewport.',
+    'Browser resize/Phaser resize did not reconcile the 800x450 landscape viewport.',
   );
   const landscapeResize = canvas.dataset.mgdLogicalSize ?? '';
 
