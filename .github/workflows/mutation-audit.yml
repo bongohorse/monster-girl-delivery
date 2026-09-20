@@ -2,6 +2,13 @@ name: Collectibles mutation audit
 
 on:
   workflow_dispatch:
+  # Gate 5C validation only. Remove this PR trigger before merge.
+  pull_request:
+    paths:
+      - '.github/workflows/mutation-audit.yml'
+      - 'scripts/collectibles-mutation-command.mjs'
+      - 'tests/systems/PrototypeCollectiblesReferenceOracle.test.ts'
+      - 'docs/TEST_QUALITY*'
 
 permissions:
   contents: read
@@ -37,6 +44,7 @@ jobs:
             tests/systems/PrototypeCollectiblesAuthorityAudit.test.ts \
             tests/systems/PrototypeCollectibles.test.ts \
             tests/systems/PrototypeBroadphaseWorkEvidence.test.ts \
+            tests/systems/PrototypeCollectiblesReferenceOracle.test.ts \
             --reporter=json \
             --outputFile=reports/mutation/collectibles/baseline.json
 
