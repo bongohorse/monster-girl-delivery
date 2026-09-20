@@ -2,6 +2,13 @@ name: Collectibles mutation audit
 
 on:
   workflow_dispatch:
+  # Gate 5A validation only. Remove this PR trigger before merge.
+  pull_request:
+    paths:
+      - '.github/workflows/mutation-audit.yml'
+      - 'src/systems/PrototypeCollectibles.ts'
+      - 'tests/systems/PrototypeCollectiblesAuthorityAudit.test.ts'
+      - 'docs/TEST_QUALITY*'
 
 permissions:
   contents: read
