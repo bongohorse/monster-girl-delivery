@@ -35,12 +35,5 @@ jobs:
       - name: Test
         run: bun run test
 
-      # Temporary Gate 1 evidence step for #371. Remove before merge after baseline capture.
-      - name: Coverage baseline (Gate 1)
-        run: |
-          bun run test:coverage
-          echo '--- COVERAGE_JSON_SUMMARY ---'
-          cat coverage/coverage-summary.json
-
       - name: Build
         run: bun run build
