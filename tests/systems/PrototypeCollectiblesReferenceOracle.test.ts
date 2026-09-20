@@ -169,9 +169,7 @@ const solveReferenceContactOnset = (
   return earliest;
 };
 
-const createTrajectory = (
-  vertical: Readonly<VerticalCase>,
-): Readonly<VerticalFlightTrajectory> => {
+const createTrajectory = (vertical: Readonly<VerticalCase>): Readonly<VerticalFlightTrajectory> => {
   const finalSegment = vertical.segments[vertical.segments.length - 1];
   if (!finalSegment) {
     throw new Error('Gate 5C trajectory requires at least one segment.');
