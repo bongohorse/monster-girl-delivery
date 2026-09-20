@@ -1,6 +1,17 @@
 import type { PrototypeZapperCollisionWorkCounters } from '../systems/HazardCollision';
 import type { PerformanceSnapshot } from './PerformanceSampler';
 
+export interface PerformanceRuntimeMetrics {
+  readonly activeCollectibleCount: number;
+  readonly activeHazardCount: number;
+  readonly laserPresentationCount: number;
+  readonly presentedCollectibleCount: number;
+  readonly presentedHazardCount: number;
+  readonly primitiveHazardPresentationCount: number;
+  readonly sceneGameObjectCount: number;
+  readonly zapperPresentationCount: number;
+}
+
 export interface PerformanceEvidenceContext {
   readonly baseScrollSpeed: number;
   readonly buildCommit: string;
@@ -36,6 +47,7 @@ export interface PerformanceEvidenceReport {
     readonly actualFps: number | null;
     readonly fpsLimit: number;
     readonly frameTime: Readonly<PerformanceSnapshot>;
+    readonly runtime: Readonly<PerformanceRuntimeMetrics> | null;
     readonly zapperWork: Readonly<PrototypeZapperCollisionWorkCounters> | null;
   };
   readonly context: {
@@ -65,7 +77,7 @@ export interface PerformanceEvidenceReport {
     readonly viewportWidth: number;
   };
   readonly capturedAtIso: string;
-  readonly schemaVersion: 2;
+  readonly schemaVersion: 3;
 }
 
 export const createPerformanceEvidenceReport = (
@@ -74,6 +86,7 @@ export const createPerformanceEvidenceReport = (
   actualFps: number,
   fpsLimit: number,
   zapperWork?: Readonly<PrototypeZapperCollisionWorkCounters>,
+  runtime?: Readonly<PerformanceRuntimeMetrics>,
 ): Readonly<PerformanceEvidenceReport> =>
   Object.freeze({
     build: Object.freeze({
@@ -84,6 +97,7 @@ export const createPerformanceEvidenceReport = (
       actualFps: Number.isFinite(actualFps) && actualFps > 0 ? actualFps : null,
       fpsLimit,
       frameTime: Object.freeze({ ...snapshot }),
+      runtime: runtime ? Object.freeze({ ...runtime }) : null,
       zapperWork: zapperWork ? Object.freeze({ ...zapperWork }) : null,
     }),
     context: Object.freeze({
@@ -113,7 +127,7 @@ export const createPerformanceEvidenceReport = (
       viewportWidth: context.viewportWidth,
     }),
     capturedAtIso: context.capturedAtIso,
-    schemaVersion: 2,
+    schemaVersion: 3,
   });
 
 export const serializePerformanceEvidenceReport = (
