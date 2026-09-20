@@ -143,6 +143,99 @@ const getHorizontalOpportunityBounds = (
  * a physical TOI, and deliberately cannot use the earlier end of the smaller lethal-core window as
  * proof that a vertically later Graze happened before another hazard's lethal contact.
  */
+const canHazardReachPlayerHorizontallyDuringStep = (
+  initialDistance: number,
+  scrollSpeed: number,
+  hazard: Readonly<LogicalHazard>,
+  elapsedSeconds: number,
+): boolean => {
+  if (elapsedSeconds === 0) {
+    return true;
+  }
+
+  const interval = hazard.collisionInterval ?? { startSeconds: 0, endSeconds: elapsedSeconds };
+  if (
+    !Number.isFinite(interval.startSeconds) ||
+    !Number.isFinite(interval.endSeconds) ||
+    interval.startSeconds < 0 ||
+    interval.endSeconds < interval.startSeconds ||
+    interval.endSeconds > elapsedSeconds
+  ) {
+    // Keep malformed inputs on the historical exact path so collision owns the validation error.
+    return true;
+  }
+  if (interval.endSeconds === interval.startSeconds) {
+    return true;
+  }
+
+  const opportunity = getHorizontalOpportunityBounds(
+    initialDistance,
+    scrollSpeed,
+    hazard,
+    getGrazeOpportunityExtents(hazard),
+  );
+  if (!opportunity) {
+    return false;
+  }
+
+  return (
+    Math.min(opportunity.endSeconds, interval.endSeconds) >
+    Math.max(opportunity.startSeconds, interval.startSeconds)
+  );
+};
+
+/**
+ * Conservatively narrows the current collision stream before identity/Graze/contact work.
+ *
+ * Returns the original array by identity when every retained hazard is still a candidate. A new
+ * array is allocated only after the first definite horizontal reject. Zero-delta and malformed
+ * interval inputs retain the historical exact path.
+ */
+export const filterPrototypeHazardCandidatesForStep = (
+  initialRunState: Readonly<RunMotionState>,
+  elapsedSeconds: number,
+  runMotionTuning: Readonly<RunMotionValues>,
+  hazards: ReadonlyArray<Readonly<LogicalHazard>>,
+): ReadonlyArray<Readonly<LogicalHazard>> => {
+  if (
+    elapsedSeconds === 0 ||
+    hazards.length === 0 ||
+    !Number.isFinite(initialRunState.distance) ||
+    !Number.isFinite(runMotionTuning.baseScrollSpeed)
+  ) {
+    return hazards;
+  }
+
+  let filtered: Array<Readonly<LogicalHazard>> | undefined;
+
+  for (let index = 0; index < hazards.length; index += 1) {
+    const hazard = hazards[index];
+    if (hazard === undefined) {
+      continue;
+    }
+
+    const candidate = canHazardReachPlayerHorizontallyDuringStep(
+      initialRunState.distance,
+      runMotionTuning.baseScrollSpeed,
+      hazard,
+      elapsedSeconds,
+    );
+
+    if (filtered) {
+      if (candidate) {
+        filtered.push(hazard);
+      }
+      continue;
+    }
+
+    if (!candidate) {
+      filtered = hazards.slice(0, index);
+    }
+  }
+
+  return filtered ?? hazards;
+};
+
 const getGrazeResolutionSeconds = (
   initialDistance: number,
   scrollSpeed: number,
@@ -231,8 +324,10 @@ const isPlayerInLegacyGrazeZoneDuringStep = (
  * resolved different-hazard candidates are retained only when the existing continuous collision
  * authority confirms that no lethal overlap has happened by that candidate's resolution boundary.
  * Zappers resolve core and outer-padding contact from one shared sample/geometry pass when Graze is
- * still eligible. The boundary is deterministic qualification state, not unsupported physical TOI
- * ordering.
+ * still eligible. The full retained hazard stream owns occurrence history, while an optional
+ * conservative contact-candidate subset may skip exact collision work for horizontally unreachable
+ * hazards. Pending occurrences still resolve against the retained stream after their opportunity
+ * passes. The boundary is deterministic qualification state, not unsupported physical TOI ordering.
  */
 export const evaluatePrototypeGrazeStep = (
   state: Readonly<PrototypeGrazeRunState>,
@@ -242,6 +337,7 @@ export const evaluatePrototypeGrazeStep = (
   runMotionTuning: Readonly<RunMotionValues>,
   hazards: ReadonlyArray<Readonly<LogicalHazard>>,
   workCounters?: PrototypeZapperCollisionWorkCounters,
+  contactHazards: ReadonlyArray<Readonly<LogicalHazard>> = hazards,
 ): PrototypeGrazeStepResult => {
   // The lifecycle adapter omits Active intervals on zero-delta pause/resize updates. Preserve
   // qualification history through that transient absence while retaining the core collision rule.
@@ -284,7 +380,7 @@ export const evaluatePrototypeGrazeStep = (
   const resolvedCandidates = new Map<string, number>();
   let lethalCollision = false;
 
-  for (const hazard of hazards) {
+  for (const hazard of contactHazards) {
     const occurrenceId = getGrazeOccurrenceId(hazard);
     const grazeOccurrenceId =
       occurrenceId !== null && !consumed.has(occurrenceId) ? occurrenceId : null;
@@ -354,6 +450,29 @@ export const evaluatePrototypeGrazeStep = (
       if (resolutionSeconds !== null) {
         resolvedCandidates.set(grazeOccurrenceId, resolutionSeconds);
       }
+    }
+  }
+
+  // A previously entered Graze can become fully qualified after its current-step contact window has
+  // already moved out of broadphase range. Retain the full logical stream for that state transition
+  // without sending those hazards back through collision/narrowphase work.
+  for (const hazard of hazards) {
+    const occurrenceId = getGrazeOccurrenceId(hazard);
+    if (
+      occurrenceId === null ||
+      !pending.has(occurrenceId) ||
+      resolvedCandidates.has(occurrenceId)
+    ) {
+      continue;
+    }
+    const resolutionSeconds = getGrazeResolutionSeconds(
+      initialRunState.distance,
+      runMotionTuning.baseScrollSpeed,
+      hazard,
+      elapsedSeconds,
+    );
+    if (resolutionSeconds !== null) {
+      resolvedCandidates.set(occurrenceId, resolutionSeconds);
     }
   }
 

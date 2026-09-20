@@ -10,6 +10,7 @@ import {
 import {
   EMPTY_PROTOTYPE_GRAZE_RUN_STATE,
   evaluatePrototypeGrazeStep,
+  filterPrototypeHazardCandidatesForStep,
   type PrototypeGrazeRunState,
 } from './PrototypeGraze';
 import {
@@ -76,7 +77,10 @@ export const createPrototypeRunState = (
 /**
  * Advances one authoritative run step. Lethal core collision, Graze, and M5 collectible pickup
  * inspect the same continuous player trajectory. Positive-step lethal-core contacts resolved by
- * Graze are reused by collectible ordering, avoiding a second full-step collision pass. Pickup
+ * Graze are reused by collectible ordering, avoiding a second full-step collision pass. One
+ * conservative horizontal hazard candidate set is shared by Graze and collectible death ordering so
+ * retained hazards that cannot reach the player this step never enter exact contact/narrowphase work.
+ * Graze retention still observes the full stream for occurrence history. Pickup
  * qualification still resolves prefix ordering before the immutable terminal result is created, so
  * presentation never owns collection and a coarse terminal step cannot award a pickup after death.
  */
@@ -98,6 +102,12 @@ export const stepPrototypeRun = (
     context.flightBounds,
   );
   const flight = { ...flightTrajectory.finalState };
+  const hazardCandidates = filterPrototypeHazardCandidatesForStep(
+    state.motion,
+    elapsedSeconds,
+    context.runMotionTuning,
+    context.hazards,
+  );
   const grazeResult = evaluatePrototypeGrazeStep(
     state.graze ?? EMPTY_PROTOTYPE_GRAZE_RUN_STATE,
     state.motion,
@@ -106,6 +116,7 @@ export const stepPrototypeRun = (
     context.runMotionTuning,
     context.hazards,
     context.zapperCollisionWorkCounters,
+    hazardCandidates,
   );
   const graze =
     state.graze || grazeResult.state.count > 0 || grazeResult.state.pendingOccurrenceIds.length > 0
@@ -118,7 +129,7 @@ export const stepPrototypeRun = (
     elapsedSeconds,
     context.runMotionTuning,
     context.collectibles ?? [],
-    context.hazards,
+    hazardCandidates,
     grazeResult.resolvedLethalHazards,
     context.zapperCollisionWorkCounters,
   );
