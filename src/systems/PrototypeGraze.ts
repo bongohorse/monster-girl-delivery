@@ -16,6 +16,7 @@ import {
   type PrototypePlayerCollisionExtents,
   type PrototypeZapperCollisionWorkCounters,
 } from './HazardCollision';
+import type { PrototypeBroadphaseWorkCounters } from './PrototypeBroadphaseWork';
 import type { RunMotionState } from './RunMotionSimulation';
 import type { VerticalFlightTrajectory } from './VerticalFlightSimulation';
 
@@ -196,13 +197,21 @@ export const filterPrototypeHazardCandidatesForStep = (
   elapsedSeconds: number,
   runMotionTuning: Readonly<RunMotionValues>,
   hazards: ReadonlyArray<Readonly<LogicalHazard>>,
+  broadphaseWorkCounters?: PrototypeBroadphaseWorkCounters,
 ): ReadonlyArray<Readonly<LogicalHazard>> => {
+  if (elapsedSeconds > 0 && broadphaseWorkCounters) {
+    broadphaseWorkCounters.hazardRetainedCount += hazards.length;
+  }
+
   if (
     elapsedSeconds === 0 ||
     hazards.length === 0 ||
     !Number.isFinite(initialRunState.distance) ||
     !Number.isFinite(runMotionTuning.baseScrollSpeed)
   ) {
+    if (elapsedSeconds > 0 && broadphaseWorkCounters) {
+      broadphaseWorkCounters.hazardCandidateCount += hazards.length;
+    }
     return hazards;
   }
 
@@ -233,7 +242,11 @@ export const filterPrototypeHazardCandidatesForStep = (
     }
   }
 
-  return filtered ?? hazards;
+  const candidates = filtered ?? hazards;
+  if (broadphaseWorkCounters) {
+    broadphaseWorkCounters.hazardCandidateCount += candidates.length;
+  }
+  return candidates;
 };
 
 const getGrazeResolutionSeconds = (
@@ -270,6 +283,7 @@ const hasLethalCollisionBy = (
   hazard: Readonly<LogicalHazard>,
   boundarySeconds: number,
   workCounters?: PrototypeZapperCollisionWorkCounters,
+  broadphaseWorkCounters?: PrototypeBroadphaseWorkCounters,
 ): boolean => {
   if (boundarySeconds <= 0) {
     return false;
@@ -281,6 +295,9 @@ const hasLethalCollisionBy = (
     return false;
   }
 
+  if (broadphaseWorkCounters) {
+    broadphaseWorkCounters.hazardCollisionEvaluationCount += 1;
+  }
   return isPlayerCollidingWithHazardDuringStep(
     initialRunState,
     trajectory,
@@ -305,8 +322,12 @@ const isPlayerInLegacyGrazeZoneDuringStep = (
   runMotionTuning: Readonly<RunMotionValues>,
   hazard: Readonly<LogicalHazard>,
   workCounters?: PrototypeZapperCollisionWorkCounters,
-): boolean =>
-  isPlayerCollidingWithHazardDuringStep(
+  broadphaseWorkCounters?: PrototypeBroadphaseWorkCounters,
+): boolean => {
+  if (broadphaseWorkCounters) {
+    broadphaseWorkCounters.hazardCollisionEvaluationCount += 1;
+  }
+  return isPlayerCollidingWithHazardDuringStep(
     initialRunState,
     trajectory,
     elapsedSeconds,
@@ -315,6 +336,7 @@ const isPlayerInLegacyGrazeZoneDuringStep = (
     PROTOTYPE_PLAYER_GRAZE_EXTENTS,
     workCounters,
   );
+};
 
 /**
  * Evaluates lethal core collision and optional Graze from the same continuous trajectory/lifecycle
@@ -338,6 +360,7 @@ export const evaluatePrototypeGrazeStep = (
   hazards: ReadonlyArray<Readonly<LogicalHazard>>,
   workCounters?: PrototypeZapperCollisionWorkCounters,
   contactHazards: ReadonlyArray<Readonly<LogicalHazard>> = hazards,
+  broadphaseWorkCounters?: PrototypeBroadphaseWorkCounters,
 ): PrototypeGrazeStepResult => {
   // The lifecycle adapter omits Active intervals on zero-delta pause/resize updates. Preserve
   // qualification history through that transient absence while retaining the core collision rule.
@@ -387,6 +410,9 @@ export const evaluatePrototypeGrazeStep = (
     let coreHit: boolean;
     let preResolvedZapperGrazeHit: boolean | null = null;
 
+    if (broadphaseWorkCounters) {
+      broadphaseWorkCounters.hazardCollisionEvaluationCount += 1;
+    }
     if (isPrototypeZapperHazard(hazard) && grazeOccurrenceId !== null) {
       const contacts = evaluatePlayerPrototypeZapperCoreAndGrazeDuringStep(
         initialRunState,
@@ -435,6 +461,7 @@ export const evaluatePrototypeGrazeStep = (
         runMotionTuning,
         hazard,
         workCounters,
+        broadphaseWorkCounters,
       );
     if (grazeHit) {
       pending.add(grazeOccurrenceId);
@@ -490,6 +517,7 @@ export const evaluatePrototypeGrazeStep = (
               hazard,
               resolutionSeconds,
               workCounters,
+              broadphaseWorkCounters,
             ),
           )),
     )
