@@ -116,6 +116,8 @@ Entry/browser wiring such as `src/main.ts` and `Boot.ts` appears at 0% under the
 
 ## Sampling evidence limits
 
+Gate 5's cross-subsystem evidence matrix, seed-preservation rule, and test-order/isolation audit are documented in [`TEST_QUALITY_GATE5_EVIDENCE_MATRIX.md`](TEST_QUALITY_GATE5_EVIDENCE_MATRIX.md).
+
 A finer numerical sampler is not automatically a correctness oracle.
 
 For rotating or otherwise numerically sampled collision:

@@ -1,0 +1,96 @@
+name: Test stability audit
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  stability:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .bun-version
+
+      - name: Install locked dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Prepare evidence directory
+        run: mkdir -p reports/test-stability
+
+      - name: Isolated shuffled run — seed 37101
+        run: |
+          set -o pipefail
+          node ./node_modules/vitest/vitest.mjs run \
+            --pool=forks \
+            --sequence.shuffle.files \
+            --sequence.shuffle.tests \
+            --sequence.seed=37101 \
+            2>&1 | tee reports/test-stability/isolated-seed-37101.log
+
+      - name: Isolated shuffled run — seed 37102
+        run: |
+          set -o pipefail
+          node ./node_modules/vitest/vitest.mjs run \
+            --pool=forks \
+            --sequence.shuffle.files \
+            --sequence.shuffle.tests \
+            --sequence.seed=37102 \
+            2>&1 | tee reports/test-stability/isolated-seed-37102.log
+
+      - name: Shared-context diagnostic — seed 37101
+        id: shared
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          node ./node_modules/vitest/vitest.mjs run \
+            --pool=forks \
+            --no-isolate \
+            --no-file-parallelism \
+            --sequence.shuffle.files \
+            --sequence.shuffle.tests \
+            --sequence.seed=37101 \
+            2>&1 | tee reports/test-stability/shared-context-seed-37101.log
+
+      - name: Record audit metadata
+        env:
+          SHARED_CONTEXT_OUTCOME: ${{ steps.shared.outcome }}
+        run: |
+          node --input-type=module - <<'NODE'
+          import { execFileSync } from 'node:child_process';
+          import { writeFileSync } from 'node:fs';
+
+          writeFileSync(
+            'reports/test-stability/summary.json',
+            JSON.stringify(
+              {
+                commit: process.env.GITHUB_SHA,
+                workflowRunId: process.env.GITHUB_RUN_ID,
+                bun: execFileSync('bun', ['--version'], { encoding: 'utf8' }).trim(),
+                node: process.version,
+                isolatedSeeds: [37101, 37102],
+                sharedContextSeed: 37101,
+                sharedContextOutcome: process.env.SHARED_CONTEXT_OUTCOME,
+              },
+              null,
+              2,
+            ) + '\n',
+          );
+          NODE
+
+      - name: Upload stability evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-stability-${{ github.sha }}
+          path: reports/test-stability/
+          if-no-files-found: error
+          retention-days: 14
