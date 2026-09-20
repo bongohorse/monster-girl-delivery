@@ -26,3 +26,7 @@ graphify-out/
 *.njsproj
 *.sln
 *.sw?
+
+# Mutation audit output
+.stryker-tmp/
+reports/mutation/
