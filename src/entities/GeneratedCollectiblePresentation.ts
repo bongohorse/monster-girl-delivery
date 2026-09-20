@@ -27,6 +27,7 @@ export class GeneratedCollectiblePresentation {
   private renderedPlayerScreenX = Number.NaN;
   private renderedProjectionOffsetY = Number.NaN;
   private renderedProjectionScaleY = Number.NaN;
+  private presentedCollectibleCount = 0;
 
   constructor(scene: Scene) {
     this.graphics = scene.add.graphics().setDepth(-40);
@@ -56,8 +57,9 @@ export class GeneratedCollectiblePresentation {
       this.graphics.clear().setPosition(0, projection.offsetY).setScale(1, projection.scaleY);
       const consumed = consumedCollectibleIds.length === 0 ? null : new Set(consumedCollectibleIds);
 
-      this.drawIntent(spawns, consumed, 'safe-guide', SAFE_GUIDE_COLOR, playerScreenX);
-      this.drawIntent(spawns, consumed, 'risk-reward', RISK_REWARD_COLOR, playerScreenX);
+      this.presentedCollectibleCount =
+        this.drawIntent(spawns, consumed, 'safe-guide', SAFE_GUIDE_COLOR, playerScreenX) +
+        this.drawIntent(spawns, consumed, 'risk-reward', RISK_REWARD_COLOR, playerScreenX);
 
       this.renderedSpawns = spawns;
       this.renderedConsumedCollectibleIds = consumedCollectibleIds;
@@ -73,12 +75,17 @@ export class GeneratedCollectiblePresentation {
     );
   }
 
+  getPresentedCollectibleCount(): number {
+    return this.presentedCollectibleCount;
+  }
+
   destroy(): void {
     if (this.destroyed) {
       return;
     }
 
     this.destroyed = true;
+    this.presentedCollectibleCount = 0;
     this.graphics.destroy();
   }
 
@@ -88,8 +95,9 @@ export class GeneratedCollectiblePresentation {
     intent: LogicalCollectibleSpawnInstance['intent'],
     color: number,
     playerScreenX: number,
-  ): void {
+  ): number {
     this.graphics.fillStyle(color, 0.95);
+    let count = 0;
 
     for (const spawn of spawns) {
       if (
@@ -104,6 +112,9 @@ export class GeneratedCollectiblePresentation {
         spawn.y,
         COLLECTIBLE_RADIUS,
       );
+      count += 1;
     }
+
+    return count;
   }
 }

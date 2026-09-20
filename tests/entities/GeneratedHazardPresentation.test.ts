@@ -135,6 +135,10 @@ describe('GeneratedHazardPresentation', () => {
     expect(addGraphics).toHaveBeenCalledTimes(2);
     expect(graphicsObjects[0]?.setPosition).toHaveBeenCalledWith(900, 120);
     expect(graphicsObjects[1]?.setPosition).toHaveBeenCalledWith(1_100, 120);
+    expect(presentation.getPrimitivePresentationCount()).toBe(2);
+    expect(presentation.getLaserPresentationCount()).toBe(0);
+    expect(presentation.getZapperPresentationCount()).toBe(0);
+    expect(presentation.getPresentedHazardCount()).toBe(2);
   });
 
   it('reuses emitted instances and removes presentations that leave the logical window', () => {
@@ -150,6 +154,7 @@ describe('GeneratedHazardPresentation', () => {
     expect(graphicsObjects[0]?.destroy).toHaveBeenCalledOnce();
     expect(graphicsObjects[1]?.destroy).not.toHaveBeenCalled();
     expect(graphicsObjects[1]?.setPosition).toHaveBeenLastCalledWith(1_000, 120);
+    expect(presentation.getPresentedHazardCount()).toBe(1);
   });
 
   it('reuses one distinct primitive while projecting its logical patrol position', () => {
@@ -256,5 +261,6 @@ describe('GeneratedHazardPresentation', () => {
 
     expect(graphicsObjects[0]?.destroy).toHaveBeenCalledOnce();
     expect(addGraphics).toHaveBeenCalledOnce();
+    expect(presentation.getPresentedHazardCount()).toBe(0);
   });
 });

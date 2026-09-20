@@ -26,7 +26,11 @@ The report records:
 - current FPS limit and Phaser actual FPS;
 - rolling average / P95 / P99 / current frame time;
 - session worst frame time and slow-frame count;
-- authoritative Zapper collision work counters.
+- authoritative Zapper collision work counters;
+- active logical hazard and unconsumed collectible counts;
+- retained presentation counts for hazards and collectibles;
+- primitive-hazard, Laser, and Zapper presentation-family counts;
+- Phaser Scene Display List Game Object count.
 
 If the Clipboard API is unavailable, the same JSON is written to the browser console.
 
@@ -43,7 +47,19 @@ For before/after comparisons:
 7. preserve the raw JSON evidence rather than transcribing only the headline FPS;
 8. treat development/Director results as development evidence, not as a production-build certification.
 
-The current sampler window is 300 valid raw-frame samples. At 60 Hz that represents about five seconds; at higher refresh rates it covers a shorter wall-clock interval. The JSON explicitly records sample count/capacity so this is visible in the evidence. Schema version 2 also records benchmark identity and tuning/runtime state required to reject mismatched captures.
+The current sampler window is 300 valid raw-frame samples. At 60 Hz that represents about five seconds; at higher refresh rates it covers a shorter wall-clock interval. The JSON explicitly records sample count/capacity so this is visible in the evidence. Schema version 3 also records benchmark identity, tuning/runtime state, and bounded workload/presentation counts required to reject mismatched captures.
+
+## Runtime count semantics
+
+Runtime counts are read only on the existing low-frequency Director HUD refresh cadence (250 ms) and on an explicit **CP** export. They do not add a per-frame telemetry pass.
+
+- **active hazards** are the logical generated/retained/manual hazards currently owned by Foundation;
+- **active collectibles** are retained logical collectible spawns that have not been consumed;
+- **presented hazards / collectibles** are the current entries retained by their presentation owners;
+- **primitive / Laser / Zapper** counts describe the hazard presentation families, not renderer draw calls;
+- **Scene Game Objects** is the size of Phaser's public Scene Display List returned by `children.getChildren()`.
+
+These counters deliberately do **not** claim renderer batches, GPU draw calls, exact onscreen pixel visibility, JS heap, or GC activity. Those require dedicated trustworthy instrumentation or browser/renderer tooling.
 
 ## #332 before/after reference
 
