@@ -1,0 +1,186 @@
+name: Browser runtime smoke
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/browser-runtime-smoke.yml'
+      - 'index.html'
+      - 'public/**'
+      - 'src/main.ts'
+      - 'src/main.ts'
+      - 'src/core/**'
+      - 'src/game/**'
+      - 'src/input/**'
+      - 'src/entities/**'
+      - 'src/devtools/**'
+      - 'tests/browser/**'
+      - 'vite/**'
+      - 'package.json'
+      - 'bun.lock'
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/browser-runtime-smoke.yml'
+      - 'index.html'
+      - 'public/**'
+      - 'src/core/**'
+      - 'src/game/**'
+      - 'src/input/**'
+      - 'src/entities/**'
+      - 'src/devtools/**'
+      - 'tests/browser/**'
+      - 'vite/**'
+      - 'package.json'
+      - 'bun.lock'
+
+permissions:
+  contents: read
+
+jobs:
+  runtime-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .bun-version
+
+      - name: Install locked dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Prepare evidence directory
+        run: mkdir -p reports/browser-runtime-smoke
+
+      - name: Record Chrome version
+        run: |
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          if [ -z "$CHROME" ]; then
+            echo "No supported Chrome/Chromium binary found on the runner." >&2
+            exit 1
+          fi
+          "$CHROME" --version | tee reports/browser-runtime-smoke/chrome-version.txt
+          printf '%s\n' "$CHROME" > reports/browser-runtime-smoke/chrome-path.txt
+
+      - name: Start Vite browser-smoke server
+        run: |
+          bunx vite \
+            --host 127.0.0.1 \
+            --port 4173 \
+            --strictPort \
+            --config vite/config.dev.mjs \
+            > reports/browser-runtime-smoke/vite.log 2>&1 &
+          echo $! > reports/browser-runtime-smoke/vite.pid
+
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent --show-error \
+              http://127.0.0.1:4173/tests/browser/runtime-smoke.html \
+              > /dev/null; then
+              exit 0
+            fi
+            sleep 0.25
+          done
+
+          cat reports/browser-runtime-smoke/vite.log >&2
+          exit 1
+
+      - name: Run root application boot smoke
+        run: |
+          set -o pipefail
+          CHROME="$(cat reports/browser-runtime-smoke/chrome-path.txt)"
+          timeout 30s "$CHROME" \
+            --headless=new \
+            --no-sandbox \
+            --disable-dev-shm-usage \
+            --disable-background-timer-throttling \
+            --disable-renderer-backgrounding \
+            --use-gl=swiftshader \
+            --enable-unsafe-swiftshader \
+            --window-size=1024,768 \
+            --virtual-time-budget=5000 \
+            --run-all-compositor-stages-before-draw \
+            --dump-dom \
+            http://127.0.0.1:4173/ \
+            > reports/browser-runtime-smoke/root-dom.html \
+            2> reports/browser-runtime-smoke/root-chrome.log
+
+          grep -F '<canvas' reports/browser-runtime-smoke/root-dom.html
+          grep -F 'data-mgd-logical-size=' reports/browser-runtime-smoke/root-dom.html
+          grep -F 'data-mgd-backing-size=' reports/browser-runtime-smoke/root-dom.html
+
+      - name: Run real-browser Phaser smoke
+        run: |
+          set -o pipefail
+          CHROME="$(cat reports/browser-runtime-smoke/chrome-path.txt)"
+          timeout 45s "$CHROME" \
+            --headless=new \
+            --no-sandbox \
+            --disable-dev-shm-usage \
+            --disable-background-timer-throttling \
+            --disable-renderer-backgrounding \
+            --use-gl=swiftshader \
+            --enable-unsafe-swiftshader \
+            --window-size=1024,768 \
+            --virtual-time-budget=15000 \
+            --run-all-compositor-stages-before-draw \
+            --dump-dom \
+            http://127.0.0.1:4173/tests/browser/runtime-smoke.html \
+            > reports/browser-runtime-smoke/dom.html \
+            2> reports/browser-runtime-smoke/chrome.log
+
+          cat reports/browser-runtime-smoke/dom.html
+          grep -F 'data-smoke-status="passed"' reports/browser-runtime-smoke/dom.html
+          grep -F '"scene":"Foundation"' reports/browser-runtime-smoke/dom.html
+          grep -F '"keyboardInput":true' reports/browser-runtime-smoke/dom.html
+          grep -F '"pointerInput":true' reports/browser-runtime-smoke/dom.html
+          grep -F '"lifecycle":true' reports/browser-runtime-smoke/dom.html
+          grep -F '"portraitResize":"360x640"' reports/browser-runtime-smoke/dom.html
+          grep -F '"landscapeResize":"800x450"' reports/browser-runtime-smoke/dom.html
+          grep -F '"teardown":true' reports/browser-runtime-smoke/dom.html
+
+      - name: Stop Vite browser-smoke server
+        if: always()
+        run: |
+          if [ -f reports/browser-runtime-smoke/vite.pid ]; then
+            kill "$(cat reports/browser-runtime-smoke/vite.pid)" 2>/dev/null || true
+          fi
+
+      - name: Record smoke metadata
+        if: always()
+        run: |
+          node --input-type=module - <<'NODE'
+          import { execFileSync } from 'node:child_process';
+          import { writeFileSync } from 'node:fs';
+
+          writeFileSync(
+            'reports/browser-runtime-smoke/summary.json',
+            JSON.stringify(
+              {
+                commit: process.env.GITHUB_SHA,
+                workflowRunId: process.env.GITHUB_RUN_ID,
+                bun: execFileSync('bun', ['--version'], { encoding: 'utf8' }).trim(),
+                node: process.version,
+                fixture: '/tests/browser/runtime-smoke.html',
+                authorityBoundary:
+                  'browser integration smoke only; deterministic simulation authority remains in Node tests',
+              },
+              null,
+              2,
+            ) + '\n',
+          );
+          NODE
+
+      - name: Upload browser-smoke evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: browser-runtime-smoke-${{ github.sha }}
+          path: reports/browser-runtime-smoke/
+          if-no-files-found: error
+          retention-days: 14

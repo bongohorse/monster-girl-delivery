@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <base href="/" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="/style.css" />
+  <title>MGD Browser Runtime Smoke</title>
+  <style>
+    body {
+      position: static;
+      overflow: auto;
+    }
+
+    #app {
+      width: auto;
+      height: auto;
+      min-height: 0;
+      overflow: visible;
+    }
+
+    #game-container {
+      position: relative;
+      width: 640px;
+      height: 360px;
+    }
+
+    #smoke-result {
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body data-smoke-status="pending">
+  <div id="app">
+    <div id="game-container"></div>
+    <div id="safe-area-probe" aria-hidden="true"></div>
+  </div>
+  <pre id="smoke-result">pending</pre>
+  <script type="module" src="/tests/browser/runtime-smoke.ts"></script>
+</body>
+</html>

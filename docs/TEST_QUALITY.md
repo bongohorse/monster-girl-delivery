@@ -144,6 +144,12 @@ Cross-frame-rate comparisons must specify:
 
 Randomized failures must preserve the failing seed. Where practical, minimize/shrink the counterexample. Flake investigations should vary ordering and process/isolation conditions instead of relying only on repeated identical runs.
 
+## Browser/runtime smoke
+
+Gate 6's automated real-Chrome coverage is documented in [`TEST_QUALITY_BROWSER_RUNTIME_GATE6.md`](TEST_QUALITY_BROWSER_RUNTIME_GATE6.md).
+
+This layer covers DOM, Phaser, canvas, browser input, resize and lifecycle integration that Node tests cannot establish. It remains separate from deterministic simulation authority, visual approval, real-device touch validation and performance profiling.
+
 ## Mutation-testing interpretation
 
 The bounded Collectibles pilot, exact mutation ranges, reproducibility check, result classification and evidence are documented in [`TEST_QUALITY_STRYKER_GATE3.md`](TEST_QUALITY_STRYKER_GATE3.md).
