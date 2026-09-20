@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 import {
   getLogicalCollectibleSpawnIdentity,
   getNextGeneratedCollectiblePruneDistance,
+  materializePatternCollectibles,
   reconcileGeneratedCollectibles,
 } from '../../src/generation/GeneratedCollectibles';
+import { M5_TEACHING_FLIGHT_ARC_PATTERN } from '../../src/generation/M5CollectibleMovementPatterns';
 import { scheduleNextPattern } from '../../src/generation/PatternSpawnScheduler';
 import {
   PROTOTYPE_CORRIDOR_PATTERN,
@@ -12,6 +14,23 @@ import {
 import { createRunGenerationState } from '../../src/generation/RunGenerationState';
 
 describe('GeneratedCollectibles', () => {
+  it('materializes one authored collectible-heavy occurrence through the shared path logic', () => {
+    const first = materializePatternCollectibles(M5_TEACHING_FLIGHT_ARC_PATTERN, 1_000);
+    const repeated = materializePatternCollectibles(M5_TEACHING_FLIGHT_ARC_PATTERN, 1_000);
+
+    expect(first).toHaveLength(60);
+    expect(first[0]?.runDistance).toBe(1_000);
+    expect(first.at(-1)?.runDistance).toBeGreaterThan(first[0]?.runDistance ?? 0);
+    expect(first.map(getLogicalCollectibleSpawnIdentity)).toEqual(
+      repeated.map(getLogicalCollectibleSpawnIdentity),
+    );
+    expect(Object.isFrozen(first)).toBe(true);
+    expect(Object.isFrozen(first[0])).toBe(true);
+    expect(() => materializePatternCollectibles(M5_TEACHING_FLIGHT_ARC_PATTERN, -1)).toThrow(
+      RangeError,
+    );
+  });
+
   it('materializes accepted safe-guide path points without consuming another random decision', () => {
     const initialState = createRunGenerationState('collectible-safe-guide');
     const schedule = scheduleNextPattern({
