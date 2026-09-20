@@ -6,17 +6,26 @@ Node/Vitest remains the deterministic authority for simulation, generation, coll
 
 ## Runtime seam
 
-The smoke fixture is served by the repository's existing Vite development configuration and boots the real Phaser runtime through:
+Gate 6 uses two browser passes through the repository's existing Vite development configuration.
+
+The first opens the real root `index.html`. That executes `src/main.ts` through its browser `DOMContentLoaded` bootstrap and must create a real Phaser canvas carrying render-resolution metadata.
+
+The second, deeper fixture boots the Phaser runtime through:
 
 `Boot -> Preloader -> Foundation`
 
-Director mode is disabled so the smoke exercises the normal gameplay scene rather than Director-only controls.
+Director mode is disabled in the deep fixture so its assertions exercise the normal gameplay scene rather than Director-only controls.
 
 The workflow uses the Chrome/Chromium binary provided by GitHub's Ubuntu runner. It does not add Playwright, Puppeteer, jsdom, or another browser-test dependency to the game.
 
 ## Automated browser assertions
 
-The browser fixture must establish all of the following before it reports PASS:
+The root-app pass must establish:
+
+- the actual `index.html -> src/main.ts` bootstrap creates a Phaser canvas;
+- the installed render-resolution controller publishes logical and backing-size metadata on that canvas.
+
+The deeper browser fixture must establish all of the following before it reports PASS:
 
 1. Phaser creates exactly one connected HTML canvas with a positive backing size and concrete renderer.
 2. The Boot/Preloader asset path loads the background texture and reaches the active `Foundation` scene.
@@ -38,7 +47,7 @@ Browser smoke is a separate workflow from the fast Node CI.
 It runs on:
 
 - manual dispatch;
-- pull requests touching browser/runtime-relevant paths;
+- pull requests touching browser/runtime-relevant paths, including the root `src/main.ts` entrypoint;
 - pushes to `main` touching those paths.
 
 This keeps coverage/mutation/stability diagnostics separate while still preventing browser-only regressions from silently landing in runtime code.
