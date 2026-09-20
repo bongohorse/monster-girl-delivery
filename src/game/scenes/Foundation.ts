@@ -11,6 +11,7 @@ import { DirectorTuningControls } from '../../devtools/DirectorTuningControls';
 import {
   createPerformanceEvidenceReport,
   serializePerformanceEvidenceReport,
+  type PerformanceRuntimeMetrics,
 } from '../../devtools/PerformanceEvidence';
 import type { PerformanceSnapshot } from '../../devtools/PerformanceSampler';
 import { GeneratedCollectiblePresentation } from '../../entities/GeneratedCollectiblePresentation';
@@ -27,6 +28,7 @@ import {
 import type { EncounterStreamObservation } from '../../generation/EncounterStreamObservation';
 import { PROTOTYPE_PATTERN_REACHABILITY_CONTEXT } from '../../generation/FlightReachability';
 import {
+  getLogicalCollectibleSpawnIdentity,
   getNextGeneratedCollectiblePruneDistance,
   type LogicalCollectibleSpawnInstance,
   reconcileGeneratedCollectibles,
@@ -305,6 +307,7 @@ export class Foundation extends Scene {
           setSimulationFrozen: this.handleDirectorFreeze,
           triggerDeath: this.handleDirectorDeath,
           startZapperPerformancePreset: this.startDirectorZapperPerformancePreset,
+          readRuntimeMetrics: this.readDirectorPerformanceRuntimeMetrics,
           exportPerformanceEvidence: this.handleDirectorPerformanceEvidenceExport,
         },
         this.directorZapperCollisionWorkCounters,
@@ -717,11 +720,28 @@ export class Foundation extends Scene {
     this.directorDebugOverlay?.setEnabled(enabled);
   };
 
+  private readonly readDirectorPerformanceRuntimeMetrics = (): Readonly<PerformanceRuntimeMetrics> => {
+    const hazardPresentation = this.generatedHazardPresentation;
+    const collectiblePresentation = this.generatedCollectiblePresentation;
+
+    return Object.freeze({
+      activeCollectibleCount: this.getActiveCollectibleCount(),
+      activeHazardCount: this.getActiveHazardCount(),
+      laserPresentationCount: hazardPresentation?.getLaserPresentationCount() ?? 0,
+      presentedCollectibleCount: collectiblePresentation?.getPresentedCollectibleCount() ?? 0,
+      presentedHazardCount: hazardPresentation?.getPresentedHazardCount() ?? 0,
+      primitiveHazardPresentationCount: hazardPresentation?.getPrimitivePresentationCount() ?? 0,
+      sceneGameObjectCount: this.children.getChildren().length,
+      zapperPresentationCount: hazardPresentation?.getZapperPresentationCount() ?? 0,
+    });
+  };
+
   private readonly handleDirectorPerformanceEvidenceExport = (
     snapshot: Readonly<PerformanceSnapshot>,
     framesPerSecond: number,
     fpsLimit: number,
     zapperWork?: Readonly<PrototypeZapperCollisionWorkCounters>,
+    runtime?: Readonly<PerformanceRuntimeMetrics>,
   ): void => {
     if (!this.viewportService) {
       return;
@@ -761,6 +781,7 @@ export class Foundation extends Scene {
       framesPerSecond,
       fpsLimit,
       zapperWork,
+      runtime ?? this.readDirectorPerformanceRuntimeMetrics(),
     );
     const serialized = serializePerformanceEvidenceReport(report);
     const clipboard = typeof navigator === 'undefined' ? undefined : navigator.clipboard;
@@ -978,6 +999,29 @@ export class Foundation extends Scene {
     if (retained.length !== this.directorManualHazards.length) {
       this.directorManualHazards = Object.freeze(retained);
     }
+  }
+
+  private getActiveCollectibleCount(): number {
+    const consumedIds = this.runState.collectibles?.consumedCollectibleIds ?? [];
+    if (consumedIds.length === 0) {
+      return this.collectibleSpawns.length;
+    }
+
+    let count = 0;
+    for (const spawn of this.collectibleSpawns) {
+      if (!consumedIds.includes(getLogicalCollectibleSpawnIdentity(spawn))) {
+        count += 1;
+      }
+    }
+    return count;
+  }
+
+  private getActiveHazardCount(): number {
+    const generatedCount = this.directorAutoHazardsEnabled ? (this.hazardStream?.spawns.length ?? 0) : 0;
+    const retainedGeneratedCount = this.directorAutoHazardsEnabled
+      ? this.retainedGeneratedTelegraphedHazards.length
+      : 0;
+    return generatedCount + retainedGeneratedCount + this.directorManualHazards.length;
   }
 
   private getActiveHazardSpawns(): ReadonlyArray<Readonly<LogicalHazardSpawnInstance>> {
