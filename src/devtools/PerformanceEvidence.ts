@@ -1,9 +1,11 @@
 import type { PrototypeZapperCollisionWorkCounters } from '../systems/HazardCollision';
+import type { PrototypeBroadphaseWorkCounters } from '../systems/PrototypeBroadphaseWork';
 import type { PerformanceSnapshot } from './PerformanceSampler';
 
 export interface PerformanceRuntimeMetrics {
   readonly activeCollectibleCount: number;
   readonly activeHazardCount: number;
+  readonly broadphaseWork: Readonly<PrototypeBroadphaseWorkCounters> | null;
   readonly laserPresentationCount: number;
   readonly presentedCollectibleCount: number;
   readonly presentedHazardCount: number;
@@ -77,7 +79,7 @@ export interface PerformanceEvidenceReport {
     readonly viewportWidth: number;
   };
   readonly capturedAtIso: string;
-  readonly schemaVersion: 3;
+  readonly schemaVersion: 4;
 }
 
 export const createPerformanceEvidenceReport = (
@@ -97,7 +99,14 @@ export const createPerformanceEvidenceReport = (
       actualFps: Number.isFinite(actualFps) && actualFps > 0 ? actualFps : null,
       fpsLimit,
       frameTime: Object.freeze({ ...snapshot }),
-      runtime: runtime ? Object.freeze({ ...runtime }) : null,
+      runtime: runtime
+        ? Object.freeze({
+            ...runtime,
+            broadphaseWork: runtime.broadphaseWork
+              ? Object.freeze({ ...runtime.broadphaseWork })
+              : null,
+          })
+        : null,
       zapperWork: zapperWork ? Object.freeze({ ...zapperWork }) : null,
     }),
     context: Object.freeze({
@@ -127,7 +136,7 @@ export const createPerformanceEvidenceReport = (
       viewportWidth: context.viewportWidth,
     }),
     capturedAtIso: context.capturedAtIso,
-    schemaVersion: 3,
+    schemaVersion: 4,
   });
 
 export const serializePerformanceEvidenceReport = (
