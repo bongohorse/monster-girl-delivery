@@ -39,11 +39,16 @@ jobs:
       - name: Install locked dependencies
         run: bun install --frozen-lockfile
 
-      - name: Verify focused baseline
-        run: bun run test -- tests/systems/PrototypeCollectiblesAuthorityAudit.test.ts tests/systems/PrototypeCollectibles.test.ts
-
       - name: Prepare evidence directory
         run: mkdir -p reports/mutation/collectibles
+
+      - name: Verify focused baseline
+        run: |
+          node ./node_modules/vitest/vitest.mjs run \
+            tests/systems/PrototypeCollectiblesAuthorityAudit.test.ts \
+            tests/systems/PrototypeCollectibles.test.ts \
+            --reporter=json \
+            --outputFile=reports/mutation/collectibles/baseline.json
 
       - name: Record tool versions
         shell: bash
@@ -52,6 +57,8 @@ jobs:
           import { readFileSync, writeFileSync } from 'node:fs';
           import { execFileSync } from 'node:child_process';
           const version = (name) => JSON.parse(readFileSync('node_modules/' + name + '/package.json', 'utf8')).version;
+          const baseline = JSON.parse(readFileSync('reports/mutation/collectibles/baseline.json', 'utf8'));
+          const expectedTests = baseline.testResults.flatMap((suite) => suite.assertionResults).length;
           writeFileSync('reports/mutation/collectibles/run-metadata.json', JSON.stringify({
             commit: execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(),
             workflowRunId: process.env.GITHUB_RUN_ID,
@@ -59,12 +66,14 @@ jobs:
             bun: execFileSync('bun', ['--version'], { encoding: 'utf8' }).trim(),
             vitest: version('vitest'),
             strykerCore: version('@stryker-mutator/core'),
+            expectedTests,
           }, null, 2) + '\n');
           NODE
 
       - name: Run mutation pilot 1
         env:
           MGD_MUTATION_EVIDENCE_DIR: ${{ github.workspace }}/reports/mutation/collectibles/evidence-1
+          MGD_MUTATION_BASELINE_REPORT: ${{ github.workspace }}/reports/mutation/collectibles/baseline.json
         run: |
           rm -f reports/mutation/collectibles/mutation.json
           set -o pipefail
@@ -74,6 +83,7 @@ jobs:
       - name: Run mutation pilot 2
         env:
           MGD_MUTATION_EVIDENCE_DIR: ${{ github.workspace }}/reports/mutation/collectibles/evidence-2
+          MGD_MUTATION_BASELINE_REPORT: ${{ github.workspace }}/reports/mutation/collectibles/baseline.json
         run: |
           rm -f reports/mutation/collectibles/mutation.json
           bun run test:mutation:collectibles
@@ -108,6 +118,10 @@ jobs:
             return rows;
           };
 
+          const baseline = load('reports/mutation/collectibles/baseline.json');
+          const expectedTests = baseline.testResults.flatMap((suite) => suite.assertionResults).length;
+          if (expectedTests <= 0) throw new Error('Focused baseline must contain tests.');
+
           const first = flatten(load('reports/mutation/collectibles/run-1.json'));
           const second = flatten(load('reports/mutation/collectibles/run-2.json'));
           if (first.length === 0 || second.length === 0) {
@@ -121,7 +135,11 @@ jobs:
             for (const row of rows) {
               if (!['Killed', 'Survived'].includes(row.status)) continue;
               const evidence = load('reports/mutation/collectibles/evidence-' + run + '/' + row.id + '.evidence.json');
-              if (evidence.completed !== 17 || !['TestFailure', 'Passed'].includes(evidence.kind)) {
+              if (
+                evidence.expected !== expectedTests ||
+                evidence.completed !== expectedTests ||
+                !['TestFailure', 'Passed'].includes(evidence.kind)
+              ) {
                 throw new Error('Unusable test execution for mutant ' + row.id + ': ' + evidence.kind);
               }
               if ((row.status === 'Survived') !== (evidence.kind === 'Passed')) {
@@ -157,6 +175,7 @@ jobs:
             workflowRunId: process.env.GITHUB_RUN_ID,
             node: process.version,
             runtime: process.release.name,
+            expectedTests,
             mutantCountRun1: first.length,
             mutantCountRun2: second.length,
             statusCountsRun1: counts(first),
