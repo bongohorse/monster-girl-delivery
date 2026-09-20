@@ -102,6 +102,7 @@ import { getLogicalViewportFromBacking } from '../RenderResolution';
 const RUNNING_INSTRUCTIONS =
   'M5 in progress — hazards, Graze + collectibles\nHold touch, mouse, or Space to thrust.';
 const RETRY_READY_INSTRUCTIONS = 'Tap, click, or press Space to retry.';
+const DIRECTOR_NORMAL_PERFORMANCE_PRESET_ID = 'normal-run-v1';
 const DIRECTOR_ZAPPER_OFFSCREEN_PADDING = 24;
 const formatDeadInstructions = (
   result: Readonly<PrototypeRunResultSnapshot>,
@@ -306,6 +307,7 @@ export class Foundation extends Scene {
           clearHazards: this.clearDirectorHazards,
           setSimulationFrozen: this.handleDirectorFreeze,
           triggerDeath: this.handleDirectorDeath,
+          startNormalPerformancePreset: this.startDirectorNormalPerformancePreset,
           startZapperPerformancePreset: this.startDirectorZapperPerformancePreset,
           readRuntimeMetrics: this.readDirectorPerformanceRuntimeMetrics,
           exportPerformanceEvidence: this.handleDirectorPerformanceEvidenceExport,
@@ -860,6 +862,15 @@ export class Foundation extends Scene {
     );
     this.directorZapperVariantIndex =
       (this.directorZapperVariantIndex + 1) % DIRECTOR_ZAPPER_VARIANTS.length;
+  };
+
+  private readonly startDirectorNormalPerformancePreset = (): void => {
+    if (!this.viewportService) {
+      return;
+    }
+
+    this.restartRun(this.viewportService.getSnapshot(), PROTOTYPE_LIVE_RUN_SEED);
+    this.directorPerformancePresetId = DIRECTOR_NORMAL_PERFORMANCE_PRESET_ID;
   };
 
   private readonly startDirectorZapperPerformancePreset = (): void => {
