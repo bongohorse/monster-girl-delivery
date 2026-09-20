@@ -146,6 +146,8 @@ The bounded Collectibles pilot, exact mutation ranges, reproducibility check, re
 
 Gate 4 survivor hardening, performance-work evidence and the remaining justified survivor set are documented in [`TEST_QUALITY_STRYKER_GATE4.md`](TEST_QUALITY_STRYKER_GATE4.md).
 
+Gate 5 begins with independently solved Collectibles contact-time references documented in [`TEST_QUALITY_COLLISION_REFERENCE_GATE5.md`](TEST_QUALITY_COLLISION_REFERENCE_GATE5.md).
+
 Mutation testing measures whether tests detect changes; it does not prove that the expected behavior is correct.
 
 Every pilot report records separate counts for:
