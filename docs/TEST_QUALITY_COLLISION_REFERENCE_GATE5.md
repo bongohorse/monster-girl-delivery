@@ -194,3 +194,44 @@ That result is useful: the new independent multi-segment examples broaden the do
 Gate 5B therefore closes as **reference-domain expansion**, not as proof that 54/56 are equivalent.
 
 The next reference slice should use an independent solver/oracle over a bounded, explicitly stated trajectory domain rather than accumulating more implementation-shaped examples.
+
+
+## Gate 5C — independent piecewise-linear time-interval oracle
+
+Gate 5C stops adding hand-picked production-shaped examples and introduces a deliberately separate reference calculation for a bounded domain:
+
+- static Collectibles;
+- non-negative linear run motion;
+- manually specified, position-continuous piecewise-linear vertical trajectories;
+- positive-area AABB pickup geometry only.
+
+The oracle does **not** call `HazardCollision`, `VerticalFlightSimulation`, the private Collectibles first-contact solver, or a finer numerical sampler.
+
+### Reference method
+
+The player center must lie inside two open intervals:
+
+- horizontal: `(coinX - 32, coinX + 32)`;
+- vertical: `(coinY - 38, coinY + 38)`.
+
+For each linear axis segment, Gate 5C solves the entry/exit times of that open interval directly with elementary linear algebra. Pickup exists iff a horizontal open-time interval and at least one vertical open-time interval have a non-empty intersection.
+
+This is intentionally a different formulation from production's collision-range plus root/candidate machinery.
+
+### Deterministic matrix
+
+The test crosses:
+
+- 7 horizontal motion/reference cases;
+- 6 manually specified vertical trajectories;
+- 7 Collectible Y positions.
+
+That gives **294** deterministic pickup-existence cases, including stationary edge cases, translated origins, sub-unit speeds, movement away from the Collectible, single-segment motion, late-segment contact, a boundary-touch retreat, and a three-segment velocity-reset path.
+
+A second reference set uses independently solved onset times to bracket lethal lifecycle start just before / exactly at / just after contact. This checks ordering as well as contact existence.
+
+### Claim boundary
+
+The oracle establishes exact agreement only for this explicitly bounded piecewise-linear domain. It does not claim arbitrary quadratic/polynomial trajectories or rotating hazard geometry are solved by this reference implementation.
+
+If defensive contact-null mutants 54/56 still survive, they may be reclassified as equivalent **within this bounded reference domain**, while the production guard remains as defense for domains not proven here.
