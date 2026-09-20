@@ -78,3 +78,50 @@ These tests establish consistency for the stated static-Collectible AABB cases:
 They do **not** prove arbitrary polynomial trajectories, malformed trajectories, every flight-bound transition, or general hazard geometry. A surviving defensive guard is not reclassified globally from this finite set alone.
 
 This slice intentionally keeps “finer sampling” out of the oracle.
+
+
+## Accepted Gate 5A evidence
+
+Validated PR head:
+
+`03c9751b9948975ccc204909fd5aaf3b8af300b3`
+
+Normal CI #1000 / run `35529867137` passed:
+
+- Biome;
+- TypeScript;
+- **113 test files / 824 tests**;
+- production build.
+
+Mutation audit #19 / run `35529867155` passed twice with a focused baseline of **28 tests**:
+
+| State | Run 1 | Run 2 |
+| --- | ---: | ---: |
+| Killed | 49 | 49 |
+| Survived | 16 | 16 |
+| NoCoverage | 0 | 0 |
+| Timeout | 0 | 0 |
+| CompileError | 0 | 0 |
+| RuntimeError | 0 | 0 |
+| Ignored | 0 | 0 |
+
+- mutant count: 65 per run;
+- verdict changes: **0**;
+- Stryker runtime: **1 min 12 s / 1 min 12 s**;
+- merge-ref/report commit: `f2ca5acdbf2e8e8722adc26bda85f7d4c663e4c4`;
+- artifact ID: `10610708012`;
+- artifact digest: `sha256:3a6c0da634c2b36e2ae5216744cd1032aeca0fd81a3b42f37b3ed58390472095`.
+
+The survivor set is unchanged from Gate 4:
+
+`17, 19, 21, 22, 23, 24, 26, 27, 29, 34, 37, 40, 41, 43, 54, 56`
+
+Most importantly, the defensive contact-null mutants **54 and 56 still survive**.
+
+This is useful negative evidence rather than a failed gate: the independently solved horizontal-linear, vertical-linear, vertical-quadratic and disjoint-axis reference cases found no disagreement between the exact pickup precheck and the first-contact solver.
+
+The valid claim is therefore narrow:
+
+> Within the analytical Gate 5A reference set, the exact collision precheck and first-contact solver agree on pickup existence and ordering.
+
+Gate 5A does **not** prove the `contactSeconds === null` guard unreachable for every valid trajectory. Mutants 54/56 remain deferred until the reference domain is widened across flight-bound transitions, multi-segment trajectories and other independently solvable collision cases.
