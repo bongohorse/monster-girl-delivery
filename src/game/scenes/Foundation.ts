@@ -74,6 +74,11 @@ import {
   type PrototypeZapperCollisionWorkCounters,
 } from '../../systems/HazardCollision';
 import {
+  createPrototypeBroadphaseWorkCounters,
+  resetPrototypeBroadphaseWorkCounters,
+  type PrototypeBroadphaseWorkCounters,
+} from '../../systems/PrototypeBroadphaseWork';
+import {
   createPrototypeDeathRetryState,
   enterPrototypeFailState,
   getPrototypeFailStateProgress,
@@ -202,6 +207,7 @@ export class Foundation extends Scene {
   private directorDebugOverlay?: DirectorDebugOverlay;
   private directorPanel?: DirectorPanel;
   private directorPerformanceHud?: DirectorPerformanceHud;
+  private directorBroadphaseWorkCounters?: PrototypeBroadphaseWorkCounters;
   private directorZapperCollisionWorkCounters?: PrototypeZapperCollisionWorkCounters;
   private directorRunControls?: DirectorRunControls;
   private directorTuningControls?: DirectorTuningControls;
@@ -289,6 +295,7 @@ export class Foundation extends Scene {
         throw new Error('Director performance HUD requires the game container.');
       }
 
+      this.directorBroadphaseWorkCounters = createPrototypeBroadphaseWorkCounters();
       this.directorZapperCollisionWorkCounters = createPrototypeZapperCollisionWorkCounters();
       this.directorDebugOverlay = new DirectorDebugOverlay(this);
       this.directorPerformanceHud = new DirectorPerformanceHud(
@@ -310,6 +317,11 @@ export class Foundation extends Scene {
           startNormalPerformancePreset: this.startDirectorNormalPerformancePreset,
           startZapperPerformancePreset: this.startDirectorZapperPerformancePreset,
           readRuntimeMetrics: this.readDirectorPerformanceRuntimeMetrics,
+          resetWorkCounters: () => {
+            if (this.directorBroadphaseWorkCounters) {
+              resetPrototypeBroadphaseWorkCounters(this.directorBroadphaseWorkCounters);
+            }
+          },
           exportPerformanceEvidence: this.handleDirectorPerformanceEvidenceExport,
         },
         this.directorZapperCollisionWorkCounters,
@@ -527,6 +539,7 @@ export class Foundation extends Scene {
             this.timedZapperState,
             telegraphedCollisionHazards,
           ),
+          broadphaseWorkCounters: this.directorBroadphaseWorkCounters,
           runMotionTuning,
           thrustHeld,
           zapperCollisionWorkCounters: this.directorZapperCollisionWorkCounters,
@@ -730,6 +743,9 @@ export class Foundation extends Scene {
       return Object.freeze({
         activeCollectibleCount: this.getActiveCollectibleCount(),
         activeHazardCount: this.getActiveHazardCount(),
+        broadphaseWork: this.directorBroadphaseWorkCounters
+          ? Object.freeze({ ...this.directorBroadphaseWorkCounters })
+          : null,
         laserPresentationCount: hazardPresentation?.getLaserPresentationCount() ?? 0,
         presentedCollectibleCount: collectiblePresentation?.getPresentedCollectibleCount() ?? 0,
         presentedHazardCount: hazardPresentation?.getPresentedHazardCount() ?? 0,
@@ -1299,6 +1315,7 @@ export class Foundation extends Scene {
     this.directorTuningControls = undefined;
     this.directorPerformanceHud?.destroy();
     this.directorPerformanceHud = undefined;
+    this.directorBroadphaseWorkCounters = undefined;
     this.directorZapperCollisionWorkCounters = undefined;
     this.directorPanel?.destroy();
     this.directorPanel = undefined;
