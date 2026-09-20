@@ -18,7 +18,7 @@ import type {
 } from './VerticalFlightSimulation';
 
 /** Pickup footprint intentionally reaches beyond the visible core coin for forgiving arcade contact. */
-export const PROTOTYPE_COLLECTIBLE_HALF_SIZE = 14;
+export const PROTOTYPE_COLLECTIBLE_HALF_SIZE = 14.000001;
 
 export interface PrototypeCollectibleRunState {
   readonly collectedCount: number;
