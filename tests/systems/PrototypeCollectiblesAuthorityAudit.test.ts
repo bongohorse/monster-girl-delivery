@@ -183,6 +183,44 @@ describe('PrototypeCollectibles Gate 2 authority rules', () => {
     });
   });
 
+  it('treats the shared onset boundary itself as edge-only, then resolves the tie after positive overlap begins', () => {
+    /*
+     * Both the hazard and coin below have the same open-overlap onset boundary at t=1.32 s.
+     * At exactly that boundary the AABBs only touch, so positive-area collision/pickup has not
+     * happened yet. Immediately after the boundary, both have positive overlap; the ordering
+     * policy then awards the pickup while the enclosing step also becomes lethal.
+     */
+    const tiedCollectible = collectible('tie-onset-boundary', 164);
+
+    const boundaryOnly = stepPrototypeRun(createPrototypeRunState(FLIGHT_BOUNDS), 1.32, {
+      collectibles: [tiedCollectible],
+      flightBounds: FLIGHT_BOUNDS,
+      flightTuning: FLIGHT_TUNING,
+      hazards: [lethalHazard],
+      runMotionTuning: RUN_MOTION,
+      thrustHeld: false,
+    });
+
+    expect(boundaryOnly.enteredDead).toBe(false);
+    expect(boundaryOnly.state.collectibles).toBeUndefined();
+
+    const positiveOverlap = stepPrototypeRun(createPrototypeRunState(FLIGHT_BOUNDS), 1.320001, {
+      collectibles: [tiedCollectible],
+      flightBounds: FLIGHT_BOUNDS,
+      flightTuning: FLIGHT_TUNING,
+      hazards: [lethalHazard],
+      runMotionTuning: RUN_MOTION,
+      thrustHeld: false,
+    });
+
+    expect(positiveOverlap.enteredDead).toBe(true);
+    expect(positiveOverlap.state.finalResult).toMatchObject({
+      collectedCount: 1,
+      collectedValue: 1,
+      earnedReward: 1,
+    });
+  });
+
   it('awards pickup on an exact first-contact tie, while the same step still ends in death', () => {
     /*
      * Explicit tie policy: only a strictly earlier lethal positive-area contact
