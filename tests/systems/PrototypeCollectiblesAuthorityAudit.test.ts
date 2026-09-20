@@ -111,13 +111,13 @@ describe('PrototypeCollectibles Gate 5 analytical contact references', () => {
     );
     const spawn = collectible('gate5-horizontal-reference', 100);
 
-    expect(evaluate(spawn, elapsedSeconds, RUN_MOTION, trajectory, 0.68 - 1e-6).collectedCount).toBe(
-      0,
-    );
+    expect(
+      evaluate(spawn, elapsedSeconds, RUN_MOTION, trajectory, 0.68 - 1e-6).collectedCount,
+    ).toBe(0);
     expect(evaluate(spawn, elapsedSeconds, RUN_MOTION, trajectory, 0.68).collectedCount).toBe(1);
-    expect(evaluate(spawn, elapsedSeconds, RUN_MOTION, trajectory, 0.68 + 1e-6).collectedCount).toBe(
-      1,
-    );
+    expect(
+      evaluate(spawn, elapsedSeconds, RUN_MOTION, trajectory, 0.68 + 1e-6).collectedCount,
+    ).toBe(1);
   });
 
   it('matches the analytical vertical-only linear contact boundary at 0.85 s', () => {
@@ -141,9 +141,9 @@ describe('PrototypeCollectibles Gate 5 analytical contact references', () => {
       evaluate(spawn, elapsedSeconds, STATIONARY_RUN_MOTION, trajectory, 0.85 - 1e-6)
         .collectedCount,
     ).toBe(0);
-    expect(evaluate(spawn, elapsedSeconds, STATIONARY_RUN_MOTION, trajectory, 0.85).collectedCount).toBe(
-      1,
-    );
+    expect(
+      evaluate(spawn, elapsedSeconds, STATIONARY_RUN_MOTION, trajectory, 0.85).collectedCount,
+    ).toBe(1);
     expect(
       evaluate(spawn, elapsedSeconds, STATIONARY_RUN_MOTION, trajectory, 0.85 + 1e-6)
         .collectedCount,
