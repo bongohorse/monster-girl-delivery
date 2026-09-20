@@ -130,6 +130,8 @@ Frame-partition evidence proves a defined determinism contract, not absolute phy
 
 ## Determinism contract
 
+Gate 5 deterministic Collectibles evidence and the explicit terminal endpoint limitation are documented in [`TEST_QUALITY_DETERMINISM_GATE5.md`](TEST_QUALITY_DETERMINISM_GATE5.md).
+
 Cross-frame-rate comparisons must specify:
 
 - identical seed and initial state;
