@@ -165,6 +165,7 @@ import { Foundation } from '../../../src/game/scenes/Foundation';
 interface DirectorTestControls {
   clearHazards?: () => void;
   exportPerformanceEvidence?: (...args: unknown[]) => void;
+  readRuntimeMetrics?: () => unknown;
   setAutoHazardsEnabled?: (enabled: boolean) => void;
   setFpsLimit?: (limit: number) => void;
   setGodModeEnabled?: (enabled: boolean) => void;
@@ -247,6 +248,7 @@ describe('Foundation Director mode boundary', () => {
       undefined,
       expect.objectContaining({
         exportPerformanceEvidence: expect.any(Function),
+        readRuntimeMetrics: expect.any(Function),
         setFpsLimit: expect.any(Function),
         startZapperPerformancePreset: expect.any(Function),
         setWireframesEnabled: expect.any(Function),
