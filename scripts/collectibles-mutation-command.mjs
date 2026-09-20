@@ -7,12 +7,12 @@ const id = process.env.__STRYKER_ACTIVE_MUTANT__ ?? 'baseline';
 const directory = process.env.MGD_MUTATION_EVIDENCE_DIR;
 if (!directory) throw new Error('Run this command through the Stryker Collectibles config.');
 mkdirSync(directory, { recursive: true });
-const reportPath = join(directory, id + '.vitest.json');
+const reportPath = join(directory, `${id}.vitest.json`);
 const child = spawnSync(process.execPath, [
   'node_modules/vitest/vitest.mjs', 'run',
   'tests/systems/PrototypeCollectiblesAuthorityAudit.test.ts',
   'tests/systems/PrototypeCollectibles.test.ts',
-  '--reporter=json', '--outputFile=' + reportPath,
+  '--reporter=json', `--outputFile=${reportPath}`,
 ], { encoding: 'utf8', maxBuffer: 8 * 1024 * 1024 });
 
 let evidence;
@@ -35,7 +35,7 @@ try {
 } catch (error) {
   evidence = { id, kind: 'RuntimeError', completed: 0, error: String(error) };
 }
-writeFileSync(join(directory, id + '.evidence.json'), JSON.stringify(evidence, null, 2) + '\n');
+writeFileSync(join(directory, `${id}.evidence.json`), JSON.stringify(evidence, null, 2) + '\n');
 if (evidence.kind !== 'Passed') {
   console.error(JSON.stringify(evidence));
   if (evidence.kind === 'RuntimeError') console.error(child.stderr, child.stdout);
