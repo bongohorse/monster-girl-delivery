@@ -2,8 +2,6 @@ name: Coverage audit
 
 on:
   workflow_dispatch:
-  # Temporary validation trigger for PR #373; remove before merge.
-  pull_request:
 
 permissions:
   contents: read
