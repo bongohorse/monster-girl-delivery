@@ -6,6 +6,7 @@ import {
   PROTOTYPE_RUN_MOTION_DEFAULTS,
   type RunMotionValues,
 } from '../../src/config/RunMotionConfig';
+import type { LogicalCollectibleSpawnInstance } from '../../src/generation/GeneratedCollectibles';
 import type { LogicalHazard } from '../../src/systems/HazardCollision';
 import { type PrototypeRunState, stepPrototypeRun } from '../../src/systems/PrototypeRunSimulation';
 import type { VerticalFlightBounds } from '../../src/systems/VerticalFlightSimulation';
@@ -64,6 +65,7 @@ export interface ScriptedInputTransition {
 }
 
 export interface PartitionedSimulationOptions {
+  readonly collectibles?: ReadonlyArray<Readonly<LogicalCollectibleSpawnInstance>>;
   readonly flightBounds: Readonly<VerticalFlightBounds>;
   readonly flightTuning?: Readonly<FlightTuningValues>;
   readonly hazards?: ReadonlyArray<Readonly<LogicalHazard>>;
@@ -92,6 +94,7 @@ export const runPartitionedSimulation = (
     totalDuration,
     schedule,
     flightBounds,
+    collectibles = [],
     flightTuning = PROTOTYPE_FLIGHT_TUNING_DEFAULTS,
     runMotionTuning = PROTOTYPE_RUN_MOTION_DEFAULTS,
     hazards = [],
@@ -158,6 +161,7 @@ export const runPartitionedSimulation = (
       const stepDelta = nextTargetTime - currentSimulatedTime;
       if (stepDelta > EPSILON) {
         const stepResult = stepPrototypeRun(state, stepDelta, {
+          collectibles,
           flightBounds,
           flightTuning,
           hazards,
