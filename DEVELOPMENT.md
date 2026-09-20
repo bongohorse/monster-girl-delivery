@@ -138,9 +138,11 @@ High-value examples:
 
 Avoid browser/rendering tests for rules that can be expressed as pure TypeScript. Do not test framework internals merely to increase test count.
 
+Detailed evidence selection for gameplay-authority PRs—including independent oracles, coverage, mutation testing, frame-partition evidence, browser smoke, stability audits, performance evidence, and manual/device boundaries—is defined in [`docs/TEST_QUALITY.md`](docs/TEST_QUALITY.md). Use that policy to choose the smallest evidence set that supports the actual claim.
+
 ## 8. CI
 
-Pull-request validation follows the repository's configured GitHub Actions workflow. The expected core sequence is:
+Pull-request validation follows the repository's configured GitHub Actions workflows. The normal core sequence is:
 
 ```text
 install
@@ -149,6 +151,8 @@ install
 → Vitest
 → production build
 ```
+
+Additional path-filtered or manual evidence workflows are not part of every PR by default. In particular, the browser-runtime smoke runs for browser/runtime-relevant paths, while coverage, mutation and stability audits remain targeted diagnostics under [`docs/TEST_QUALITY.md`](docs/TEST_QUALITY.md).
 
 `main` may additionally deploy the validated web build to GitHub Pages.
 
