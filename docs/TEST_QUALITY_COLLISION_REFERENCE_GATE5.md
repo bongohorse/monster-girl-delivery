@@ -194,3 +194,103 @@ That result is useful: the new independent multi-segment examples broaden the do
 Gate 5B therefore closes as **reference-domain expansion**, not as proof that 54/56 are equivalent.
 
 The next reference slice should use an independent solver/oracle over a bounded, explicitly stated trajectory domain rather than accumulating more implementation-shaped examples.
+
+
+## Gate 5C — independent piecewise-linear time-interval oracle
+
+Gate 5C stops adding hand-picked production-shaped examples and introduces a deliberately separate reference calculation for a bounded domain:
+
+- static Collectibles;
+- non-negative linear run motion;
+- manually specified, position-continuous piecewise-linear vertical trajectories;
+- positive-area AABB pickup geometry only.
+
+The oracle does **not** call `HazardCollision`, `VerticalFlightSimulation`, the private Collectibles first-contact solver, or a finer numerical sampler.
+
+### Reference method
+
+The player center must lie inside two open intervals:
+
+- horizontal: `(coinX - 32, coinX + 32)`;
+- vertical: `(coinY - 38, coinY + 38)`.
+
+For each linear axis segment, Gate 5C solves the entry/exit times of that open interval directly with elementary linear algebra. Pickup exists iff a horizontal open-time interval and at least one vertical open-time interval have a non-empty intersection.
+
+This is intentionally a different formulation from production's collision-range plus root/candidate machinery.
+
+### Deterministic matrix
+
+The test crosses:
+
+- 7 horizontal motion/reference cases;
+- 6 manually specified vertical trajectories;
+- 7 Collectible Y positions.
+
+That gives **294** deterministic pickup-existence cases, including stationary edge cases, translated origins, sub-unit speeds, movement away from the Collectible, single-segment motion, late-segment contact, a boundary-touch retreat, and a three-segment velocity-reset path.
+
+A second reference set uses independently solved onset times to bracket lethal lifecycle start just before / exactly at / just after contact. This checks ordering as well as contact existence.
+
+### Claim boundary
+
+The oracle establishes exact agreement only for this explicitly bounded piecewise-linear domain. It does not claim arbitrary quadratic/polynomial trajectories or rotating hazard geometry are solved by this reference implementation.
+
+If defensive contact-null mutants 54/56 still survive, they may be reclassified as equivalent **within this bounded reference domain**, while the production guard remains as defense for domains not proven here.
+
+
+## Gate 5C accepted evidence
+
+Validated PR head:
+
+`dbf34a11ba3f5059aab3ab893227d383cf04e39a`
+
+Normal CI #1009 passed:
+
+- Biome;
+- TypeScript;
+- **114 test files / 829 tests**;
+- production build.
+
+The new independent oracle checked all **294** deterministic piecewise-linear reference combinations without finding a production disagreement.
+
+Mutation audit #24 / run `35533122248` passed twice:
+
+| State | Run 1 | Run 2 |
+| --- | ---: | ---: |
+| Killed | 49 | 49 |
+| Survived | 16 | 16 |
+| NoCoverage | 0 | 0 |
+| Timeout | 0 | 0 |
+| CompileError | 0 | 0 |
+| RuntimeError | 0 | 0 |
+| Ignored | 0 | 0 |
+
+- focused baseline: **33 tests**;
+- mutant count: 65 per run;
+- verdict changes: **0**;
+- merge-ref/report commit: `8295972bdaac050b00e7cd4cc5f3d3c7b85f485d`;
+- artifact ID: `10612251875`;
+- artifact digest: `sha256:0daf2594cef12ad2bac726d62ecacd1a69c668a335e330b902ac2c598fdf73ad`.
+
+The survivor IDs remain:
+
+`17, 19, 21, 22, 23, 24, 26, 27, 29, 34, 37, 40, 41, 43, 54, 56`
+
+### Reclassification of 54/56
+
+Mutants 54/56 remove the defensive `contactSeconds === null` rejection after the exact pickup collision precheck.
+
+Gate 5A and 5B showed agreement on independently solved single-trajectory and multi-segment examples. Gate 5C adds a separate open-time-interval solver and **294** deterministic existence checks plus independent onset-ordering checks.
+
+Within the explicitly bounded Gate 5C domain:
+
+- static Collectibles;
+- non-negative linear run motion;
+- position-continuous piecewise-linear vertical trajectories;
+- valid finite segments;
+- positive-area AABB pickup geometry;
+
+the exact pickup precheck and first-contact solver agree. Mutants 54/56 are therefore classified as **equivalent within this validated domain**.
+
+This is not a claim of global equivalence for arbitrary quadratic/polynomial trajectories, malformed trajectories, or unrelated hazard geometry. The defensive production guard remains in place because it is cheap and protects domains not proven by this oracle.
+
+Gate 5C deliberately does not delete the guard merely to improve a mutation score.
