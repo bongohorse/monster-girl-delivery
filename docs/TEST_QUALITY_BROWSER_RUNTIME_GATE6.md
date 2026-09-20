@@ -57,3 +57,45 @@ This smoke is intentionally **not**:
 Real-device checks such as perceived sharpness, touch ergonomics, viewport chrome, thermal behavior and mobile GPU performance remain separate evidence.
 
 The smoke only claims that the exercised DOM, Phaser, canvas, input, resize and lifecycle integration path works in the recorded headless Chrome environment.
+
+
+## Gate 6 accepted evidence
+
+Validated browser-smoke head:
+
+`a6ed36cc1b87cefaeddd739341d75b5fba727486`
+
+Browser runtime smoke #7 / run `35534998835` passed on GitHub Ubuntu 24.04 with:
+
+- Google Chrome **152.0.7977.82**;
+- Bun **1.4.2**;
+- the repository's Vite development configuration;
+- Phaser's concrete renderer type **2** (WebGL in this run).
+
+Observed browser evidence:
+
+- initial logical canvas: **640x360**;
+- active scene: **Foundation** after Boot/Preloader;
+- DOM Space input reached gameplay input: **true**;
+- DOM primary-mouse input reached gameplay input: **true**;
+- browser lifecycle pagehide/pageshow path: **true**;
+- portrait resize metadata: **360x640**;
+- landscape resize metadata: **800x450**;
+- `Game.destroy(true)` teardown: **true**;
+- captured runtime errors / unhandled rejections: **0**.
+
+Evidence artifact:
+
+- artifact ID: `10612635070`;
+- artifact digest: `sha256:227f3a9e8fbbd8501601f13c57f9f7536f22d24351d6e9da04ab910401197bfe`.
+
+The matching normal CI #1025 passed Biome, TypeScript, **115 test files / 832 tests**, and the production build.
+
+### Validation corrections retained as evidence
+
+The first Gate 6 attempts exposed two test-harness assumptions rather than product regressions:
+
+1. a nested smoke page resolved Phaser's relative `assets/bg.png` below `/tests/browser/`; the fixture now sets the same root base used by the application;
+2. Chrome's `--virtual-time-budget` DOM-dump mode did not reliably deliver the layout `ResizeObserver` callback; the automated smoke therefore drives the product's registered browser `resize` event path, while focused tests continue to cover the observer callback itself.
+
+Those corrections narrow what the automated smoke claims instead of hiding failed attempts.
