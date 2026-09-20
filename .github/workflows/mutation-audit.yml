@@ -2,16 +2,6 @@ name: Collectibles mutation audit
 
 on:
   workflow_dispatch:
-  # Gate 4 validation only. Remove this PR trigger before merge.
-  pull_request:
-    paths:
-      - '.github/workflows/mutation-audit.yml'
-      - 'stryker.collectibles.config.mjs'
-      - 'scripts/collectibles-mutation-command.mjs'
-      - 'src/systems/PrototypeCollectibles.ts'
-      - 'tests/systems/PrototypeCollectibles*.test.ts'
-      - 'tests/systems/PrototypeBroadphaseWorkEvidence.test.ts'
-      - 'docs/TEST_QUALITY*'
 
 permissions:
   contents: read
