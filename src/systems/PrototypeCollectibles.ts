@@ -403,7 +403,7 @@ export const evaluatePrototypeCollectibleStep = (
           elapsedSeconds,
           runMotionTuning,
           hazard,
-          contactSeconds,
+          Math.min(elapsedSeconds, contactSeconds + 1e-6),
           workCounters,
           broadphaseWorkCounters,
         ),
