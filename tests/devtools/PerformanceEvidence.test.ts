@@ -85,7 +85,7 @@ describe('PerformanceEvidence', () => {
     expect(report).toEqual({
       build: { commit: 'abc123def456', mode: 'development' },
       capture: {
-        actualFps: 60.1,
+        measuredFps: 60.1,
         fpsLimit: 60,
         frameTime: {
           averageFrameTimeMilliseconds: 16.4,
@@ -205,7 +205,7 @@ describe('PerformanceEvidence', () => {
       0,
     );
 
-    expect(report.capture.actualFps).toBeNull();
+    expect(report.capture.measuredFps).toBeNull();
     expect(report.capture.runtime).toBeNull();
     expect(report.capture.zapperWork).toBeNull();
     const serialized = serializePerformanceEvidenceReport(report);
