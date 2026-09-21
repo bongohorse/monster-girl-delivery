@@ -68,6 +68,19 @@ describe('TimedLaserLifecycle', () => {
     expect(step.state.complete).toBe(false);
   });
 
+  it('never emits an ON collision interval beyond the current step when boundary epsilon applies', () => {
+    const on = stepTimedLaserLifecycle(createTimedLaserLifecycleState(), 2.5).state;
+    const delta = PROTOTYPE_TIMED_LASER_CONFIG.onSeconds - 5e-13;
+    const step = stepTimedLaserLifecycle(on, delta);
+
+    expect(step.lethalIntervals).toHaveLength(1);
+    expect(step.lethalIntervals[0]?.startSeconds).toBe(0);
+    expect(step.lethalIntervals[0]?.endSeconds).toBe(delta);
+    expect(step.lethalIntervals[0]?.endSeconds).toBeLessThanOrEqual(delta);
+    expect(step.lethalIntervals[0]?.endsPhase).toBe(true);
+    expect(step.state).toMatchObject({ phase: 'recovery', elapsedPhaseSeconds: 0, complete: false });
+  });
+
   it('freezes on zero delta and completes one-shot only after recovery', () => {
     const state = stepTimedLaserLifecycle(createTimedLaserLifecycleState(), 3.25).state;
     expect(state.phase).toBe('recovery');
