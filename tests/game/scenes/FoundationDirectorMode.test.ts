@@ -49,7 +49,7 @@ vi.mock('phaser', () => {
       resize: () => undefined,
     };
     readonly events = { once: () => undefined };
-    readonly game = { loop: { actualFps: 60, rawDelta: 17, setFPSLimit: setFpsLimit } };
+    readonly game = { loop: { actualFps: 165, rawDelta: 6.06, setFPSLimit: setFpsLimit } };
     readonly scale = {
       height: 450,
       off: () => undefined,
@@ -299,8 +299,8 @@ describe('Foundation Director mode boundary', () => {
     performanceControls?.setFpsLimit?.(90);
     expect(setFpsLimit).toHaveBeenCalledWith(90);
 
-    foundation.update(0, 16);
-    expect(directorPerformanceHudUpdate).toHaveBeenCalledWith(17, 60, false, false);
+    foundation.update(1_000, 16);
+    expect(directorPerformanceHudUpdate).toHaveBeenCalledWith(1_000, false, false);
   });
 
   it('uses Director Z to start the deterministic Zapper cycle fully beyond the right viewport edge', () => {
@@ -592,11 +592,11 @@ describe('Foundation Director mode boundary', () => {
     foundation.create();
 
     services.lifecycle.pause('hidden');
-    foundation.update(0, 5_000);
-    expect(directorPerformanceHudUpdate).toHaveBeenLastCalledWith(17, 60, true, false);
+    foundation.update(1_000, 5_000);
+    expect(directorPerformanceHudUpdate).toHaveBeenLastCalledWith(1_000, true, false);
 
     services.lifecycle.resume('hidden');
-    foundation.update(0, 5_000);
-    expect(directorPerformanceHudUpdate).toHaveBeenLastCalledWith(17, 60, false, true);
+    foundation.update(6_000, 5_000);
+    expect(directorPerformanceHudUpdate).toHaveBeenLastCalledWith(6_000, false, true);
   });
 });

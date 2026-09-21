@@ -23,7 +23,7 @@ The report records:
 - active performance-preset identity;
 - Director GOD/AUTO/frozen/wireframe state;
 - base/effective run speed and current flight-tuning values;
-- current FPS limit and Phaser actual FPS;
+- current FPS limit and measured game-step FPS derived from the same bounded wall-clock interval window;
 - rolling average / P95 / P99 / current frame time;
 - session worst frame time and slow-frame count;
 - authoritative Zapper collision work counters;
@@ -48,7 +48,9 @@ For before/after comparisons:
 7. preserve the raw JSON evidence rather than transcribing only the headline FPS;
 8. treat development/Director results as development evidence, not as a production-build certification.
 
-The current sampler window is 300 valid raw-frame samples. At 60 Hz that represents about five seconds; at higher refresh rates it covers a shorter wall-clock interval. The JSON explicitly records sample count/capacity so this is visible in the evidence. Schema version 4 also records benchmark identity, tuning/runtime state, bounded workload/presentation counts, and cumulative broadphase work required to reject mismatched captures.
+The current sampler window is 300 valid game-step wall-clock interval samples. At 60 game steps per second that represents about five seconds; at higher update rates it covers a shorter wall-clock interval. The JSON explicitly records sample count/capacity so this is visible in the evidence. Schema version 5 records `timingSource: "game-step-wall-clock"` in addition to benchmark identity, tuning/runtime state, bounded workload/presentation counts, and cumulative broadphase work required to reject mismatched captures.
+
+Phaser's RAF-level `game.loop.actualFps` and `game.loop.rawDelta` are intentionally not used for capped benchmark evidence. In Phaser 4.2.1 the FPS-limited loop can still update those values on every browser RAF callback even when the actual game callback runs less frequently. Director evidence instead timestamps actual Foundation game-step callbacks and derives both FPS and frame-interval statistics from those timestamps.
 
 ## Runtime count semantics
 
@@ -89,7 +91,7 @@ NP normalizes the measurement setup in one action:
 - resumes the simulation if it was frozen;
 - disables collision wireframes;
 - resets the bounded frame-time sampler, Zapper work counters, and run broadphase work counters;
-- discards the first post-setup raw frame so synchronous restart/setup work is not measured;
+- discards the first post-setup game step and uses it only to establish a fresh wall-clock timestamp baseline so synchronous restart/setup work is not measured;
 - restarts the real generated run at distance/time zero with the fixed live-run seed.
 
 Unlike ZP, NP does not inject manual hazards. It uses the normal generated hazard, collectible, lifecycle, collision, Graze, presentation, pruning, and run-motion paths. Current tuning values are intentionally not rewritten; they are recorded in the evidence so captures with mismatched tuning can be rejected rather than silently compared.

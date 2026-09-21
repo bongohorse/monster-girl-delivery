@@ -247,6 +247,24 @@ const createHarness = () => {
   };
 };
 
+const gameStepTimestampByHud = new WeakMap<DirectorPerformanceHud, number>();
+
+const updateHud = (
+  hud: DirectorPerformanceHud,
+  elapsedMilliseconds: number,
+  lifecyclePaused = false,
+  discardCurrentSample = false,
+): void => {
+  if (!gameStepTimestampByHud.has(hud)) {
+    gameStepTimestampByHud.set(hud, 0);
+    hud.update(0, false);
+  }
+
+  const timestamp = (gameStepTimestampByHud.get(hud) ?? 0) + elapsedMilliseconds;
+  gameStepTimestampByHud.set(hud, timestamp);
+  hud.update(timestamp, lifecyclePaused, discardCurrentSample);
+};
+
 describe('DirectorPerformanceHud', () => {
   it('creates one compact DOM row and lays it out inside safe-area bounds', () => {
     const { container, hud, playgroundControls, root, values, wireframeLabel } = createHarness();
@@ -271,14 +289,14 @@ describe('DirectorPerformanceHud', () => {
     const { hud, sampler, values } = createHarness();
     const createSnapshot = vi.spyOn(sampler, 'createSnapshot');
 
-    hud.update(16, 59.6, false);
+    updateHud(hud, 16, false);
     for (let frame = 0; frame < 16; frame += 1) {
-      hud.update(16, 59.6, false);
+      updateHud(hud, 16, false);
     }
 
     expect(sampler.createSnapshot().sampleCount).toBe(8);
     expect(createSnapshot).toHaveBeenCalledTimes(3);
-    expect(values.children[0]?.textContent).toBe('60 FPS [∞]');
+    expect(values.children[0]?.textContent).toBe('63 FPS [∞]');
     expect(values.children[1]?.textContent).toBe(' | 16.0 ms');
     expect(values.children[2]?.textContent).toContain('P95 16.0 | P99 16.0');
     expect(values.children[0]?.dataset.health).toBe('good');
@@ -295,18 +313,18 @@ describe('DirectorPerformanceHud', () => {
     zapperWorkCounters.primaryNarrowphaseCheckCount = 30;
     zapperWorkCounters.secondaryNarrowphaseCheckCount = 12;
 
-    hud.update(16, 60, false);
+    updateHud(hud, 16, false);
     expect(zapperWorkValue.textContent).toBe(' | Z C 2 B 1 Sm 30/40 G 30 N 30/12');
     const writesAfterRefresh = zapperWorkValue.textWriteCount;
 
     zapperWorkCounters.evaluatedSampleCount = 99;
     for (let frame = 0; frame < 15; frame += 1) {
-      hud.update(16, 60, false);
+      updateHud(hud, 16, false);
     }
     expect(zapperWorkValue.textWriteCount).toBe(writesAfterRefresh);
     expect(zapperWorkValue.textContent).toContain('Sm 30/40');
 
-    hud.update(16, 60, false);
+    updateHud(hud, 16, false);
     expect(zapperWorkValue.textContent).toContain('Sm 99/40');
     expect(zapperWorkValue.textWriteCount).toBe(writesAfterRefresh + 1);
   });
@@ -315,24 +333,24 @@ describe('DirectorPerformanceHud', () => {
     const { hud, readRuntimeMetrics, runtimeValue } = createHarness();
     expect(readRuntimeMetrics).toHaveBeenCalledTimes(1);
 
-    hud.update(16, 60, false);
+    updateHud(hud, 16, false);
     expect(readRuntimeMetrics).toHaveBeenCalledTimes(2);
     expect(runtimeValue.textContent).toBe(
       ' | R H 7/7 C 5/5 P 2 L 1 Z 4 GO 12 | BP H 10/70 E 12 C 8/50 E 6 T 4',
     );
 
     for (let frame = 0; frame < 15; frame += 1) {
-      hud.update(16, 60, false);
+      updateHud(hud, 16, false);
     }
     expect(readRuntimeMetrics).toHaveBeenCalledTimes(2);
 
-    hud.update(16, 60, false);
+    updateHud(hud, 16, false);
     expect(readRuntimeMetrics).toHaveBeenCalledTimes(3);
   });
 
   it('cycles runtime FPS limits from unlimited through all requested presets', () => {
     const { fpsButton, hud, setFpsLimit } = createHarness();
-    hud.update(16, 58.7, false);
+    updateHud(hud, 16, false);
 
     for (const expected of [30, 60, 90, 120, 144, 0]) {
       fpsButton.dispatch('click');
@@ -340,24 +358,36 @@ describe('DirectorPerformanceHud', () => {
     }
 
     expect(setFpsLimit.mock.calls.map(([limit]) => limit)).toEqual([30, 60, 90, 120, 144, 0]);
-    expect(fpsButton.textContent).toBe('59 FPS [∞]');
+    expect(fpsButton.textContent).toBe('-- FPS [∞]');
+  });
+
+  it('derives measured FPS from actual game-step wall-clock intervals', () => {
+    const { evidenceButton, exportPerformanceEvidence, hud } = createHarness();
+
+    for (let frame = 0; frame < 8; frame += 1) {
+      updateHud(hud, 1000 / 60);
+    }
+    evidenceButton.dispatch('click');
+
+    expect(exportPerformanceEvidence).toHaveBeenCalledOnce();
+    expect(exportPerformanceEvidence.mock.calls[0]?.[1]).toBeCloseTo(60, 9);
   });
 
   it('uses the specified frame-time and FPS health bands', () => {
     const { hud, values } = createHarness();
 
-    hud.update(20, 50, false);
+    updateHud(hud, 20, false);
     expect(values.children[0]?.dataset.health).toBe('mild');
     expect(values.children[1]?.dataset.health).toBe('mild');
 
     for (let frame = 0; frame < 13; frame += 1) {
-      hud.update(30, 30, false);
+      updateHud(hud, 30, false);
     }
     expect(values.children[0]?.dataset.health).toBe('noticeable');
     expect(values.children[1]?.dataset.health).toBe('noticeable');
 
     for (let frame = 0; frame < 9; frame += 1) {
-      hud.update(60, 10, false);
+      updateHud(hud, 60, false);
     }
     expect(values.children[0]?.dataset.health).toBe('severe');
     expect(values.children[1]?.dataset.health).toBe('severe');
@@ -374,7 +404,7 @@ describe('DirectorPerformanceHud', () => {
       visibilityButton,
       wireframeLabel,
     } = createHarness();
-    hud.update(16, 60, false);
+    updateHud(hud, 16, false);
     const writesBeforeHide = values.children.reduce(
       (total, child) => total + child.textWriteCount,
       0,
@@ -382,7 +412,7 @@ describe('DirectorPerformanceHud', () => {
 
     visibilityButton.dispatch('click');
     for (let frame = 0; frame < 20; frame += 1) {
-      hud.update(30, 30, false);
+      updateHud(hud, 30, false);
     }
 
     expect(values.hidden).toBe(true);
@@ -491,7 +521,7 @@ describe('DirectorPerformanceHud', () => {
       zapperWorkCounters,
     } = createHarness();
 
-    hud.update(30, 40, false);
+    updateHud(hud, 30, false);
     zapperWorkCounters.candidateSampleCount = 50;
     autoHazardsButton.dispatch('click');
     wireframeCheckbox.checked = true;
@@ -513,9 +543,9 @@ describe('DirectorPerformanceHud', () => {
     expect(sampler.createSnapshot().sampleCount).toBe(0);
     expect(zapperWorkCounters.candidateSampleCount).toBe(0);
 
-    hud.update(80, 10, false);
+    updateHud(hud, 80, false);
     expect(sampler.createSnapshot().sampleCount).toBe(0);
-    hud.update(16, 60, false);
+    updateHud(hud, 16, false);
     expect(sampler.createSnapshot().sampleCount).toBe(1);
   });
 
@@ -536,7 +566,7 @@ describe('DirectorPerformanceHud', () => {
       zapperWorkCounters,
     } = createHarness();
 
-    hud.update(30, 40, false);
+    updateHud(hud, 30, false);
     zapperWorkCounters.candidateSampleCount = 50;
     wireframeCheckbox.checked = true;
     wireframeCheckbox.dispatch('change');
@@ -557,9 +587,9 @@ describe('DirectorPerformanceHud', () => {
     expect(sampler.createSnapshot().sampleCount).toBe(0);
     expect(zapperWorkCounters.candidateSampleCount).toBe(0);
 
-    hud.update(80, 10, false);
+    updateHud(hud, 80, false);
     expect(sampler.createSnapshot().sampleCount).toBe(0);
-    hud.update(16, 60, false);
+    updateHud(hud, 16, false);
     expect(sampler.createSnapshot().sampleCount).toBe(1);
   });
 
@@ -597,7 +627,7 @@ describe('DirectorPerformanceHud', () => {
 
   it('exports one structured snapshot on demand without retaining live counter references', () => {
     const { evidenceButton, exportPerformanceEvidence, hud, zapperWorkCounters } = createHarness();
-    hud.update(16, 58.5, false);
+    updateHud(hud, 16, false);
     zapperWorkCounters.collisionCallCount = 3;
     zapperWorkCounters.candidateSampleCount = 40;
     zapperWorkCounters.evaluatedSampleCount = 12;
@@ -610,7 +640,7 @@ describe('DirectorPerformanceHud', () => {
         currentFrameTimeMilliseconds: 16,
         sampleCount: 1,
       }),
-      58.5,
+      62.5,
       0,
       expect.objectContaining({
         candidateSampleCount: 40,
@@ -645,7 +675,7 @@ describe('DirectorPerformanceHud', () => {
       zapperWorkCounters,
       zapperWorkValue,
     } = createHarness();
-    hud.update(30, 45, false);
+    updateHud(hud, 30, false);
     zapperWorkCounters.collisionCallCount = 4;
     zapperWorkCounters.candidateSampleCount = 80;
     zapperWorkCounters.evaluatedSampleCount = 60;
