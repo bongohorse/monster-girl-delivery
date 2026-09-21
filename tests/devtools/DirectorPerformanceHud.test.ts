@@ -640,6 +640,33 @@ describe('DirectorPerformanceHud', () => {
     });
   });
 
+  it('cancels automated capture when a manual workload control changes the run', () => {
+    const {
+      benchmarkStatusValue,
+      exportPerformanceEvidence,
+      hud,
+      missileButton,
+      normalPerformanceButton,
+      sampler,
+    } = createHarness();
+
+    normalPerformanceButton.dispatch('click');
+    expect(normalPerformanceButton.dataset.benchmarkState).toBe('running');
+    expect(benchmarkStatusValue.hidden).toBe(false);
+
+    missileButton.dispatch('click');
+
+    expect(normalPerformanceButton.dataset.benchmarkState).toBeUndefined();
+    expect(benchmarkStatusValue.hidden).toBe(true);
+
+    updateHud(hud, 16, false);
+    for (let sample = 0; sample < sampler.getWindowCapacity(); sample += 1) {
+      updateHud(hud, 16, false);
+    }
+
+    expect(exportPerformanceEvidence).not.toHaveBeenCalled();
+  });
+
   it('blocks gameplay and suppresses DOM control events without queuing thrust', () => {
     const { godModeButton, input, visibilityButton, wireframeLabel } = createHarness();
     input.pressPointer(7, 'touch');
@@ -703,6 +730,7 @@ describe('DirectorPerformanceHud', () => {
         }),
         sceneGameObjectCount: 12,
       }),
+      { targetSampleCount: null, trigger: 'manual' },
     );
 
     const exportedCounters = exportPerformanceEvidence.mock.calls[0]?.[3] as
