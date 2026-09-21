@@ -60,9 +60,7 @@ describe('Foundation generated telegraph retention', () => {
     const foundation = new Foundation(createAppServices(), false);
     let telegraphedState = reachActive(missile);
 
-    const currentGenerated: ReadonlyArray<Readonly<LogicalHazardSpawnInstance>> = Object.freeze(
-      [],
-    );
+    const currentGenerated: ReadonlyArray<Readonly<LogicalHazardSpawnInstance>> = Object.freeze([]);
     Reflect.set(foundation, 'hazardStream', { spawns: currentGenerated });
     Reflect.set(foundation, 'telegraphedHazardState', telegraphedState);
 
