@@ -82,6 +82,19 @@ describe('Timed Zapper lifecycle', () => {
     expect(result.lethalIntervals).toEqual([]);
   });
 
+  it('never emits an ON collision interval beyond the current step when boundary epsilon applies', () => {
+    const on = advance(createTimedZapperLifecycleState(), 2).state;
+    const delta = PROTOTYPE_TIMED_ZAPPER_CONFIG.onSeconds - 5e-13;
+    const result = advance(on, delta);
+
+    expect(result.lethalIntervals).toHaveLength(1);
+    expect(result.lethalIntervals[0]?.startSeconds).toBe(0);
+    expect(result.lethalIntervals[0]?.endSeconds).toBe(delta);
+    expect(result.lethalIntervals[0]?.endSeconds).toBeLessThanOrEqual(delta);
+    expect(result.lethalIntervals[0]?.endsPhase).toBe(true);
+    expect(result.state).toEqual({ phase: 'off', elapsedPhaseSeconds: 0, complete: false });
+  });
+
   it('supports one-shot data that cannot reactivate after its first ON phase', () => {
     const config = { ...PROTOTYPE_TIMED_ZAPPER_CONFIG, mode: 'one-shot' as const };
     const completed = stepTimedZapperLifecycle(createTimedZapperLifecycleState(), 3.2, config);
