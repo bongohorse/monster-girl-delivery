@@ -10,6 +10,8 @@ import { DirectorRunControls } from '../../devtools/DirectorRunControls';
 import { DirectorTuningControls } from '../../devtools/DirectorTuningControls';
 import {
   createPerformanceEvidenceReport,
+  type PerformanceEvidenceCaptureMetadata,
+  type PerformanceEvidenceReport,
   type PerformanceRuntimeMetrics,
   serializePerformanceEvidenceReport,
 } from '../../devtools/PerformanceEvidence';
@@ -109,6 +111,7 @@ const RUNNING_INSTRUCTIONS =
 const RETRY_READY_INSTRUCTIONS = 'Tap, click, or press Space to retry.';
 const DIRECTOR_NORMAL_PERFORMANCE_PRESET_ID = 'normal-run-v1';
 const DIRECTOR_ZAPPER_OFFSCREEN_PADDING = 24;
+const DIRECTOR_LAST_PERFORMANCE_EVIDENCE_STORAGE_KEY = 'mgd:last-performance-evidence';
 const formatDeadInstructions = (
   result: Readonly<PrototypeRunResultSnapshot>,
   retryReady: boolean,
@@ -753,6 +756,10 @@ export class Foundation extends Scene {
     fpsLimit: number,
     zapperWork?: Readonly<PrototypeZapperCollisionWorkCounters>,
     runtime?: Readonly<PerformanceRuntimeMetrics>,
+    captureMetadata: Readonly<PerformanceEvidenceCaptureMetadata> = Object.freeze({
+      targetSampleCount: null,
+      trigger: 'manual',
+    }),
   ): void => {
     if (!this.viewportService) {
       return;
@@ -793,10 +800,16 @@ export class Foundation extends Scene {
       fpsLimit,
       zapperWork,
       runtime ?? this.readDirectorPerformanceRuntimeMetrics(),
+      captureMetadata,
     );
     const serialized = serializePerformanceEvidenceReport(report);
-    const clipboard = typeof navigator === 'undefined' ? undefined : navigator.clipboard;
+    this.persistDirectorPerformanceEvidence(serialized);
 
+    if (captureMetadata.trigger === 'auto-window-full') {
+      this.downloadDirectorPerformanceEvidence(report, serialized);
+    }
+
+    const clipboard = typeof navigator === 'undefined' ? undefined : navigator.clipboard;
     if (clipboard?.writeText) {
       void clipboard.writeText(serialized).catch(() => {
         console.info('MGD performance evidence', serialized);
@@ -806,6 +819,48 @@ export class Foundation extends Scene {
 
     console.info('MGD performance evidence', serialized);
   };
+
+  private persistDirectorPerformanceEvidence(serialized: string): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    try {
+      window.localStorage?.setItem(DIRECTOR_LAST_PERFORMANCE_EVIDENCE_STORAGE_KEY, serialized);
+    } catch {
+      // Storage may be unavailable in private/locked-down browser contexts; export still continues.
+    }
+  }
+
+  private downloadDirectorPerformanceEvidence(
+    report: Readonly<PerformanceEvidenceReport>,
+    serialized: string,
+  ): void {
+    if (
+      typeof document === 'undefined' ||
+      typeof Blob === 'undefined' ||
+      typeof URL === 'undefined' ||
+      typeof URL.createObjectURL !== 'function'
+    ) {
+      return;
+    }
+
+    const preset = (report.context.performancePresetId ?? 'manual').replace(/[^a-z0-9-]+/gi, '-');
+    const timestamp = report.capturedAtIso.replace(/[:.]/g, '-');
+    const commit = report.build.commit.slice(0, 12);
+    const filename = `mgd-performance-${preset}-${commit}-${timestamp}.json`;
+    const objectUrl = URL.createObjectURL(
+      new Blob([serialized], { type: 'application/json;charset=utf-8' }),
+    );
+    const anchor = document.createElement('a');
+    anchor.href = objectUrl;
+    anchor.download = filename;
+    anchor.hidden = true;
+    document.body?.append(anchor);
+    anchor.click();
+    anchor.remove();
+    window.setTimeout(() => URL.revokeObjectURL(objectUrl), 0);
+  }
 
   private readonly clearDirectorHazards = (): void => {
     this.directorPerformancePresetId = null;

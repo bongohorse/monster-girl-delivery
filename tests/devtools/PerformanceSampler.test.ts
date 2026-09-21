@@ -2,8 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { PerformanceSampler } from '../../src/devtools/PerformanceSampler';
 
 describe('PerformanceSampler', () => {
-  it('uses the bounded 300-sample prototype window by default', () => {
-    expect(new PerformanceSampler().createSnapshot().windowCapacity).toBe(300);
+  it('exposes allocation-free bounded-window progress', () => {
+    const sampler = new PerformanceSampler();
+
+    expect(sampler.getSampleCount()).toBe(0);
+    expect(sampler.getWindowCapacity()).toBe(300);
+    sampler.sample(16, false);
+    expect(sampler.getSampleCount()).toBe(1);
+    expect(sampler.getWindowCapacity()).toBe(300);
   });
 
   it('evicts a wrapped rolling window while retaining session-wide worst and slow counts', () => {
