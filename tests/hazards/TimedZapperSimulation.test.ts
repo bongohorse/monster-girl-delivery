@@ -165,6 +165,20 @@ describe('Timed Zapper simulation', () => {
     ).toBe(true);
   });
 
+  it('keeps epsilon-snapped ON intervals valid for exact collision evaluation', () => {
+    const spawn = createTimedSpawn();
+    let state = stepTimedZapperSimulation(createTimedZapperSimulationState(), [spawn], 2);
+    const delta = 1.2 - 5e-13;
+    state = stepTimedZapperSimulation(state, [spawn], delta);
+
+    const hazard = requireSingleHazard(getCollisionHazardsForTimedZapperSimulation(state, [spawn]));
+    expect(hazard.collisionInterval?.endSeconds).toBe(delta);
+    expect(hazard.collisionInterval?.endSeconds).toBeLessThanOrEqual(delta);
+    expect(() =>
+      collides(hazard, { distance: 100, simulationSeconds: 2 }, delta, 350),
+    ).not.toThrow();
+  });
+
   it('cannot remain lethal after an ON -> OFF boundary inside a coarse step', () => {
     const spawn = createTimedSpawn();
     let state = stepTimedZapperSimulation(createTimedZapperSimulationState(), [spawn], 3);
