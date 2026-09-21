@@ -311,6 +311,8 @@ For documentation-only changes that cannot affect runtime/build behavior, code c
 
 Manual playtesting is evidence for feel, presentation, touch behavior, device lifecycle, and other outcomes that automated tests cannot prove. Do not pretend an automated unit test proves subjective game feel.
 
+For gameplay-authority changes and test-quality audits, follow the evidence-selection and test-review policy in [`docs/TEST_QUALITY.md`](docs/TEST_QUALITY.md). Do not run coverage, mutation, browser, stability, or device evidence by rote; use the trigger that matches the claim being validated.
+
 ## 17. GitHub / PR discipline
 
 A green CI run is validation evidence, not automatic product approval.

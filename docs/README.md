@@ -34,6 +34,7 @@ GitHub Milestones and focused Issues/PRs are the live execution trail. Completed
 | Review the deeper Jetpack Joyride systems/content-grammar analysis | [`JETPACK_JOYRIDE_WIKI_DEEP_DIVE.md`](JETPACK_JOYRIDE_WIKI_DEEP_DIVE.md) |
 | Understand technical boundaries | [`../ARCHITECTURE.md`](../ARCHITECTURE.md) |
 | See commands, CI, testing, Codespaces, or closeout workflow | [`../DEVELOPMENT.md`](../DEVELOPMENT.md) |
+| Choose test-quality evidence for a gameplay-authority change | [`TEST_QUALITY.md`](TEST_QUALITY.md) |
 | See human ↔ AI orchestration | [`AI_WORKFLOW.md`](AI_WORKFLOW.md) |
 | Use Jules as a GitHub-native assistant safely | [`JULES_WORKFLOW.md`](JULES_WORKFLOW.md) |
 | Review AI GitHub authentication/permissions | [`GITHUB_AI_ACCESS.md`](GITHUB_AI_ACCESS.md) |
@@ -93,6 +94,7 @@ A **current explicit Game Director decision** controls product intent. Living do
 | Focused GitHub Issue / PR | concrete live scope, acceptance criteria, implementation/review trail | silent overrides of `DECIDED` product rules or architecture boundaries |
 | [`../ARCHITECTURE.md`](../ARCHITECTURE.md) | technical ownership, service/system boundaries, current vs. planned architecture | product scope, milestone scheduling |
 | [`../DEVELOPMENT.md`](../DEVELOPMENT.md) | commands, verification, Codespaces, CI, PR mechanics, milestone closeout process | product/game design |
+| [`TEST_QUALITY.md`](TEST_QUALITY.md) | detailed test-evidence selection, independent-oracle/mutation/coverage/browser/stability policy, and test-review criteria | product/game rules, ordinary command ownership, milestone scope |
 | [`../AGENTS.md`](../AGENTS.md) | mandatory coding-agent behavior and scope discipline | product design |
 | [`AI_WORKFLOW.md`](AI_WORKFLOW.md) | human/AI coordination and role orchestration | authentication setup, product scope |
 | [`JULES_WORKFLOW.md`](JULES_WORKFLOW.md) | Jules-specific dispatch, planning/review, evidence/trust, concurrency, scheduled-task, and environment rules | product scope, general agent rules |
@@ -162,6 +164,10 @@ Use for:
 - dependency handling;
 - PR flow;
 - milestone closeout procedure.
+
+### `TEST_QUALITY.md` — test evidence policy
+
+Use for selecting and reviewing evidence beyond the normal completion checks: independent expected results, coverage audits, mutation/fault injection, frame-partition and seed evidence, browser/runtime smoke, stability audits, performance evidence, and manual/device boundaries.
 
 ### `AGENTS.md` — coding-agent contract
 

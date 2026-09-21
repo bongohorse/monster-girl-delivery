@@ -271,6 +271,8 @@ Avoid tests that exist only to mirror internal implementation or inflate apparen
 
 Documentation-only changes do not need game build/test runs when they cannot affect runtime behavior, unless a documentation-specific validation exists.
 
+When a gameplay-authority change needs evidence beyond normal CI, use the canonical selection/review policy in [`TEST_QUALITY.md`](TEST_QUALITY.md) rather than automatically requesting every available test tool.
+
 Manual playtest/device evidence is required when automated checks cannot prove the acceptance criterion, especially for game feel, touch behavior, presentation, lifecycle, and subjective tuning.
 
 ## Coordination / review flow

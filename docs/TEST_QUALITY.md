@@ -17,6 +17,144 @@ Preferred sources of truth, in order:
 
 Avoid deriving the assertion from the same formula or helper that the production code uses. Product code and test code can otherwise agree on the same mistake.
 
+## Permanent PR evidence policy
+
+This section is the canonical MGD policy for selecting and reviewing test-quality evidence. It supplements the repository-wide completion commands in `AGENTS.md` / `DEVELOPMENT.md`; it does not replace the focused Issue's acceptance criteria or Game Director approval.
+
+### Baseline for code and configuration changes
+
+Every code/configuration PR still completes the normal repository checks:
+
+```text
+Biome
+→ TypeScript
+→ Vitest
+→ production build
+```
+
+A green baseline proves that the repository's current checks accept the change. It is not, by itself, proof that a changed gameplay rule is correct.
+
+For a deterministic gameplay-authority change, the PR should also make the following visible in its tests, PR evidence, or owning Issue:
+
+1. **Rule** — what observable gameplay invariant or outcome is intended?
+2. **Expected-result source** — why is the expected value/result correct independently of the implementation under test?
+3. **Regression seam** — which focused test would fail if that rule were plausibly violated?
+4. **Evidence boundary** — what is *not* established by that test or workflow?
+
+Gameplay authority includes logic that can change simulation outcomes such as time/physics, collision/contact, hazard lifecycle, generation/fairness, scoring/rewards, persistence migrations, or other deterministic rules. Presentation-only code is not promoted into this category merely because it is important.
+
+Simple explicit rules do not need an elaborate second implementation. A hand-computable constant, boundary, state transition, or previously reproduced regression can be the independent expected-result source.
+
+### Evidence-selection matrix
+
+Use the smallest evidence set that can actually support the claim.
+
+| Evidence | Required when | Not required merely because |
+| --- | --- | --- |
+| Focused behavioral/regression test | A deterministic project-owned rule changes, a reproduced deterministic bug is fixed, or an invariant needs protection | code was refactored without behavior change |
+| Independent analytical/reference case or oracle | A critical algorithm can be self-consistently wrong and the expected result would otherwise reuse the same production formula/helper; especially collision/contact, reachability/fairness, ordering or numerical authority | a simple rule already has an independently obvious expected value |
+| Boundary triplet / neighboring cases | Correctness depends on an inequality, threshold, interval edge, tie, lifecycle boundary or geometry contact | the behavior has no meaningful boundary |
+| Frame-partition evidence | A change can alter time/physics/collision/discrete-event outcomes across different simulation partitions | ordinary non-time-dependent state logic changes |
+| Fixed-seed/replay evidence | Gameplay randomness/generation changes or a randomized failure is investigated | deterministic logic contains no seeded behavior |
+| Coverage audit | The task is explicitly auditing blind spots, a critical area is poorly understood after structural change, or review needs to locate unexercised source paths | every PR, or to satisfy an arbitrary percentage |
+| Mutation/fault-injection audit | The task claims to prove that critical tests detect plausible regressions, or review identifies credible test/implementation coupling that ordinary behavioral evidence does not resolve | every feature/fix PR, or to chase a mutation score |
+| Browser runtime smoke | Browser/Phaser/DOM/canvas/input/resize/lifecycle integration changes, including paths covered by the browser-smoke workflow; manually dispatch it when an integration-relevant change falls outside those path filters | pure simulation/generation/math logic changes |
+| Test-order/isolation stability audit | Investigating flakes/global-state coupling, changing Vitest isolation/pool behavior, or changing shared test infrastructure in a way that could create order dependence | every normal PR |
+| Performance/work-counter/device profiling | The PR makes a performance/work-cost claim or changes a hot path whose acceptance requires cost evidence | a behavior-only mutation survives while output remains equivalent |
+| Manual/real-device evidence | Acceptance concerns game feel, visual quality, real touch ergonomics, browser chrome/safe areas, real device lifecycle, thermal/GPU behavior, or other hardware-dependent outcomes | deterministic Node or headless-browser behavior is already sufficient |
+
+If an assigned Issue explicitly requires stronger evidence, the Issue wins. If a row is triggered but the evidence cannot be obtained, the PR must state the missing evidence and must not silently claim the corresponding result.
+
+### Coverage policy
+
+Coverage is a **blind-spot map**.
+
+- Do not add or raise a global percentage target simply to make the number larger.
+- Prioritize uncovered branches using gameplay consequence, complexity, prior regressions and realistic reachability.
+- A high percentage does not remove the need for independent expected results.
+- An uncovered defensive/impossible-state branch is not automatically a product gap.
+- Normal PR CI does not run the coverage audit unless a focused task deliberately changes that policy.
+
+### Independent-oracle policy
+
+Use an independent oracle when the production algorithm and a naive test could reproduce the same mistake.
+
+Good oracle sources include:
+
+- closed-form math for a bounded case;
+- a simpler algorithm with different structure;
+- an explicit game rule evaluated from fixed inputs;
+- a retained real regression/counterexample.
+
+Do not call a copied production formula, production helper, finer numerical sampler, or another frame partition an independent oracle.
+
+An oracle must state its valid domain. Agreement inside that domain cannot be generalized to arbitrary geometry, trajectories, seeds or runtime environments.
+
+### Mutation and fault-injection policy
+
+Mutation testing asks whether tests notice a changed program; it does not decide the correct program.
+
+For a focused mutation/fault-injection audit:
+
+- keep the mutated scope bounded;
+- retain the independent gameplay rule used to judge an important mutant;
+- distinguish assertion kills from timeout, compile error and runtime error;
+- inspect important kills so an unrelated crash is not credited as rule detection;
+- classify survivors before adding tests;
+- use work counters/profiling for performance-only survivors;
+- document equivalent-in-domain and invalid/out-of-domain survivors rather than writing artificial tests to kill them;
+- remove temporary faults before merge.
+
+There is no repository-wide target mutation score.
+
+### Browser, visual and device policy
+
+Node/Vitest is the deterministic authority for pure gameplay rules. The browser smoke owns integration that only a browser can establish, not simulation truth.
+
+The browser-smoke workflow should be green when its path filters apply. Manually dispatch it when a change has browser-integration risk that the path filter does not capture.
+
+Headless browser success does not establish:
+
+- visual correctness or sharpness;
+- real touch hardware behavior;
+- mobile browser chrome/safe-area behavior;
+- subjective feel;
+- mobile GPU/thermal performance.
+
+Those require the focused manual/device evidence named by the Issue or milestone.
+
+### Test review checklist
+
+Review tests as production evidence, not as an automatic benefit because more assertions exist.
+
+For each material new/changed test, ask:
+
+1. **Independent expectation** — Is the expected result justified without asking the implementation under test to calculate it?
+2. **Observable contract** — Does the assertion protect behavior/invariant rather than a private implementation shape?
+3. **Realistic path** — Can the tested state occur through a supported runtime/configuration boundary, or is defensive synthetic-state coverage explicitly the purpose?
+4. **Failure quality** — Would the test fail for the intended rule violation rather than an incidental crash, timeout or unrelated assertion?
+5. **Boundary quality** — Where thresholds/ties/intervals matter, are just-outside / exact-boundary / just-inside cases represented?
+6. **Determinism** — Are seed, initial state, simulation time and comparison horizon explicit where they matter?
+7. **Coupling** — Is the test importing/reusing production helpers in a way that can make code and test agree on the same bug?
+8. **Assertion strength** — Could the test pass vacuously because it only checks existence, broad ranges, snapshots of implementation output, or a result unrelated to the claimed rule?
+9. **Evidence range** — Are tolerances and valid domains stated without upgrading sampled evidence into a universal claim?
+10. **Maintenance value** — Would a plausible regression be easier to diagnose because this test exists, or is it mostly test-count/coverage churn?
+
+A white-box read seam is acceptable when external stimulus travels through the real supported path but the test needs internal state only to observe the result. Mutating private state to manufacture a failure is not evidence of a product defect unless the task explicitly concerns defensive validation or that state can cross a real external boundary.
+
+### PR evidence summary
+
+A gameplay-authority PR does not need a ceremonial template, but its review trail should make the material evidence discoverable. State, as applicable:
+
+- the gameplay rule/invariant changed;
+- the independent source of the expected result;
+- focused regression/boundary/partition/seed evidence;
+- any coverage/mutation/browser/stability/performance/manual evidence actually required;
+- the exact final-head CI result;
+- known limits, deferred device checks or justified survivor classifications.
+
+Do not list tools that were run if they do not support a material claim.
+
 ## Gate 1: coverage baseline
 
 Run:
