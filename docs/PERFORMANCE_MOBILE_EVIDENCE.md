@@ -71,15 +71,19 @@ Broadphase work counters are additive evidence only. Gameplay never reads them. 
 
 These counters deliberately do **not** claim renderer batches, GPU draw calls, exact onscreen pixel visibility, JS heap, or GC activity. Those require dedicated trustworthy instrumentation or browser/renderer tooling.
 
-## #332 before/after reference
+## Canonical before/after references
 
-The instrumented pre-optimization reference point is the Gate 8 sampling baseline:
+Use these measurement refs for M5 performance evidence. They intentionally share the same schema-v6 timing, stable HUD, automated NP/ZP capture, persistence, and export tooling while preserving the relevant BEFORE behavior:
 
-- commit `5f5b8e0b1832bb2c1c356ce981eeb24130fd5269` / PR #353.
+| Issue | BEFORE branch | BEFORE commit | Benchmark | Preserved baseline behavior |
+| --- | --- | --- | --- | --- |
+| #329 | `perf/329-mobile-baseline` | `0eb3d9c4d6ec9a0f697389fa8c8d4f444effa0e3` | NP | allocation-heavy pre-optimization live path |
+| #330 | `perf/330-mobile-baseline` | `e264d2a5773d2f3b251e26f62de29c1a81368374` | NP | shared run-distance broadphase disabled for evidence |
+| #332 | `perf/332-mobile-baseline` | `38888842bbb07af3fd5d526685aa8c4a94d65552` | ZP | Gate-8/pre-optimization Zapper collision algorithm |
 
-The optimized reference is current `main` after the #332 mechanical gates.
+The corresponding AFTER reference is `main` at or after `791eef21add4b77c9cdeac3e26854589688f05fc`, provided no later change alters the benchmark workload or performance authority under test. Record the exact AFTER build commit from each exported JSON rather than assuming `main` stayed unchanged.
 
-For a trustworthy device comparison, use equivalent evidence instrumentation on both refs. Do not compare a Director-instrumented build against a different production/tooling configuration and attribute the difference to Zapper collision.
+The historical #332 Gate-8 source point remains `5f5b8e0b1832bb2c1c356ce981eeb24130fd5269` / PR #353, but it is **not** the canonical device-capture ref because it does not contain the final matched schema-v6 automation. For trustworthy before/after comparisons, use the canonical baseline branches above and equivalent current-main instrumentation.
 
 ## Automated benchmark capture
 
