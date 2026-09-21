@@ -29,7 +29,7 @@ export interface DirectorPerformanceHudControls {
   readonly resetWorkCounters?: () => void;
   readonly exportPerformanceEvidence?: (
     snapshot: Readonly<PerformanceSnapshot>,
-    framesPerSecond: number,
+    measuredFramesPerSecond: number,
     fpsLimit: number,
     zapperWork?: Readonly<PrototypeZapperCollisionWorkCounters>,
     runtime?: Readonly<PerformanceRuntimeMetrics>,
@@ -118,7 +118,7 @@ export class DirectorPerformanceHud {
   private elapsedSinceRefreshMilliseconds = Number.POSITIVE_INFINITY;
   private fpsLimitIndex = 0;
   private hidden = false;
-  private latestFramesPerSecond = 0;
+  private previousGameStepTimestampMilliseconds: number | null = null;
   private godModeEnabled = false;
   private autoHazardsEnabled = true;
   private simulationFrozen = false;
@@ -283,8 +283,7 @@ export class DirectorPerformanceHud {
   }
 
   update(
-    rawFrameTimeMilliseconds: number,
-    framesPerSecond: number,
+    gameStepTimestampMilliseconds: number,
     lifecyclePaused: boolean,
     discardCurrentSample = false,
   ): void {
@@ -292,20 +291,34 @@ export class DirectorPerformanceHud {
       return;
     }
 
-    this.latestFramesPerSecond = framesPerSecond;
+    const previousGameStepTimestampMilliseconds = this.previousGameStepTimestampMilliseconds;
+    const timestampIsValid =
+      Number.isFinite(gameStepTimestampMilliseconds) && gameStepTimestampMilliseconds >= 0;
+    this.previousGameStepTimestampMilliseconds = timestampIsValid
+      ? gameStepTimestampMilliseconds
+      : null;
+    const rawGameStepIntervalMilliseconds =
+      timestampIsValid &&
+      previousGameStepTimestampMilliseconds !== null &&
+      gameStepTimestampMilliseconds > previousGameStepTimestampMilliseconds
+        ? gameStepTimestampMilliseconds - previousGameStepTimestampMilliseconds
+        : Number.NaN;
+
     const discardPresetSetupSample = this.discardNextPerformanceSample;
     this.discardNextPerformanceSample = false;
     const accepted = this.sampler.sample(
-      rawFrameTimeMilliseconds,
+      rawGameStepIntervalMilliseconds,
       lifecyclePaused,
-      discardCurrentSample || discardPresetSetupSample,
+      discardCurrentSample ||
+        discardPresetSetupSample ||
+        previousGameStepTimestampMilliseconds === null,
     );
 
     if (!accepted || this.hidden) {
       return;
     }
 
-    this.elapsedSinceRefreshMilliseconds += rawFrameTimeMilliseconds;
+    this.elapsedSinceRefreshMilliseconds += rawGameStepIntervalMilliseconds;
     if (this.elapsedSinceRefreshMilliseconds < DIRECTOR_PERFORMANCE_HUD_REFRESH_MILLISECONDS) {
       return;
     }
@@ -415,8 +428,8 @@ export class DirectorPerformanceHud {
     this.fpsLimitIndex = (this.fpsLimitIndex + 1) % DIRECTOR_FPS_LIMIT_OPTIONS.length;
     const limit = DIRECTOR_FPS_LIMIT_OPTIONS[this.fpsLimitIndex] ?? 0;
     this.controls?.setFpsLimit(limit);
+    this.resetPerformanceMeasurements();
     this.refreshFpsLimitTitle();
-    this.refreshVisibleValues();
   };
 
   private readonly handleWireframeChange = (event: Event): void => {
@@ -482,6 +495,7 @@ export class DirectorPerformanceHud {
 
   private resetPerformanceMeasurements(): void {
     this.sampler.reset();
+    this.previousGameStepTimestampMilliseconds = null;
     if (this.zapperCollisionWorkCounters) {
       resetPrototypeZapperCollisionWorkCounters(this.zapperCollisionWorkCounters);
     }
@@ -542,9 +556,16 @@ export class DirectorPerformanceHud {
       ? Object.freeze({ ...this.zapperCollisionWorkCounters })
       : undefined;
     const runtime = this.controls?.readRuntimeMetrics?.();
+    const snapshot = this.sampler.createSnapshot();
+    const measuredFramesPerSecond =
+      snapshot.averageFrameTimeMilliseconds !== null &&
+      Number.isFinite(snapshot.averageFrameTimeMilliseconds) &&
+      snapshot.averageFrameTimeMilliseconds > 0
+        ? 1000 / snapshot.averageFrameTimeMilliseconds
+        : 0;
     this.controls?.exportPerformanceEvidence?.(
-      this.sampler.createSnapshot(),
-      this.latestFramesPerSecond,
+      snapshot,
+      measuredFramesPerSecond,
       limit,
       zapperWork,
       runtime,
@@ -596,10 +617,14 @@ export class DirectorPerformanceHud {
 
   private refreshVisibleValues(): void {
     const snapshot = this.sampler.createSnapshot();
+    const measuredFramesPerSecond =
+      snapshot.averageFrameTimeMilliseconds !== null &&
+      Number.isFinite(snapshot.averageFrameTimeMilliseconds) &&
+      snapshot.averageFrameTimeMilliseconds > 0
+        ? 1000 / snapshot.averageFrameTimeMilliseconds
+        : null;
     const measuredFps =
-      Number.isFinite(this.latestFramesPerSecond) && this.latestFramesPerSecond > 0
-        ? `${Math.round(this.latestFramesPerSecond)} FPS`
-        : '-- FPS';
+      measuredFramesPerSecond !== null ? `${Math.round(measuredFramesPerSecond)} FPS` : '-- FPS';
     const limit = DIRECTOR_FPS_LIMIT_OPTIONS[this.fpsLimitIndex] ?? 0;
 
     setTextIfChanged(this.fpsValue, `${measuredFps} [${formatFpsLimit(limit)}]`);
@@ -618,7 +643,7 @@ export class DirectorPerformanceHud {
     if (runtime) {
       setTextIfChanged(this.runtimeValue, this.formatRuntimeMetrics(runtime));
     }
-    setHealthIfChanged(this.fpsValue, getFpsHealth(this.latestFramesPerSecond));
+    setHealthIfChanged(this.fpsValue, getFpsHealth(measuredFramesPerSecond ?? 0));
     setHealthIfChanged(
       this.frameTimeValue,
       getFrameTimeHealth(snapshot.currentFrameTimeMilliseconds),
