@@ -29,7 +29,7 @@ export interface DirectorPerformanceHudControls {
   readonly resetWorkCounters?: () => void;
   readonly exportPerformanceEvidence?: (
     snapshot: Readonly<PerformanceSnapshot>,
-    framesPerSecond: number,
+    measuredFramesPerSecond: number,
     fpsLimit: number,
     zapperWork?: Readonly<PrototypeZapperCollisionWorkCounters>,
     runtime?: Readonly<PerformanceRuntimeMetrics>,
