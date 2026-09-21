@@ -161,6 +161,7 @@ const createHarness = () => {
   const evidenceButton = fixedControls?.children[4];
   const zapperWorkValue = values?.children[2];
   const runtimeValue = values?.children[3];
+  const benchmarkStatusValue = values?.children[4];
   const wireframeCheckbox = wireframeLabel?.children[0];
   const godModeButton = playgroundControls?.children[0];
   const autoHazardsButton = playgroundControls?.children[1];
@@ -186,6 +187,7 @@ const createHarness = () => {
     !fpsButton ||
     !zapperWorkValue ||
     !runtimeValue ||
+    !benchmarkStatusValue ||
     !wireframeCheckbox ||
     !godModeButton ||
     !autoHazardsButton ||
@@ -204,6 +206,7 @@ const createHarness = () => {
 
   return {
     autoHazardsButton,
+    benchmarkStatusValue,
     clearButton,
     clearHazards,
     container,
@@ -285,7 +288,7 @@ describe('DirectorPerformanceHud', () => {
     expect(root.className).toBe('director-performance-hud');
     expect(root.style).toMatchObject({ left: '52px', top: '20px', maxWidth: '740px' });
     expect(fixedControls.children).toHaveLength(5);
-    expect(values.children).toHaveLength(4);
+    expect(values.children).toHaveLength(5);
     expect(wireframeLabel.children).toHaveLength(2);
     expect(playgroundControls.children).toHaveLength(11);
   });
@@ -514,15 +517,18 @@ describe('DirectorPerformanceHud', () => {
     expect(triggerDeath).toHaveBeenCalledOnce();
   });
 
-  it('starts the normal-run performance preset from one normalized measurement state', () => {
+  it('runs the normal preset at 60 FPS and auto-captures the first full sample window', () => {
     const {
       autoHazardsButton,
+      benchmarkStatusValue,
+      exportPerformanceEvidence,
       freezeButton,
       godModeButton,
       hud,
       normalPerformanceButton,
       sampler,
       setAutoHazardsEnabled,
+      setFpsLimit,
       setGodModeEnabled,
       setSimulationFrozen,
       setWireframesEnabled,
@@ -540,6 +546,7 @@ describe('DirectorPerformanceHud', () => {
 
     normalPerformanceButton.dispatch('click');
 
+    expect(setFpsLimit).toHaveBeenLastCalledWith(60);
     expect(setGodModeEnabled).toHaveBeenLastCalledWith(true);
     expect(setAutoHazardsEnabled).toHaveBeenLastCalledWith(true);
     expect(setSimulationFrozen).toHaveBeenLastCalledWith(false);
@@ -547,26 +554,45 @@ describe('DirectorPerformanceHud', () => {
     expect(startNormalPerformancePreset).toHaveBeenCalledOnce();
     expect(godModeButton.dataset.active).toBe('true');
     expect(autoHazardsButton.dataset.active).toBe('true');
+    expect(normalPerformanceButton.dataset.benchmarkState).toBe('running');
+    expect(benchmarkStatusValue.textContent).toBe(' | BENCH NP 0/8');
     expect(freezeButton.dataset.active).toBe('false');
     expect(freezeButton.textContent).toBe('⏸');
     expect(wireframeCheckbox.checked).toBe(false);
-    expect(sampler.createSnapshot().sampleCount).toBe(0);
+    expect(sampler.getSampleCount()).toBe(0);
     expect(zapperWorkCounters.candidateSampleCount).toBe(0);
 
-    updateHud(hud, 80, false);
-    expect(sampler.createSnapshot().sampleCount).toBe(0);
     updateHud(hud, 16, false);
-    expect(sampler.createSnapshot().sampleCount).toBe(1);
+    expect(sampler.getSampleCount()).toBe(0);
+    for (let sample = 0; sample < 8; sample += 1) {
+      updateHud(hud, 16, false);
+    }
+
+    expect(sampler.getSampleCount()).toBe(8);
+    expect(normalPerformanceButton.dataset.benchmarkState).toBe('captured');
+    expect(benchmarkStatusValue.textContent).toBe(' | BENCH NP 8/8 ✓');
+    expect(exportPerformanceEvidence).toHaveBeenCalledOnce();
+    expect(exportPerformanceEvidence).toHaveBeenCalledWith(
+      expect.objectContaining({ sampleCount: 8, windowCapacity: 8 }),
+      62.5,
+      60,
+      expect.any(Object),
+      expect.any(Object),
+      { targetSampleCount: 8, trigger: 'auto-window-full' },
+    );
   });
 
-  it('starts the Zapper performance preset from one normalized measurement state', () => {
+  it('runs the Zapper preset at 60 FPS and auto-captures the first full sample window', () => {
     const {
       autoHazardsButton,
+      benchmarkStatusValue,
+      exportPerformanceEvidence,
       freezeButton,
       godModeButton,
       hud,
       sampler,
       setAutoHazardsEnabled,
+      setFpsLimit,
       setGodModeEnabled,
       setSimulationFrozen,
       setWireframesEnabled,
@@ -584,6 +610,7 @@ describe('DirectorPerformanceHud', () => {
 
     zapperPerformanceButton.dispatch('click');
 
+    expect(setFpsLimit).toHaveBeenLastCalledWith(60);
     expect(setGodModeEnabled).toHaveBeenLastCalledWith(true);
     expect(setAutoHazardsEnabled).toHaveBeenLastCalledWith(false);
     expect(setSimulationFrozen).toHaveBeenLastCalledWith(false);
@@ -591,16 +618,53 @@ describe('DirectorPerformanceHud', () => {
     expect(startZapperPerformancePreset).toHaveBeenCalledOnce();
     expect(godModeButton.dataset.active).toBe('true');
     expect(autoHazardsButton.dataset.active).toBe('false');
+    expect(zapperPerformanceButton.dataset.benchmarkState).toBe('running');
+    expect(benchmarkStatusValue.textContent).toBe(' | BENCH ZP 0/8');
     expect(freezeButton.dataset.active).toBe('false');
     expect(freezeButton.textContent).toBe('⏸');
     expect(wireframeCheckbox.checked).toBe(false);
-    expect(sampler.createSnapshot().sampleCount).toBe(0);
+    expect(sampler.getSampleCount()).toBe(0);
     expect(zapperWorkCounters.candidateSampleCount).toBe(0);
 
-    updateHud(hud, 80, false);
-    expect(sampler.createSnapshot().sampleCount).toBe(0);
     updateHud(hud, 16, false);
-    expect(sampler.createSnapshot().sampleCount).toBe(1);
+    for (let sample = 0; sample < 8; sample += 1) {
+      updateHud(hud, 16, false);
+    }
+
+    expect(zapperPerformanceButton.dataset.benchmarkState).toBe('captured');
+    expect(benchmarkStatusValue.textContent).toBe(' | BENCH ZP 8/8 ✓');
+    expect(exportPerformanceEvidence).toHaveBeenCalledOnce();
+    expect(exportPerformanceEvidence.mock.calls[0]?.[5]).toEqual({
+      targetSampleCount: 8,
+      trigger: 'auto-window-full',
+    });
+  });
+
+  it('cancels automated capture when a manual workload control changes the run', () => {
+    const {
+      benchmarkStatusValue,
+      exportPerformanceEvidence,
+      hud,
+      missileButton,
+      normalPerformanceButton,
+      sampler,
+    } = createHarness();
+
+    normalPerformanceButton.dispatch('click');
+    expect(normalPerformanceButton.dataset.benchmarkState).toBe('running');
+    expect(benchmarkStatusValue.hidden).toBe(false);
+
+    missileButton.dispatch('click');
+
+    expect(normalPerformanceButton.dataset.benchmarkState).toBeUndefined();
+    expect(benchmarkStatusValue.hidden).toBe(true);
+
+    updateHud(hud, 16, false);
+    for (let sample = 0; sample < sampler.getWindowCapacity(); sample += 1) {
+      updateHud(hud, 16, false);
+    }
+
+    expect(exportPerformanceEvidence).not.toHaveBeenCalled();
   });
 
   it('blocks gameplay and suppresses DOM control events without queuing thrust', () => {
@@ -666,6 +730,7 @@ describe('DirectorPerformanceHud', () => {
         }),
         sceneGameObjectCount: 12,
       }),
+      { targetSampleCount: null, trigger: 'manual' },
     );
 
     const exportedCounters = exportPerformanceEvidence.mock.calls[0]?.[3] as

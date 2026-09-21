@@ -112,6 +112,18 @@ body {
   color: #eafffb;
 }
 
+.director-performance-hud__button[data-benchmark-state="running"] {
+  box-shadow: inset 0 0 0 1px #f2d35e;
+}
+
+.director-performance-hud__button[data-benchmark-state="captured"] {
+  box-shadow: inset 0 0 0 1px #68e39b;
+}
+
+.director-performance-hud__benchmark-status {
+  color: #b9c8ec;
+}
+
 .director-performance-hud__fps {
   width: 14ch;
   min-width: 14ch;
