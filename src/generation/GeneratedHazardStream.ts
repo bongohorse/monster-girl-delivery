@@ -275,8 +275,34 @@ export const resolveHazardSafeSpeedChange = (
 const freezeState = (state: GeneratedHazardStreamState): Readonly<GeneratedHazardStreamState> =>
   Object.freeze({
     ...state,
-    spawns: Object.freeze([...state.spawns]),
+    // Authoritative stream states already publish a frozen spawn array. Preserve that reference
+    // across metadata-only state changes instead of copying the full retained stream every step.
+    spawns: Object.isFrozen(state.spawns) ? state.spawns : Object.freeze([...state.spawns]),
   });
+
+const retainGeneratedHazardSpawns = (
+  spawns: ReadonlyArray<Readonly<GeneratedHazardSpawnInstance>>,
+  minimumRetainedRight: number,
+): ReadonlyArray<Readonly<GeneratedHazardSpawnInstance>> => {
+  let retained: Array<Readonly<GeneratedHazardSpawnInstance>> | undefined;
+
+  for (let index = 0; index < spawns.length; index += 1) {
+    const spawn = spawns[index];
+    if (spawn === undefined) {
+      continue;
+    }
+    if (spawn.hitbox.right >= minimumRetainedRight) {
+      retained?.push(spawn);
+      continue;
+    }
+
+    // Allocate only when the first expired spawn is actually removed. Every earlier spawn was
+    // retained, so a single prefix copy is sufficient and later retained entries append in order.
+    retained ??= spawns.slice(0, index);
+  }
+
+  return retained ?? spawns;
+};
 
 const fillLegacySpawnWindow = (
   state: Readonly<GeneratedHazardStreamState>,
@@ -295,9 +321,11 @@ const fillLegacySpawnWindow = (
   });
   const windowEnd = getPatternSchedulingBoundary(runDistance, schedulingWindow);
 
-  const retainedSpawns = state.spawns.filter(
-    (spawn) => spawn.hitbox.right >= runDistance - config.retainBehindDistance,
+  const retainedSpawns = retainGeneratedHazardSpawns(
+    state.spawns,
+    runDistance - config.retainBehindDistance,
   );
+  let nextSpawns: Array<Readonly<GeneratedHazardSpawnInstance>> | undefined;
   let generationState = state.generationState;
   let nextPatternStartDistance = state.nextPatternStartDistance;
   let scheduledPatternCount = state.scheduledPatternCount;
@@ -330,7 +358,8 @@ const fillLegacySpawnWindow = (
       break;
     }
 
-    retainedSpawns.push(
+    nextSpawns ??= [...retainedSpawns];
+    nextSpawns.push(
       ...schedule.spawns.map((spawn) =>
         Object.freeze({
           ...spawn,
@@ -353,7 +382,7 @@ const fillLegacySpawnWindow = (
     runDistance,
     scheduledPatternCount,
     schedulingWindow,
-    spawns: retainedSpawns,
+    spawns: nextSpawns ?? retainedSpawns,
     status,
   });
 };
@@ -373,9 +402,11 @@ const fillPolicySpawnWindow = (
   const config = context.config ?? PROTOTYPE_GENERATED_HAZARD_STREAM_CONFIG;
   const baseConstraints = context.constraints ?? PROTOTYPE_PATTERN_VALIDATION_CONSTRAINTS;
   const reachabilitySource = context.reachability ?? PROTOTYPE_PATTERN_REACHABILITY_CONTEXT;
-  const retainedSpawns = state.spawns.filter(
-    (spawn) => spawn.hitbox.right >= runDistance - config.retainBehindDistance,
+  const retainedSpawns = retainGeneratedHazardSpawns(
+    state.spawns,
+    runDistance - config.retainBehindDistance,
   );
+  let nextSpawns: Array<Readonly<GeneratedHazardSpawnInstance>> | undefined;
   const windowEnd = getPatternSchedulingBoundary(runDistance, schedulingWindow);
   let generationState = state.generationState;
   let nextPatternStartDistance = state.nextPatternStartDistance;
@@ -552,7 +583,8 @@ const fillPolicySpawnWindow = (
       nextPatternStartDistance = windowEnd + Math.max(1, schedulingWindow.minimumReactionDistance);
       break;
     }
-    retainedSpawns.push(...acceptedSpawns);
+    nextSpawns ??= [...retainedSpawns];
+    nextSpawns.push(...acceptedSpawns);
     context.observeEncounter?.({
       kind: 'accepted',
       runDistance,
@@ -583,7 +615,7 @@ const fillPolicySpawnWindow = (
     runDistance,
     scheduledPatternCount,
     schedulingWindow,
-    spawns: retainedSpawns,
+    spawns: nextSpawns ?? retainedSpawns,
     status,
   });
 };
@@ -796,10 +828,16 @@ const createMotionPlanningContext = (
 
 const getReadabilityClearSeconds = (state: Readonly<GeneratedHazardStreamState>): number | null => {
   const reservations = state.policy?.readability.reservations ?? [];
-  if (reservations.length === 0) {
-    return null;
+  let latestEndSeconds: number | null = null;
+
+  for (const reservation of reservations) {
+    const endSeconds = reservation.activeWindow.endSeconds;
+    if (latestEndSeconds === null || endSeconds > latestEndSeconds) {
+      latestEndSeconds = endSeconds;
+    }
   }
-  return Math.max(...reservations.map((reservation) => reservation.activeWindow.endSeconds));
+
+  return latestEndSeconds;
 };
 
 const getNextMotionDistanceEvent = (
@@ -807,7 +845,7 @@ const getNextMotionDistanceEvent = (
   context: Readonly<GeneratedHazardStreamContext>,
 ): number | null => {
   const currentDistance = state.runDistance;
-  const candidates: number[] = [];
+  let nextDistance: number | null = null;
 
   if (context.policy !== undefined) {
     const nextTierStartDistance = calculateDifficulty(
@@ -818,25 +856,34 @@ const getNextMotionDistanceEvent = (
       nextTierStartDistance !== null &&
       nextTierStartDistance > currentDistance + MOTION_EVENT_EPSILON
     ) {
-      candidates.push(nextTierStartDistance);
+      nextDistance = nextTierStartDistance;
     }
   }
 
   const exitDistance = state.policy?.exitEnvelope.runDistance;
-  if (exitDistance !== undefined && exitDistance > currentDistance + MOTION_EVENT_EPSILON) {
-    candidates.push(exitDistance);
+  if (
+    exitDistance !== undefined &&
+    exitDistance > currentDistance + MOTION_EVENT_EPSILON &&
+    (nextDistance === null || exitDistance < nextDistance)
+  ) {
+    nextDistance = exitDistance;
   }
 
   for (const spawn of state.spawns) {
     const targetDistance = spawn.approachTiming.targetRunDistance;
-    if (targetDistance >= currentDistance) {
-      candidates.push(
-        Math.max(targetDistance + MOTION_EVENT_EPSILON, currentDistance + MOTION_EVENT_EPSILON),
-      );
+    if (targetDistance < currentDistance) {
+      continue;
+    }
+    const candidateDistance = Math.max(
+      targetDistance + MOTION_EVENT_EPSILON,
+      currentDistance + MOTION_EVENT_EPSILON,
+    );
+    if (nextDistance === null || candidateDistance < nextDistance) {
+      nextDistance = candidateDistance;
     }
   }
 
-  return candidates.length === 0 ? null : Math.min(...candidates);
+  return nextDistance;
 };
 
 /**
