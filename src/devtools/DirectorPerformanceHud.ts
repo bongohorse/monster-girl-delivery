@@ -91,6 +91,7 @@ const setHealthIfChanged = (element: HTMLElement, health: PerformanceHealth): vo
 export class DirectorPerformanceHud {
   private readonly root: HTMLDivElement;
   private readonly visibilityButton: HTMLButtonElement;
+  private readonly fixedControls: HTMLSpanElement;
   private readonly values: HTMLSpanElement;
   private readonly fpsValue: HTMLButtonElement;
   private readonly frameTimeValue: HTMLSpanElement;
@@ -144,6 +145,9 @@ export class DirectorPerformanceHud {
     this.visibilityButton.setAttribute('aria-label', 'Hide Director values and controls');
     this.visibilityButton.setAttribute('aria-pressed', 'false');
 
+    this.fixedControls = ownerDocument.createElement('span');
+    this.fixedControls.className = 'director-performance-hud__fixed-controls';
+
     this.values = ownerDocument.createElement('span');
     this.values.className = 'director-performance-hud__values';
     this.fpsValue = ownerDocument.createElement('button');
@@ -160,7 +164,6 @@ export class DirectorPerformanceHud {
     this.runtimeValue.title =
       'Runtime counts: active/presented hazards, active/presented collectibles, primitive/Laser/Zapper presentations, Phaser Scene Game Objects';
     this.values.append(
-      this.fpsValue,
       this.frameTimeValue,
       this.statisticsValue,
       this.zapperWorkValue,
@@ -251,14 +254,14 @@ export class DirectorPerformanceHud {
       'Copy structured performance evidence JSON',
     );
 
-    this.root.append(
-      this.visibilityButton,
-      this.values,
+    this.fixedControls.append(
+      this.fpsValue,
       this.wireframeLabel,
       this.playgroundControls,
       this.resetButton,
       this.evidenceButton,
     );
+    this.root.append(this.visibilityButton, this.fixedControls, this.values);
     container.append(this.root);
 
     this.addControlListeners(this.visibilityButton, this.handleVisibilityClick);
@@ -404,12 +407,10 @@ export class DirectorPerformanceHud {
   private readonly handleVisibilityClick = (event: Event): void => {
     this.stopControlEvent(event);
     this.hidden = !this.hidden;
+    this.fixedControls.hidden = this.hidden;
+    this.fixedControls.style.display = this.hidden ? 'none' : '';
     this.values.hidden = this.hidden;
     this.values.style.display = this.hidden ? 'none' : '';
-    this.wireframeLabel.hidden = this.hidden;
-    this.playgroundControls.hidden = this.hidden;
-    this.resetButton.hidden = this.hidden;
-    this.evidenceButton.hidden = this.hidden;
     this.visibilityButton.title = this.hidden
       ? 'Show Director values and controls'
       : 'Hide Director values and controls';
