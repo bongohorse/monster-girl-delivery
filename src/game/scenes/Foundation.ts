@@ -753,7 +753,7 @@ export class Foundation extends Scene {
 
   private readonly handleDirectorPerformanceEvidenceExport = (
     snapshot: Readonly<PerformanceSnapshot>,
-    framesPerSecond: number,
+    measuredFramesPerSecond: number,
     fpsLimit: number,
     zapperWork?: Readonly<PrototypeZapperCollisionWorkCounters>,
     runtime?: Readonly<PerformanceRuntimeMetrics>,
@@ -793,7 +793,7 @@ export class Foundation extends Scene {
         wireframesEnabled: this.directorWireframesEnabled,
       },
       snapshot,
-      framesPerSecond,
+      measuredFramesPerSecond,
       fpsLimit,
       zapperWork,
       runtime ?? this.readDirectorPerformanceRuntimeMetrics(),
