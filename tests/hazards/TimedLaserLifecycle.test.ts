@@ -78,7 +78,11 @@ describe('TimedLaserLifecycle', () => {
     expect(step.lethalIntervals[0]?.endSeconds).toBe(delta);
     expect(step.lethalIntervals[0]?.endSeconds).toBeLessThanOrEqual(delta);
     expect(step.lethalIntervals[0]?.endsPhase).toBe(true);
-    expect(step.state).toMatchObject({ phase: 'recovery', elapsedPhaseSeconds: 0, complete: false });
+    expect(step.state).toMatchObject({
+      phase: 'recovery',
+      elapsedPhaseSeconds: 0,
+      complete: false,
+    });
   });
 
   it('freezes on zero delta and completes one-shot only after recovery', () => {
