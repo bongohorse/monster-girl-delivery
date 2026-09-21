@@ -152,14 +152,15 @@ const createHarness = () => {
   );
   const root = container.children[0];
   const visibilityButton = root?.children[0];
-  const values = root?.children[1];
-  const wireframeLabel = root?.children[2];
-  const playgroundControls = root?.children[3];
-  const resetButton = root?.children[4];
-  const evidenceButton = root?.children[5];
-  const fpsButton = values?.children[0];
-  const zapperWorkValue = values?.children[3];
-  const runtimeValue = values?.children[4];
+  const fixedControls = root?.children[1];
+  const values = root?.children[2];
+  const fpsButton = fixedControls?.children[0];
+  const wireframeLabel = fixedControls?.children[1];
+  const playgroundControls = fixedControls?.children[2];
+  const resetButton = fixedControls?.children[3];
+  const evidenceButton = fixedControls?.children[4];
+  const zapperWorkValue = values?.children[2];
+  const runtimeValue = values?.children[3];
   const wireframeCheckbox = wireframeLabel?.children[0];
   const godModeButton = playgroundControls?.children[0];
   const autoHazardsButton = playgroundControls?.children[1];
@@ -176,6 +177,7 @@ const createHarness = () => {
   if (
     !root ||
     !visibilityButton ||
+    !fixedControls ||
     !values ||
     !wireframeLabel ||
     !playgroundControls ||
@@ -208,6 +210,7 @@ const createHarness = () => {
     deathButton,
     evidenceButton,
     exportPerformanceEvidence,
+    fixedControls,
     fpsButton,
     freezeButton,
     godModeButton,
@@ -267,7 +270,8 @@ const updateHud = (
 
 describe('DirectorPerformanceHud', () => {
   it('creates one compact DOM row and lays it out inside safe-area bounds', () => {
-    const { container, hud, playgroundControls, root, values, wireframeLabel } = createHarness();
+    const { container, fixedControls, hud, playgroundControls, root, values, wireframeLabel } =
+      createHarness();
     const viewport = new ViewportService(844, 390, {
       top: 12,
       right: 44,
@@ -280,13 +284,14 @@ describe('DirectorPerformanceHud', () => {
     expect(container.children).toHaveLength(1);
     expect(root.className).toBe('director-performance-hud');
     expect(root.style).toMatchObject({ left: '52px', top: '20px', maxWidth: '740px' });
-    expect(values.children).toHaveLength(5);
+    expect(fixedControls.children).toHaveLength(5);
+    expect(values.children).toHaveLength(4);
     expect(wireframeLabel.children).toHaveLength(2);
     expect(playgroundControls.children).toHaveLength(11);
   });
 
   it('samples every frame but refreshes formatted values at most every 250 ms', () => {
-    const { hud, sampler, values } = createHarness();
+    const { fpsButton, hud, sampler, values } = createHarness();
     const createSnapshot = vi.spyOn(sampler, 'createSnapshot');
 
     updateHud(hud, 16, false);
@@ -296,11 +301,11 @@ describe('DirectorPerformanceHud', () => {
 
     expect(sampler.createSnapshot().sampleCount).toBe(8);
     expect(createSnapshot).toHaveBeenCalledTimes(3);
-    expect(values.children[0]?.textContent).toBe('63 FPS [∞]');
-    expect(values.children[1]?.textContent).toBe(' | 16.0 ms');
-    expect(values.children[2]?.textContent).toContain('P95 16.0 | P99 16.0');
+    expect(fpsButton.textContent).toBe('63 FPS [∞]');
+    expect(values.children[0]?.textContent).toBe(' | 16.0 ms');
+    expect(values.children[1]?.textContent).toContain('P95 16.0 | P99 16.0');
+    expect(fpsButton.dataset.health).toBe('good');
     expect(values.children[0]?.dataset.health).toBe('good');
-    expect(values.children[1]?.dataset.health).toBe('good');
   });
 
   it('refreshes authoritative Zapper work only on the existing HUD cadence', () => {
@@ -374,27 +379,28 @@ describe('DirectorPerformanceHud', () => {
   });
 
   it('uses the specified frame-time and FPS health bands', () => {
-    const { hud, values } = createHarness();
+    const { fpsButton, hud, values } = createHarness();
 
     updateHud(hud, 20, false);
+    expect(fpsButton.dataset.health).toBe('mild');
     expect(values.children[0]?.dataset.health).toBe('mild');
-    expect(values.children[1]?.dataset.health).toBe('mild');
 
     for (let frame = 0; frame < 13; frame += 1) {
       updateHud(hud, 30, false);
     }
+    expect(fpsButton.dataset.health).toBe('noticeable');
     expect(values.children[0]?.dataset.health).toBe('noticeable');
-    expect(values.children[1]?.dataset.health).toBe('noticeable');
 
     for (let frame = 0; frame < 9; frame += 1) {
       updateHud(hud, 60, false);
     }
+    expect(fpsButton.dataset.health).toBe('severe');
     expect(values.children[0]?.dataset.health).toBe('severe');
-    expect(values.children[1]?.dataset.health).toBe('severe');
   });
 
   it('hides values and playground controls together while sampling continues', () => {
     const {
+      fixedControls,
       hud,
       playgroundControls,
       resetButton,
@@ -415,26 +421,30 @@ describe('DirectorPerformanceHud', () => {
       updateHud(hud, 30, false);
     }
 
+    expect(fixedControls.hidden).toBe(true);
+    expect(fixedControls.style.display).toBe('none');
     expect(values.hidden).toBe(true);
     expect(values.style.display).toBe('none');
-    expect(wireframeLabel.hidden).toBe(true);
-    expect(playgroundControls.hidden).toBe(true);
-    expect(resetButton.hidden).toBe(true);
-    expect(evidenceButton.hidden).toBe(true);
+    expect(wireframeLabel.hidden).toBe(false);
+    expect(playgroundControls.hidden).toBe(false);
+    expect(resetButton.hidden).toBe(false);
+    expect(evidenceButton.hidden).toBe(false);
     expect(sampler.createSnapshot().sampleCount).toBe(8);
     expect(values.children.reduce((total, child) => total + child.textWriteCount, 0)).toBe(
       writesBeforeHide,
     );
 
     visibilityButton.dispatch('click');
+    expect(fixedControls.hidden).toBe(false);
+    expect(fixedControls.style.display).toBe('');
     expect(values.hidden).toBe(false);
     expect(values.style.display).toBe('');
     expect(wireframeLabel.hidden).toBe(false);
     expect(playgroundControls.hidden).toBe(false);
     expect(resetButton.hidden).toBe(false);
     expect(evidenceButton.hidden).toBe(false);
-    expect(values.children[1]?.textContent).toBe(' | 30.0 ms');
-    expect(values.children[2]?.textContent).toContain('S 20');
+    expect(values.children[0]?.textContent).toBe(' | 30.0 ms');
+    expect(values.children[1]?.textContent).toContain('S 20');
   });
 
   it('toggles authoritative wireframe rendering from the compact HB control', () => {
@@ -696,8 +706,8 @@ describe('DirectorPerformanceHud', () => {
       primaryNarrowphaseCheckCount: 0,
       secondaryNarrowphaseCheckCount: 0,
     });
-    expect(values.children[1]?.textContent).toBe(' | -- ms');
-    expect(values.children[2]?.textContent).toContain('M -- | S 0');
+    expect(values.children[0]?.textContent).toBe(' | -- ms');
+    expect(values.children[1]?.textContent).toContain('M -- | S 0');
     expect(zapperWorkValue.textContent).toBe(' | Z C 0 B 0 Sm 0/0 G 0 N 0/0');
   });
 
