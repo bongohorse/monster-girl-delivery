@@ -59,7 +59,11 @@ export class PerformanceSampler {
    * Records one game-step wall-clock interval. Paused steps are ignored and arm one active-step
    * rejection; discardCurrentSample handles a resume step already rejected by the caller.
    */
-  sample(gameStepIntervalMilliseconds: number, paused: boolean, discardCurrentSample = false): boolean {
+  sample(
+    gameStepIntervalMilliseconds: number,
+    paused: boolean,
+    discardCurrentSample = false,
+  ): boolean {
     if (paused) {
       this.rejectNextActiveSample = true;
       return false;
