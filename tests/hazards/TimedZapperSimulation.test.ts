@@ -174,7 +174,9 @@ describe('Timed Zapper simulation', () => {
     const hazard = requireSingleHazard(getCollisionHazardsForTimedZapperSimulation(state, [spawn]));
     expect(hazard.collisionInterval?.endSeconds).toBe(delta);
     expect(hazard.collisionInterval?.endSeconds).toBeLessThanOrEqual(delta);
-    expect(() => collides(hazard, { distance: 100, simulationSeconds: 2 }, delta, 350)).not.toThrow();
+    expect(() =>
+      collides(hazard, { distance: 100, simulationSeconds: 2 }, delta, 350),
+    ).not.toThrow();
   });
 
   it('cannot remain lethal after an ON -> OFF boundary inside a coarse step', () => {
