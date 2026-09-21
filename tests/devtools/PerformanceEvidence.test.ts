@@ -76,6 +76,7 @@ describe('PerformanceEvidence', () => {
       60,
       counters,
       runtime,
+      { targetSampleCount: 300, trigger: 'auto-window-full' },
     );
 
     counters.evaluatedSampleCount = 999;
@@ -97,7 +98,9 @@ describe('PerformanceEvidence', () => {
           windowCapacity: 300,
           worstFrameTimeMilliseconds: 41.2,
         },
+        targetSampleCount: 300,
         timingSource: 'game-step-wall-clock',
+        trigger: 'auto-window-full',
         runtime: {
           activeCollectibleCount: 9,
           activeHazardCount: 14,
@@ -154,7 +157,7 @@ describe('PerformanceEvidence', () => {
         viewportWidth: 844,
       },
       capturedAtIso: '2026-09-19T18:00:00.000Z',
-      schemaVersion: 5,
+      schemaVersion: 6,
     });
     expect(Object.isFrozen(report)).toBe(true);
     expect(Object.isFrozen(report.capture.frameTime)).toBe(true);
@@ -206,10 +209,12 @@ describe('PerformanceEvidence', () => {
     );
 
     expect(report.capture.measuredFps).toBeNull();
+    expect(report.capture.targetSampleCount).toBeNull();
+    expect(report.capture.trigger).toBe('manual');
     expect(report.capture.runtime).toBeNull();
     expect(report.capture.zapperWork).toBeNull();
     const serialized = serializePerformanceEvidenceReport(report);
-    expect(serialized).toContain('"schemaVersion": 5');
+    expect(serialized).toContain('"schemaVersion": 6');
     expect(JSON.parse(serialized)).toEqual(report);
   });
 });
