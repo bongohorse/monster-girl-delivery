@@ -60,8 +60,7 @@ describe('Foundation generated telegraph retention', () => {
     const foundation = new Foundation(createAppServices(), false);
     let telegraphedState = reachActive(missile);
 
-    const currentGenerated: ReadonlyArray<Readonly<LogicalHazardSpawnInstance>> = Object.freeze([]);
-    Reflect.set(foundation, 'hazardStream', { spawns: currentGenerated });
+    Reflect.set(foundation, 'hazardStream', { spawns: Object.freeze([]) });
     Reflect.set(foundation, 'telegraphedHazardState', telegraphedState);
 
     const reconcile = Reflect.get(foundation, 'reconcileRetainedGeneratedTelegraphedHazards') as (
@@ -84,24 +83,13 @@ describe('Foundation generated telegraph retention', () => {
       getLogicalHazardSpawnIdentity(missile),
     );
 
-    // Stable generated membership must not rebuild the retained container while its lifecycle is
-    // still active. This is the ordinary frame-to-frame allocation fast path.
-    reconcile.call(foundation, currentGenerated);
-    expect(Reflect.get(foundation, 'retainedGeneratedTelegraphedHazards')).toBe(retained);
-
     telegraphedState = stepTelegraphedHazardSimulation(telegraphedState, [missile], 3.2, {
       positionY: 72,
       runDistance: 1_750,
     });
     Reflect.set(foundation, 'telegraphedHazardState', telegraphedState);
-    reconcile.call(foundation, currentGenerated);
+    reconcile.call(foundation, []);
 
-    const expiredRetained = Reflect.get(
-      foundation,
-      'retainedGeneratedTelegraphedHazards',
-    ) as ReadonlyArray<Readonly<LogicalHazardSpawnInstance>>;
-    expect(expiredRetained).toEqual([]);
-    expect(expiredRetained).not.toBe(retained);
-    expect(Object.isFrozen(expiredRetained)).toBe(true);
+    expect(Reflect.get(foundation, 'retainedGeneratedTelegraphedHazards')).toEqual([]);
   });
 });

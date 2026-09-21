@@ -221,17 +221,6 @@ export class Foundation extends Scene {
   private generatedHazardPresentation?: GeneratedHazardPresentation;
   private hazardStream?: Readonly<GeneratedHazardStreamState>;
   private hazardVerticalDomain = createPrototypeHazardVerticalDomain(createPrototypeFlightBounds());
-  private cachedFlightBoundsViewport?: ReturnType<ViewportService['getSnapshot']>;
-  private cachedFlightBounds?: Readonly<ReturnType<typeof createPrototypeFlightBounds>>;
-  private cachedHazardStreamContext?: ReturnType<typeof createLiveHazardStreamContext>;
-  private cachedHazardStreamContextFlightTuning?: ReturnType<
-    AppServices['flightTuning']['getSnapshot']
-  >;
-  private cachedHazardStreamContextVerticalDomain?: Readonly<PrototypeHazardVerticalDomain>;
-  private cachedHazardStreamContextObserver?: (
-    observation: Readonly<EncounterStreamObservation>,
-  ) => void;
-  private cachedRunMotionTuning?: Readonly<{ baseScrollSpeed: number }>;
   private playerPresentation?: PrototypePlayerPresentation;
   private scrollingWorldPresentation?: PrototypeScrollingWorldPresentation;
   private telegraphedHazardState: Readonly<TelegraphedHazardSimulationState> =
@@ -269,7 +258,6 @@ export class Foundation extends Scene {
   create() {
     this.shutdownHandled = false;
     this.directorZapperCollisionWorkCounters = undefined;
-    this.clearRuntimeCaches();
     this.deathRetryState = createPrototypeDeathRetryState();
     this.retainedGeneratedTelegraphedHazards = Object.freeze([]);
     this.timedZapperState = createTimedZapperSimulationState();
@@ -342,12 +330,16 @@ export class Foundation extends Scene {
     }
 
     const viewport = this.viewportService.getSnapshot();
-    const bounds = this.getCachedFlightBounds(viewport);
+    const bounds = createPrototypeFlightBounds(viewport);
     this.hazardVerticalDomain = createPrototypeHazardVerticalDomain(bounds);
     this.runState = createPrototypeRunState(bounds);
     this.hazardStream = createGeneratedHazardStream(
       PROTOTYPE_LIVE_RUN_SEED,
-      this.getCachedLiveHazardStreamContext(this.services.flightTuning.getSnapshot()),
+      createLiveHazardStreamContext(
+        this.services.flightTuning.getSnapshot(),
+        this.hazardVerticalDomain,
+        this.directorPanel?.observeEncounter,
+      ),
       this.services.runMotion.getSnapshot(),
     );
     this.collectibleSpawns = Object.freeze([]);
@@ -453,8 +445,12 @@ export class Foundation extends Scene {
       this.services.input.consumePrimaryActionPress();
       const requestedRunMotion = this.services.runMotion.getSnapshot();
       const flightTuning = this.services.flightTuning.getSnapshot();
-      const flightBounds = this.getCachedFlightBounds(viewport);
-      const hazardStreamContext = this.getCachedLiveHazardStreamContext(flightTuning);
+      const flightBounds = createPrototypeFlightBounds(viewport);
+      const hazardStreamContext = createLiveHazardStreamContext(
+        flightTuning,
+        this.hazardVerticalDomain,
+        this.directorPanel?.observeEncounter,
+      );
       // Resolve parameters before movement, without aging or admitting new content.
       const generatedBeforeMotionAdvance = this.hazardStream.spawns;
       this.hazardStream = advanceGeneratedHazardStream(
@@ -483,7 +479,7 @@ export class Foundation extends Scene {
       for (const motionSegment of motionPlan.segments) {
         const initialFlight = this.runState.flight;
         const initialMotion = this.runState.motion;
-        const runMotionTuning = this.getCachedRunMotionTuning(motionSegment.scrollSpeed);
+        const runMotionTuning = Object.freeze({ baseScrollSpeed: motionSegment.scrollSpeed });
         const resolvePlayerTargetAtDelta = (deltaSeconds: number): TelegraphedHazardTarget => {
           const subFlight = stepVerticalFlight(
             initialFlight,
@@ -637,7 +633,7 @@ export class Foundation extends Scene {
       readSafeAreaInsets(document.getElementById('safe-area-probe')),
     );
     const viewport = this.viewportService.getSnapshot();
-    const flightBounds = this.getCachedFlightBounds(viewport);
+    const flightBounds = createPrototypeFlightBounds(viewport);
     this.hazardVerticalDomain = createPrototypeHazardVerticalDomain(flightBounds);
 
     if (this.runState.phase === 'running') {
@@ -977,52 +973,17 @@ export class Foundation extends Scene {
     previousGenerated: ReadonlyArray<Readonly<LogicalHazardSpawnInstance>>,
   ): void {
     if (!this.directorAutoHazardsEnabled) {
-      if (this.retainedGeneratedTelegraphedHazards.length > 0) {
-        this.retainedGeneratedTelegraphedHazards = Object.freeze([]);
-      }
+      this.retainedGeneratedTelegraphedHazards = Object.freeze([]);
       return;
     }
 
     const currentGenerated = this.hazardStream?.spawns ?? [];
-
-    // GeneratedHazardStream preserves the frozen spawn-array reference while membership is
-    // unchanged. In that common path there are no newly dropped generated hazards to reconcile;
-    // only already-retained telegraphs may have expired while lifecycle simulation advanced.
-    if (currentGenerated === previousGenerated) {
-      const retained = this.retainedGeneratedTelegraphedHazards;
-      let nextRetained: Array<Readonly<LogicalHazardSpawnInstance>> | undefined;
-
-      for (let index = 0; index < retained.length; index += 1) {
-        const spawn = retained[index];
-        if (spawn === undefined) {
-          continue;
-        }
-        const lifecycle = getTelegraphedHazardLifecycle(this.telegraphedHazardState, spawn);
-        if (lifecycle !== null && lifecycle.phase !== 'expired') {
-          nextRetained?.push(spawn);
-          continue;
-        }
-
-        nextRetained ??= retained.slice(0, index);
-      }
-
-      if (nextRetained !== undefined) {
-        this.retainedGeneratedTelegraphedHazards = Object.freeze(nextRetained);
-      }
-      return;
-    }
-
-    // Membership-change path: allocate lookup containers only when the generated stream actually
-    // publishes a different spawn array. Avoid map()/spread/filter() intermediates even here.
-    const currentIdentities = new Set<string>();
-    for (const spawn of currentGenerated) {
-      currentIdentities.add(getLogicalHazardSpawnIdentity(spawn));
-    }
-
-    const retainedByIdentity = new Map<string, Readonly<LogicalHazardSpawnInstance>>();
-    for (const spawn of this.retainedGeneratedTelegraphedHazards) {
-      retainedByIdentity.set(getLogicalHazardSpawnIdentity(spawn), spawn);
-    }
+    const currentIdentities = new Set(currentGenerated.map(getLogicalHazardSpawnIdentity));
+    const retainedByIdentity = new Map(
+      this.retainedGeneratedTelegraphedHazards.map(
+        (spawn) => [getLogicalHazardSpawnIdentity(spawn), spawn] as const,
+      ),
+    );
 
     for (const spawn of previousGenerated) {
       if (!isTelegraphedHazardBehavior(spawn.behavior)) {
@@ -1038,14 +999,12 @@ export class Foundation extends Scene {
       retainedByIdentity.delete(identity);
     }
 
-    const nextRetained: Array<Readonly<LogicalHazardSpawnInstance>> = [];
-    for (const spawn of retainedByIdentity.values()) {
-      const lifecycle = getTelegraphedHazardLifecycle(this.telegraphedHazardState, spawn);
-      if (lifecycle !== null && lifecycle.phase !== 'expired') {
-        nextRetained.push(spawn);
-      }
-    }
-    this.retainedGeneratedTelegraphedHazards = Object.freeze(nextRetained);
+    this.retainedGeneratedTelegraphedHazards = Object.freeze(
+      [...retainedByIdentity.values()].filter((spawn) => {
+        const lifecycle = getTelegraphedHazardLifecycle(this.telegraphedHazardState, spawn);
+        return lifecycle !== null && lifecycle.phase !== 'expired';
+      }),
+    );
   }
 
   private pruneDirectorManualHazards(): void {
@@ -1110,13 +1069,14 @@ export class Foundation extends Scene {
     const viewport = this.viewportService.getSnapshot();
     const flightTuning =
       this.hazardStream?.policy?.flightTuning ?? this.services.flightTuning.getSnapshot();
-    const runMotionTuning = this.getCachedRunMotionTuning(
-      this.hazardStream?.schedulingWindow.scrollSpeed ??
+    const runMotionTuning = Object.freeze({
+      baseScrollSpeed:
+        this.hazardStream?.schedulingWindow.scrollSpeed ??
         this.services.runMotion.getSnapshot().baseScrollSpeed,
-    );
+    });
     const forcedDeath = stepPrototypeRun(this.runState, 0, {
       collectibles: this.collectibleSpawns,
-      flightBounds: this.getCachedFlightBounds(viewport),
+      flightBounds: createPrototypeFlightBounds(viewport),
       flightTuning,
       hazards: [
         Object.freeze({
@@ -1156,12 +1116,16 @@ export class Foundation extends Scene {
     this.directorLaserVariantIndex = 0;
     this.directorZapperVariantIndex = 0;
     this.directorZapperGroupIndex = 0;
-    const flightBounds = this.getCachedFlightBounds(viewport);
+    const flightBounds = createPrototypeFlightBounds(viewport);
     this.runState = createPrototypeRunState(flightBounds);
     this.deathRetryState = createPrototypeDeathRetryState();
     this.hazardStream = createGeneratedHazardStream(
       seed,
-      this.getCachedLiveHazardStreamContext(this.services.flightTuning.getSnapshot()),
+      createLiveHazardStreamContext(
+        this.services.flightTuning.getSnapshot(),
+        this.hazardVerticalDomain,
+        this.directorPanel?.observeEncounter,
+      ),
       this.services.runMotion.getSnapshot(),
     );
     if (this.directorAutoHazardsEnabled) {
@@ -1188,67 +1152,6 @@ export class Foundation extends Scene {
     }
     this.services.input.releaseAll();
     this.instructions?.setText(RUNNING_INSTRUCTIONS);
-  }
-
-  private getCachedFlightBounds(
-    viewport: ReturnType<ViewportService['getSnapshot']>,
-  ): Readonly<ReturnType<typeof createPrototypeFlightBounds>> {
-    if (this.cachedFlightBounds && this.cachedFlightBoundsViewport === viewport) {
-      return this.cachedFlightBounds;
-    }
-
-    const bounds = Object.freeze(createPrototypeFlightBounds(viewport));
-    this.cachedFlightBoundsViewport = viewport;
-    this.cachedFlightBounds = bounds;
-    return bounds;
-  }
-
-  private getCachedLiveHazardStreamContext(
-    flightTuning: ReturnType<AppServices['flightTuning']['getSnapshot']>,
-  ): ReturnType<typeof createLiveHazardStreamContext> {
-    const observeEncounter = this.directorPanel?.observeEncounter;
-    if (
-      this.cachedHazardStreamContext &&
-      this.cachedHazardStreamContextFlightTuning === flightTuning &&
-      this.cachedHazardStreamContextVerticalDomain === this.hazardVerticalDomain &&
-      this.cachedHazardStreamContextObserver === observeEncounter
-    ) {
-      return this.cachedHazardStreamContext;
-    }
-
-    const context = createLiveHazardStreamContext(
-      flightTuning,
-      this.hazardVerticalDomain,
-      observeEncounter,
-    );
-    this.cachedHazardStreamContext = context;
-    this.cachedHazardStreamContextFlightTuning = flightTuning;
-    this.cachedHazardStreamContextVerticalDomain = this.hazardVerticalDomain;
-    this.cachedHazardStreamContextObserver = observeEncounter;
-    return context;
-  }
-
-  private getCachedRunMotionTuning(baseScrollSpeed: number): Readonly<{ baseScrollSpeed: number }> {
-    if (
-      this.cachedRunMotionTuning &&
-      Object.is(this.cachedRunMotionTuning.baseScrollSpeed, baseScrollSpeed)
-    ) {
-      return this.cachedRunMotionTuning;
-    }
-
-    const tuning = Object.freeze({ baseScrollSpeed });
-    this.cachedRunMotionTuning = tuning;
-    return tuning;
-  }
-
-  private clearRuntimeCaches(): void {
-    this.cachedFlightBoundsViewport = undefined;
-    this.cachedFlightBounds = undefined;
-    this.cachedHazardStreamContext = undefined;
-    this.cachedHazardStreamContextFlightTuning = undefined;
-    this.cachedHazardStreamContextVerticalDomain = undefined;
-    this.cachedHazardStreamContextObserver = undefined;
-    this.cachedRunMotionTuning = undefined;
   }
 
   private reconcileCollectiblesIfNeeded(force = false): void {
@@ -1370,7 +1273,6 @@ export class Foundation extends Scene {
     this.retainedGeneratedTelegraphedHazards = Object.freeze([]);
     this.directorManualHazards = Object.freeze([]);
     this.hazardStream = undefined;
-    this.clearRuntimeCaches();
     this.telegraphedHazardState = createTelegraphedHazardSimulationState();
     this.timedZapperState = createTimedZapperSimulationState();
     this.directorLaserVariantIndex = 0;

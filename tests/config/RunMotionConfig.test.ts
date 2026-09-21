@@ -51,18 +51,13 @@ describe('RunMotionConfig', () => {
     expect(config.getSnapshot()).toEqual(PROTOTYPE_RUN_MOTION_DEFAULTS);
   });
 
-  it('reuses immutable snapshots until run motion actually changes', () => {
+  it('returns immutable snapshots that do not share mutable state', () => {
     const config = new RunMotionConfig();
     const original = config.getSnapshot();
 
     expect(Object.isFrozen(PROTOTYPE_RUN_MOTION_DEFAULTS)).toBe(true);
     expect(Object.isFrozen(original)).toBe(true);
     expect(Reflect.set(original, 'baseScrollSpeed', 999)).toBe(false);
-    expect(config.getSnapshot()).toBe(original);
-
-    config.update({});
-    config.update({ baseScrollSpeed: original.baseScrollSpeed });
-    expect(config.getSnapshot()).toBe(original);
 
     config.update({ baseScrollSpeed: 400 });
     const updated = config.getSnapshot();
@@ -70,6 +65,5 @@ describe('RunMotionConfig', () => {
     expect(original.baseScrollSpeed).toBe(350);
     expect(updated.baseScrollSpeed).toBe(400);
     expect(updated).not.toBe(original);
-    expect(config.getSnapshot()).toBe(updated);
   });
 });

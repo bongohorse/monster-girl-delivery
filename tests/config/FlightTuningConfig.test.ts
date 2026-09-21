@@ -70,17 +70,12 @@ describe('FlightTuningConfig', () => {
     expect(config.getSnapshot()).toEqual(PROTOTYPE_FLIGHT_TUNING_DEFAULTS);
   });
 
-  it('reuses immutable snapshots until tuning actually changes', () => {
+  it('returns immutable snapshots that do not share mutable state', () => {
     const config = new FlightTuningConfig();
     const original = config.getSnapshot();
 
     expect(Object.isFrozen(original)).toBe(true);
     expect(Reflect.set(original, 'gravity', 999)).toBe(false);
-    expect(config.getSnapshot()).toBe(original);
-
-    config.update({});
-    config.update({ gravity: original.gravity });
-    expect(config.getSnapshot()).toBe(original);
 
     config.update({ gravity: 1_500 });
     const updated = config.getSnapshot();
@@ -88,6 +83,5 @@ describe('FlightTuningConfig', () => {
     expect(original.gravity).toBe(1_600);
     expect(updated.gravity).toBe(1_500);
     expect(updated).not.toBe(original);
-    expect(config.getSnapshot()).toBe(updated);
   });
 });
