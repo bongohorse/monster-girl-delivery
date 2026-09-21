@@ -1019,10 +1019,7 @@ export class Foundation extends Scene {
       currentIdentities.add(getLogicalHazardSpawnIdentity(spawn));
     }
 
-    const retainedByIdentity = new Map<
-      string,
-      Readonly<LogicalHazardSpawnInstance>
-    >();
+    const retainedByIdentity = new Map<string, Readonly<LogicalHazardSpawnInstance>>();
     for (const spawn of this.retainedGeneratedTelegraphedHazards) {
       retainedByIdentity.set(getLogicalHazardSpawnIdentity(spawn), spawn);
     }
