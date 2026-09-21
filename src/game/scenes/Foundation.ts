@@ -849,10 +849,7 @@ export class Foundation extends Scene {
       return;
     }
 
-    const preset = (report.context.performancePresetId ?? 'manual').replace(
-      /[^a-z0-9-]+/gi,
-      '-',
-    );
+    const preset = (report.context.performancePresetId ?? 'manual').replace(/[^a-z0-9-]+/gi, '-');
     const timestamp = report.capturedAtIso.replace(/[:.]/g, '-');
     const commit = report.build.commit.slice(0, 12);
     const filename = `mgd-performance-${preset}-${commit}-${timestamp}.json`;
