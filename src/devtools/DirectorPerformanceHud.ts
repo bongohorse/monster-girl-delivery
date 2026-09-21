@@ -5,11 +5,23 @@ import {
   resetPrototypeZapperCollisionWorkCounters,
 } from '../systems/HazardCollision';
 import { createDirectorResponsiveLayout } from './DirectorResponsiveLayout';
-import type { PerformanceRuntimeMetrics } from './PerformanceEvidence';
+import type {
+  PerformanceEvidenceCaptureMetadata,
+  PerformanceRuntimeMetrics,
+} from './PerformanceEvidence';
 import { PerformanceSampler, type PerformanceSnapshot } from './PerformanceSampler';
 
 export const DIRECTOR_PERFORMANCE_HUD_REFRESH_MILLISECONDS = 250;
 export const DIRECTOR_FPS_LIMIT_OPTIONS = Object.freeze([0, 30, 60, 90, 120, 144] as const);
+export const DIRECTOR_AUTOMATED_BENCHMARK_FPS_LIMIT = 60;
+
+type DirectorAutomatedBenchmarkKind = 'normal' | 'zapper';
+
+interface DirectorAutomatedBenchmarkState {
+  readonly kind: DirectorAutomatedBenchmarkKind;
+  readonly targetSampleCount: number;
+  status: 'running' | 'captured';
+}
 
 export interface DirectorPerformanceHudControls {
   readonly setFpsLimit: (limit: number) => void;
@@ -33,6 +45,7 @@ export interface DirectorPerformanceHudControls {
     fpsLimit: number,
     zapperWork?: Readonly<PrototypeZapperCollisionWorkCounters>,
     runtime?: Readonly<PerformanceRuntimeMetrics>,
+    captureMetadata?: Readonly<PerformanceEvidenceCaptureMetadata>,
   ) => void;
 }
 
@@ -98,6 +111,7 @@ export class DirectorPerformanceHud {
   private readonly statisticsValue: HTMLSpanElement;
   private readonly zapperWorkValue: HTMLSpanElement;
   private readonly runtimeValue: HTMLSpanElement;
+  private readonly benchmarkStatusValue: HTMLSpanElement;
   private readonly wireframeLabel: HTMLLabelElement;
   private readonly wireframeCheckbox: HTMLInputElement;
   private readonly playgroundControls: HTMLSpanElement;
@@ -123,6 +137,7 @@ export class DirectorPerformanceHud {
   private godModeEnabled = false;
   private autoHazardsEnabled = true;
   private simulationFrozen = false;
+  private automatedBenchmark: DirectorAutomatedBenchmarkState | null = null;
 
   constructor(
     container: HTMLElement,
@@ -163,11 +178,17 @@ export class DirectorPerformanceHud {
     this.runtimeValue.hidden = this.controls?.readRuntimeMetrics === undefined;
     this.runtimeValue.title =
       'Runtime counts: active/presented hazards, active/presented collectibles, primitive/Laser/Zapper presentations, Phaser Scene Game Objects';
+    this.benchmarkStatusValue = ownerDocument.createElement('span');
+    this.benchmarkStatusValue.className = 'director-performance-hud__benchmark-status';
+    this.benchmarkStatusValue.hidden = true;
+    this.benchmarkStatusValue.title =
+      'Automated benchmark progress; capture occurs exactly when the bounded sample window first fills';
     this.values.append(
       this.frameTimeValue,
       this.statisticsValue,
       this.zapperWorkValue,
       this.runtimeValue,
+      this.benchmarkStatusValue,
     );
 
     this.wireframeLabel = ownerDocument.createElement('label');
@@ -214,12 +235,12 @@ export class DirectorPerformanceHud {
     this.normalPerformanceButton = this.createButton(
       ownerDocument,
       'NP',
-      'Start deterministic normal-run performance preset',
+      'Run 60 FPS normal benchmark and auto-capture when the sample window is full',
     );
     this.zapperPerformanceButton = this.createButton(
       ownerDocument,
       'ZP',
-      'Start deterministic Zapper performance preset',
+      'Run 60 FPS Zapper benchmark and auto-capture when the sample window is full',
     );
     this.playgroundControls.append(
       this.godModeButton,
