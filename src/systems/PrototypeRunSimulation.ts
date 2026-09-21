@@ -48,7 +48,7 @@ export interface PrototypeRunStepContext {
   resultTotals?: Readonly<PrototypeRunResultTotals>;
   runMotionTuning: Readonly<RunMotionValues>;
   thrustHeld: boolean;
-  /** Baseline-branch-only switch used to measure the shared hazard broadphase against identical current code. */
+  /** Baseline-branch-only switch used to measure both run broadphases against identical current code. */
   disableRunBroadphasesForPerformanceEvidence?: boolean;
   /** Optional additive instrumentation sink; gameplay writes counters but never reads them. */
   broadphaseWorkCounters?: PrototypeBroadphaseWorkCounters;
