@@ -300,6 +300,7 @@ export const evaluatePrototypeCollectibleStep = (
   resolvedLethalHazards: ReadonlyArray<Readonly<LogicalHazard>> | null = null,
   workCounters?: PrototypeZapperCollisionWorkCounters,
   broadphaseWorkCounters?: PrototypeBroadphaseWorkCounters,
+  disableBroadphaseForPerformanceEvidence = false,
 ): Readonly<PrototypeCollectibleRunState> => {
   if (elapsedSeconds === 0) {
     return state;
@@ -309,25 +310,30 @@ export const evaluatePrototypeCollectibleStep = (
     broadphaseWorkCounters.collectibleRetainedCount += collectibles.length;
   }
 
-  const finalDistance = initialRunState.distance + runMotionTuning.baseScrollSpeed * elapsedSeconds;
-  const minimumPlayerDistance = Math.min(initialRunState.distance, finalDistance);
-  const maximumPlayerDistance = Math.max(initialRunState.distance, finalDistance);
-  const minimumCandidateRunDistance =
-    minimumPlayerDistance -
-    PROTOTYPE_PLAYER_COLLISION_EXTENTS.left -
-    PROTOTYPE_COLLECTIBLE_HALF_SIZE;
-  const maximumCandidateRunDistance =
-    maximumPlayerDistance +
-    PROTOTYPE_PLAYER_COLLISION_EXTENTS.right +
-    PROTOTYPE_COLLECTIBLE_HALF_SIZE;
-  const firstCandidateIndex = findFirstCollectibleAtOrAfterRunDistance(
-    collectibles,
-    minimumCandidateRunDistance,
-  );
-  const candidateEndIndex = findFirstCollectibleAfterRunDistance(
-    collectibles,
-    maximumCandidateRunDistance,
-  );
+  let firstCandidateIndex = 0;
+  let candidateEndIndex = collectibles.length;
+  if (!disableBroadphaseForPerformanceEvidence) {
+    const finalDistance =
+      initialRunState.distance + runMotionTuning.baseScrollSpeed * elapsedSeconds;
+    const minimumPlayerDistance = Math.min(initialRunState.distance, finalDistance);
+    const maximumPlayerDistance = Math.max(initialRunState.distance, finalDistance);
+    const minimumCandidateRunDistance =
+      minimumPlayerDistance -
+      PROTOTYPE_PLAYER_COLLISION_EXTENTS.left -
+      PROTOTYPE_COLLECTIBLE_HALF_SIZE;
+    const maximumCandidateRunDistance =
+      maximumPlayerDistance +
+      PROTOTYPE_PLAYER_COLLISION_EXTENTS.right +
+      PROTOTYPE_COLLECTIBLE_HALF_SIZE;
+    firstCandidateIndex = findFirstCollectibleAtOrAfterRunDistance(
+      collectibles,
+      minimumCandidateRunDistance,
+    );
+    candidateEndIndex = findFirstCollectibleAfterRunDistance(
+      collectibles,
+      maximumCandidateRunDistance,
+    );
+  }
   if (broadphaseWorkCounters) {
     broadphaseWorkCounters.collectibleCandidateCount += candidateEndIndex - firstCandidateIndex;
   }
