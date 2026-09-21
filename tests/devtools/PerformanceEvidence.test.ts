@@ -97,6 +97,7 @@ describe('PerformanceEvidence', () => {
           windowCapacity: 300,
           worstFrameTimeMilliseconds: 41.2,
         },
+        timingSource: 'game-step-wall-clock',
         runtime: {
           activeCollectibleCount: 9,
           activeHazardCount: 14,
@@ -153,7 +154,7 @@ describe('PerformanceEvidence', () => {
         viewportWidth: 844,
       },
       capturedAtIso: '2026-09-19T18:00:00.000Z',
-      schemaVersion: 4,
+      schemaVersion: 5,
     });
     expect(Object.isFrozen(report)).toBe(true);
     expect(Object.isFrozen(report.capture.frameTime)).toBe(true);
@@ -208,7 +209,7 @@ describe('PerformanceEvidence', () => {
     expect(report.capture.runtime).toBeNull();
     expect(report.capture.zapperWork).toBeNull();
     const serialized = serializePerformanceEvidenceReport(report);
-    expect(serialized).toContain('"schemaVersion": 4');
+    expect(serialized).toContain('"schemaVersion": 5');
     expect(JSON.parse(serialized)).toEqual(report);
   });
 });
