@@ -46,7 +46,7 @@ export interface PerformanceEvidenceReport {
     readonly mode: 'development' | 'production';
   };
   readonly capture: {
-    readonly actualFps: number | null;
+    readonly measuredFps: number | null;
     readonly fpsLimit: number;
     readonly frameTime: Readonly<PerformanceSnapshot>;
     readonly timingSource: 'game-step-wall-clock';
@@ -86,7 +86,7 @@ export interface PerformanceEvidenceReport {
 export const createPerformanceEvidenceReport = (
   context: Readonly<PerformanceEvidenceContext>,
   snapshot: Readonly<PerformanceSnapshot>,
-  actualFps: number,
+  measuredFps: number,
   fpsLimit: number,
   zapperWork?: Readonly<PrototypeZapperCollisionWorkCounters>,
   runtime?: Readonly<PerformanceRuntimeMetrics>,
@@ -97,7 +97,7 @@ export const createPerformanceEvidenceReport = (
       mode: context.buildMode,
     }),
     capture: Object.freeze({
-      actualFps: Number.isFinite(actualFps) && actualFps > 0 ? actualFps : null,
+      measuredFps: Number.isFinite(measuredFps) && measuredFps > 0 ? measuredFps : null,
       fpsLimit,
       frameTime: Object.freeze({ ...snapshot }),
       timingSource: 'game-step-wall-clock',
