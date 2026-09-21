@@ -113,7 +113,9 @@ body {
 }
 
 .director-performance-hud__fps {
-  min-width: 78px;
+  width: 14ch;
+  min-width: 14ch;
+  max-width: 14ch;
 }
 
 .director-performance-hud__toggle {
