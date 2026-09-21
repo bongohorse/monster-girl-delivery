@@ -2,6 +2,13 @@ import type { PrototypeZapperCollisionWorkCounters } from '../systems/HazardColl
 import type { PrototypeBroadphaseWorkCounters } from '../systems/PrototypeBroadphaseWork';
 import type { PerformanceSnapshot } from './PerformanceSampler';
 
+export type PerformanceEvidenceCaptureTrigger = 'manual' | 'auto-window-full';
+
+export interface PerformanceEvidenceCaptureMetadata {
+  readonly targetSampleCount: number | null;
+  readonly trigger: PerformanceEvidenceCaptureTrigger;
+}
+
 export interface PerformanceRuntimeMetrics {
   readonly activeCollectibleCount: number;
   readonly activeHazardCount: number;
@@ -49,7 +56,9 @@ export interface PerformanceEvidenceReport {
     readonly measuredFps: number | null;
     readonly fpsLimit: number;
     readonly frameTime: Readonly<PerformanceSnapshot>;
+    readonly targetSampleCount: number | null;
     readonly timingSource: 'game-step-wall-clock';
+    readonly trigger: PerformanceEvidenceCaptureTrigger;
     readonly runtime: Readonly<PerformanceRuntimeMetrics> | null;
     readonly zapperWork: Readonly<PrototypeZapperCollisionWorkCounters> | null;
   };
@@ -80,7 +89,7 @@ export interface PerformanceEvidenceReport {
     readonly viewportWidth: number;
   };
   readonly capturedAtIso: string;
-  readonly schemaVersion: 5;
+  readonly schemaVersion: 6;
 }
 
 export const createPerformanceEvidenceReport = (
@@ -90,6 +99,10 @@ export const createPerformanceEvidenceReport = (
   fpsLimit: number,
   zapperWork?: Readonly<PrototypeZapperCollisionWorkCounters>,
   runtime?: Readonly<PerformanceRuntimeMetrics>,
+  captureMetadata: Readonly<PerformanceEvidenceCaptureMetadata> = Object.freeze({
+    targetSampleCount: null,
+    trigger: 'manual',
+  }),
 ): Readonly<PerformanceEvidenceReport> =>
   Object.freeze({
     build: Object.freeze({
@@ -100,7 +113,14 @@ export const createPerformanceEvidenceReport = (
       measuredFps: Number.isFinite(measuredFps) && measuredFps > 0 ? measuredFps : null,
       fpsLimit,
       frameTime: Object.freeze({ ...snapshot }),
+      targetSampleCount:
+        captureMetadata.targetSampleCount !== null &&
+        Number.isSafeInteger(captureMetadata.targetSampleCount) &&
+        captureMetadata.targetSampleCount > 0
+          ? captureMetadata.targetSampleCount
+          : null,
       timingSource: 'game-step-wall-clock',
+      trigger: captureMetadata.trigger,
       runtime: runtime
         ? Object.freeze({
             ...runtime,
@@ -138,7 +158,7 @@ export const createPerformanceEvidenceReport = (
       viewportWidth: context.viewportWidth,
     }),
     capturedAtIso: context.capturedAtIso,
-    schemaVersion: 5,
+    schemaVersion: 6,
   });
 
 export const serializePerformanceEvidenceReport = (
