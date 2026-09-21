@@ -338,6 +338,10 @@ export class DirectorPerformanceHud {
         previousGameStepTimestampMilliseconds === null,
     );
 
+    if (accepted) {
+      this.completeAutomatedBenchmarkIfReady();
+    }
+
     if (!accepted || this.hidden) {
       return;
     }
@@ -447,6 +451,7 @@ export class DirectorPerformanceHud {
 
   private readonly handleFpsLimitClick = (event: Event): void => {
     this.stopControlEvent(event);
+    this.clearAutomatedBenchmark();
     this.fpsLimitIndex = (this.fpsLimitIndex + 1) % DIRECTOR_FPS_LIMIT_OPTIONS.length;
     const limit = DIRECTOR_FPS_LIMIT_OPTIONS[this.fpsLimitIndex] ?? 0;
     this.controls?.setFpsLimit(limit);
@@ -456,11 +461,13 @@ export class DirectorPerformanceHud {
 
   private readonly handleWireframeChange = (event: Event): void => {
     event.stopPropagation();
+    this.clearAutomatedBenchmark();
     this.controls?.setWireframesEnabled(this.wireframeCheckbox.checked);
   };
 
   private readonly handleGodModeClick = (event: Event): void => {
     this.stopControlEvent(event);
+    this.clearAutomatedBenchmark();
     this.godModeEnabled = !this.godModeEnabled;
     this.setToggleState(this.godModeButton, this.godModeEnabled);
     this.controls?.setGodModeEnabled?.(this.godModeEnabled);
@@ -468,6 +475,7 @@ export class DirectorPerformanceHud {
 
   private readonly handleAutoHazardsClick = (event: Event): void => {
     this.stopControlEvent(event);
+    this.clearAutomatedBenchmark();
     this.autoHazardsEnabled = !this.autoHazardsEnabled;
     this.setToggleState(this.autoHazardsButton, this.autoHazardsEnabled);
     this.controls?.setAutoHazardsEnabled?.(this.autoHazardsEnabled);
@@ -475,31 +483,37 @@ export class DirectorPerformanceHud {
 
   private readonly handleMissileClick = (event: Event): void => {
     this.stopControlEvent(event);
+    this.clearAutomatedBenchmark();
     this.controls?.spawnMissile?.();
   };
 
   private readonly handleZapperClick = (event: Event): void => {
     this.stopControlEvent(event);
+    this.clearAutomatedBenchmark();
     this.controls?.spawnZapper?.();
   };
 
   private readonly handleZapperGroupClick = (event: Event): void => {
     this.stopControlEvent(event);
+    this.clearAutomatedBenchmark();
     this.controls?.spawnZapperGroup?.();
   };
 
   private readonly handleLaserClick = (event: Event): void => {
     this.stopControlEvent(event);
+    this.clearAutomatedBenchmark();
     this.controls?.spawnLaser?.();
   };
 
   private readonly handleClearClick = (event: Event): void => {
     this.stopControlEvent(event);
+    this.clearAutomatedBenchmark();
     this.controls?.clearHazards?.();
   };
 
   private readonly handleFreezeClick = (event: Event): void => {
     this.stopControlEvent(event);
+    this.clearAutomatedBenchmark();
     this.simulationFrozen = !this.simulationFrozen;
     this.setToggleState(this.freezeButton, this.simulationFrozen);
     this.freezeButton.textContent = this.simulationFrozen ? '▶' : '⏸';
@@ -512,6 +526,7 @@ export class DirectorPerformanceHud {
 
   private readonly handleDeathClick = (event: Event): void => {
     this.stopControlEvent(event);
+    this.clearAutomatedBenchmark();
     this.controls?.triggerDeath?.();
   };
 
@@ -528,6 +543,7 @@ export class DirectorPerformanceHud {
 
   private readonly handleResetClick = (event: Event): void => {
     this.stopControlEvent(event);
+    this.clearAutomatedBenchmark();
     this.resetPerformanceMeasurements();
   };
 
@@ -561,18 +577,104 @@ export class DirectorPerformanceHud {
 
   private readonly handleNormalPerformanceClick = (event: Event): void => {
     this.stopControlEvent(event);
-    this.preparePerformancePreset(true);
-    this.controls?.startNormalPerformancePreset?.();
+    this.startAutomatedBenchmark('normal');
   };
 
   private readonly handleZapperPerformanceClick = (event: Event): void => {
     this.stopControlEvent(event);
-    this.preparePerformancePreset(false);
-    this.controls?.startZapperPerformancePreset?.();
+    this.startAutomatedBenchmark('zapper');
   };
 
   private readonly handleEvidenceClick = (event: Event): void => {
     this.stopControlEvent(event);
+    this.exportPerformanceEvidence({ targetSampleCount: null, trigger: 'manual' });
+  };
+
+  private startAutomatedBenchmark(kind: DirectorAutomatedBenchmarkKind): void {
+    this.clearAutomatedBenchmark();
+    const benchmarkFpsIndex = DIRECTOR_FPS_LIMIT_OPTIONS.indexOf(
+      DIRECTOR_AUTOMATED_BENCHMARK_FPS_LIMIT,
+    );
+    if (benchmarkFpsIndex < 0) {
+      throw new RangeError('Automated Director benchmark FPS limit is unavailable.');
+    }
+
+    this.fpsLimitIndex = benchmarkFpsIndex;
+    this.controls?.setFpsLimit(DIRECTOR_AUTOMATED_BENCHMARK_FPS_LIMIT);
+    this.refreshFpsLimitTitle();
+    this.preparePerformancePreset(kind === 'normal');
+
+    if (kind === 'normal') {
+      this.controls?.startNormalPerformancePreset?.();
+    } else {
+      this.controls?.startZapperPerformancePreset?.();
+    }
+
+    this.automatedBenchmark = {
+      kind,
+      status: 'running',
+      targetSampleCount: this.sampler.getWindowCapacity(),
+    };
+    this.refreshAutomatedBenchmarkStatus();
+  }
+
+  private completeAutomatedBenchmarkIfReady(): void {
+    const benchmark = this.automatedBenchmark;
+    if (
+      benchmark === null ||
+      benchmark.status !== 'running' ||
+      this.sampler.getSampleCount() < benchmark.targetSampleCount
+    ) {
+      return;
+    }
+
+    benchmark.status = 'captured';
+    this.refreshAutomatedBenchmarkStatus();
+    this.exportPerformanceEvidence({
+      targetSampleCount: benchmark.targetSampleCount,
+      trigger: 'auto-window-full',
+    });
+  }
+
+  private clearAutomatedBenchmark(): void {
+    if (this.automatedBenchmark === null) {
+      return;
+    }
+
+    this.automatedBenchmark = null;
+    delete this.normalPerformanceButton.dataset.benchmarkState;
+    delete this.zapperPerformanceButton.dataset.benchmarkState;
+    this.benchmarkStatusValue.hidden = true;
+    setTextIfChanged(this.benchmarkStatusValue, '');
+  }
+
+  private refreshAutomatedBenchmarkStatus(): void {
+    const benchmark = this.automatedBenchmark;
+    if (benchmark === null) {
+      this.benchmarkStatusValue.hidden = true;
+      return;
+    }
+
+    const button =
+      benchmark.kind === 'normal' ? this.normalPerformanceButton : this.zapperPerformanceButton;
+    const otherButton =
+      benchmark.kind === 'normal' ? this.zapperPerformanceButton : this.normalPerformanceButton;
+    button.dataset.benchmarkState = benchmark.status;
+    delete otherButton.dataset.benchmarkState;
+
+    const label = benchmark.kind === 'normal' ? 'NP' : 'ZP';
+    const sampleCount = Math.min(this.sampler.getSampleCount(), benchmark.targetSampleCount);
+    const capturedSuffix = benchmark.status === 'captured' ? ' ✓' : '';
+    this.benchmarkStatusValue.hidden = false;
+    setTextIfChanged(
+      this.benchmarkStatusValue,
+      ` | BENCH ${label} ${sampleCount}/${benchmark.targetSampleCount}${capturedSuffix}`,
+    );
+  }
+
+  private exportPerformanceEvidence(
+    captureMetadata: Readonly<PerformanceEvidenceCaptureMetadata>,
+  ): void {
     const limit = DIRECTOR_FPS_LIMIT_OPTIONS[this.fpsLimitIndex] ?? 0;
     const zapperWork = this.zapperCollisionWorkCounters
       ? Object.freeze({ ...this.zapperCollisionWorkCounters })
@@ -591,8 +693,9 @@ export class DirectorPerformanceHud {
       limit,
       zapperWork,
       runtime,
+      captureMetadata,
     );
-  };
+  }
 
   private addControlListeners(element: HTMLElement, clickHandler: (event: Event) => void): void {
     element.addEventListener('pointerdown', this.handlePointerDown);
@@ -665,6 +768,7 @@ export class DirectorPerformanceHud {
     if (runtime) {
       setTextIfChanged(this.runtimeValue, this.formatRuntimeMetrics(runtime));
     }
+    this.refreshAutomatedBenchmarkStatus();
     setHealthIfChanged(this.fpsValue, getFpsHealth(measuredFramesPerSecond ?? 0));
     setHealthIfChanged(
       this.frameTimeValue,
