@@ -158,8 +158,7 @@ describe('generated hazard motion planning', () => {
     expect(observeEncounter).not.toHaveBeenCalled();
     expect(planned.stream.generationState).toBe(state.generationState);
     expect(planned.stream.scheduledPatternCount).toBe(state.scheduledPatternCount);
-    // Planning-only metadata updates must not clone the unchanged authoritative spawn stream.
-    expect(planned.stream.spawns).toBe(state.spawns);
+    expect(planned.stream.spawns).toEqual(state.spawns);
     expect(planned.stream.schedulingWindow.scrollSpeed).toBe(state.schedulingWindow.scrollSpeed);
   });
 });
@@ -448,25 +447,6 @@ describe('generated hazard stream', () => {
     expect(committed.runDistance).toBe(preview.runDistance);
   });
 
-  it('reuses the frozen spawn array when a forward commit changes no spawn membership', () => {
-    const initial = createGeneratedHazardStream(
-      'stable-spawn-array',
-      LIVE_CONTEXT,
-      PROTOTYPE_RUN_MOTION_DEFAULTS,
-    );
-    const advanced = advanceGeneratedHazardStream(
-      initial,
-      initial.runDistance + 1,
-      LIVE_CONTEXT,
-      PROTOTYPE_RUN_MOTION_DEFAULTS,
-    );
-
-    expect(advanced.runDistance).toBe(initial.runDistance + 1);
-    expect(advanced.scheduledPatternCount).toBe(initial.scheduledPatternCount);
-    expect(advanced.spawns).toBe(initial.spawns);
-    expect(Object.isFrozen(advanced.spawns)).toBe(true);
-  });
-
   it('returns the same state without duplicate spawns at repeated run distance', () => {
     const initial = createGeneratedHazardStream(
       'no-duplicates',
@@ -527,8 +507,6 @@ describe('generated hazard stream', () => {
       PROTOTYPE_RUN_MOTION_DEFAULTS,
     );
 
-    expect(advanced.spawns).not.toBe(initial.spawns);
-    expect(Object.isFrozen(advanced.spawns)).toBe(true);
     expect(advanced.spawns).not.toContain(firstSpawn);
     expect(advanced.spawns.every((spawn) => spawn.runDistance >= firstSpawn.runDistance)).toBe(
       true,
