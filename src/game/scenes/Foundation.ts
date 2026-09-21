@@ -539,7 +539,7 @@ export class Foundation extends Scene {
             this.timedZapperState,
             telegraphedCollisionHazards,
           ),
-          disableSharedHazardBroadphaseForPerformanceEvidence:
+          disableRunBroadphasesForPerformanceEvidence:
             this.directorPerformancePresetId !== null,
           broadphaseWorkCounters: this.directorBroadphaseWorkCounters,
           runMotionTuning,
