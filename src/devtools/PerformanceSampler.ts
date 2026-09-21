@@ -23,7 +23,7 @@ const assertPositiveFinite = (value: number, name: string): void => {
   }
 };
 
-/** Fixed-capacity raw frame-time sampler with an allocation-free O(1) recording path. */
+/** Fixed-capacity game-step interval sampler with an allocation-free O(1) recording path. */
 export class PerformanceSampler {
   private readonly samples: Float64Array;
   private readonly percentileScratch: Float64Array;
@@ -56,10 +56,10 @@ export class PerformanceSampler {
   }
 
   /**
-   * Records one Phaser rawDelta sample. Paused frames are ignored and arm one active-frame
-   * rejection; discardCurrentSample handles a resume frame already rejected by the caller.
+   * Records one game-step wall-clock interval. Paused steps are ignored and arm one active-step
+   * rejection; discardCurrentSample handles a resume step already rejected by the caller.
    */
-  sample(rawFrameTimeMilliseconds: number, paused: boolean, discardCurrentSample = false): boolean {
+  sample(gameStepIntervalMilliseconds: number, paused: boolean, discardCurrentSample = false): boolean {
     if (paused) {
       this.rejectNextActiveSample = true;
       return false;
@@ -75,7 +75,7 @@ export class PerformanceSampler {
       return false;
     }
 
-    if (!Number.isFinite(rawFrameTimeMilliseconds) || rawFrameTimeMilliseconds <= 0) {
+    if (!Number.isFinite(gameStepIntervalMilliseconds) || gameStepIntervalMilliseconds <= 0) {
       return false;
     }
 
@@ -85,16 +85,16 @@ export class PerformanceSampler {
       this.rollingSampleCount += 1;
     }
 
-    this.samples[this.nextSampleIndex] = rawFrameTimeMilliseconds;
+    this.samples[this.nextSampleIndex] = gameStepIntervalMilliseconds;
     this.nextSampleIndex = (this.nextSampleIndex + 1) % this.samples.length;
-    this.rollingSumMilliseconds += rawFrameTimeMilliseconds;
-    this.currentFrameTimeMilliseconds = rawFrameTimeMilliseconds;
+    this.rollingSumMilliseconds += gameStepIntervalMilliseconds;
+    this.currentFrameTimeMilliseconds = gameStepIntervalMilliseconds;
     this.worstFrameTimeMilliseconds = Math.max(
-      this.worstFrameTimeMilliseconds ?? rawFrameTimeMilliseconds,
-      rawFrameTimeMilliseconds,
+      this.worstFrameTimeMilliseconds ?? gameStepIntervalMilliseconds,
+      gameStepIntervalMilliseconds,
     );
 
-    if (rawFrameTimeMilliseconds > this.slowFrameThresholdMilliseconds) {
+    if (gameStepIntervalMilliseconds > this.slowFrameThresholdMilliseconds) {
       this.slowFrameCount += 1;
     }
 
