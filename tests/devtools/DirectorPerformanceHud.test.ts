@@ -161,6 +161,7 @@ const createHarness = () => {
   const evidenceButton = fixedControls?.children[4];
   const zapperWorkValue = values?.children[2];
   const runtimeValue = values?.children[3];
+  const benchmarkStatusValue = values?.children[4];
   const wireframeCheckbox = wireframeLabel?.children[0];
   const godModeButton = playgroundControls?.children[0];
   const autoHazardsButton = playgroundControls?.children[1];
@@ -186,6 +187,7 @@ const createHarness = () => {
     !fpsButton ||
     !zapperWorkValue ||
     !runtimeValue ||
+    !benchmarkStatusValue ||
     !wireframeCheckbox ||
     !godModeButton ||
     !autoHazardsButton ||
@@ -204,6 +206,7 @@ const createHarness = () => {
 
   return {
     autoHazardsButton,
+    benchmarkStatusValue,
     clearButton,
     clearHazards,
     container,
@@ -285,7 +288,7 @@ describe('DirectorPerformanceHud', () => {
     expect(root.className).toBe('director-performance-hud');
     expect(root.style).toMatchObject({ left: '52px', top: '20px', maxWidth: '740px' });
     expect(fixedControls.children).toHaveLength(5);
-    expect(values.children).toHaveLength(4);
+    expect(values.children).toHaveLength(5);
     expect(wireframeLabel.children).toHaveLength(2);
     expect(playgroundControls.children).toHaveLength(11);
   });
