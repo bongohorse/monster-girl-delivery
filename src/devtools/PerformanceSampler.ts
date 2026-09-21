@@ -101,6 +101,14 @@ export class PerformanceSampler {
     return true;
   }
 
+  getSampleCount(): number {
+    return this.rollingSampleCount;
+  }
+
+  getWindowCapacity(): number {
+    return this.samples.length;
+  }
+
   /** Computes distribution values only when the low-frequency HUD asks for them. */
   createSnapshot(): Readonly<PerformanceSnapshot> {
     if (this.rollingSampleCount === 0) {
