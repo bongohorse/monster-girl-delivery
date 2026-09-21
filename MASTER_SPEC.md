@@ -467,7 +467,7 @@ Director tooling may support, as relevant to implemented systems:
 
 Director tooling must remain isolated from production gameplay and use the same authoritative runtime state/configuration rather than maintaining a parallel version.
 
-Director Mode includes a compact, safe-area-aware performance HUD as development-only instrumentation. Its FPS headline and bounded rolling average/P95/P99/current/worst/slow-frame metrics come from wall-clock intervals between actual game-step callbacks, not Phaser RAF-level `actualFps` / `rawDelta`. Sampling continues at game-step cadence with fixed storage, while percentile calculation and DOM updates are capped to a low refresh rate. Hidden/background/resume/setup intervals are excluded, and profiler values never affect simulation or content decisions.
+Director Mode includes a compact, safe-area-aware performance HUD as development-only instrumentation. Its FPS headline and bounded rolling average/P95/P99/current/worst/slow-frame metrics come from wall-clock intervals between actual game-step callbacks, not Phaser RAF-level `actualFps` / `rawDelta`. Sampling continues at game-step cadence with fixed storage, while percentile calculation and DOM updates are capped to a low refresh rate. Standard NP/ZP evidence runs use a one-click 60 FPS benchmark path that automatically exports the first complete bounded sample window and marks the capture trigger in structured evidence. Hidden/background/resume/setup intervals are excluded, and profiler values never affect simulation or content decisions.
 
 ---
 
