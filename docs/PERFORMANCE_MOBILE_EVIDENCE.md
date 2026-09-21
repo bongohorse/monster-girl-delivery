@@ -8,7 +8,7 @@ This workflow records repeatable real-device evidence without turning browser FP
 
 The Director performance HUD owns the existing bounded frame-time sampler and authoritative Zapper work counters.
 
-The **CP** control exports one JSON snapshot only when pressed. It does not add a second collision pass, a growing telemetry history, or per-frame serialization.
+The **NP** and **ZP** controls run standardized 60 FPS benchmarks and automatically export the first complete bounded sample window. **CP** remains available for ad-hoc manual snapshots. None of these paths adds a second collision pass, a growing telemetry history, or per-frame serialization.
 
 The report records:
 
@@ -24,6 +24,7 @@ The report records:
 - Director GOD/AUTO/frozen/wireframe state;
 - base/effective run speed and current flight-tuning values;
 - current FPS limit and measured game-step FPS derived from the same bounded wall-clock interval window;
+- capture trigger (`manual` or `auto-window-full`) and automated target sample count;
 - rolling average / P95 / P99 / current frame time;
 - session worst frame time and slow-frame count;
 - authoritative Zapper collision work counters;
@@ -33,7 +34,7 @@ The report records:
 - primitive-hazard, Laser, and Zapper presentation-family counts;
 - Phaser Scene Display List Game Object count.
 
-If the Clipboard API is unavailable, the same JSON is written to the browser console.
+Every exported report is also persisted as the latest performance evidence in browser local storage. Automated benchmark captures additionally request a JSON download using a filename containing the preset, commit, and timestamp. Clipboard copy is still attempted; if it is unavailable, the JSON is also written to the browser console.
 
 ## Measurement rules
 
@@ -48,7 +49,7 @@ For before/after comparisons:
 7. preserve the raw JSON evidence rather than transcribing only the headline FPS;
 8. treat development/Director results as development evidence, not as a production-build certification.
 
-The current sampler window is 300 valid game-step wall-clock interval samples. At 60 game steps per second that represents about five seconds; at higher update rates it covers a shorter wall-clock interval. The JSON explicitly records sample count/capacity so this is visible in the evidence. Schema version 5 records `timingSource: "game-step-wall-clock"` in addition to benchmark identity, tuning/runtime state, bounded workload/presentation counts, and cumulative broadphase work required to reject mismatched captures.
+The current sampler window is 300 valid game-step wall-clock interval samples. Standard NP/ZP benchmarks force a 60 FPS game-step limit, so a full window represents about five seconds. The JSON explicitly records sample count/capacity and the automated target count. Schema version 6 records `timingSource: "game-step-wall-clock"`, `trigger`, and `targetSampleCount` in addition to benchmark identity, tuning/runtime state, bounded workload/presentation counts, and cumulative broadphase work required to reject mismatched captures.
 
 Phaser's RAF-level `game.loop.actualFps` and `game.loop.rawDelta` are intentionally not used for capped benchmark evidence. In Phaser 4.2.1 the FPS-limited loop can still update those values on every browser RAF callback even when the actual game callback runs less frequently. Director evidence instead timestamps actual Foundation game-step callbacks and derives both FPS and frame-interval statistics from those timestamps.
 
@@ -79,6 +80,22 @@ The instrumented pre-optimization reference point is the Gate 8 sampling baselin
 The optimized reference is current `main` after the #332 mechanical gates.
 
 For a trustworthy device comparison, use equivalent evidence instrumentation on both refs. Do not compare a Director-instrumented build against a different production/tooling configuration and attribute the difference to Zapper collision.
+
+## Automated benchmark capture
+
+The Director HUD uses the existing **NP** and **ZP** controls as one-click benchmark runners. Pressing either control:
+
+- forces the game-step FPS limit to **60**;
+- normalizes the benchmark state and resets all bounded frame/work counters;
+- starts the selected deterministic workload;
+- records samples without allocating percentile snapshots on every game step;
+- automatically captures exactly when the sample window first reaches **300/300**;
+- marks the HUD status as `BENCH NP 300/300 ✓` or `BENCH ZP 300/300 ✓`;
+- persists the exact report and requests a JSON download automatically.
+
+Changing FPS, GOD/AUTO, wireframes, freeze state, hazards, or reset while a benchmark is running cancels the automatic capture so a modified workload cannot be mistaken for standard evidence.
+
+**CP** remains an explicit manual/ad-hoc snapshot and records `trigger: "manual"`. Standard acceptance evidence should use the automatic NP/ZP path.
 
 ## Normal-run benchmark preset
 
@@ -119,11 +136,12 @@ At the prototype 350 px/s base speed, the authored Zapper span keeps new benchma
 To capture:
 
 1. start a development build; Director Mode is enabled automatically in DEV;
-2. select the FPS limit to compare (start with 60);
-3. press **ZP**;
-4. do not change tuning, controls, wireframes, or add manual hazards during the capture window;
-5. once the 300-sample window is full, press **CP**;
-6. preserve the copied JSON with the build commit in the filename.
+2. press **ZP** once;
+3. keep the page foregrounded and do not alter Director controls during the run;
+4. wait for `BENCH ZP 300/300 ✓`;
+5. preserve the automatically exported JSON.
+
+There is no manual sample-window timing or CP click in the standard Zapper benchmark.
 
 A valid standard Zapper capture should report `performancePresetId: "zapper-heavy-v1"`, AUTO false, GOD true, frozen false, and wireframes false. The JSON also records tuning values and FPS limit so mismatched runs can be rejected instead of silently compared.
 
@@ -138,7 +156,7 @@ Useful evidence should include at least:
 - P99;
 - worst valid frame time;
 - slow-frame count;
-- actual FPS;
+- measured game-step FPS;
 - candidate/evaluated Zapper samples;
 - geometry resolutions;
 - core/Graze narrowphase checks;
