@@ -213,6 +213,7 @@ describe('Foundation Director mode boundary', () => {
     expect(Reflect.get(foundation, 'directorDebugOverlay')).toBeUndefined();
     expect(Reflect.get(foundation, 'directorPanel')).toBeUndefined();
     expect(Reflect.get(foundation, 'directorPerformanceHud')).toBeUndefined();
+    expect(Reflect.get(foundation, 'directorBroadphaseWorkCounters')).toBeUndefined();
     expect(Reflect.get(foundation, 'directorZapperCollisionWorkCounters')).toBeUndefined();
     expect(Reflect.get(foundation, 'directorRunControls')).toBeUndefined();
     expect(Reflect.get(foundation, 'directorTuningControls')).toBeUndefined();
@@ -231,6 +232,7 @@ describe('Foundation Director mode boundary', () => {
 
     expect(directorControlsDestroyed).not.toHaveBeenCalled();
     expect(directorPerformanceHudDestroyed).not.toHaveBeenCalled();
+    expect(Reflect.get(foundation, 'directorBroadphaseWorkCounters')).toBeUndefined();
     expect(Reflect.get(foundation, 'directorZapperCollisionWorkCounters')).toBeUndefined();
     expect(directorRunControlsDestroyed).not.toHaveBeenCalled();
     expect(services.input.getSnapshot().gameplayBlocked).toBe(false);
@@ -250,6 +252,7 @@ describe('Foundation Director mode boundary', () => {
       expect.objectContaining({
         exportPerformanceEvidence: expect.any(Function),
         readRuntimeMetrics: expect.any(Function),
+        resetWorkCounters: expect.any(Function),
         setFpsLimit: expect.any(Function),
         startNormalPerformancePreset: expect.any(Function),
         startZapperPerformancePreset: expect.any(Function),
@@ -284,6 +287,13 @@ describe('Foundation Director mode boundary', () => {
     const performanceControls = directorPerformanceHudConstructed.mock.calls[0]?.[3] as
       | DirectorTestControls
       | undefined;
+    const broadphaseWorkCounters = Reflect.get(foundation, 'directorBroadphaseWorkCounters');
+    expect(broadphaseWorkCounters).toMatchObject({
+      collectibleCandidateCount: 0,
+      collectibleRetainedCount: 0,
+      hazardCandidateCount: 0,
+      hazardRetainedCount: 0,
+    });
     const zapperWorkCounters = Reflect.get(foundation, 'directorZapperCollisionWorkCounters');
     expect(zapperWorkCounters).toBe(directorPerformanceHudConstructed.mock.calls[0]?.[4]);
     performanceControls?.setFpsLimit?.(90);

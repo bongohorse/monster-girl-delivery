@@ -26,6 +26,7 @@ export interface DirectorPerformanceHudControls {
   readonly startNormalPerformancePreset?: () => void;
   readonly startZapperPerformancePreset?: () => void;
   readonly readRuntimeMetrics?: () => Readonly<PerformanceRuntimeMetrics>;
+  readonly resetWorkCounters?: () => void;
   readonly exportPerformanceEvidence?: (
     snapshot: Readonly<PerformanceSnapshot>,
     framesPerSecond: number,
@@ -238,10 +239,10 @@ export class DirectorPerformanceHud {
     this.resetButton.className = 'director-performance-hud__button';
     this.resetButton.type = 'button';
     this.resetButton.textContent = '↻';
-    this.resetButton.title = 'Reset performance statistics and Zapper work counters';
+    this.resetButton.title = 'Reset performance statistics and collision work counters';
     this.resetButton.setAttribute(
       'aria-label',
-      'Reset performance statistics and Zapper work counters',
+      'Reset performance statistics and collision work counters',
     );
 
     this.evidenceButton = this.createButton(
@@ -484,6 +485,7 @@ export class DirectorPerformanceHud {
     if (this.zapperCollisionWorkCounters) {
       resetPrototypeZapperCollisionWorkCounters(this.zapperCollisionWorkCounters);
     }
+    this.controls?.resetWorkCounters?.();
     this.elapsedSinceRefreshMilliseconds = 0;
     this.refreshVisibleValues();
   }
@@ -640,7 +642,14 @@ export class DirectorPerformanceHud {
       ` P ${runtime.primitiveHazardPresentationCount}` +
       ` L ${runtime.laserPresentationCount}` +
       ` Z ${runtime.zapperPresentationCount}` +
-      ` GO ${runtime.sceneGameObjectCount}`
+      ` GO ${runtime.sceneGameObjectCount}` +
+      (runtime.broadphaseWork
+        ? ` | BP H ${runtime.broadphaseWork.hazardCandidateCount}/${runtime.broadphaseWork.hazardRetainedCount}` +
+          ` E ${runtime.broadphaseWork.hazardCollisionEvaluationCount}` +
+          ` C ${runtime.broadphaseWork.collectibleCandidateCount}/${runtime.broadphaseWork.collectibleRetainedCount}` +
+          ` E ${runtime.broadphaseWork.collectibleCollisionEvaluationCount}` +
+          ` T ${runtime.broadphaseWork.collectibleContactResolutionCount}`
+        : '')
     );
   }
 
