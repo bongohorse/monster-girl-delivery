@@ -706,8 +706,8 @@ describe('DirectorPerformanceHud', () => {
       primaryNarrowphaseCheckCount: 0,
       secondaryNarrowphaseCheckCount: 0,
     });
-    expect(values.children[1]?.textContent).toBe(' | -- ms');
-    expect(values.children[2]?.textContent).toContain('M -- | S 0');
+    expect(values.children[0]?.textContent).toBe(' | -- ms');
+    expect(values.children[1]?.textContent).toContain('M -- | S 0');
     expect(zapperWorkValue.textContent).toBe(' | Z C 0 B 0 Sm 0/0 G 0 N 0/0');
   });
 
