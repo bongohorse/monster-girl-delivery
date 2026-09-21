@@ -61,6 +61,7 @@ body {
     Monaco,
     Consolas,
     monospace;
+  font-variant-numeric: tabular-nums;
   pointer-events: none;
   scrollbar-width: none;
   white-space: nowrap;
@@ -70,10 +71,20 @@ body {
   display: none;
 }
 
+.director-performance-hud__fixed-controls,
 .director-performance-hud__values,
 .director-performance-hud__playground {
   display: inline-flex;
   align-items: center;
+}
+
+.director-performance-hud__fixed-controls {
+  flex: 0 0 auto;
+  gap: 5px;
+}
+
+.director-performance-hud__values {
+  flex: 0 0 auto;
 }
 
 .director-performance-hud__playground {
