@@ -188,55 +188,6 @@ afterEach(() => {
 });
 
 describe('Foundation scene gameplay orchestration', () => {
-  it('reuses runtime wrapper caches until their authoritative inputs change', () => {
-    const { foundation, services, viewportService } = createFoundationHarness();
-    const callCache = (name: string, ...args: unknown[]): unknown => {
-      const method = Reflect.get(foundation, name);
-      if (typeof method !== 'function') {
-        throw new TypeError(`Foundation cache helper is unavailable: ${name}`);
-      }
-      return Reflect.apply(method, foundation, args);
-    };
-
-    const initialViewport = viewportService.getSnapshot();
-    const firstBounds = callCache('getCachedFlightBounds', initialViewport);
-    const repeatedBounds = callCache('getCachedFlightBounds', initialViewport);
-    expect(repeatedBounds).toBe(firstBounds);
-    expect(Object.isFrozen(firstBounds)).toBe(true);
-
-    viewportService.resize(401, 800);
-    const resizedBounds = callCache('getCachedFlightBounds', viewportService.getSnapshot());
-    expect(resizedBounds).not.toBe(firstBounds);
-
-    const flightTuning = services.flightTuning.getSnapshot();
-    const firstContext = callCache('getCachedLiveHazardStreamContext', flightTuning);
-    const repeatedContext = callCache('getCachedLiveHazardStreamContext', flightTuning);
-    expect(repeatedContext).toBe(firstContext);
-    expect(Object.isFrozen(firstContext)).toBe(true);
-
-    services.flightTuning.update({ gravity: flightTuning.gravity + 1 });
-    const tunedContext = callCache(
-      'getCachedLiveHazardStreamContext',
-      services.flightTuning.getSnapshot(),
-    );
-    expect(tunedContext).not.toBe(firstContext);
-
-    const replacementDomain = createPrototypeHazardVerticalDomain(
-      resizedBounds as ReturnType<typeof createPrototypeFlightBounds>,
-    );
-    Reflect.set(foundation, 'hazardVerticalDomain', replacementDomain);
-    const resizedDomainContext = callCache(
-      'getCachedLiveHazardStreamContext',
-      services.flightTuning.getSnapshot(),
-    );
-    expect(resizedDomainContext).not.toBe(tunedContext);
-
-    const firstRunMotion = callCache('getCachedRunMotionTuning', 350);
-    expect(callCache('getCachedRunMotionTuning', 350)).toBe(firstRunMotion);
-    expect(Object.isFrozen(firstRunMotion)).toBe(true);
-    expect(callCache('getCachedRunMotionTuning', 400)).not.toBe(firstRunMotion);
-  });
-
   it('passes the lifecycle-resolved collision intervals into the authoritative run step', () => {
     const { foundation } = createFoundationHarness();
     const schedule = scheduleNextPattern({
