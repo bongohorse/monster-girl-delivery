@@ -18,7 +18,7 @@ export const assertValidBaseScrollSpeed: (value: unknown) => asserts value is nu
 
 /** Owns the live horizontal run-motion tuning state shared by the application. */
 export class RunMotionConfig {
-  private snapshot: Readonly<RunMotionValues> = PROTOTYPE_RUN_MOTION_DEFAULTS;
+  private values: RunMotionValues = { ...PROTOTYPE_RUN_MOTION_DEFAULTS };
 
   update(update: RunMotionUpdate): void {
     if (!('baseScrollSpeed' in update)) {
@@ -27,13 +27,10 @@ export class RunMotionConfig {
 
     const { baseScrollSpeed } = update;
     assertValidBaseScrollSpeed(baseScrollSpeed);
-    if (baseScrollSpeed === this.snapshot.baseScrollSpeed) {
-      return;
-    }
-    this.snapshot = Object.freeze({ baseScrollSpeed });
+    this.values = { baseScrollSpeed };
   }
 
   getSnapshot(): Readonly<RunMotionValues> {
-    return this.snapshot;
+    return Object.freeze({ ...this.values });
   }
 }
