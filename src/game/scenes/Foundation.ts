@@ -390,7 +390,7 @@ export class Foundation extends Scene {
     this.layout(viewport);
   }
 
-  update(_time: number, delta: number) {
+  update(time: number, delta: number) {
     if (!this.viewportService || !this.playerPresentation || !this.hazardStream) {
       return;
     }
@@ -406,14 +406,10 @@ export class Foundation extends Scene {
         : undefined;
 
     if (this.directorPerformanceHud && directorLifecycle) {
-      const rawFrameTimeMilliseconds = this.game.loop.rawDelta;
       this.directorPerformanceHud.update(
-        rawFrameTimeMilliseconds,
-        this.game.loop.actualFps,
+        time,
         directorLifecycle.paused,
-        !directorLifecycle.paused &&
-          rawFrameTimeMilliseconds > 0 &&
-          normalizedSimulationDeltaSeconds === 0,
+        !directorLifecycle.paused && delta > 0 && normalizedSimulationDeltaSeconds === 0,
       );
     }
 
@@ -753,7 +749,7 @@ export class Foundation extends Scene {
 
   private readonly handleDirectorPerformanceEvidenceExport = (
     snapshot: Readonly<PerformanceSnapshot>,
-    framesPerSecond: number,
+    measuredFramesPerSecond: number,
     fpsLimit: number,
     zapperWork?: Readonly<PrototypeZapperCollisionWorkCounters>,
     runtime?: Readonly<PerformanceRuntimeMetrics>,
@@ -793,7 +789,7 @@ export class Foundation extends Scene {
         wireframesEnabled: this.directorWireframesEnabled,
       },
       snapshot,
-      framesPerSecond,
+      measuredFramesPerSecond,
       fpsLimit,
       zapperWork,
       runtime ?? this.readDirectorPerformanceRuntimeMetrics(),
