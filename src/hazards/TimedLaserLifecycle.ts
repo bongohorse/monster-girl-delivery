@@ -182,7 +182,9 @@ export const stepTimedLaserLifecycle = (
     const availableSeconds = duration - elapsedPhaseSeconds;
     const reachesBoundary =
       remainingSeconds + TIMED_LASER_BOUNDARY_EPSILON_SECONDS >= availableSeconds;
-    const consumedSeconds = reachesBoundary ? availableSeconds : remainingSeconds;
+    const consumedSeconds = reachesBoundary
+      ? Math.min(availableSeconds, remainingSeconds)
+      : remainingSeconds;
 
     if (phase === 'on' && consumedSeconds > 0) {
       lethalIntervals.push(
