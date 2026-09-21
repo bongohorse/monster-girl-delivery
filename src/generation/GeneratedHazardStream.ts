@@ -828,15 +828,14 @@ const createMotionPlanningContext = (
 
 const getReadabilityClearSeconds = (state: Readonly<GeneratedHazardStreamState>): number | null => {
   const reservations = state.policy?.readability.reservations ?? [];
-  let latestEndSeconds: number | null = null;
-
-  for (const reservation of reservations) {
-    const endSeconds = reservation.activeWindow.endSeconds;
-    if (latestEndSeconds === null || endSeconds > latestEndSeconds) {
-      latestEndSeconds = endSeconds;
-    }
+  if (reservations.length === 0) {
+    return null;
   }
 
+  let latestEndSeconds = Number.NEGATIVE_INFINITY;
+  for (const reservation of reservations) {
+    latestEndSeconds = Math.max(latestEndSeconds, reservation.activeWindow.endSeconds);
+  }
   return latestEndSeconds;
 };
 
