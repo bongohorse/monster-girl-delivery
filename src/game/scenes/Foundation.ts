@@ -977,17 +977,55 @@ export class Foundation extends Scene {
     previousGenerated: ReadonlyArray<Readonly<LogicalHazardSpawnInstance>>,
   ): void {
     if (!this.directorAutoHazardsEnabled) {
-      this.retainedGeneratedTelegraphedHazards = Object.freeze([]);
+      if (this.retainedGeneratedTelegraphedHazards.length > 0) {
+        this.retainedGeneratedTelegraphedHazards = Object.freeze([]);
+      }
       return;
     }
 
     const currentGenerated = this.hazardStream?.spawns ?? [];
-    const currentIdentities = new Set(currentGenerated.map(getLogicalHazardSpawnIdentity));
-    const retainedByIdentity = new Map(
-      this.retainedGeneratedTelegraphedHazards.map(
-        (spawn) => [getLogicalHazardSpawnIdentity(spawn), spawn] as const,
-      ),
-    );
+
+    // GeneratedHazardStream preserves the frozen spawn-array reference while membership is
+    // unchanged. In that common path there are no newly dropped generated hazards to reconcile;
+    // only already-retained telegraphs may have expired while lifecycle simulation advanced.
+    if (currentGenerated === previousGenerated) {
+      const retained = this.retainedGeneratedTelegraphedHazards;
+      let nextRetained: Array<Readonly<LogicalHazardSpawnInstance>> | undefined;
+
+      for (let index = 0; index < retained.length; index += 1) {
+        const spawn = retained[index];
+        if (spawn === undefined) {
+          continue;
+        }
+        const lifecycle = getTelegraphedHazardLifecycle(this.telegraphedHazardState, spawn);
+        if (lifecycle !== null && lifecycle.phase !== 'expired') {
+          nextRetained?.push(spawn);
+          continue;
+        }
+
+        nextRetained ??= retained.slice(0, index);
+      }
+
+      if (nextRetained !== undefined) {
+        this.retainedGeneratedTelegraphedHazards = Object.freeze(nextRetained);
+      }
+      return;
+    }
+
+    // Membership-change path: allocate lookup containers only when the generated stream actually
+    // publishes a different spawn array. Avoid map()/spread/filter() intermediates even here.
+    const currentIdentities = new Set<string>();
+    for (const spawn of currentGenerated) {
+      currentIdentities.add(getLogicalHazardSpawnIdentity(spawn));
+    }
+
+    const retainedByIdentity = new Map<
+      string,
+      Readonly<LogicalHazardSpawnInstance>
+    >();
+    for (const spawn of this.retainedGeneratedTelegraphedHazards) {
+      retainedByIdentity.set(getLogicalHazardSpawnIdentity(spawn), spawn);
+    }
 
     for (const spawn of previousGenerated) {
       if (!isTelegraphedHazardBehavior(spawn.behavior)) {
@@ -1003,12 +1041,14 @@ export class Foundation extends Scene {
       retainedByIdentity.delete(identity);
     }
 
-    this.retainedGeneratedTelegraphedHazards = Object.freeze(
-      [...retainedByIdentity.values()].filter((spawn) => {
-        const lifecycle = getTelegraphedHazardLifecycle(this.telegraphedHazardState, spawn);
-        return lifecycle !== null && lifecycle.phase !== 'expired';
-      }),
-    );
+    const nextRetained: Array<Readonly<LogicalHazardSpawnInstance>> = [];
+    for (const spawn of retainedByIdentity.values()) {
+      const lifecycle = getTelegraphedHazardLifecycle(this.telegraphedHazardState, spawn);
+      if (lifecycle !== null && lifecycle.phase !== 'expired') {
+        nextRetained.push(spawn);
+      }
+    }
+    this.retainedGeneratedTelegraphedHazards = Object.freeze(nextRetained);
   }
 
   private pruneDirectorManualHazards(): void {
