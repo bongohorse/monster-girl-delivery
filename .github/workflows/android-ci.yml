@@ -125,13 +125,13 @@ jobs:
             exit 1
           fi
 
-      - name: Compile tests and assemble debug APK
+      - name: Compile tests and assemble Android variants
         working-directory: android
         env:
           MGD_ANDROID_TEST_KEYSTORE_PASSWORD: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && secrets.MGD_ANDROID_TEST_KEYSTORE_PASSWORD || '' }}
           MGD_ANDROID_TEST_KEY_ALIAS: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && secrets.MGD_ANDROID_TEST_KEY_ALIAS || '' }}
           MGD_ANDROID_TEST_KEY_PASSWORD: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && secrets.MGD_ANDROID_TEST_KEY_PASSWORD || '' }}
-        run: ./gradlew testDebugUnitTest assembleDebug --stacktrace
+        run: ./gradlew testDebugUnitTest assembleDebug assembleRelease --stacktrace
 
       - name: Stage commit-addressed APK evidence
         shell: bash
