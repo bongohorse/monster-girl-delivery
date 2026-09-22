@@ -53,7 +53,27 @@ For updateable tester builds, configure a dedicated **non-production test keysto
 - `MGD_ANDROID_TEST_KEY_ALIAS`;
 - `MGD_ANDROID_TEST_KEY_PASSWORD`.
 
-A partial configuration fails the build instead of silently switching to an incompatible debug certificate. Signing secrets are limited to the preparation and Gradle steps, and the temporary keystore is removed even after failure.
+Also configure the non-secret repository Actions variable:
+
+- `MGD_ANDROID_TEST_CERT_SHA256` — the pinned SHA-256 fingerprint of the certificate contained in the stable test keystore.
+
+The fingerprint is deliberately stored independently from the keystore. A release succeeds only when the certificate extracted from the final APK matches this pinned value, so accidentally replacing the keystore cannot silently create a new update-incompatible signing identity.
+
+To inspect the certificate locally, use the JDK `keytool` command and copy its SHA-256 fingerprint:
+
+```text
+keytool -list -v -keystore mgd-test.keystore -alias <your-alias>
+```
+
+The repository variable accepts the usual colon-separated fingerprint or the equivalent 64 hexadecimal characters; the workflow normalizes it before comparison.
+
+On Windows PowerShell, the keystore can be converted to the base64 value required by `MGD_ANDROID_TEST_KEYSTORE_BASE64` without modifying the file:
+
+```powershell
+[Convert]::ToBase64String([IO.File]::ReadAllBytes("mgd-test.keystore"))
+```
+
+A partial four-secret configuration fails the build instead of silently switching to an incompatible debug certificate. The release workflow additionally fails if the pinned certificate fingerprint is absent or malformed. Signing secrets are limited to the preparation and Gradle steps, and the temporary keystore is removed even after failure.
 
 When all four secrets are available on `main`, CI decodes the keystore only into the runner's temporary directory, signs the debug build with it, and records `stable-test` as the signing mode. The keystore and passwords must never be committed to the repository.
 
@@ -69,7 +89,10 @@ Release safety rules:
 - the tagged commit must be contained in `main`;
 - `package.json` must contain the same version without the leading `v`;
 - all four stable test-signing secrets are mandatory;
-- release signing never falls back to Gradle's ephemeral debug certificate.
+- release signing never falls back to Gradle's ephemeral debug certificate;
+- `MGD_ANDROID_TEST_CERT_SHA256` must contain the pinned stable-test certificate fingerprint;
+- the final APK signer certificate must match that pinned fingerprint exactly;
+- a GitHub Release for the same tag must not already exist; published release assets are immutable and are never replaced with `--clobber`.
 
 Android release versions are derived deterministically from the tag:
 
@@ -77,26 +100,34 @@ Android release versions are derived deterministically from the tag:
 
 For example, `v0.4.1` produces `versionName=0.4.1` and `versionCode=4001`. `MINOR` and `PATCH` must each remain at or below 999. This keeps Android update ordering monotonic for the supported SemVer scheme.
 
-The workflow runs the source quality gates, builds the production web bundle, syncs Capacitor, assembles a signed release APK, and checks the finished APK itself for the expected package ID, version code, version name, non-debuggable release state and valid signature before anything is published. It then creates or refreshes the matching GitHub Release.
+The workflow runs the source quality gates, builds the production web bundle, syncs Capacitor, assembles a signed release APK, and checks the finished APK itself for the expected package ID, version code, version name, non-debuggable release state, valid signature and pinned signing-certificate identity before anything is published. It then creates a new matching GitHub Release. If that release tag already has a GitHub Release, the workflow fails instead of replacing files.
 
 Each release contains:
 
 - `MGD-v<version>.apk` — the file Obtainium should install;
 - `SHA256SUMS.txt`;
-- `build-info.json` with commit, tag, Android version and signing mode;
+- `build-info.json` with commit, tag, Android version, signing mode and signing-certificate SHA-256 fingerprint;
 - `apk-signature.txt` from `apksigner`;
+- `apk-cert-sha256.txt` containing the normalized signer-certificate fingerprint used for the pin check;
 - `apk-badging.txt` with the inspected package/version metadata from the final APK.
 
 ### Publishing a tester release
+
+Before the first release, create the dedicated stable test keystore, configure the four signing secrets, and set `MGD_ANDROID_TEST_CERT_SHA256` to the certificate fingerprint from that same keystore.
+
+For each release:
 
 1. Update `package.json` to the intended stable version and merge that change to `main`.
 2. Confirm CI is green on that `main` commit.
 3. Create the matching tag, for example `v0.4.1`, on that commit.
 4. Push the tag to GitHub.
 5. Confirm the `Android Release` workflow finishes successfully.
-6. Verify the GitHub Release contains exactly one MGD APK plus the evidence files above.
+6. Verify the GitHub Release contains exactly one MGD APK plus the evidence files above and that `apk-cert-sha256.txt` matches the pinned certificate fingerprint.
+7. For the first stable-key release, uninstall any previously installed `ephemeral-debug` APK and install the release APK on representative Android hardware.
+8. Verify launch, package identity, landscape/touch/back-gesture behavior and the device features required for the release.
+9. Before calling the update path proven, publish a later version signed by the same stable key and verify that Obtainium/Android performs a real in-place update without uninstalling the prior stable-key release.
 
-Do not move or reuse a published version tag for different source code. Publish a new version instead.
+Do not move or reuse a published version tag for different source code. Do not overwrite an existing GitHub Release. Publish a new version instead.
 
 ### Obtainium setup
 
