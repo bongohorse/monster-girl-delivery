@@ -24,18 +24,24 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:coverage": "node ./node_modules/vitest/vitest.mjs run --coverage.enabled",
-    "test:mutation:collectibles": "stryker run stryker.collectibles.config.mjs"
+    "test:mutation:collectibles": "stryker run stryker.collectibles.config.mjs",
+    "android:sync": "bun run build && cap sync android",
+    "android:open": "bun run android:sync && cap open android",
+    "android:debug": "bun run android:sync && node scripts/android-gradle.mjs assembleDebug"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.14",
+    "@capacitor/cli": "8.5.2",
+    "@stryker-mutator/core": "10.0.0",
     "@vitest/coverage-istanbul": "5.0.1",
     "terser": "^5.51.2",
     "typescript": "7.0.2",
     "vite": "^8.1.0",
-    "vitest": "5.0.1",
-    "@stryker-mutator/core": "10.0.0"
+    "vitest": "5.0.1"
   },
   "dependencies": {
+    "@capacitor/android": "8.5.2",
+    "@capacitor/core": "8.5.2",
     "phaser": "4.2.1"
   }
 }
