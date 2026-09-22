@@ -17,7 +17,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      MGD_ANDROID_DIRECTOR_BUILD: '1'
       MGD_ANDROID_SIGNING_MODE: stable-test
     steps:
       - name: Check out tagged source
@@ -59,6 +58,15 @@ jobs:
         id: version
         shell: bash
         run: node scripts/android-release-version.mjs "$GITHUB_REF_NAME" >> "$GITHUB_OUTPUT"
+
+      - name: Require production runtime mode
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${MGD_ANDROID_DIRECTOR_BUILD:-0}" = '1' ]; then
+            echo '::error::Public Android releases must not enable Director tooling or override Vite development mode.'
+            exit 1
+          fi
 
       - name: Refuse an existing GitHub Release
         env:
