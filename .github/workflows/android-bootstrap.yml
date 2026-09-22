@@ -1,0 +1,122 @@
+name: Bootstrap Capacitor Android
+
+on:
+  push:
+    branches:
+      - feature/407-capacitor-android
+    paths:
+      - '.github/workflows/android-bootstrap.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  bootstrap:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out feature branch
+        uses: actions/checkout@v7
+        with:
+          ref: feature/407-capacitor-android
+          fetch-depth: 0
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .bun-version
+
+      - name: Install existing dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Add pinned Capacitor runtime
+        run: |
+          bun add @capacitor/core@8.5.2 @capacitor/android@8.5.2
+          bun add --dev @capacitor/cli@8.5.2
+
+      - name: Write Capacitor configuration
+        run: |
+          cat > capacitor.config.ts <<'EOF'
+          import type { CapacitorConfig } from '@capacitor/cli';
+
+          const config: CapacitorConfig = {
+            appId: 'com.bongohorse.monstergirldelivery',
+            appName: 'MGD',
+            webDir: 'dist',
+          };
+
+          export default config;
+          EOF
+
+      - name: Add Android package scripts
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync, writeFileSync } from 'node:fs';
+
+          const packageJson = JSON.parse(readFileSync('package.json', 'utf8'));
+          packageJson.scripts['android:sync'] = 'bun run build && cap sync android';
+          packageJson.scripts['android:open'] = 'bun run android:sync && cap open android';
+          packageJson.scripts['android:debug'] = 'bun run android:sync && cd android && ./gradlew assembleDebug';
+          writeFileSync('package.json', `${JSON.stringify(packageJson, null, 2)}\n`);
+          NODE
+
+      - name: Build web bundle
+        run: bun run build
+
+      - name: Generate Android project
+        run: bunx cap add android
+
+      - name: Lock MGD to landscape
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          manifest = Path('android/app/src/main/AndroidManifest.xml')
+          text = manifest.read_text()
+          needle = 'android:exported="true"'
+          if needle not in text:
+              raise SystemExit('Could not find exported MainActivity in AndroidManifest.xml')
+          text = text.replace(
+              needle,
+              needle + '\n            android:screenOrientation="sensorLandscape"',
+              1,
+          )
+          manifest.write_text(text)
+          PY
+
+      - name: Document generated project boundary
+        run: |
+          cat > docs/ANDROID_CAPACITOR.md <<'EOF'
+          # MGD Android / Capacitor
+
+          MGD keeps Phaser/Vite TypeScript as the gameplay authority and uses Capacitor only as the native Android container.
+
+          ## Identity
+
+          - Capacitor: 8.5.2
+          - app name: `MGD`
+          - Android application id: `com.bongohorse.monstergirldelivery`
+          - web output: `dist/`
+          - native platform: `android/`
+          - orientation: `sensorLandscape`
+
+          ## Local workflow
+
+          - `bun install`
+          - `bun run android:sync` builds Vite and syncs `dist/` into Android.
+          - `bun run android:open` syncs and opens the native project in Android Studio.
+          - `bun run android:debug` syncs and assembles the debug APK with Gradle.
+
+          Do not edit copied web assets under `android/app/src/main/assets/public/`; `cap sync android` owns them.
+
+          Browser and Capacitor/WebView benchmark captures are separate runtime populations and must not be compared as if they were the same environment.
+          EOF
+
+      - name: Commit generated Android platform
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add package.json bun.lock capacitor.config.ts android docs/ANDROID_CAPACITOR.md
+          git commit -m 'feat: add Capacitor Android container for #407'
+          git push origin HEAD:feature/407-capacitor-android
