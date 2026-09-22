@@ -104,7 +104,7 @@ Add this repository URL to Obtainium:
 
 `https://github.com/bongohorse/monster-girl-delivery`
 
-Use GitHub as the source. MGD publishes one APK per release with the stable filename pattern `MGD-v<version>.apk`, so an APK filter can be restricted to `^MGD-v.*\\.apk$` if desired.
+Use GitHub as the source. MGD publishes one APK per release with the stable filename pattern `MGD-v<version>.apk`, so an APK filter can be restricted to `^MGD-v.*\.apk$` if desired.
 
 Once the first stable-key release is installed, later GitHub Releases signed with the same key can update it in place. If the device currently has an `ephemeral-debug` build, uninstall it before installing the first stable-key release. That one-time reinstall is expected because the signing certificate changes.
 
