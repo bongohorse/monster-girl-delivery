@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      PR_HEAD_SHA: ${{ github.event.pull_request.head.sha || '' }}
       MGD_ANDROID_TEST_KEYSTORE_BASE64: ${{ secrets.MGD_ANDROID_TEST_KEYSTORE_BASE64 }}
       MGD_ANDROID_TEST_KEYSTORE_PASSWORD: ${{ secrets.MGD_ANDROID_TEST_KEYSTORE_PASSWORD }}
       MGD_ANDROID_TEST_KEY_ALIAS: ${{ secrets.MGD_ANDROID_TEST_KEY_ALIAS }}
@@ -45,6 +45,20 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
+
+      - name: Record checked-out build identity
+        id: build_identity
+        shell: bash
+        run: |
+          BUILT_SHA="$(git rev-parse HEAD)"
+          echo "BUILT_SHA=$BUILT_SHA" >> "$GITHUB_ENV"
+          echo "built_sha=$BUILT_SHA" >> "$GITHUB_OUTPUT"
+          if [ -n "$PR_HEAD_SHA" ]; then
+            echo "PR_HEAD_SHA=$PR_HEAD_SHA"
+          else
+            echo 'PR_HEAD_SHA=<none>'
+          fi
+          echo "BUILT_SHA=$BUILT_SHA"
 
       - name: Set up Bun
         uses: oven-sh/setup-bun@v2
@@ -93,8 +107,8 @@ jobs:
       - name: Stage commit-addressed APK evidence
         shell: bash
         run: |
-          SHORT_SHA="${SOURCE_SHA:0:12}"
-          APK_NAME="mgd-debug-${SHORT_SHA}.apk"
+          SHORT_BUILT_SHA="${BUILT_SHA:0:12}"
+          APK_NAME="mgd-debug-${SHORT_BUILT_SHA}.apk"
           APK_SOURCE='android/app/build/outputs/apk/debug/app-debug.apk'
           APK_TARGET="reports/android/${APK_NAME}"
           mkdir -p reports/android
@@ -115,14 +129,21 @@ jobs:
           node --input-type=module <<'NODE'
           import { writeFileSync } from 'node:fs';
 
-          const sourceSha = process.env.SOURCE_SHA;
+          const builtCommit = process.env.BUILT_SHA;
+          if (!builtCommit) {
+            throw new Error('BUILT_SHA is required for Android artifact identity.');
+          }
+          const prHeadCommit = process.env.PR_HEAD_SHA || null;
           writeFileSync(
             'reports/android/build-info.json',
             `${JSON.stringify(
               {
-                sourceCommit: sourceSha,
-                shortSourceCommit: sourceSha.slice(0, 12),
-                workflowCommit: process.env.GITHUB_SHA,
+                builtCommit,
+                shortBuiltCommit: builtCommit.slice(0, 12),
+                prHeadCommit,
+                workflowEventSha: process.env.GITHUB_SHA,
+                workflowRef: process.env.GITHUB_REF,
+                workflowEventName: process.env.GITHUB_EVENT_NAME,
                 workflowRunId: process.env.GITHUB_RUN_ID,
                 workflowRunAttempt: process.env.GITHUB_RUN_ATTEMPT,
                 signingMode: process.env.MGD_ANDROID_SIGNING_MODE,
@@ -140,7 +161,7 @@ jobs:
       - name: Upload Android test APK
         uses: actions/upload-artifact@v7
         with:
-          name: mgd-android-debug-${{ env.SOURCE_SHA }}
+          name: mgd-android-debug-${{ steps.build_identity.outputs.built_sha }}
           path: reports/android/
           if-no-files-found: error
           retention-days: 14
