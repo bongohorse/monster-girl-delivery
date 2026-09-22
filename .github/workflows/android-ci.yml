@@ -1,0 +1,71 @@
+name: Android CI
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/android-ci.yml'
+      - 'android/**'
+      - 'capacitor.config.ts'
+      - 'index.html'
+      - 'public/**'
+      - 'src/**'
+      - 'vite/**'
+      - 'package.json'
+      - 'bun.lock'
+      - '.bun-version'
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/android-ci.yml'
+      - 'android/**'
+      - 'capacitor.config.ts'
+      - 'index.html'
+      - 'public/**'
+      - 'src/**'
+      - 'vite/**'
+      - 'package.json'
+      - 'bun.lock'
+      - '.bun-version'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  android-debug-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .bun-version
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - name: Install locked dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Sync production web build into Android
+        run: bun run android:sync
+
+      - name: Verify MGD Android identity
+        run: |
+          grep -F "appId: 'com.bongohorse.monstergirldelivery'" capacitor.config.ts
+          grep -F "appName: 'MGD'" capacitor.config.ts
+          grep -F "appendUserAgent: 'MGD-Capacitor/1'" capacitor.config.ts
+          grep -F 'android:screenOrientation="sensorLandscape"' android/app/src/main/AndroidManifest.xml
+          grep -F 'applicationId "com.bongohorse.monstergirldelivery"' android/app/build.gradle
+
+      - name: Compile tests and assemble debug APK
+        working-directory: android
+        run: ./gradlew testDebugUnitTest assembleDebug --stacktrace
