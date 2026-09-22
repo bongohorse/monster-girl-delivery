@@ -4,12 +4,14 @@ on:
   pull_request:
     paths:
       - '.github/workflows/android-ci.yml'
+      - '.github/workflows/android-release.yml'
       - 'android/**'
       - 'capacitor.config.ts'
       - 'index.html'
       - 'public/**'
       - 'src/**'
       - 'vite/**'
+      - 'scripts/android-release-version.mjs'
       - 'scripts/verify-web-package.mjs'
       - 'tsconfig.json'
       - 'package.json'
@@ -20,12 +22,14 @@ on:
       - main
     paths:
       - '.github/workflows/android-ci.yml'
+      - '.github/workflows/android-release.yml'
       - 'android/**'
       - 'capacitor.config.ts'
       - 'index.html'
       - 'public/**'
       - 'src/**'
       - 'vite/**'
+      - 'scripts/android-release-version.mjs'
       - 'scripts/verify-web-package.mjs'
       - 'tsconfig.json'
       - 'package.json'
@@ -77,6 +81,12 @@ jobs:
       - name: Install locked dependencies
         run: bun install --frozen-lockfile
 
+      - name: Verify Android release version mapping
+        shell: bash
+        run: |
+          PACKAGE_VERSION="$(node --input-type=module -e "import { readFileSync } from 'node:fs'; console.log(JSON.parse(readFileSync('package.json', 'utf8')).version)")"
+          node scripts/android-release-version.mjs "v${PACKAGE_VERSION}"
+
       - name: Sync production web build into Android
         run: bun run android:sync
 
@@ -115,13 +125,13 @@ jobs:
             exit 1
           fi
 
-      - name: Compile tests and assemble debug APK
+      - name: Compile tests and assemble Android variants
         working-directory: android
         env:
           MGD_ANDROID_TEST_KEYSTORE_PASSWORD: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && secrets.MGD_ANDROID_TEST_KEYSTORE_PASSWORD || '' }}
           MGD_ANDROID_TEST_KEY_ALIAS: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && secrets.MGD_ANDROID_TEST_KEY_ALIAS || '' }}
           MGD_ANDROID_TEST_KEY_PASSWORD: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && secrets.MGD_ANDROID_TEST_KEY_PASSWORD || '' }}
-        run: ./gradlew testDebugUnitTest assembleDebug --stacktrace
+        run: ./gradlew testDebugUnitTest assembleDebug assembleRelease --stacktrace
 
       - name: Stage commit-addressed APK evidence
         shell: bash
