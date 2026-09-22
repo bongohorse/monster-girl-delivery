@@ -41,6 +41,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
+      MGD_ANDROID_DIRECTOR_BUILD: '1'
       MGD_ANDROID_SIGNING_MODE: ephemeral-debug
       PR_HEAD_SHA: ${{ github.event.pull_request.head.sha || '' }}
     steps:
