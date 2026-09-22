@@ -13,14 +13,13 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.regex.Pattern;
 
 @CapacitorPlugin(name = "EvidenceExport")
 public class EvidenceExportPlugin extends Plugin {
     private static final Pattern SAFE_FILENAME = Pattern.compile("[A-Za-z0-9._-]{1,180}");
-    private static final int MAX_CONTENT_LENGTH = 2 * 1024 * 1024;
+    private static final int MAX_CONTENT_BYTES = 2 * 1024 * 1024;
 
     @PluginMethod
     public void share(PluginCall call) {
@@ -35,7 +34,9 @@ public class EvidenceExportPlugin extends Plugin {
             call.reject("Evidence content is required.");
             return;
         }
-        if (content.length() > MAX_CONTENT_LENGTH) {
+
+        byte[] contentBytes = content.getBytes(StandardCharsets.UTF_8);
+        if (contentBytes.length > MAX_CONTENT_BYTES) {
             call.reject("Evidence payload exceeds the 2 MiB safety limit.");
             return;
         }
@@ -48,11 +49,8 @@ public class EvidenceExportPlugin extends Plugin {
             }
 
             File evidenceFile = new File(evidenceDirectory, filename);
-            try (
-                FileOutputStream stream = new FileOutputStream(evidenceFile, false);
-                OutputStreamWriter writer = new OutputStreamWriter(stream, StandardCharsets.UTF_8)
-            ) {
-                writer.write(content);
+            try (FileOutputStream stream = new FileOutputStream(evidenceFile, false)) {
+                stream.write(contentBytes);
             }
 
             Uri evidenceUri = FileProvider.getUriForFile(
