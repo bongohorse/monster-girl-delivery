@@ -36,6 +36,12 @@ jobs:
   android-debug-build:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      MGD_ANDROID_TEST_KEYSTORE_BASE64: ${{ secrets.MGD_ANDROID_TEST_KEYSTORE_BASE64 }}
+      MGD_ANDROID_TEST_KEYSTORE_PASSWORD: ${{ secrets.MGD_ANDROID_TEST_KEYSTORE_PASSWORD }}
+      MGD_ANDROID_TEST_KEY_ALIAS: ${{ secrets.MGD_ANDROID_TEST_KEY_ALIAS }}
+      MGD_ANDROID_TEST_KEY_PASSWORD: ${{ secrets.MGD_ANDROID_TEST_KEY_PASSWORD }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
@@ -55,6 +61,20 @@ jobs:
       - name: Install locked dependencies
         run: bun install --frozen-lockfile
 
+      - name: Prepare optional stable test signing
+        shell: bash
+        run: |
+          if [ -n "$MGD_ANDROID_TEST_KEYSTORE_BASE64" ] && \
+             [ -n "$MGD_ANDROID_TEST_KEYSTORE_PASSWORD" ] && \
+             [ -n "$MGD_ANDROID_TEST_KEY_ALIAS" ] && \
+             [ -n "$MGD_ANDROID_TEST_KEY_PASSWORD" ]; then
+            printf '%s' "$MGD_ANDROID_TEST_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/mgd-test.keystore"
+            echo "MGD_ANDROID_TEST_KEYSTORE_FILE=$RUNNER_TEMP/mgd-test.keystore" >> "$GITHUB_ENV"
+            echo 'MGD_ANDROID_SIGNING_MODE=stable-test' >> "$GITHUB_ENV"
+          else
+            echo 'MGD_ANDROID_SIGNING_MODE=ephemeral-debug' >> "$GITHUB_ENV"
+          fi
+
       - name: Sync production web build into Android
         run: bun run android:sync
 
@@ -69,3 +89,55 @@ jobs:
       - name: Compile tests and assemble debug APK
         working-directory: android
         run: ./gradlew testDebugUnitTest assembleDebug --stacktrace
+
+      - name: Stage commit-addressed APK evidence
+        shell: bash
+        run: |
+          SHORT_SHA="${SOURCE_SHA:0:12}"
+          APK_SOURCE='android/app/build/outputs/apk/debug/app-debug.apk'
+          APK_TARGET="reports/android/mgd-debug-${SHORT_SHA}.apk"
+          mkdir -p reports/android
+          cp "$APK_SOURCE" "$APK_TARGET"
+          sha256sum "$APK_TARGET" > reports/android/SHA256SUMS.txt
+
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+          if [ -z "$APKSIGNER" ]; then
+            echo 'Android apksigner was not found.' >&2
+            exit 1
+          fi
+          "$APKSIGNER" verify --verbose --print-certs "$APK_TARGET" \
+            > reports/android/apk-signature.txt
+
+          node --input-type=module <<'NODE'
+          import { writeFileSync } from 'node:fs';
+
+          const sourceSha = process.env.SOURCE_SHA;
+          writeFileSync(
+            'reports/android/build-info.json',
+            `${JSON.stringify(
+              {
+                sourceCommit: sourceSha,
+                shortSourceCommit: sourceSha.slice(0, 12),
+                workflowCommit: process.env.GITHUB_SHA,
+                workflowRunId: process.env.GITHUB_RUN_ID,
+                workflowRunAttempt: process.env.GITHUB_RUN_ATTEMPT,
+                signingMode: process.env.MGD_ANDROID_SIGNING_MODE,
+                applicationId: 'com.bongohorse.monstergirldelivery',
+                artifactType: 'debug-apk',
+                java: '21',
+                capacitor: '8.5.2',
+              },
+              null,
+              2,
+            )}\n`,
+          );
+          NODE
+
+      - name: Upload Android test APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: mgd-android-debug-${{ env.SOURCE_SHA }}
+          path: reports/android/
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
