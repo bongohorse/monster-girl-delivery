@@ -19,10 +19,15 @@ const phasermsg = () => {
   };
 };
 
+const androidDirectorBuild = process.env.MGD_ANDROID_DIRECTOR_BUILD === '1';
+
 export default defineConfig({
   base: './',
 
-  define: createBuildDefines(),
+  define: {
+    ...createBuildDefines(),
+    ...(androidDirectorBuild ? { 'import.meta.env.DEV': 'true' } : {}),
+  },
 
   logLevel: 'warning',
 
