@@ -27,6 +27,18 @@ A service worker is not required for Chromium PWA installation, and omitting it 
 
 If offline support is introduced later, it must include an explicit cache/version authority and a documented benchmark bypass/invalidation path before it is enabled for performance evidence.
 
+## Hosted test build
+
+The production web build is deployed from `main` through GitHub Actions to GitHub Pages. This provides an HTTPS test target without requiring a Codespace or local development server.
+
+Expected project URL:
+
+`https://bongohorse.github.io/monster-girl-delivery/`
+
+The Pages workflow builds the normal Vite production output and deploys only `dist/`. Pull requests build the same artifact but do not deploy it.
+
+If the repository has not used GitHub Pages before, repository Settings → Pages may need the publishing source set to **GitHub Actions** once before the first deployment can succeed.
+
 ## Android install smoke
 
 On the HTTPS-hosted production build:
