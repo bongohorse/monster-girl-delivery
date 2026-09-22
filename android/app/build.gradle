@@ -6,6 +6,15 @@ def testKeyAlias = System.getenv("MGD_ANDROID_TEST_KEY_ALIAS")
 def testKeyPassword = System.getenv("MGD_ANDROID_TEST_KEY_PASSWORD")
 def stableTestSigningEnabled = testKeystorePath && testKeystorePassword && testKeyAlias && testKeyPassword
 
+def configuredVersionCode = System.getenv("MGD_ANDROID_VERSION_CODE")
+def configuredVersionName = System.getenv("MGD_ANDROID_VERSION_NAME")
+def androidVersionCode = configuredVersionCode ? configuredVersionCode.toInteger() : 1
+def androidVersionName = configuredVersionName ?: "1.0"
+
+if (androidVersionCode < 1 || androidVersionCode > 2100000000) {
+    throw new GradleException("MGD_ANDROID_VERSION_CODE must be between 1 and 2100000000")
+}
+
 android {
     namespace = "com.bongohorse.monstergirldelivery"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -13,8 +22,8 @@ android {
         applicationId "com.bongohorse.monstergirldelivery"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode androidVersionCode
+        versionName androidVersionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -39,6 +48,9 @@ android {
             }
         }
         release {
+            if (stableTestSigningEnabled) {
+                signingConfig signingConfigs.test
+            }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
