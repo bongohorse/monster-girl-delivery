@@ -60,6 +60,18 @@ jobs:
         shell: bash
         run: node scripts/android-release-version.mjs "$GITHUB_REF_NAME" >> "$GITHUB_OUTPUT"
 
+      - name: Refuse an existing GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "::error::GitHub Release $RELEASE_TAG already exists. Published release assets are immutable; publish a new version tag instead of replacing files."
+            exit 1
+          fi
+
       - name: Require stable test signing secrets
         env:
           MGD_ANDROID_TEST_KEYSTORE_BASE64: ${{ secrets.MGD_ANDROID_TEST_KEYSTORE_BASE64 }}
@@ -78,6 +90,19 @@ jobs:
           fi
           printf '%s' "$MGD_ANDROID_TEST_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/mgd-test.keystore"
           echo "MGD_ANDROID_TEST_KEYSTORE_FILE=$RUNNER_TEMP/mgd-test.keystore" >> "$GITHUB_ENV"
+
+      - name: Require pinned signing certificate fingerprint
+        env:
+          EXPECTED_CERT_SHA256: ${{ vars.MGD_ANDROID_TEST_CERT_SHA256 }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          NORMALIZED_CERT_SHA256="$(printf '%s' "$EXPECTED_CERT_SHA256" | tr -d ':[:space:]' | tr '[:upper:]' '[:lower:]')"
+          if ! [[ "$NORMALIZED_CERT_SHA256" =~ ^[0-9a-f]{64}$ ]]; then
+            echo '::error::Repository variable MGD_ANDROID_TEST_CERT_SHA256 must contain the pinned 64-hex SHA-256 fingerprint of the stable test signing certificate.'
+            exit 1
+          fi
+          echo "MGD_ANDROID_EXPECTED_CERT_SHA256=$NORMALIZED_CERT_SHA256" >> "$GITHUB_ENV"
 
       - name: Run source quality gates
         run: |
@@ -143,6 +168,27 @@ jobs:
           "$APKSIGNER" verify --verbose --print-certs "$APK_TARGET" \
             > reports/android-release/apk-signature.txt
 
+          mapfile -t CERT_DIGEST_LINES < <(
+            grep -E '^Signer #[0-9]+ certificate SHA-256 digest:' reports/android-release/apk-signature.txt
+          )
+          if [ "${#CERT_DIGEST_LINES[@]}" -ne 1 ]; then
+            echo "::error::Expected exactly one APK signer certificate, found ${#CERT_DIGEST_LINES[@]}."
+            exit 1
+          fi
+          ACTUAL_CERT_SHA256="$(
+            printf '%s' "${CERT_DIGEST_LINES[0]#*: }" | tr -d ':[:space:]' | tr '[:upper:]' '[:lower:]'
+          )"
+          if ! [[ "$ACTUAL_CERT_SHA256" =~ ^[0-9a-f]{64}$ ]]; then
+            echo '::error::Could not parse the APK signer SHA-256 certificate fingerprint.'
+            exit 1
+          fi
+          if [ "$ACTUAL_CERT_SHA256" != "$MGD_ANDROID_EXPECTED_CERT_SHA256" ]; then
+            echo "::error::APK signing certificate does not match the pinned stable test certificate. Expected $MGD_ANDROID_EXPECTED_CERT_SHA256, got $ACTUAL_CERT_SHA256."
+            exit 1
+          fi
+          printf '%s\n' "$ACTUAL_CERT_SHA256" > reports/android-release/apk-cert-sha256.txt
+          export ACTUAL_CERT_SHA256
+
           (
             cd reports/android-release
             sha256sum "$APK_NAME" > SHA256SUMS.txt
@@ -160,6 +206,7 @@ jobs:
                 versionName: process.env.RELEASE_VERSION_NAME,
                 versionCode: Number(process.env.RELEASE_VERSION_CODE),
                 signingMode: 'stable-test',
+                signingCertificateSha256: process.env.ACTUAL_CERT_SHA256,
                 applicationId: 'com.bongohorse.monstergirldelivery',
                 artifactType: 'direct-release-apk',
                 workflowRunId: process.env.GITHUB_RUN_ID,
@@ -180,7 +227,7 @@ jobs:
           retention-days: 30
           compression-level: 0
 
-      - name: Publish GitHub Release for Obtainium
+      - name: Publish immutable GitHub Release for Obtainium
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ steps.version.outputs.tag }}
@@ -193,17 +240,19 @@ jobs:
             'reports/android-release/SHA256SUMS.txt'
             'reports/android-release/build-info.json'
             'reports/android-release/apk-signature.txt'
+            'reports/android-release/apk-cert-sha256.txt'
             'reports/android-release/apk-badging.txt'
           )
 
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            gh release upload "$RELEASE_TAG" "${assets[@]}" --clobber
-          else
-            gh release create "$RELEASE_TAG" "${assets[@]}" \
-              --verify-tag \
-              --generate-notes \
-              --title "MGD ${RELEASE_VERSION_NAME}"
+            echo "::error::GitHub Release $RELEASE_TAG already exists. Refusing to replace published assets; publish a new version tag instead."
+            exit 1
           fi
+
+          gh release create "$RELEASE_TAG" "${assets[@]}" \
+            --verify-tag \
+            --generate-notes \
+            --title "MGD ${RELEASE_VERSION_NAME}"
 
       - name: Remove temporary signing keystore
         if: always()
