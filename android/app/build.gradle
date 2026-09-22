@@ -1,5 +1,11 @@
 apply plugin: 'com.android.application'
 
+def testKeystorePath = System.getenv("MGD_ANDROID_TEST_KEYSTORE_FILE")
+def testKeystorePassword = System.getenv("MGD_ANDROID_TEST_KEYSTORE_PASSWORD")
+def testKeyAlias = System.getenv("MGD_ANDROID_TEST_KEY_ALIAS")
+def testKeyPassword = System.getenv("MGD_ANDROID_TEST_KEY_PASSWORD")
+def stableTestSigningEnabled = testKeystorePath && testKeystorePassword && testKeyAlias && testKeyPassword
+
 android {
     namespace = "com.bongohorse.monstergirldelivery"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -16,7 +22,22 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        if (stableTestSigningEnabled) {
+            test {
+                storeFile file(testKeystorePath)
+                storePassword testKeystorePassword
+                keyAlias testKeyAlias
+                keyPassword testKeyPassword
+            }
+        }
+    }
     buildTypes {
+        debug {
+            if (stableTestSigningEnabled) {
+                signingConfig signingConfigs.test
+            }
+        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
