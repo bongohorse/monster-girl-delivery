@@ -4,7 +4,6 @@ on:
   push:
     tags:
       - 'v*.*.*'
-  workflow_dispatch:
 
 permissions:
   contents: write
@@ -120,21 +119,34 @@ jobs:
           set -euo pipefail
           APK_SOURCE='android/app/build/outputs/apk/release/app-release.apk'
           APK_NAME="MGD-${RELEASE_TAG}.apk"
+          APK_TARGET="reports/android-release/$APK_NAME"
           mkdir -p reports/android-release
-          cp "$APK_SOURCE" "reports/android-release/$APK_NAME"
+          cp "$APK_SOURCE" "$APK_TARGET"
+
+          AAPT="$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -n 1)"
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+          if [ -z "$AAPT" ] || [ -z "$APKSIGNER" ]; then
+            echo 'Required Android build-tools (aapt/apksigner) were not found.' >&2
+            exit 1
+          fi
+
+          BADGING="$($AAPT dump badging "$APK_TARGET")"
+          printf '%s\n' "$BADGING" > reports/android-release/apk-badging.txt
+          grep -F "package: name='com.bongohorse.monstergirldelivery'" <<< "$BADGING"
+          grep -F "versionCode='${RELEASE_VERSION_CODE}'" <<< "$BADGING"
+          grep -F "versionName='${RELEASE_VERSION_NAME}'" <<< "$BADGING"
+          if grep -q '^application-debuggable' <<< "$BADGING"; then
+            echo '::error::Release APK is unexpectedly debuggable.'
+            exit 1
+          fi
+
+          "$APKSIGNER" verify --verbose --print-certs "$APK_TARGET" \
+            > reports/android-release/apk-signature.txt
 
           (
             cd reports/android-release
             sha256sum "$APK_NAME" > SHA256SUMS.txt
           )
-
-          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
-          if [ -z "$APKSIGNER" ]; then
-            echo 'Android apksigner was not found.' >&2
-            exit 1
-          fi
-          "$APKSIGNER" verify --verbose --print-certs "reports/android-release/$APK_NAME" \
-            > reports/android-release/apk-signature.txt
 
           node --input-type=module <<'NODE'
           import { writeFileSync } from 'node:fs';
@@ -181,6 +193,7 @@ jobs:
             'reports/android-release/SHA256SUMS.txt'
             'reports/android-release/build-info.json'
             'reports/android-release/apk-signature.txt'
+            'reports/android-release/apk-badging.txt'
           )
 
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
