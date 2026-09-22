@@ -1,5 +1,6 @@
 package com.bongohorse.monstergirldelivery;
 
+import android.content.ClipData;
 import android.content.Intent;
 import android.net.Uri;
 
@@ -13,6 +14,7 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.regex.Pattern;
 
@@ -34,9 +36,7 @@ public class EvidenceExportPlugin extends Plugin {
             call.reject("Evidence content is required.");
             return;
         }
-
-        byte[] contentBytes = content.getBytes(StandardCharsets.UTF_8);
-        if (contentBytes.length > MAX_CONTENT_BYTES) {
+        if (content.getBytes(StandardCharsets.UTF_8).length > MAX_CONTENT_BYTES) {
             call.reject("Evidence payload exceeds the 2 MiB safety limit.");
             return;
         }
@@ -49,8 +49,11 @@ public class EvidenceExportPlugin extends Plugin {
             }
 
             File evidenceFile = new File(evidenceDirectory, filename);
-            try (FileOutputStream stream = new FileOutputStream(evidenceFile, false)) {
-                stream.write(contentBytes);
+            try (
+                FileOutputStream stream = new FileOutputStream(evidenceFile, false);
+                OutputStreamWriter writer = new OutputStreamWriter(stream, StandardCharsets.UTF_8)
+            ) {
+                writer.write(content);
             }
 
             Uri evidenceUri = FileProvider.getUriForFile(
@@ -62,9 +65,11 @@ public class EvidenceExportPlugin extends Plugin {
             Intent shareIntent = new Intent(Intent.ACTION_SEND)
                 .setType("application/json")
                 .putExtra(Intent.EXTRA_STREAM, evidenceUri)
+                .setClipData(ClipData.newRawUri("MGD performance evidence", evidenceUri))
                 .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
 
-            Intent chooser = Intent.createChooser(shareIntent, "Share MGD performance evidence");
+            Intent chooser = Intent.createChooser(shareIntent, "Share MGD performance evidence")
+                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             getActivity().startActivity(chooser);
 
             JSObject result = new JSObject();
