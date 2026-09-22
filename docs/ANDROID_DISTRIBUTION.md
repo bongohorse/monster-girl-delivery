@@ -10,7 +10,7 @@ GitHub Actions is the canonical Android test-build environment. The `Android CI`
 4. builds the production Phaser/Vite bundle;
 5. syncs that bundle into Capacitor Android;
 6. runs the Android identity checks;
-7. runs Gradle tests and `assembleDebug` on Java 21;
+7. runs Gradle tests and `assembleDebug` on Java 25;
 8. verifies the generated APK signature;
 9. publishes a commit-addressed GitHub Actions artifact.
 
@@ -56,6 +56,54 @@ A partial configuration fails the build instead of silently switching to an inco
 When all four secrets are available on `main`, CI decodes the keystore only into the runner's temporary directory, signs the debug build with it, and records `stable-test` as the signing mode. The keystore and passwords must never be committed to the repository.
 
 The production Play signing key is a separate future concern and must not reuse the test key.
+
+## GitHub Releases for Obtainium
+
+Direct tester updates use GitHub Releases rather than a self-updater inside MGD. The `Android Release` workflow runs when a stable SemVer tag such as `v0.4.1` is pushed.
+
+Release safety rules:
+
+- the tag must match `vMAJOR.MINOR.PATCH` exactly;
+- the tagged commit must be contained in `main`;
+- `package.json` must contain the same version without the leading `v`;
+- all four stable test-signing secrets are mandatory;
+- release signing never falls back to Gradle's ephemeral debug certificate.
+
+Android release versions are derived deterministically from the tag:
+
+`versionCode = MAJOR * 1,000,000 + MINOR * 1,000 + PATCH`
+
+For example, `v0.4.1` produces `versionName=0.4.1` and `versionCode=4001`. `MINOR` and `PATCH` must each remain at or below 999. This keeps Android update ordering monotonic for the supported SemVer scheme.
+
+The workflow runs the source quality gates, builds the production web bundle, syncs Capacitor, assembles a signed release APK, verifies its APK signature, and creates or refreshes the matching GitHub Release. Each release contains:
+
+- `MGD-v<version>.apk` — the file Obtainium should install;
+- `SHA256SUMS.txt`;
+- `build-info.json` with commit, tag, Android version and signing mode;
+- `apk-signature.txt` from `apksigner`.
+
+### Publishing a tester release
+
+1. Update `package.json` to the intended stable version and merge that change to `main`.
+2. Confirm CI is green on that `main` commit.
+3. Create the matching tag, for example `v0.4.1`, on that commit.
+4. Push the tag to GitHub.
+5. Wait for the `Android Release` workflow to finish successfully.
+6. Verify the GitHub Release contains exactly one MGD APK plus the evidence files above.
+
+Do not move or reuse a published version tag for different source code. Publish a new version instead.
+
+### Obtainium setup
+
+Add this repository URL to Obtainium:
+
+`https://github.com/bongohorse/monster-girl-delivery`
+
+Use GitHub as the source. MGD publishes one APK per release with the stable filename pattern `MGD-v<version>.apk`, so an APK filter can be restricted to `^MGD-v.*\\.apk$` if desired.
+
+Once the first stable-key release is installed, later GitHub Releases signed with the same key can update it in place. If the device currently has an `ephemeral-debug` build, uninstall it before installing the first stable-key release. That one-time reinstall is expected because the signing certificate changes.
+
+Obtainium is the update/discovery layer only. Android still enforces package identity, version ordering and signing-certificate compatibility.
 
 ## Optional Firebase App Distribution
 
