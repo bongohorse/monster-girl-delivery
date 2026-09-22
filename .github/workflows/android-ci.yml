@@ -94,11 +94,15 @@ jobs:
         shell: bash
         run: |
           SHORT_SHA="${SOURCE_SHA:0:12}"
+          APK_NAME="mgd-debug-${SHORT_SHA}.apk"
           APK_SOURCE='android/app/build/outputs/apk/debug/app-debug.apk'
-          APK_TARGET="reports/android/mgd-debug-${SHORT_SHA}.apk"
+          APK_TARGET="reports/android/${APK_NAME}"
           mkdir -p reports/android
           cp "$APK_SOURCE" "$APK_TARGET"
-          sha256sum "$APK_TARGET" > reports/android/SHA256SUMS.txt
+          (
+            cd reports/android
+            sha256sum "$APK_NAME" > SHA256SUMS.txt
+          )
 
           APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
           if [ -z "$APKSIGNER" ]; then
