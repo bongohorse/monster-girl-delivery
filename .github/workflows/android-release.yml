@@ -165,18 +165,21 @@ jobs:
             exit 1
           fi
 
-          "$APKSIGNER" verify --verbose --print-certs "$APK_TARGET" \
-            > reports/android-release/apk-signature.txt
+          "$APKSIGNER" verify --verbose --print-certs "$APK_TARGET" 2>&1 \
+            | tee reports/android-release/apk-signature.txt
 
           mapfile -t CERT_DIGEST_LINES < <(
-            grep -E '^Signer #[0-9]+ certificate SHA-256 digest:' reports/android-release/apk-signature.txt
+            grep -Ei 'certificate SHA-256 digest:' reports/android-release/apk-signature.txt
           )
           if [ "${#CERT_DIGEST_LINES[@]}" -ne 1 ]; then
-            echo "::error::Expected exactly one APK signer certificate, found ${#CERT_DIGEST_LINES[@]}."
+            echo "::error::Expected exactly one APK signer certificate SHA-256 digest, found ${#CERT_DIGEST_LINES[@]}."
             exit 1
           fi
           ACTUAL_CERT_SHA256="$(
-            printf '%s' "${CERT_DIGEST_LINES[0]#*: }" | tr -d ':[:space:]' | tr '[:upper:]' '[:lower:]'
+            printf '%s' "${CERT_DIGEST_LINES[0]}" \
+              | sed -E 's/^.*certificate SHA-256 digest:[[:space:]]*//I' \
+              | tr -d ':[:space:]' \
+              | tr '[:upper:]' '[:lower:]'
           )"
           if ! [[ "$ACTUAL_CERT_SHA256" =~ ^[0-9a-f]{64}$ ]]; then
             echo '::error::Could not parse the APK signer SHA-256 certificate fingerprint.'
