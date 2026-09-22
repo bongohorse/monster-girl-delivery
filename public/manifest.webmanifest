@@ -1,0 +1,28 @@
+{
+  "name": "Monster Girl Delivery",
+  "short_name": "MGD",
+  "description": "Mobile-first arcade runner.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "landscape",
+  "background_color": "#121426",
+  "theme_color": "#121426",
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "./icons/mgd-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icons/mgd-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
