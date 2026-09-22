@@ -27,7 +27,7 @@
     "test:mutation:collectibles": "stryker run stryker.collectibles.config.mjs",
     "android:sync": "bun run build && cap sync android",
     "android:open": "bun run android:sync && cap open android",
-    "android:debug": "bun run android:sync && cd android && ./gradlew assembleDebug"
+    "android:debug": "bun run android:sync && node scripts/android-gradle.mjs assembleDebug"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.14",
