@@ -1,0 +1,197 @@
+name: Android Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      MGD_ANDROID_DIRECTOR_BUILD: '1'
+      MGD_ANDROID_SIGNING_MODE: stable-test
+    steps:
+      - name: Check out tagged source
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Require a release tag on main history
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_REF" != refs/tags/v* ]]; then
+            echo '::error::Android releases must run from a vMAJOR.MINOR.PATCH tag.'
+            exit 1
+          fi
+          git fetch origin main
+          if ! git merge-base --is-ancestor HEAD origin/main; then
+            echo '::error::Release tag does not point to a commit contained in main.'
+            exit 1
+          fi
+          echo "BUILT_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .bun-version
+
+      - name: Set up Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: gradle
+
+      - name: Install locked dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Resolve Android release version
+        id: version
+        shell: bash
+        run: node scripts/android-release-version.mjs "$GITHUB_REF_NAME" >> "$GITHUB_OUTPUT"
+
+      - name: Require stable test signing secrets
+        env:
+          MGD_ANDROID_TEST_KEYSTORE_BASE64: ${{ secrets.MGD_ANDROID_TEST_KEYSTORE_BASE64 }}
+          MGD_ANDROID_TEST_KEYSTORE_PASSWORD: ${{ secrets.MGD_ANDROID_TEST_KEYSTORE_PASSWORD }}
+          MGD_ANDROID_TEST_KEY_ALIAS: ${{ secrets.MGD_ANDROID_TEST_KEY_ALIAS }}
+          MGD_ANDROID_TEST_KEY_PASSWORD: ${{ secrets.MGD_ANDROID_TEST_KEY_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "$MGD_ANDROID_TEST_KEYSTORE_BASE64" ] || \
+             [ -z "$MGD_ANDROID_TEST_KEYSTORE_PASSWORD" ] || \
+             [ -z "$MGD_ANDROID_TEST_KEY_ALIAS" ] || \
+             [ -z "$MGD_ANDROID_TEST_KEY_PASSWORD" ]; then
+            echo '::error::All four MGD_ANDROID_TEST_* secrets are required. Release signing never falls back to an ephemeral debug key.'
+            exit 1
+          fi
+          printf '%s' "$MGD_ANDROID_TEST_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/mgd-test.keystore"
+          echo "MGD_ANDROID_TEST_KEYSTORE_FILE=$RUNNER_TEMP/mgd-test.keystore" >> "$GITHUB_ENV"
+
+      - name: Run source quality gates
+        run: |
+          bun run ci:check
+          bun run typecheck
+          bun run test
+
+      - name: Sync production web build into Android
+        run: bun run android:sync
+
+      - name: Verify bundled production PWA
+        run: node scripts/verify-web-package.mjs android/app/src/main/assets/public
+
+      - name: Verify MGD Android identity
+        run: |
+          grep -F "appId: 'com.bongohorse.monstergirldelivery'" capacitor.config.ts
+          grep -F "appName: 'MGD'" capacitor.config.ts
+          grep -F "appendUserAgent: 'MGD-Capacitor/1'" capacitor.config.ts
+          grep -F 'android:screenOrientation="sensorLandscape"' android/app/src/main/AndroidManifest.xml
+          grep -F 'applicationId "com.bongohorse.monstergirldelivery"' android/app/build.gradle
+
+      - name: Compile tests and assemble signed release APK
+        working-directory: android
+        env:
+          MGD_ANDROID_VERSION_NAME: ${{ steps.version.outputs.versionName }}
+          MGD_ANDROID_VERSION_CODE: ${{ steps.version.outputs.versionCode }}
+          MGD_ANDROID_TEST_KEYSTORE_PASSWORD: ${{ secrets.MGD_ANDROID_TEST_KEYSTORE_PASSWORD }}
+          MGD_ANDROID_TEST_KEY_ALIAS: ${{ secrets.MGD_ANDROID_TEST_KEY_ALIAS }}
+          MGD_ANDROID_TEST_KEY_PASSWORD: ${{ secrets.MGD_ANDROID_TEST_KEY_PASSWORD }}
+        run: ./gradlew testDebugUnitTest assembleRelease --stacktrace
+
+      - name: Stage and verify release assets
+        env:
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+          RELEASE_VERSION_NAME: ${{ steps.version.outputs.versionName }}
+          RELEASE_VERSION_CODE: ${{ steps.version.outputs.versionCode }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK_SOURCE='android/app/build/outputs/apk/release/app-release.apk'
+          APK_NAME="MGD-${RELEASE_TAG}.apk"
+          mkdir -p reports/android-release
+          cp "$APK_SOURCE" "reports/android-release/$APK_NAME"
+
+          (
+            cd reports/android-release
+            sha256sum "$APK_NAME" > SHA256SUMS.txt
+          )
+
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+          if [ -z "$APKSIGNER" ]; then
+            echo 'Android apksigner was not found.' >&2
+            exit 1
+          fi
+          "$APKSIGNER" verify --verbose --print-certs "reports/android-release/$APK_NAME" \
+            > reports/android-release/apk-signature.txt
+
+          node --input-type=module <<'NODE'
+          import { writeFileSync } from 'node:fs';
+
+          writeFileSync(
+            'reports/android-release/build-info.json',
+            `${JSON.stringify(
+              {
+                builtCommit: process.env.BUILT_SHA,
+                tag: process.env.RELEASE_TAG,
+                versionName: process.env.RELEASE_VERSION_NAME,
+                versionCode: Number(process.env.RELEASE_VERSION_CODE),
+                signingMode: 'stable-test',
+                applicationId: 'com.bongohorse.monstergirldelivery',
+                artifactType: 'direct-release-apk',
+                workflowRunId: process.env.GITHUB_RUN_ID,
+                workflowRunAttempt: process.env.GITHUB_RUN_ATTEMPT,
+              },
+              null,
+              2,
+            )}\n`,
+          );
+          NODE
+
+      - name: Preserve release evidence as Actions artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: mgd-android-release-${{ steps.version.outputs.versionName }}
+          path: reports/android-release/
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
+
+      - name: Publish GitHub Release for Obtainium
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+          RELEASE_VERSION_NAME: ${{ steps.version.outputs.versionName }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          assets=(
+            "reports/android-release/MGD-${RELEASE_TAG}.apk"
+            'reports/android-release/SHA256SUMS.txt'
+            'reports/android-release/build-info.json'
+            'reports/android-release/apk-signature.txt'
+          )
+
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" "${assets[@]}" --clobber
+          else
+            gh release create "$RELEASE_TAG" "${assets[@]}" \
+              --verify-tag \
+              --generate-notes \
+              --title "MGD ${RELEASE_VERSION_NAME}"
+          fi
+
+      - name: Remove temporary signing keystore
+        if: always()
+        run: rm -f "$RUNNER_TEMP/mgd-test.keystore"
