@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-mgd-boot-phase="html">
 <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/favicon.png" />
@@ -7,6 +7,91 @@
     <meta name="theme-color" content="#121426" />
     <link rel="stylesheet" href="/style.css" />
     <title>Monster Girl Delivery</title>
+    <style>
+        #mgd-boot-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 30000;
+            display: grid;
+            place-items: center;
+            box-sizing: border-box;
+            padding: max(24px, env(safe-area-inset-top, 0)) max(24px, env(safe-area-inset-right, 0)) max(24px, env(safe-area-inset-bottom, 0)) max(24px, env(safe-area-inset-left, 0));
+            background: #121426;
+            color: #f5f7ff;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        .mgd-boot-screen__content {
+            display: grid;
+            width: min(240px, calc(100vw - 48px));
+            justify-items: center;
+            gap: 14px;
+        }
+
+        .mgd-boot-screen__title {
+            font-size: clamp(28px, 8vw, 44px);
+            font-weight: 800;
+            letter-spacing: 0.16em;
+            line-height: 1;
+            text-indent: 0.16em;
+        }
+
+        .mgd-boot-screen__track {
+            width: 100%;
+            height: 5px;
+            overflow: hidden;
+            border-radius: 999px;
+            background: rgb(255 255 255 / 12%);
+        }
+
+        .mgd-boot-screen__bar {
+            width: 42%;
+            height: 100%;
+            border-radius: inherit;
+            background: #d8e2f7;
+            animation: mgd-boot-progress 1.1s ease-in-out infinite;
+        }
+
+        .mgd-boot-screen__status {
+            min-height: 1.2em;
+            color: rgb(216 226 247 / 72%);
+            font-size: 12px;
+            text-align: center;
+        }
+
+        #mgd-boot-reload {
+            min-width: 92px;
+            padding: 7px 12px;
+            border: 1px solid rgb(216 226 247 / 35%);
+            border-radius: 5px;
+            background: #26314f;
+            color: #fff;
+            font: inherit;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+
+        #mgd-boot-reload[hidden] {
+            display: none;
+        }
+
+        #mgd-boot-screen[data-state="delayed"] .mgd-boot-screen__bar {
+            animation-duration: 2.2s;
+        }
+
+        @keyframes mgd-boot-progress {
+            0% { transform: translateX(-110%); }
+            50% { transform: translateX(70%); }
+            100% { transform: translateX(250%); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .mgd-boot-screen__bar {
+                width: 65%;
+                animation: none;
+            }
+        }
+    </style>
 </head>
 
 <body>
@@ -14,6 +99,38 @@
         <div id="game-container"></div>
         <div id="safe-area-probe" aria-hidden="true"></div>
     </div>
+
+    <div id="mgd-boot-screen" role="status" aria-live="polite" aria-label="MGD loading">
+        <div class="mgd-boot-screen__content">
+            <div class="mgd-boot-screen__title">MGD</div>
+            <div class="mgd-boot-screen__track" aria-hidden="true">
+                <div class="mgd-boot-screen__bar"></div>
+            </div>
+            <div id="mgd-boot-status" class="mgd-boot-screen__status">Loading…</div>
+            <button id="mgd-boot-reload" type="button" hidden>Reload</button>
+        </div>
+    </div>
+
+    <script>
+        (() => {
+            const bootScreen = document.getElementById('mgd-boot-screen');
+            const status = document.getElementById('mgd-boot-status');
+            const reloadButton = document.getElementById('mgd-boot-reload');
+            if (!bootScreen || !status || !reloadButton) return;
+
+            const showProblem = (message) => {
+                if (!bootScreen.isConnected) return;
+                bootScreen.dataset.state = 'delayed';
+                status.textContent = message;
+                reloadButton.hidden = false;
+            };
+
+            window.setTimeout(() => showProblem('Start is taking longer than expected.'), 12000);
+            window.addEventListener('error', () => showProblem('Start failed.'), { once: true });
+            window.addEventListener('unhandledrejection', () => showProblem('Start failed.'), { once: true });
+            reloadButton.addEventListener('click', () => window.location.reload());
+        })();
+    </script>
     <script type="module" src="/src/main.ts"></script>
 </body>
 </html>

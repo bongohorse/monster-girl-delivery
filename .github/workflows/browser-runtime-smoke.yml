@@ -8,7 +8,6 @@ on:
       - 'index.html'
       - 'public/**'
       - 'src/main.ts'
-      - 'src/main.ts'
       - 'src/core/**'
       - 'src/game/**'
       - 'src/input/**'
@@ -25,6 +24,7 @@ on:
       - '.github/workflows/browser-runtime-smoke.yml'
       - 'index.html'
       - 'public/**'
+      - 'src/main.ts'
       - 'src/core/**'
       - 'src/game/**'
       - 'src/input/**'
@@ -93,6 +93,12 @@ jobs:
       - name: Run root application boot smoke
         run: |
           set -o pipefail
+          curl --fail --silent --show-error \
+            http://127.0.0.1:4173/ \
+            > reports/browser-runtime-smoke/root-source.html
+          grep -F 'id="mgd-boot-screen"' reports/browser-runtime-smoke/root-source.html
+          grep -F '>MGD<' reports/browser-runtime-smoke/root-source.html
+
           CHROME="$(cat reports/browser-runtime-smoke/chrome-path.txt)"
           timeout 30s "$CHROME" \
             --headless=new \
@@ -113,6 +119,12 @@ jobs:
           grep -F '<canvas' reports/browser-runtime-smoke/root-dom.html
           grep -F 'data-mgd-logical-size=' reports/browser-runtime-smoke/root-dom.html
           grep -F 'data-mgd-backing-size=' reports/browser-runtime-smoke/root-dom.html
+          grep -F 'data-mgd-boot-phase="ready"' reports/browser-runtime-smoke/root-dom.html
+          grep -F 'data-mgd-boot-ready="true"' reports/browser-runtime-smoke/root-dom.html
+          if grep -F '<div id="mgd-boot-screen"' reports/browser-runtime-smoke/root-dom.html; then
+            echo 'MGD boot screen remained mounted after the first complete render.' >&2
+            exit 1
+          fi
 
       - name: Run real-browser Phaser smoke
         run: |
