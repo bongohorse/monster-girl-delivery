@@ -70,7 +70,7 @@ jobs:
         uses: actions/setup-java@v6
         with:
           distribution: temurin
-          java-version: '25'
+          java-version: '26'
           cache: gradle
 
       - name: Install locked dependencies
@@ -167,7 +167,7 @@ jobs:
                 signingMode: process.env.MGD_ANDROID_SIGNING_MODE,
                 applicationId: 'com.bongohorse.monstergirldelivery',
                 artifactType: 'debug-apk',
-                java: '25',
+                java: '26',
                 capacitor: JSON.parse(readFileSync('node_modules/@capacitor/android/package.json', 'utf8')).version,
               },
               null,
