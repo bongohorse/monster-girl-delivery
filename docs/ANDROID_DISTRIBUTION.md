@@ -10,8 +10,8 @@ GitHub Actions is the canonical Android test-build environment. The `Android CI`
 4. builds the production Phaser/Vite bundle;
 5. syncs that bundle into Capacitor Android;
 6. runs the Android identity checks;
-7. runs Gradle tests and `assembleDebug` on Java 25;
-8. verifies the generated APK signature;
+7. runs Gradle tests and assembles both debug and release variants on Java 25;
+8. verifies the generated debug APK signature;
 9. publishes a commit-addressed GitHub Actions artifact.
 
 The artifact is named `mgd-android-debug-<built-commit>` and contains:
@@ -35,6 +35,8 @@ Artifacts are retained for 14 days. The build does not require Codespaces, the p
 6. Verify that the app reports/runs as `MGD` and starts without browser URL/navigation chrome.
 
 Only install APKs from a known MGD workflow run. `build-info.json`, `SHA256SUMS.txt`, and the artifact name make the downloaded file traceable to the commit that was actually built. When testing a PR artifact, also record its `prHeadCommit` so the triggering branch revision remains visible.
+
+The Actions debug artifact is evidence/development output, not the Obtainium update channel. Obtainium should track only the APK assets attached to GitHub Releases.
 
 ## Test signing and updates
 
@@ -75,12 +77,15 @@ Android release versions are derived deterministically from the tag:
 
 For example, `v0.4.1` produces `versionName=0.4.1` and `versionCode=4001`. `MINOR` and `PATCH` must each remain at or below 999. This keeps Android update ordering monotonic for the supported SemVer scheme.
 
-The workflow runs the source quality gates, builds the production web bundle, syncs Capacitor, assembles a signed release APK, verifies its APK signature, and creates or refreshes the matching GitHub Release. Each release contains:
+The workflow runs the source quality gates, builds the production web bundle, syncs Capacitor, assembles a signed release APK, and checks the finished APK itself for the expected package ID, version code, version name, non-debuggable release state and valid signature before anything is published. It then creates or refreshes the matching GitHub Release.
+
+Each release contains:
 
 - `MGD-v<version>.apk` — the file Obtainium should install;
 - `SHA256SUMS.txt`;
 - `build-info.json` with commit, tag, Android version and signing mode;
-- `apk-signature.txt` from `apksigner`.
+- `apk-signature.txt` from `apksigner`;
+- `apk-badging.txt` with the inspected package/version metadata from the final APK.
 
 ### Publishing a tester release
 
@@ -88,7 +93,7 @@ The workflow runs the source quality gates, builds the production web bundle, sy
 2. Confirm CI is green on that `main` commit.
 3. Create the matching tag, for example `v0.4.1`, on that commit.
 4. Push the tag to GitHub.
-5. Wait for the `Android Release` workflow to finish successfully.
+5. Confirm the `Android Release` workflow finishes successfully.
 6. Verify the GitHub Release contains exactly one MGD APK plus the evidence files above.
 
 Do not move or reuse a published version tag for different source code. Publish a new version instead.
