@@ -66,8 +66,8 @@ public class EvidenceExportPlugin extends Plugin {
                 .setClipData(ClipData.newRawUri("MGD performance evidence", evidenceUri))
                 .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
 
-            Intent chooser = Intent.createChooser(shareIntent, "Share MGD performance evidence")
-                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            Intent chooser = Intent.createChooser(shareIntent, "Share MGD performance evidence");
+            chooser.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             getActivity().startActivity(chooser);
 
             JSObject result = new JSObject();
