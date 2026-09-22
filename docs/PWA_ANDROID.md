@@ -37,7 +37,13 @@ Expected project URL:
 
 The Pages workflow builds the normal Vite production output and deploys only `dist/`. Pull requests build the same artifact but do not deploy it.
 
-If the repository has not used GitHub Pages before, repository Settings → Pages may need the publishing source set to **GitHub Actions** once before the first deployment can succeed.
+Repository Settings → Pages → Source must be **GitHub Actions**. Branch/Jekyll publishing is not supported: it can overwrite `dist/` with uncompiled repository sources. The deployment job reads the Pages `build_type` and fails with setup instructions unless it is `workflow`.
+
+Only runs on `main` can publish. PR builds have a separate concurrency group, so a PR cannot replace a queued production deployment. To publish the latest build, dispatch the workflow on current `main`; rerunning an old run republishes that run's commit.
+
+Before upload, `scripts/verify-web-package.mjs` checks the actual production output: relative asset links, compiled JavaScript, manifest identity/scope/display, and install-icon PNG dimensions. The Android workflow applies the same check to the copied web package. These checks do not replace installed-device acceptance.
+
+After changing the repository setting, verify a new main push produces no competing dynamic Jekyll deployment and inspect the public HTML, manifest and assets. A successful Vite upload alone does not prove the repository setting was changed.
 
 ## Android install smoke
 

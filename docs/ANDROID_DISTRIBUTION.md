@@ -17,7 +17,7 @@ GitHub Actions is the canonical Android test-build environment. The `Android CI`
 The artifact is named `mgd-android-debug-<built-commit>` and contains:
 
 - `mgd-debug-<12-char-built-commit>.apk`;
-- `build-info.json` with the exact checked-out `builtCommit`, nullable `prHeadCommit`, workflow event/ref/run identity, Capacitor version and signing mode;
+- `build-info.json` with the exact checked-out `builtCommit`, nullable `prHeadCommit`, workflow event/ref/run identity, the installed Capacitor version and signing mode;
 - `SHA256SUMS.txt`;
 - `apk-signature.txt` from Android `apksigner`.
 
@@ -38,7 +38,7 @@ Only install APKs from a known MGD workflow run. `build-info.json`, `SHA256SUMS.
 
 ## Test signing and updates
 
-With no repository signing secrets configured, CI falls back to Gradle's runner-local debug key and marks `build-info.json` as `ephemeral-debug`.
+PR builds and manual builds outside `main` always use an ephemeral debug key and receive no test-signing secrets. On `main`, with no repository signing secrets configured, CI falls back to Gradle's runner-local debug key and marks `build-info.json` as `ephemeral-debug`.
 
 That APK is installable, but a later CI runner may use a different debug certificate. Android will then reject an in-place update; uninstall the previous ephemeral build before installing the new one.
 
@@ -51,7 +51,9 @@ For updateable tester builds, configure a dedicated **non-production test keysto
 - `MGD_ANDROID_TEST_KEY_ALIAS`;
 - `MGD_ANDROID_TEST_KEY_PASSWORD`.
 
-When all four secrets are available, CI decodes the keystore only into the runner's temporary directory, signs the debug build with it, and records `stable-test` as the signing mode. The keystore and passwords must never be committed to the repository.
+A partial configuration fails the build instead of silently switching to an incompatible debug certificate. Signing secrets are limited to the preparation and Gradle steps, and the temporary keystore is removed even after failure.
+
+When all four secrets are available on `main`, CI decodes the keystore only into the runner's temporary directory, signs the debug build with it, and records `stable-test` as the signing mode. The keystore and passwords must never be committed to the repository.
 
 The production Play signing key is a separate future concern and must not reuse the test key.
 
