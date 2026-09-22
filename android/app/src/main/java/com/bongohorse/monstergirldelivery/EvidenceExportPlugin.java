@@ -1,5 +1,6 @@
 package com.bongohorse.monstergirldelivery;
 
+import android.content.ClipData;
 import android.content.Intent;
 import android.net.Uri;
 
@@ -63,8 +64,10 @@ public class EvidenceExportPlugin extends Plugin {
                 .setType("application/json")
                 .putExtra(Intent.EXTRA_STREAM, evidenceUri)
                 .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            shareIntent.setClipData(ClipData.newRawUri("MGD performance evidence", evidenceUri));
 
             Intent chooser = Intent.createChooser(shareIntent, "Share MGD performance evidence");
+            chooser.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             getActivity().startActivity(chooser);
 
             JSObject result = new JSObject();
