@@ -17,6 +17,20 @@
       "groupName": "GitHub Actions"
     },
     {
+      "matchPackageNames": [
+        "gradle",
+        "com.android.tools.build:gradle",
+        "java-jdk",
+        "@capacitor/android",
+        "@capacitor/core",
+        "@capacitor/cli"
+      ],
+      "matchUpdateTypes": ["major"],
+      "groupName": "Android build toolchain",
+      "dependencyDashboardApproval": true,
+      "automerge": false
+    },
+    {
       "matchUpdateTypes": ["major"],
       "automerge": false
     }
