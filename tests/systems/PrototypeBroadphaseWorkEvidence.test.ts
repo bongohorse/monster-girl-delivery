@@ -85,6 +85,28 @@ describe('PrototypeBroadphaseWork evidence', () => {
     });
   });
 
+  it('can disable only the shared hazard broadphase for current-code mobile baseline evidence', () => {
+    const counters = createPrototypeBroadphaseWorkCounters();
+    const farHazards = Array.from({ length: 100 }, (_, index) => hazard(10_000 + index * 20));
+    const nearbyHazard = hazard(20);
+
+    const result = stepPrototypeRun(createPrototypeRunState(FLIGHT_BOUNDS), 0.1, {
+      broadphaseWorkCounters: counters,
+      disableSharedHazardBroadphaseForPerformanceEvidence: true,
+      collectibles: [],
+      flightBounds: FLIGHT_BOUNDS,
+      flightTuning: FLIGHT_TUNING,
+      hazards: [...farHazards, nearbyHazard],
+      runMotionTuning: RUN_MOTION,
+      thrustHeld: false,
+    });
+
+    expect(result.enteredDead).toBe(false);
+    expect(counters.hazardRetainedCount).toBe(101);
+    expect(counters.hazardCandidateCount).toBe(101);
+    expect(counters.hazardCollisionEvaluationCount).toBe(101);
+  });
+
   it('does not resolve first-contact timing for a candidate that fails exact pickup collision', () => {
     const counters = createPrototypeBroadphaseWorkCounters();
     const verticalMiss = Object.freeze({
