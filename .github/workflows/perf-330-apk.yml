@@ -1,0 +1,172 @@
+name: M5 #330 Benchmark APK
+
+on:
+  push:
+    branches:
+      - 'perf/330-apk-after'
+      - 'perf/330-apk-before'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-benchmark-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out benchmark source
+        uses: actions/checkout@v7
+
+      - name: Resolve benchmark identity
+        id: benchmark
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "$GITHUB_REF_NAME" in
+            perf/330-apk-after)
+              echo 'variant=AFTER' >> "$GITHUB_OUTPUT"
+              echo 'variant_lower=after' >> "$GITHUB_OUTPUT"
+              echo 'application_id=com.bongohorse.monstergirldelivery.perf330after' >> "$GITHUB_OUTPUT"
+              echo 'version_code=33002' >> "$GITHUB_OUTPUT"
+              echo 'version_name=330-after' >> "$GITHUB_OUTPUT"
+              ;;
+            perf/330-apk-before)
+              echo 'variant=BEFORE' >> "$GITHUB_OUTPUT"
+              echo 'variant_lower=before' >> "$GITHUB_OUTPUT"
+              echo 'application_id=com.bongohorse.monstergirldelivery.perf330before' >> "$GITHUB_OUTPUT"
+              echo 'version_code=33001' >> "$GITHUB_OUTPUT"
+              echo 'version_name=330-before' >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "::error::Unsupported benchmark ref $GITHUB_REF_NAME"
+              exit 1
+              ;;
+          esac
+          echo "built_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .bun-version
+
+      - name: Set up Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: gradle
+
+      - name: Install locked dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run source quality gates
+        run: |
+          bun run ci:check
+          bun run typecheck
+          bun run test
+
+      - name: Sync production web build into Android
+        run: bun run android:sync
+
+      - name: Verify benchmark package identity
+        env:
+          APPLICATION_ID: ${{ steps.benchmark.outputs.application_id }}
+          VARIANT: ${{ steps.benchmark.outputs.variant }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "appId: '$APPLICATION_ID'" capacitor.config.ts
+          grep -F "appName: 'MGD 330 $VARIANT'" capacitor.config.ts
+          grep -F "applicationId \"$APPLICATION_ID\"" android/app/build.gradle
+          grep -F "<string name=\"app_name\">MGD 330 $VARIANT</string>" android/app/src/main/res/values/strings.xml
+          node scripts/verify-web-package.mjs android/app/src/main/assets/public
+
+      - name: Create ephemeral benchmark signing key
+        shell: bash
+        run: |
+          set -euo pipefail
+          KEYSTORE="$RUNNER_TEMP/mgd-perf330.keystore"
+          keytool -genkeypair -noprompt             -keystore "$KEYSTORE"             -storepass perf330benchmark             -alias perf330             -keypass perf330benchmark             -keyalg RSA             -keysize 3072             -validity 3650             -dname "CN=MGD Perf 330, OU=Benchmark, O=MGD, C=DE"
+          echo "MGD_ANDROID_TEST_KEYSTORE_FILE=$KEYSTORE" >> "$GITHUB_ENV"
+          echo 'MGD_ANDROID_TEST_KEYSTORE_PASSWORD=perf330benchmark' >> "$GITHUB_ENV"
+          echo 'MGD_ANDROID_TEST_KEY_ALIAS=perf330' >> "$GITHUB_ENV"
+          echo 'MGD_ANDROID_TEST_KEY_PASSWORD=perf330benchmark' >> "$GITHUB_ENV"
+
+      - name: Assemble production-mode benchmark APK
+        working-directory: android
+        env:
+          MGD_ANDROID_VERSION_CODE: ${{ steps.benchmark.outputs.version_code }}
+          MGD_ANDROID_VERSION_NAME: ${{ steps.benchmark.outputs.version_name }}
+        run: ./gradlew testDebugUnitTest assembleRelease --stacktrace
+
+      - name: Verify and stage APK
+        env:
+          APPLICATION_ID: ${{ steps.benchmark.outputs.application_id }}
+          VARIANT: ${{ steps.benchmark.outputs.variant }}
+          VARIANT_LOWER: ${{ steps.benchmark.outputs.variant_lower }}
+          BUILT_SHA: ${{ steps.benchmark.outputs.built_sha }}
+          VERSION_CODE: ${{ steps.benchmark.outputs.version_code }}
+          VERSION_NAME: ${{ steps.benchmark.outputs.version_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p reports/perf330
+          APK_SOURCE='android/app/build/outputs/apk/release/app-release.apk'
+          APK_NAME="MGD-330-${VARIANT}.apk"
+          cp "$APK_SOURCE" "reports/perf330/$APK_NAME"
+
+          AAPT="$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -n 1)"
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+          BADGING="$($AAPT dump badging "reports/perf330/$APK_NAME")"
+          printf '%s\n' "$BADGING" > reports/perf330/apk-badging.txt
+          grep -F "package: name='$APPLICATION_ID'" <<< "$BADGING"
+          grep -F "versionCode='$VERSION_CODE'" <<< "$BADGING"
+          grep -F "versionName='$VERSION_NAME'" <<< "$BADGING"
+          if grep -q '^application-debuggable' <<< "$BADGING"; then
+            echo '::error::Benchmark APK must be non-debuggable.'
+            exit 1
+          fi
+
+          "$APKSIGNER" verify --verbose --print-certs "reports/perf330/$APK_NAME"             > reports/perf330/apk-signature.txt
+
+          (
+            cd reports/perf330
+            sha256sum "$APK_NAME" > SHA256SUMS.txt
+          )
+
+          node --input-type=module <<'NODE'
+          import { writeFileSync } from 'node:fs';
+          writeFileSync(
+            'reports/perf330/build-info.json',
+            JSON.stringify(
+              {
+                issue: 330,
+                variant: process.env.VARIANT,
+                builtCommit: process.env.BUILT_SHA,
+                applicationId: process.env.APPLICATION_ID,
+                versionCode: Number(process.env.VERSION_CODE),
+                versionName: process.env.VERSION_NAME,
+                buildMode: 'production',
+                debuggable: false,
+                signing: 'ephemeral-benchmark',
+                purpose: 'same-device side-by-side real-device broadphase BEFORE/AFTER comparison',
+              },
+              null,
+              2,
+            ) + '\n',
+          );
+          NODE
+
+      - name: Upload benchmark APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: mgd-330-${{ steps.benchmark.outputs.variant_lower }}-${{ steps.benchmark.outputs.built_sha }}
+          path: reports/perf330/
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
+
+      - name: Remove temporary benchmark key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/mgd-perf330.keystore"
