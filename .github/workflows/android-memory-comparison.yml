@@ -5,12 +5,16 @@ on:
     paths:
       - '.github/workflows/android-memory-comparison.yml'
       - 'android/app/build.gradle'
+      - 'android/app/src/main/java/com/bongohorse/monstergirldelivery/MainActivity.java'
+      - 'android/app/src/main/java/com/bongohorse/monstergirldelivery/EvidenceExportPlugin.java'
       - 'docs/329_APK_COMPARISON.md'
   push:
     branches: [main]
     paths:
       - '.github/workflows/android-memory-comparison.yml'
       - 'android/app/build.gradle'
+      - 'android/app/src/main/java/com/bongohorse/monstergirldelivery/MainActivity.java'
+      - 'android/app/src/main/java/com/bongohorse/monstergirldelivery/EvidenceExportPlugin.java'
   workflow_dispatch:
 
 permissions:
