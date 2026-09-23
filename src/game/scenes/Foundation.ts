@@ -715,12 +715,7 @@ export class Foundation extends Scene {
       return;
     }
 
-    this.diagnosticsAccess.pointerDown(
-      pointer.id,
-      pointer.x,
-      pointer.y,
-      this.readDiagnosticsNow(),
-    );
+    this.diagnosticsAccess.pointerDown(pointer.id, pointer.x, pointer.y, this.readDiagnosticsNow());
     if (this.diagnosticsAccess.isGestureClaimed()) {
       this.diagnosticsTouchRetryPending = false;
       this.services.input.releaseAll();
