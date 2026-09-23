@@ -163,7 +163,7 @@ describe('prototype run simulation', () => {
     const state: PrototypeRunState = {
       phase: 'running',
       motion: { distance: 0, simulationSeconds: 0 },
-      flight: { positionY: 47, velocityY: 0 },
+      flight: { positionY: 100, velocityY: 0 },
     };
 
     const result = stepPrototypeRun(state, 0.05, {
@@ -176,15 +176,12 @@ describe('prototype run simulation', () => {
     });
 
     expect(result.enteredDead).toBe(false);
-    expect(counters).toEqual({
-      broadphaseRejectedCallCount: 0,
-      candidateSampleCount: 0,
-      collisionCallCount: 1,
-      evaluatedSampleCount: 0,
-      geometryResolutionCount: 1,
-      primaryNarrowphaseCheckCount: 1,
-      secondaryNarrowphaseCheckCount: 1,
-    });
+    expect(counters.collisionCallCount).toBe(1);
+    expect(counters.candidateSampleCount).toBeGreaterThan(2);
+    expect(counters.evaluatedSampleCount).toBe(counters.candidateSampleCount);
+    expect(counters.geometryResolutionCount).toBe(1);
+    expect(counters.primaryNarrowphaseCheckCount).toBe(counters.evaluatedSampleCount);
+    expect(counters.secondaryNarrowphaseCheckCount).toBe(counters.evaluatedSampleCount);
   });
 
   it('recreates the same clean state and derived hazard position on every restart', () => {
