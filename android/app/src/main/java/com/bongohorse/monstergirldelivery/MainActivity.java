@@ -13,7 +13,8 @@ import com.getcapacitor.BridgeActivity;
 import org.json.JSONObject;
 
 public class MainActivity extends BridgeActivity {
-    private static final String EVIDENCE_STORAGE_KEY = "mgd:last-performance-evidence";
+    private static final String PERFORMANCE_EVIDENCE_STORAGE_KEY = "mgd:last-performance-evidence";
+    private static final String MEMORY_EVIDENCE_STORAGE_KEY = "mgd:last-memory-evidence";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,12 +67,15 @@ public class MainActivity extends BridgeActivity {
             // browser Blob download. Read that canonical payload instead of trying to fetch the
             // short-lived blob: URL after DownloadListener dispatch; the page revokes that URL on
             // the next task, which races the asynchronous native hand-off on real devices.
+            String evidenceStorageKey = safeFilename.startsWith("mgd-memory-")
+                ? MEMORY_EVIDENCE_STORAGE_KEY
+                : PERFORMANCE_EVIDENCE_STORAGE_KEY;
             String script = "(async()=>{try{"
                 + "const content=window.localStorage.getItem("
-                + JSONObject.quote(EVIDENCE_STORAGE_KEY)
+                + JSONObject.quote(evidenceStorageKey)
                 + ");"
                 + "if(typeof content!=='string'||content.length===0){"
-                + "throw new Error('Stored MGD performance evidence is unavailable.');"
+                + "throw new Error('Stored MGD evidence is unavailable.');"
                 + "}"
                 + "await window.Capacitor.Plugins.EvidenceExport.share({filename:"
                 + JSONObject.quote(safeFilename)

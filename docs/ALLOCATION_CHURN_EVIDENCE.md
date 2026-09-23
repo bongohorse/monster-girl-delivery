@@ -193,6 +193,67 @@ Merged validation includes:
 Performance-only assertions are kept separate from gameplay truth: container identity/counters may
 prove work was avoided, but gameplay outcomes remain asserted through the existing authorities.
 
+## Mobile memory evidence harness
+
+The closeout branch adds a production-diagnostics `MEM` benchmark so representative Android
+evidence can be collected with the same simple APK workflow used for #330/#332.
+
+`MEM` normalizes the run to the standard 60 FPS / God mode / AUTO-hazard production-style preset,
+restarts on the canonical seed and records **60 seconds of active wall-clock time**. Lifecycle
+pauses and the first resume sample are excluded. The report also records authoritative simulation
+elapsed time separately: after a long frame, `TimeService` can advance by less than the wall-clock
+interval. The long frame remains in the frame-time evidence.
+
+The recording path is deliberately bounded:
+
+- frame intervals use a preallocated typed-array buffer and report average/P95/P99/worst plus the
+  existing 25 ms slow-frame threshold;
+- Chromium `performance.memory`, when exposed by the Android WebView/browser, is sampled once per
+  second rather than every frame;
+- heap evidence records first/last/min/max used heap, max total heap, sums of observed positive/negative
+  **sample-to-sample endpoint differences**, largest observed drop and the number of used-heap drops
+  >= 64 KiB. These sums are not bytes allocated or freed between samples;
+- those drops are labelled **heap drops**, not garbage-collection events. The browser API does not
+  expose authoritative GC event timing;
+- if `performance.memory` is unavailable, the report says `source: "unavailable"` rather than
+  inventing a heap/GC measurement;
+- the sampler materializes summary arrays/objects and percentile sorting only after the 60-second
+  measurement. The existing Director HUD still refreshes periodically during capture; the sampler
+  itself does not add recurring per-frame objects or arrays.
+
+The completed report is persisted separately as `mgd:last-memory-evidence`, copied to the clipboard
+when permitted, and sent through the existing Android native evidence-share path.
+
+`MEM` cancels if thrust input, resize, flight/run tuning or a workload-changing HUD control occurs.
+After pressing MEM, do not touch the gameplay area or press Space. Compare the reported run distance,
+simulation duration, display configuration and active content counts, as well as the fixed seed.
+
+This harness measures a coarse browser/WebView JS-heap trend plus game-step slow-frame pressure. It
+does not measure per-frame allocation bytes, GC frequency/pause duration, Android process PSS or native
+heap. Rapid allocation and collection between one-second samples can leave no trace in its heap series.
+Do not use a `MEM` report by itself to satisfy #329's allocation/GC acceptance criterion.
+
+## Matched BEFORE/AFTER workflow
+
+The canonical BEFORE allocation baseline is `perf/329-mobile-baseline` at `0eb3d9c4d6ec9a0f697389fa8c8d4f444effa0e3`.
+It predates both the MEM harness and the Android project. The instrumented BEFORE branch is `perf/329-memory-instrumented-before` (draft PR #450;
+use its current head SHA). It adds the same MEM sampler and
+UI without importing the later allocation optimizations; the canonical BEFORE ref remains intact.
+Both builds must use the **development Director mode** in the same mobile browser on the same device:
+the historical BEFORE commit has no production diagnostics and no Android project. Use the same
+Director visibility, display settings and profiler connection. Neither build should be labelled an
+APK-to-APK or production-vs-production comparison. An AFTER APK run can separately check the export
+and production WebView behavior, but it cannot substitute for the matched BEFORE browser run.
+
+For each branch, start its Vite development server with `bun install --frozen-lockfile` and
+`bun run dev`, open it on the same mobile browser, and use the visible Director `MEM` control.
+Restart the server and reload the page when switching branches. Capture the MEM JSON on both builds
+using the no-thrust protocol and record the exact commits, device, browser version, display size/DPR,
+run distance, simulation duration and active content counts.
+For the allocation/GC question, also record comparable Chrome DevTools Memory allocation sampling or
+Performance traces on both builds. Profiling instrumentation can perturb frame timings; compare
+instrumented traces with one another and use the unprofiled MEM frame evidence separately.
+
 ## Device/browser evidence still required
 
 #329 should remain open until a same-device before/after long-run comparison is recorded.
