@@ -48,6 +48,8 @@ export interface PrototypeRunStepContext {
   resultTotals?: Readonly<PrototypeRunResultTotals>;
   runMotionTuning: Readonly<RunMotionValues>;
   thrustHeld: boolean;
+  /** Benchmark-only switch used to reproduce the pre-#330 shared hazard broadphase workload. */
+  disableSharedHazardBroadphaseForPerformanceEvidence?: boolean;
   /** Optional additive instrumentation sink; gameplay writes counters but never reads them. */
   broadphaseWorkCounters?: PrototypeBroadphaseWorkCounters;
   /** Optional additive instrumentation sink; gameplay writes counters but never reads them. */
@@ -105,13 +107,21 @@ export const stepPrototypeRun = (
     context.flightBounds,
   );
   const flight = { ...flightTrajectory.finalState };
-  const hazardCandidates = filterPrototypeHazardCandidatesForStep(
-    state.motion,
-    elapsedSeconds,
-    context.runMotionTuning,
-    context.hazards,
-    context.broadphaseWorkCounters,
-  );
+  const disableSharedHazardBroadphase =
+    context.disableSharedHazardBroadphaseForPerformanceEvidence === true;
+  const hazardCandidates = disableSharedHazardBroadphase
+    ? context.hazards
+    : filterPrototypeHazardCandidatesForStep(
+        state.motion,
+        elapsedSeconds,
+        context.runMotionTuning,
+        context.hazards,
+        context.broadphaseWorkCounters,
+      );
+  if (disableSharedHazardBroadphase && elapsedSeconds > 0 && context.broadphaseWorkCounters) {
+    context.broadphaseWorkCounters.hazardRetainedCount += context.hazards.length;
+    context.broadphaseWorkCounters.hazardCandidateCount += context.hazards.length;
+  }
   const grazeResult = evaluatePrototypeGrazeStep(
     state.graze ?? EMPTY_PROTOTYPE_GRAZE_RUN_STATE,
     state.motion,
