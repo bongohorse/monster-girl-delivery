@@ -301,6 +301,7 @@ export class MemoryEvidenceSampler {
       this.heapSampleCount += 1;
     }
 
-    this.nextHeapSampleAtMilliseconds += MEMORY_EVIDENCE_HEAP_SAMPLE_INTERVAL_MILLISECONDS;
+    this.nextHeapSampleAtMilliseconds =
+      this.activeElapsedMilliseconds + MEMORY_EVIDENCE_HEAP_SAMPLE_INTERVAL_MILLISECONDS;
   }
 }
