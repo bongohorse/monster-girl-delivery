@@ -23,7 +23,7 @@ const StartGame = (parent: string, options: StartGameOptions) => {
     pixelArt: false,
     disableContextMenu: true,
     input: {
-      activePointers: 2,
+      activePointers: 6,
       keyboard: true,
       mouse: {
         preventDefaultWheel: true,

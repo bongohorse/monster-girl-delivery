@@ -141,6 +141,25 @@ Once the first stable-key release is installed, later GitHub Releases signed wit
 
 Obtainium is the update/discovery layer only. Android still enforces package identity, version ordering and signing-certificate compatibility.
 
+## Hidden production diagnostics
+
+Public release APKs remain normal production builds. They do not set `import.meta.env.DEV`, do not enable the Android debuggable flag, and do not expose the full development-only Director tuning/editor surface.
+
+For representative mobile hardware testing, the production runtime contains a hidden diagnostics unlock:
+
+1. finish a run and wait until the results screen says retry is ready;
+2. place exactly five fingers on the game within 450 ms;
+3. keep all five held for about two seconds without moving them significantly;
+4. a small `DIAG` marker appears and the compact performance/playground controls become available.
+
+Repeat the same five-finger hold on a retry-ready results screen to disable diagnostics. The enabled state is stored locally on that device and survives app restarts and in-place updates.
+
+The gesture is intentionally unavailable during live gameplay. A normal one-finger tap still retries the run; multi-touch attempts are claimed by the diagnostics recognizer so they cannot accidentally start a new run.
+
+Production diagnostics may change FPS limits, God mode, hazard generation/spawns, wireframes and simulation freeze for testing. Disabling diagnostics restores safe runtime defaults. Performance evidence records `diagnosticsEnabled` explicitly so diagnostic captures cannot be confused with ordinary production play.
+
+This hidden control is convenience, not a security boundary. Never place secrets, privileged server operations, signing material, or other sensitive capabilities behind it.
+
 ## Optional Firebase App Distribution
 
 Firebase App Distribution is an optional delivery layer after the GitHub Actions APK has been proven. It is not the compiler or build authority.

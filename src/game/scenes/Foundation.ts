@@ -1,7 +1,8 @@
-import { Scale, Scene, Scenes } from 'phaser';
+import { Input, Scale, Scene, Scenes } from 'phaser';
 import type { AppServices } from '../../core/AppServices';
 import { PhaserLifecycleAdapter } from '../../core/PhaserLifecycleAdapter';
 import { readSafeAreaInsets, ViewportService } from '../../core/ViewportService';
+import { DiagnosticsAccess } from '../../devtools/DiagnosticsAccess';
 import { DirectorDebugOverlay } from '../../devtools/DirectorDebugOverlay';
 import { DirectorPanel } from '../../devtools/DirectorPanel';
 import { DirectorPerformanceHud } from '../../devtools/DirectorPerformanceHud';
@@ -206,6 +207,10 @@ const createDirectorManualSpawns = (
 
 export class Foundation extends Scene {
   private instructions?: Phaser.GameObjects.Text;
+  private diagnosticsBadge?: Phaser.GameObjects.Text;
+  private diagnosticsAccess?: DiagnosticsAccess;
+  private diagnosticsTouchRetryPending = false;
+  private productionDiagnosticsEnabled = false;
   private viewportService?: ViewportService;
   private directorDebugOverlay?: DirectorDebugOverlay;
   private directorPanel?: DirectorPanel;
@@ -289,59 +294,17 @@ export class Foundation extends Scene {
       renderViewport.height,
       safeArea,
     );
+    if (!import.meta.env.DEV) {
+      this.initializeProductionDiagnostics();
+    }
+
     this.inputAdapter = new PhaserInputAdapter(this, this.services.input);
     this.lifecycleAdapter = new PhaserLifecycleAdapter(this.game, this.services.lifecycle);
 
     if (import.meta.env.DEV && this.directorMode) {
-      const gameContainer = document.getElementById('game-container');
-      if (!gameContainer) {
-        throw new Error('Director performance HUD requires the game container.');
-      }
-
-      this.directorBroadphaseWorkCounters = createPrototypeBroadphaseWorkCounters();
-      this.directorZapperCollisionWorkCounters = createPrototypeZapperCollisionWorkCounters();
-      this.directorDebugOverlay = new DirectorDebugOverlay(this);
-      this.directorPerformanceHud = new DirectorPerformanceHud(
-        gameContainer,
-        this.services.input,
-        undefined,
-        {
-          setFpsLimit: (limit) => this.game.loop.setFPSLimit(limit),
-          setWireframesEnabled: this.handleDirectorWireframes,
-          setGodModeEnabled: this.handleDirectorGodMode,
-          setAutoHazardsEnabled: this.handleDirectorAutoHazards,
-          spawnMissile: () => this.spawnDirectorHazard('missile'),
-          spawnZapper: this.spawnDirectorZapperVariant,
-          spawnZapperGroup: this.spawnDirectorZapperGroup,
-          spawnLaser: this.spawnDirectorLaserVariant,
-          clearHazards: this.clearDirectorHazards,
-          setSimulationFrozen: this.handleDirectorFreeze,
-          triggerDeath: this.handleDirectorDeath,
-          startNormalPerformancePreset: this.startDirectorNormalPerformancePreset,
-          startZapperPerformancePreset: this.startDirectorZapperPerformancePreset,
-          readRuntimeMetrics: this.readDirectorPerformanceRuntimeMetrics,
-          resetWorkCounters: () => {
-            if (this.directorBroadphaseWorkCounters) {
-              resetPrototypeBroadphaseWorkCounters(this.directorBroadphaseWorkCounters);
-            }
-          },
-          exportPerformanceEvidence: this.handleDirectorPerformanceEvidenceExport,
-        },
-        this.directorZapperCollisionWorkCounters,
-      );
-      this.directorPanel = new DirectorPanel(this, this.services.input);
-      this.directorTuningControls = new DirectorTuningControls(
-        this,
-        this.services.flightTuning,
-        this.services.runMotion,
-        this.services.input,
-      );
-      this.directorRunControls = new DirectorRunControls(
-        this,
-        this.services.input,
-        this.handleRestartSameSeed,
-        this.handleStartNewSeed,
-      );
+      this.createDirectorTools(true);
+    } else if (this.productionDiagnosticsEnabled) {
+      this.createDirectorTools(false);
     }
 
     const viewport = this.viewportService.getSnapshot();
@@ -396,6 +359,8 @@ export class Foundation extends Scene {
       .setResolution(renderViewport.renderScale)
       .setOrigin(0.5);
 
+    this.syncDiagnosticsBadge();
+
     this.scale.on(Scale.Events.RESIZE, this.handleResize);
     this.events.once(Scenes.Events.SHUTDOWN, this.handleShutdown);
     this.layout(viewport);
@@ -439,15 +404,42 @@ export class Foundation extends Scene {
         this.instructions?.setText(formatDeadInstructions(this.deathRetryState.result, true));
       }
 
-      const retryPressed = this.services.input.consumePrimaryActionPress();
+      const lifecyclePaused = this.services.lifecycle.isPaused();
+      const retryReady = previousRetryPhase === 'retry-ready' && !lifecyclePaused;
+      this.diagnosticsAccess?.setEligible(
+        this.deathRetryState.phase === 'retry-ready' && !lifecyclePaused,
+      );
+      const diagnosticsToggle = this.diagnosticsAccess?.update(this.readDiagnosticsNow()) ?? null;
+      if (diagnosticsToggle !== null) {
+        this.handleProductionDiagnosticsToggle(diagnosticsToggle);
+      }
+
+      const retrySource = this.services.input.consumePrimaryActionPressSource();
+      if (retryReady && retrySource !== null) {
+        if (retrySource === 'touch' && this.diagnosticsAccess) {
+          if (this.diagnosticsAccess.isGestureClaimed()) {
+            this.diagnosticsTouchRetryPending = false;
+          } else {
+            this.diagnosticsTouchRetryPending = true;
+          }
+        } else {
+          this.restartRun(viewport, selectNewRunSeed(this.hazardStream.generationState.seed));
+        }
+      }
+
+      const inputSnapshot = this.services.input.getSnapshot();
       if (
-        previousRetryPhase === 'retry-ready' &&
-        retryPressed &&
-        !this.services.lifecycle.isPaused()
+        retryReady &&
+        this.diagnosticsTouchRetryPending &&
+        !inputSnapshot.pointerHeld &&
+        !this.diagnosticsAccess?.isGestureClaimed()
       ) {
+        this.diagnosticsTouchRetryPending = false;
         this.restartRun(viewport, selectNewRunSeed(this.hazardStream.generationState.seed));
       }
     } else {
+      this.diagnosticsAccess?.setEligible(false);
+      this.diagnosticsTouchRetryPending = false;
       // While running, primary presses are thrust input rather than queued restart requests.
       this.services.input.consumePrimaryActionPress();
       const requestedRunMotion = this.services.runMotion.getSnapshot();
@@ -684,11 +676,196 @@ export class Foundation extends Scene {
     this.instructions
       ?.setPosition(centerX, instructionsY)
       .setWordWrapWidth(Math.max(120, safeWidth - 32));
+    this.diagnosticsBadge?.setPosition(Math.max(safeLeft + 8, safeRightEdge - 8), safeTop + 8);
     this.renderRun(viewport);
     this.directorPerformanceHud?.layout(viewport);
     this.directorPanel?.layout(viewport);
     this.directorRunControls?.layout(viewport);
     this.directorTuningControls?.layout(viewport);
+  }
+
+  private initializeProductionDiagnostics(): void {
+    let storage: Storage | null = null;
+    if (typeof window !== 'undefined') {
+      try {
+        storage = window.localStorage;
+      } catch {
+        storage = null;
+      }
+    }
+
+    this.diagnosticsAccess = new DiagnosticsAccess(storage);
+    this.productionDiagnosticsEnabled = this.diagnosticsAccess.isEnabled();
+    this.input.on(Input.Events.POINTER_DOWN, this.handleDiagnosticsPointerDown);
+    this.input.on(Input.Events.POINTER_MOVE, this.handleDiagnosticsPointerMove);
+    this.input.on(Input.Events.POINTER_UP, this.handleDiagnosticsPointerUp);
+    this.input.on(Input.Events.POINTER_UP_OUTSIDE, this.handleDiagnosticsPointerUp);
+  }
+
+  private destroyProductionDiagnosticsInput(): void {
+    if (!this.diagnosticsAccess) {
+      return;
+    }
+
+    this.input.off(Input.Events.POINTER_DOWN, this.handleDiagnosticsPointerDown);
+    this.input.off(Input.Events.POINTER_MOVE, this.handleDiagnosticsPointerMove);
+    this.input.off(Input.Events.POINTER_UP, this.handleDiagnosticsPointerUp);
+    this.input.off(Input.Events.POINTER_UP_OUTSIDE, this.handleDiagnosticsPointerUp);
+    this.diagnosticsAccess.setEligible(false);
+  }
+
+  private readonly handleDiagnosticsPointerDown = (pointer: Phaser.Input.Pointer): void => {
+    if (!pointer.wasTouch || pointer.button !== 0 || !this.diagnosticsAccess) {
+      return;
+    }
+
+    this.diagnosticsAccess.pointerDown(pointer.id, pointer.x, pointer.y, this.readDiagnosticsNow());
+    if (this.diagnosticsAccess.isGestureClaimed()) {
+      this.diagnosticsTouchRetryPending = false;
+      this.services.input.releaseAll();
+    }
+  };
+
+  private readonly handleDiagnosticsPointerMove = (pointer: Phaser.Input.Pointer): void => {
+    if (!pointer.wasTouch) {
+      return;
+    }
+
+    this.diagnosticsAccess?.pointerMove(pointer.id, pointer.x, pointer.y);
+  };
+
+  private readonly handleDiagnosticsPointerUp = (pointer: Phaser.Input.Pointer): void => {
+    if (!pointer.wasTouch) {
+      return;
+    }
+
+    this.diagnosticsAccess?.pointerUp(pointer.id);
+  };
+
+  private readDiagnosticsNow(): number {
+    return typeof performance === 'undefined' ? Date.now() : performance.now();
+  }
+
+  private handleProductionDiagnosticsToggle(enabled: boolean): void {
+    this.productionDiagnosticsEnabled = enabled;
+    this.diagnosticsTouchRetryPending = false;
+    this.services.input.releaseAll();
+
+    if (enabled) {
+      this.createDirectorTools(false);
+    } else {
+      this.resetProductionDiagnosticsRuntime();
+      this.destroyDirectorTools();
+    }
+
+    this.syncDiagnosticsBadge();
+    if (this.viewportService) {
+      this.layout(this.viewportService.getSnapshot());
+    }
+  }
+
+  private createDirectorTools(includeDevelopmentControls: boolean): void {
+    if (this.directorPerformanceHud) {
+      return;
+    }
+
+    const gameContainer = document.getElementById('game-container');
+    if (!gameContainer) {
+      throw new Error('Director performance HUD requires the game container.');
+    }
+
+    this.directorBroadphaseWorkCounters = createPrototypeBroadphaseWorkCounters();
+    this.directorZapperCollisionWorkCounters = createPrototypeZapperCollisionWorkCounters();
+    this.directorDebugOverlay = new DirectorDebugOverlay(this);
+    this.directorPerformanceHud = new DirectorPerformanceHud(
+      gameContainer,
+      this.services.input,
+      undefined,
+      {
+        setFpsLimit: (limit) => this.game.loop.setFPSLimit(limit),
+        setWireframesEnabled: this.handleDirectorWireframes,
+        setGodModeEnabled: this.handleDirectorGodMode,
+        setAutoHazardsEnabled: this.handleDirectorAutoHazards,
+        spawnMissile: () => this.spawnDirectorHazard('missile'),
+        spawnZapper: this.spawnDirectorZapperVariant,
+        spawnZapperGroup: this.spawnDirectorZapperGroup,
+        spawnLaser: this.spawnDirectorLaserVariant,
+        clearHazards: this.clearDirectorHazards,
+        setSimulationFrozen: this.handleDirectorFreeze,
+        triggerDeath: this.handleDirectorDeath,
+        startNormalPerformancePreset: this.startDirectorNormalPerformancePreset,
+        startZapperPerformancePreset: this.startDirectorZapperPerformancePreset,
+        readRuntimeMetrics: this.readDirectorPerformanceRuntimeMetrics,
+        resetWorkCounters: () => {
+          if (this.directorBroadphaseWorkCounters) {
+            resetPrototypeBroadphaseWorkCounters(this.directorBroadphaseWorkCounters);
+          }
+        },
+        exportPerformanceEvidence: this.handleDirectorPerformanceEvidenceExport,
+      },
+      this.directorZapperCollisionWorkCounters,
+    );
+
+    if (includeDevelopmentControls) {
+      this.directorPanel = new DirectorPanel(this, this.services.input);
+      this.directorTuningControls = new DirectorTuningControls(
+        this,
+        this.services.flightTuning,
+        this.services.runMotion,
+        this.services.input,
+      );
+      this.directorRunControls = new DirectorRunControls(
+        this,
+        this.services.input,
+        this.handleRestartSameSeed,
+        this.handleStartNewSeed,
+      );
+    }
+  }
+
+  private destroyDirectorTools(): void {
+    this.directorRunControls?.destroy();
+    this.directorRunControls = undefined;
+    this.directorTuningControls?.destroy();
+    this.directorTuningControls = undefined;
+    this.directorPerformanceHud?.destroy();
+    this.directorPerformanceHud = undefined;
+    this.directorBroadphaseWorkCounters = undefined;
+    this.directorZapperCollisionWorkCounters = undefined;
+    this.directorPanel?.destroy();
+    this.directorPanel = undefined;
+    this.directorDebugOverlay?.destroy();
+    this.directorDebugOverlay = undefined;
+  }
+
+  private resetProductionDiagnosticsRuntime(): void {
+    this.game.loop.setFPSLimit(0);
+    this.directorGodModeEnabled = false;
+    this.directorAutoHazardsEnabled = true;
+    this.directorSimulationFrozen = false;
+    this.directorWireframesEnabled = false;
+    this.directorPerformancePresetId = null;
+    this.directorManualHazards = Object.freeze([]);
+  }
+
+  private syncDiagnosticsBadge(): void {
+    if (!this.productionDiagnosticsEnabled) {
+      this.diagnosticsBadge?.destroy();
+      this.diagnosticsBadge = undefined;
+      return;
+    }
+
+    if (!this.diagnosticsBadge) {
+      this.diagnosticsBadge = this.add
+        .text(0, 0, 'DIAG', {
+          color: '#ffd166',
+          fontFamily: 'Arial, sans-serif',
+          fontSize: '12px',
+          fontStyle: 'bold',
+        })
+        .setOrigin(1, 0)
+        .setDepth(10_000);
+    }
   }
 
   private readonly handleRestartSameSeed = (): void => {
@@ -781,6 +958,7 @@ export class Foundation extends Scene {
         canvasBackingWidth: this.game.canvas.width,
         capturedAtIso: new Date().toISOString(),
         devicePixelRatio: typeof window === 'undefined' ? 1 : window.devicePixelRatio,
+        diagnosticsEnabled: this.productionDiagnosticsEnabled,
         directorAutoHazardsEnabled: this.directorAutoHazardsEnabled,
         directorGodModeEnabled: this.directorGodModeEnabled,
         directorSimulationFrozen: this.directorSimulationFrozen,
@@ -1191,6 +1369,8 @@ export class Foundation extends Scene {
 
   private enterRunFailState(finalResult: Readonly<PrototypeRunResultSnapshot>): void {
     this.deathRetryState = enterPrototypeFailState(finalResult);
+    this.diagnosticsAccess?.setEligible(false);
+    this.diagnosticsTouchRetryPending = false;
     this.services.input.releaseAll();
     this.instructions?.setText(formatDeadInstructions(finalResult, false));
   }
@@ -1199,6 +1379,8 @@ export class Foundation extends Scene {
     viewport: ReturnType<ViewportService['getSnapshot']>,
     seed: Parameters<typeof createGeneratedHazardStream>[0] = PROTOTYPE_LIVE_RUN_SEED,
   ): void {
+    this.diagnosticsAccess?.setEligible(false);
+    this.diagnosticsTouchRetryPending = false;
     this.directorPerformancePresetId = null;
     this.directorPanel?.reset();
     this.retainedGeneratedTelegraphedHazards = Object.freeze([]);
@@ -1397,18 +1579,13 @@ export class Foundation extends Scene {
 
     this.shutdownHandled = true;
     this.scale.off(Scale.Events.RESIZE, this.handleResize);
-    this.directorRunControls?.destroy();
-    this.directorRunControls = undefined;
-    this.directorTuningControls?.destroy();
-    this.directorTuningControls = undefined;
-    this.directorPerformanceHud?.destroy();
-    this.directorPerformanceHud = undefined;
-    this.directorBroadphaseWorkCounters = undefined;
-    this.directorZapperCollisionWorkCounters = undefined;
-    this.directorPanel?.destroy();
-    this.directorPanel = undefined;
-    this.directorDebugOverlay?.destroy();
-    this.directorDebugOverlay = undefined;
+    this.destroyDirectorTools();
+    this.destroyProductionDiagnosticsInput();
+    this.diagnosticsBadge?.destroy();
+    this.diagnosticsBadge = undefined;
+    this.diagnosticsAccess = undefined;
+    this.productionDiagnosticsEnabled = false;
+    this.diagnosticsTouchRetryPending = false;
     this.scrollingWorldPresentation?.destroy();
     this.scrollingWorldPresentation = undefined;
     this.generatedCollectiblePresentation?.destroy();

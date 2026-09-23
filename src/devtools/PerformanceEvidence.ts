@@ -29,6 +29,7 @@ export interface PerformanceEvidenceContext {
   readonly canvasBackingWidth: number;
   readonly capturedAtIso: string;
   readonly devicePixelRatio: number;
+  readonly diagnosticsEnabled: boolean;
   readonly directorAutoHazardsEnabled: boolean;
   readonly directorGodModeEnabled: boolean;
   readonly directorSimulationFrozen: boolean;
@@ -63,6 +64,7 @@ export interface PerformanceEvidenceReport {
     readonly zapperWork: Readonly<PrototypeZapperCollisionWorkCounters> | null;
   };
   readonly context: {
+    readonly diagnosticsEnabled: boolean;
     readonly directorAutoHazardsEnabled: boolean;
     readonly directorGodModeEnabled: boolean;
     readonly directorSimulationFrozen: boolean;
@@ -89,7 +91,7 @@ export interface PerformanceEvidenceReport {
     readonly viewportWidth: number;
   };
   readonly capturedAtIso: string;
-  readonly schemaVersion: 6;
+  readonly schemaVersion: 7;
 }
 
 export const createPerformanceEvidenceReport = (
@@ -132,6 +134,7 @@ export const createPerformanceEvidenceReport = (
       zapperWork: zapperWork ? Object.freeze({ ...zapperWork }) : null,
     }),
     context: Object.freeze({
+      diagnosticsEnabled: context.diagnosticsEnabled,
       directorAutoHazardsEnabled: context.directorAutoHazardsEnabled,
       directorGodModeEnabled: context.directorGodModeEnabled,
       directorSimulationFrozen: context.directorSimulationFrozen,
@@ -158,7 +161,7 @@ export const createPerformanceEvidenceReport = (
       viewportWidth: context.viewportWidth,
     }),
     capturedAtIso: context.capturedAtIso,
-    schemaVersion: 6,
+    schemaVersion: 7,
   });
 
 export const serializePerformanceEvidenceReport = (
