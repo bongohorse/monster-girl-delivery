@@ -49,6 +49,12 @@ export interface MemoryEvidenceHeapSummary {
 
 export interface MemoryEvidenceResult {
   readonly activeDurationMilliseconds: number;
+  readonly config: {
+    readonly heapDropThresholdBytes: number;
+    readonly heapSampleIntervalMilliseconds: number;
+    readonly maxFrameSamples: number;
+    readonly targetDurationMilliseconds: number;
+  };
   readonly frame: Readonly<MemoryEvidenceFrameSummary>;
   readonly heap: Readonly<MemoryEvidenceHeapSummary>;
   readonly schemaVersion: 1;
@@ -239,6 +245,12 @@ export class MemoryEvidenceSampler {
 
     return Object.freeze({
       activeDurationMilliseconds: this.activeElapsedMilliseconds,
+      config: Object.freeze({
+        heapDropThresholdBytes: MEMORY_EVIDENCE_HEAP_DROP_THRESHOLD_BYTES,
+        heapSampleIntervalMilliseconds: MEMORY_EVIDENCE_HEAP_SAMPLE_INTERVAL_MILLISECONDS,
+        maxFrameSamples: MEMORY_EVIDENCE_MAX_FRAME_SAMPLES,
+        targetDurationMilliseconds: MEMORY_EVIDENCE_DURATION_MILLISECONDS,
+      }),
       frame: Object.freeze({
         averageFrameTimeMilliseconds,
         frameSampleCount: this.frameSampleCount,
