@@ -409,10 +409,11 @@ export class Foundation extends Scene {
 
       const lifecyclePaused = this.services.lifecycle.isPaused();
       const retryReady = previousRetryPhase === 'retry-ready' && !lifecyclePaused;
-      this.diagnosticsAccess?.setEligible(
-        this.deathRetryState.phase === 'retry-ready' && !lifecyclePaused,
-      );
-      const diagnosticsToggle = this.diagnosticsAccess?.update(this.readDiagnosticsNow()) ?? null;
+      this.diagnosticsAccess?.setEligible(!lifecyclePaused);
+      const diagnosticsToggle =
+        this.deathRetryState.phase === 'retry-ready'
+          ? (this.diagnosticsAccess?.update(this.readDiagnosticsNow()) ?? null)
+          : null;
       if (diagnosticsToggle !== null) {
         this.handleProductionDiagnosticsToggle(diagnosticsToggle);
       }
@@ -1408,7 +1409,9 @@ export class Foundation extends Scene {
 
   private enterRunFailState(finalResult: Readonly<PrototypeRunResultSnapshot>): void {
     this.deathRetryState = enterPrototypeFailState(finalResult);
-    this.diagnosticsAccess?.setEligible(false);
+    // Contacts placed immediately after collision must survive the brief aftermath.
+    // Activation remains gated on retry readiness in update().
+    this.diagnosticsAccess?.setEligible(!this.services.lifecycle.isPaused());
     this.destroyDiagnosticsGestureOverlay();
     this.diagnosticsTouchRetryPending = false;
     this.services.input.releaseAll();

@@ -147,12 +147,12 @@ Public release APKs remain normal production builds. They do not set `import.met
 
 For representative mobile hardware testing, the production runtime contains a hidden diagnostics unlock:
 
-1. finish a run and wait until the results screen says retry is ready;
+1. collide with a hazard; you may start the gesture immediately during the short death aftermath or once the results screen says retry is ready;
 2. place exactly four fingers on the game within 1 second;
 3. keep all four held for two seconds (normal finger movement is fine);
 4. a small `DIAG` marker appears and the compact performance/playground controls become available.
 
-Repeat the same four-finger hold on a retry-ready results screen to disable diagnostics. The enabled state is stored locally on that device and survives app restarts and in-place updates. During a multi-touch attempt, a small safe-area-aware indicator shows the live finger count, join/hold timers, and large circles around detected contacts. Red indicates incomplete or invalid input; green indicates a valid four-finger hold. If the join takes too long, a fifth finger touches the screen, or a finger lifts before the hold completes, release all fingers before retrying.
+Repeat the same four-finger hold after a collision to disable diagnostics. The toggle completes only once retry is ready, even when the hold started during the death aftermath. The enabled state is stored locally on that device and survives app restarts and in-place updates. During a multi-touch attempt, a small safe-area-aware indicator shows the live finger count, join/hold timers, and large circles around detected contacts. Red indicates incomplete or invalid input; green indicates a valid four-finger hold. If the join takes too long, a fifth finger touches the screen, or a finger lifts before the hold completes, release all fingers before retrying.
 
 The gesture is intentionally unavailable during live gameplay. A normal one-finger tap still retries the run; multi-touch attempts are claimed by the diagnostics recognizer so they cannot accidentally start a new run.
 

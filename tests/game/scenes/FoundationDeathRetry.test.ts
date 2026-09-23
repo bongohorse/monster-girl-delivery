@@ -163,6 +163,50 @@ afterEach(() => {
 });
 
 describe('Foundation M5 death-to-retry flow', () => {
+  it('recognizes four fingers placed during the death aftermath and keeps them through retry readiness', () => {
+    const { foundation, services } = createHarness();
+    const access = new DiagnosticsAccess(null);
+    Reflect.set(foundation, 'diagnosticsAccess', access);
+    const render = vi.fn();
+    const destroy = vi.fn();
+    const layout = vi.fn();
+    const now = vi.spyOn(performance, 'now').mockReturnValue(1_000);
+
+    forceLethalCollision(foundation);
+    expect(getDeathRetryState(foundation).phase).toBe('fail-state');
+    const pointerDown = Reflect.get(foundation, 'handleDiagnosticsPointerDown') as (
+      pointer: unknown,
+    ) => void;
+    for (let id = 1; id <= 4; id += 1) {
+      now.mockReturnValue(1_000 + id * 20);
+      services.input.pressPointer(id, 'touch');
+      pointerDown.call(foundation, { id, x: id * 20, y: 100, button: 0, wasTouch: true });
+      if (id === 1) {
+        Reflect.set(foundation, 'diagnosticsGestureOverlay', { render, destroy, layout });
+      }
+    }
+
+    expect(access.getGestureSnapshot(1_080)).toMatchObject({ phase: 'holding', claimed: true });
+    expect(render).toHaveBeenCalled();
+    now.mockReturnValue(1_500);
+    for (let frame = 0; frame < 15; frame += 1) foundation.update(0, 50);
+    expect(getDeathRetryState(foundation).phase).toBe('retry-ready');
+    expect(getRunState(foundation).phase).toBe('dead');
+    expect(access.getGestureSnapshot(1_500).phase).toBe('holding');
+    expect(destroy).not.toHaveBeenCalled();
+
+    const handleToggle = vi.fn();
+    Reflect.set(foundation, 'handleProductionDiagnosticsToggle', handleToggle);
+    now.mockReturnValue(3_079);
+    foundation.update(0, 0);
+    expect(handleToggle).not.toHaveBeenCalled();
+    now.mockReturnValue(3_080);
+    foundation.update(0, 0);
+    foundation.update(0, 0);
+    expect(handleToggle).toHaveBeenCalledExactlyOnceWith(true);
+    expect(getRunState(foundation).phase).toBe('dead');
+  });
+
   it('removes production touch listeners and live gesture graphics on scene shutdown', () => {
     const { foundation } = createHarness();
     const on = vi.fn();
