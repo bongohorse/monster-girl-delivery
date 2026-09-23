@@ -67,22 +67,45 @@ public class MainActivity extends BridgeActivity {
             // browser Blob download. Read that canonical payload instead of trying to fetch the
             // short-lived blob: URL after DownloadListener dispatch; the page revokes that URL on
             // the next task, which races the asynchronous native hand-off on real devices.
-            String evidenceStorageKey = safeFilename.startsWith("mgd-memory-")
-                ? MEMORY_EVIDENCE_STORAGE_KEY
-                : PERFORMANCE_EVIDENCE_STORAGE_KEY;
+            // Blob downloads do not reliably carry the anchor's download filename through
+            // WebView's DownloadListener. If it is missing, select the latest persisted report
+            // instead of assuming the performance-evidence key.
+            String requestedKind = safeFilename.startsWith("mgd-memory-")
+                ? "memory"
+                : safeFilename.startsWith("mgd-performance-")
+                    && !safeFilename.equals("mgd-performance-evidence.json")
+                    ? "performance"
+                    : "";
             String script = "(async()=>{try{"
-                + "const content=window.localStorage.getItem("
-                + JSONObject.quote(evidenceStorageKey)
-                + ");"
-                + "if(typeof content!=='string'||content.length===0){"
-                + "throw new Error('Stored MGD evidence is unavailable.');"
-                + "}"
-                + "await window.Capacitor.Plugins.EvidenceExport.share({filename:"
+                + "const requested=" + JSONObject.quote(requestedKind) + ";"
+                + "const entries=["
+                + "{kind:'memory',content:localStorage.getItem("
+                + JSONObject.quote(MEMORY_EVIDENCE_STORAGE_KEY)
+                + ")},"
+                + "{kind:'performance',content:localStorage.getItem("
+                + JSONObject.quote(PERFORMANCE_EVIDENCE_STORAGE_KEY)
+                + ")}"
+                + "].filter(e=>typeof e.content==='string'&&e.content.length>0);"
+                + "if(entries.length===0)throw new Error('No stored MGD evidence was found.');"
+                + "const timestamp=e=>{try{return JSON.parse(e.content).capturedAtIso||''}"
+                + "catch{return ''}};"
+                + "const latest=entries.reduce((a,b)=>timestamp(a)>=timestamp(b)?a:b);"
+                + "const selected=requested?entries.find(e=>e.kind===requested):latest;"
+                + "if(!selected)throw new Error('Requested MGD evidence was not found.');"
+                + "const filename=requested===selected.kind?"
                 + JSONObject.quote(safeFilename)
-                + ",content});"
+                + ":'mgd-'+selected.kind+'-evidence.json';"
+                + "const params={filename,content:selected.content};"
+                + "const bridge=window.Capacitor;"
+                + "if(bridge?.Plugins?.EvidenceExport?.share){"
+                + "await bridge.Plugins.EvidenceExport.share(params);"
+                + "}else if(typeof bridge?.nativePromise==='function'){"
+                + "await bridge.nativePromise('EvidenceExport','share',params);"
+                + "}else throw new Error('Native EvidenceExport bridge unavailable.');"
                 + "}catch(error){"
                 + "console.error('MGD native evidence export failed',error);"
-                + "window.alert('MGD evidence export failed. The evidence remains stored locally.');"
+                + "window.alert('MGD evidence export failed: '+(error?.message||String(error))"
+                + "+' The report remains in WebView localStorage.');"
                 + "}})();";
 
             getBridge().getWebView().post(

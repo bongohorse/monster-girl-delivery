@@ -5,12 +5,16 @@ on:
     paths:
       - '.github/workflows/android-memory-comparison.yml'
       - 'android/app/build.gradle'
+      - 'android/app/src/main/java/com/bongohorse/monstergirldelivery/MainActivity.java'
+      - 'android/app/src/main/java/com/bongohorse/monstergirldelivery/EvidenceExportPlugin.java'
       - 'docs/329_APK_COMPARISON.md'
   push:
     branches: [main]
     paths:
       - '.github/workflows/android-memory-comparison.yml'
       - 'android/app/build.gradle'
+      - 'android/app/src/main/java/com/bongohorse/monstergirldelivery/MainActivity.java'
+      - 'android/app/src/main/java/com/bongohorse/monstergirldelivery/EvidenceExportPlugin.java'
   workflow_dispatch:
 
 permissions:
@@ -21,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      BEFORE_SHA: 7a84e3232336b2192897502869dfe0c2990dcfc9
+      BEFORE_SHA: 0d63b63504726fcd342c0275677a7a241d74b9c9
       MGD_ANDROID_DIRECTOR_BUILD: '1'
       MGD_ANDROID_COMPARISON_BUILD: '1'
       MGD_ANDROID_TEST_KEYSTORE_FILE: ${{ github.workspace }}/mgd-memory-test.p12
@@ -55,10 +59,13 @@ jobs:
       - name: Install locked dependencies and build both web sources
         shell: bash
         run: |
-          (cd before && bun install --frozen-lockfile && bun run build)
-          (cd after && bun install --frozen-lockfile && bun run build)
+          (cd before && bun install --frozen-lockfile && GITHUB_SHA="$BEFORE_SHA" bun run build)
+          AFTER_SHA="$(git -C after rev-parse HEAD)"
+          (cd after && bun install --frozen-lockfile && GITHUB_SHA="$AFTER_SHA" bun run build)
           grep -R -l -F 'chromium-performance-memory' before/dist/assets > /dev/null
           grep -R -l -F 'chromium-performance-memory' after/dist/assets > /dev/null
+          grep -R -l -F "${BEFORE_SHA:0:12}" before/dist/assets > /dev/null
+          grep -R -l -F "${AFTER_SHA:0:12}" after/dist/assets > /dev/null
           test "$(git -C before rev-parse HEAD)" = "$BEFORE_SHA"
 
       - name: Generate one temporary signing key for both APKs
@@ -90,7 +97,9 @@ jobs:
           MGD_ANDROID_VERSION_CODE: '2'
           MGD_ANDROID_VERSION_NAME: 329-after
         run: |
-          (cd after && bun run android:sync)
+          AFTER_SHA="$(git -C after rev-parse HEAD)"
+          (cd after && GITHUB_SHA="$AFTER_SHA" bun run android:sync)
+          grep -R -l -F "${AFTER_SHA:0:12}" after/dist/assets > /dev/null
           cmp after/dist/index.html after/android/app/src/main/assets/public/index.html
           (cd after/android && ./gradlew clean assembleDebug --stacktrace)
           AFTER_SHA="$(git -C after rev-parse HEAD)"
