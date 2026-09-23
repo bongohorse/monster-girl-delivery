@@ -207,7 +207,7 @@ describe('Foundation M5 death-to-retry flow', () => {
     expect(getRunState(foundation).phase).toBe('dead');
   });
 
-  it('removes production touch listeners and live gesture graphics on scene shutdown', () => {
+  it('removes production touch listeners and gesture text on scene shutdown', () => {
     const { foundation } = createHarness();
     const on = vi.fn();
     const off = vi.fn();
@@ -229,25 +229,10 @@ describe('Foundation M5 death-to-retry flow', () => {
         },
         destroy: destroyed,
       }),
-      graphics: () => ({
-        setDepth() {
-          return this;
-        },
-        clear() {
-          return this;
-        },
-        lineStyle() {
-          return this;
-        },
-        strokeCircle() {
-          return this;
-        },
-        destroy: destroyed,
-      }),
     });
     const initialize = Reflect.get(foundation, 'initializeProductionDiagnostics') as () => void;
     initialize.call(foundation);
-    expect(on).toHaveBeenCalledTimes(4);
+    expect(on).toHaveBeenCalledTimes(3);
     const access = Reflect.get(foundation, 'diagnosticsAccess') as DiagnosticsAccess;
     access.setEligible(true);
     const pointerDown = Reflect.get(foundation, 'handleDiagnosticsPointerDown') as (
@@ -258,8 +243,8 @@ describe('Foundation M5 death-to-retry flow', () => {
     }
     const shutdown = Reflect.get(foundation, 'handleShutdown') as () => void;
     shutdown.call(foundation);
-    expect(off).toHaveBeenCalledTimes(4);
-    expect(destroyed).toHaveBeenCalledTimes(4);
+    expect(off).toHaveBeenCalledTimes(3);
+    expect(destroyed).toHaveBeenCalledTimes(3);
     expect(Reflect.get(foundation, 'diagnosticsAccess')).toBeUndefined();
   });
 
@@ -288,20 +273,7 @@ describe('Foundation M5 death-to-retry flow', () => {
       },
       destroy: destroyed,
     });
-    const graphics = {
-      setDepth() {
-        return this;
-      },
-      clear() {
-        return this;
-      },
-      lineStyle() {
-        return this;
-      },
-      strokeCircle: vi.fn(),
-      destroy: destroyed,
-    };
-    Reflect.set(foundation, 'add', { text: createText, graphics: () => graphics });
+    Reflect.set(foundation, 'add', { text: createText });
     const pointerDown = Reflect.get(foundation, 'handleDiagnosticsPointerDown') as (
       pointer: unknown,
     ) => void;
@@ -323,7 +295,7 @@ describe('Foundation M5 death-to-retry flow', () => {
     for (let id = 1; id <= 5; id += 1) pointerUp(touch(id));
     foundation.update(0, 0);
     expect(getRunState(foundation).phase).toBe('dead');
-    expect(destroyed).toHaveBeenCalledTimes(4);
+    expect(destroyed).toHaveBeenCalledTimes(3);
 
     services.input.pressPointer(3, 'touch');
     pointerDown(touch(3));

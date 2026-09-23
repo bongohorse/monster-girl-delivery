@@ -152,7 +152,7 @@ For representative mobile hardware testing, the production runtime contains a hi
 3. keep all four held for two seconds (normal finger movement is fine);
 4. a small `DIAG` marker appears and the compact performance/playground controls become available.
 
-Repeat the same four-finger hold after a collision to disable diagnostics. The toggle completes only once retry is ready, even when the hold started during the death aftermath. The enabled state is stored locally on that device and survives app restarts and in-place updates. During a multi-touch attempt, a small safe-area-aware indicator shows the live finger count, join/hold timers, and large circles around detected contacts. Red indicates incomplete or invalid input; green indicates a valid four-finger hold. If the join takes too long, a fifth finger touches the screen, or a finger lifts before the hold completes, release all fingers before retrying.
+Repeat the same four-finger hold after a collision to disable diagnostics. The toggle completes only once retry is ready, even when the hold started during the death aftermath. The enabled state is stored locally on that device and survives app restarts and in-place updates. During a multi-touch attempt, a small safe-area-aware text indicator shows the live finger count and join/hold timers. Red indicates incomplete or invalid input; green indicates a valid four-finger hold. If the join takes too long, a fifth finger touches the screen, or a finger lifts before the hold completes, release all fingers before retrying.
 
 The gesture is intentionally unavailable during live gameplay. A normal one-finger tap still retries the run; multi-touch attempts are claimed by the diagnostics recognizer so they cannot accidentally start a new run.
 
