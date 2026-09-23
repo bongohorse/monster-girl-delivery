@@ -2,8 +2,12 @@ name: Android Release
 
 on:
   push:
+    branches:
+      - main
     tags:
       - 'v*.*.*'
+    paths:
+      - 'package.json'
 
 permissions:
   contents: write
@@ -19,32 +23,70 @@ jobs:
     env:
       MGD_ANDROID_SIGNING_MODE: stable-test
     steps:
-      - name: Check out tagged source
+      - name: Check out release source
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - name: Require a release tag on main history
+      - name: Resolve release source
+        id: source
         shell: bash
         run: |
           set -euo pipefail
-          if [[ "$GITHUB_REF" != refs/tags/v* ]]; then
-            echo '::error::Android releases must run from a vMAJOR.MINOR.PATCH tag.'
+          git fetch origin main --tags
+
+          BUILT_SHA="$(git rev-parse HEAD)"
+          echo "BUILT_SHA=$BUILT_SHA" >> "$GITHUB_ENV"
+
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            if ! git merge-base --is-ancestor HEAD origin/main; then
+              echo '::error::Release tag does not point to a commit contained in main.'
+              exit 1
+            fi
+            echo "tag=$GITHUB_REF_NAME" >> "$GITHUB_OUTPUT"
+            echo 'mode=tag' >> "$GITHUB_OUTPUT"
+            echo 'should_release=true' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [[ "$GITHUB_REF" != refs/heads/main ]]; then
+            echo "::error::Android releases must run from main or a vMAJOR.MINOR.PATCH tag; got $GITHUB_REF."
             exit 1
           fi
-          git fetch origin main
-          if ! git merge-base --is-ancestor HEAD origin/main; then
-            echo '::error::Release tag does not point to a commit contained in main.'
+
+          PACKAGE_VERSION="$(node -e "process.stdout.write(require('./package.json').version)")"
+          RELEASE_TAG="v$PACKAGE_VERSION"
+
+          if ! [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::package.json version must be stable SemVer MAJOR.MINOR.PATCH; got $PACKAGE_VERSION."
             exit 1
           fi
-          echo "BUILT_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+          if git rev-parse -q --verify "refs/tags/$RELEASE_TAG" >/dev/null; then
+            EXISTING_TAG_SHA="$(git rev-list -n 1 "$RELEASE_TAG")"
+            if [ "$EXISTING_TAG_SHA" != "$BUILT_SHA" ]; then
+              echo "::error::Version $PACKAGE_VERSION is already tagged at $EXISTING_TAG_SHA. Never move or reuse a release version; bump package.json instead."
+              exit 1
+            fi
+            echo "Release tag $RELEASE_TAG already exists on this commit; nothing to publish."
+            echo "tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+            echo 'mode=main' >> "$GITHUB_OUTPUT"
+            echo 'should_release=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+          echo 'mode=main' >> "$GITHUB_OUTPUT"
+          echo 'should_release=true' >> "$GITHUB_OUTPUT"
 
       - name: Set up Bun
+        if: steps.source.outputs.should_release == 'true'
         uses: oven-sh/setup-bun@v2
         with:
           bun-version-file: .bun-version
 
       - name: Set up Java
+        if: steps.source.outputs.should_release == 'true'
         uses: actions/setup-java@v6
         with:
           distribution: temurin
@@ -52,14 +94,17 @@ jobs:
           cache: gradle
 
       - name: Install locked dependencies
+        if: steps.source.outputs.should_release == 'true'
         run: bun install --frozen-lockfile
 
       - name: Resolve Android release version
+        if: steps.source.outputs.should_release == 'true'
         id: version
         shell: bash
-        run: node scripts/android-release-version.mjs "$GITHUB_REF_NAME" >> "$GITHUB_OUTPUT"
+        run: node scripts/android-release-version.mjs "${{ steps.source.outputs.tag }}" >> "$GITHUB_OUTPUT"
 
       - name: Require production runtime mode
+        if: steps.source.outputs.should_release == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -69,6 +114,7 @@ jobs:
           fi
 
       - name: Refuse an existing GitHub Release
+        if: steps.source.outputs.should_release == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ steps.version.outputs.tag }}
@@ -76,11 +122,12 @@ jobs:
         run: |
           set -euo pipefail
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            echo "::error::GitHub Release $RELEASE_TAG already exists. Published release assets are immutable; publish a new version tag instead of replacing files."
+            echo "::error::GitHub Release $RELEASE_TAG already exists. Published release assets are immutable; publish a new version instead."
             exit 1
           fi
 
       - name: Require stable test signing secrets
+        if: steps.source.outputs.should_release == 'true'
         env:
           MGD_ANDROID_TEST_KEYSTORE_BASE64: ${{ secrets.MGD_ANDROID_TEST_KEYSTORE_BASE64 }}
           MGD_ANDROID_TEST_KEYSTORE_PASSWORD: ${{ secrets.MGD_ANDROID_TEST_KEYSTORE_PASSWORD }}
@@ -100,6 +147,7 @@ jobs:
           echo "MGD_ANDROID_TEST_KEYSTORE_FILE=$RUNNER_TEMP/mgd-test.keystore" >> "$GITHUB_ENV"
 
       - name: Require pinned signing certificate fingerprint
+        if: steps.source.outputs.should_release == 'true'
         env:
           EXPECTED_CERT_SHA256: ${{ vars.MGD_ANDROID_TEST_CERT_SHA256 }}
         shell: bash
@@ -113,18 +161,22 @@ jobs:
           echo "MGD_ANDROID_EXPECTED_CERT_SHA256=$NORMALIZED_CERT_SHA256" >> "$GITHUB_ENV"
 
       - name: Run source quality gates
+        if: steps.source.outputs.should_release == 'true'
         run: |
           bun run ci:check
           bun run typecheck
           bun run test
 
       - name: Sync production web build into Android
+        if: steps.source.outputs.should_release == 'true'
         run: bun run android:sync
 
       - name: Verify bundled production PWA
+        if: steps.source.outputs.should_release == 'true'
         run: node scripts/verify-web-package.mjs android/app/src/main/assets/public
 
       - name: Verify MGD Android identity
+        if: steps.source.outputs.should_release == 'true'
         run: |
           grep -F "appId: 'com.bongohorse.monstergirldelivery'" capacitor.config.ts
           grep -F "appName: 'MGD'" capacitor.config.ts
@@ -133,6 +185,7 @@ jobs:
           grep -F 'applicationId "com.bongohorse.monstergirldelivery"' android/app/build.gradle
 
       - name: Compile tests and assemble signed release APK
+        if: steps.source.outputs.should_release == 'true'
         working-directory: android
         env:
           MGD_ANDROID_VERSION_NAME: ${{ steps.version.outputs.versionName }}
@@ -143,6 +196,7 @@ jobs:
         run: ./gradlew testDebugUnitTest assembleRelease --stacktrace
 
       - name: Stage and verify release assets
+        if: steps.source.outputs.should_release == 'true'
         env:
           RELEASE_TAG: ${{ steps.version.outputs.tag }}
           RELEASE_VERSION_NAME: ${{ steps.version.outputs.versionName }}
@@ -230,6 +284,7 @@ jobs:
           NODE
 
       - name: Preserve release evidence as Actions artifact
+        if: steps.source.outputs.should_release == 'true'
         uses: actions/upload-artifact@v7
         with:
           name: mgd-android-release-${{ steps.version.outputs.versionName }}
@@ -238,7 +293,26 @@ jobs:
           retention-days: 30
           compression-level: 0
 
+      - name: Create release tag automatically
+        if: steps.source.outputs.should_release == 'true' && steps.source.outputs.mode == 'main'
+        env:
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+          RELEASE_VERSION_NAME: ${{ steps.version.outputs.versionName }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin --tags
+          if git rev-parse -q --verify "refs/tags/$RELEASE_TAG" >/dev/null; then
+            echo "::error::Release tag $RELEASE_TAG appeared while the build was running. Refusing to move or replace it."
+            exit 1
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git tag -a "$RELEASE_TAG" "$BUILT_SHA" -m "MGD $RELEASE_VERSION_NAME"
+          git push origin "refs/tags/$RELEASE_TAG"
+
       - name: Publish immutable GitHub Release for Obtainium
+        if: steps.source.outputs.should_release == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ steps.version.outputs.tag }}
@@ -256,7 +330,7 @@ jobs:
           )
 
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            echo "::error::GitHub Release $RELEASE_TAG already exists. Refusing to replace published assets; publish a new version tag instead."
+            echo "::error::GitHub Release $RELEASE_TAG already exists. Refusing to replace published assets; publish a new version instead."
             exit 1
           fi
 
@@ -266,5 +340,5 @@ jobs:
             --title "MGD ${RELEASE_VERSION_NAME}"
 
       - name: Remove temporary signing keystore
-        if: always()
+        if: always() && steps.source.outputs.should_release == 'true'
         run: rm -f "$RUNNER_TEMP/mgd-test.keystore"
