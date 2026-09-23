@@ -113,11 +113,18 @@ jobs:
           grep -F "package: name='com.bongohorse.monstergirldelivery.memorytest' versionCode='2' versionName='329-after'" reports/android-memory/after-badging.txt
           "$APKSIGNER" verify --verbose --print-certs "$BEFORE_APK" > reports/android-memory/before-signature.txt
           "$APKSIGNER" verify --verbose --print-certs "$AFTER_APK" > reports/android-memory/after-signature.txt
+          echo 'BEFORE signer details:'
+          cat reports/android-memory/before-signature.txt
+          echo 'AFTER signer details:'
+          cat reports/android-memory/after-signature.txt
+          echo 'Comparing signer certificates and embedded web source'
           grep -F 'Signer #1 certificate SHA-256 digest:' reports/android-memory/before-signature.txt > reports/android-memory/before-cert.txt
           grep -F 'Signer #1 certificate SHA-256 digest:' reports/android-memory/after-signature.txt > reports/android-memory/after-cert.txt
           cmp reports/android-memory/before-cert.txt reports/android-memory/after-cert.txt
+          echo 'Signer fingerprints match'
           cmp before/dist/index.html <(unzip -p "$BEFORE_APK" assets/public/index.html)
           cmp after/dist/index.html <(unzip -p "$AFTER_APK" assets/public/index.html)
+          echo 'Embedded web entrypoints match their source builds'
           test "$(sha256sum "$BEFORE_APK" | cut -d' ' -f1)" != "$(sha256sum "$AFTER_APK" | cut -d' ' -f1)"
           (cd reports/android-memory && sha256sum MGD-MEM-*.apk > SHA256SUMS.txt)
           export AFTER_SHA
