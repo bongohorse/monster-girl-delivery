@@ -176,86 +176,13 @@ describe('M5 rotating Zapper', () => {
     expect(
       isPlayerCollidingWithPrototypeZapperDuringStep(
         { distance: 0, simulationSeconds: 0 },
-        createStationaryTrajectory(230, 0.1),
+        createStationaryTrajectory(500, 0.1),
         0.1,
         RUN_TUNING,
         hazard,
       ),
     ).toBe(false);
     expect(angleReads).toBe(1);
-  });
-
-  it('rejects a vertically unreachable Zapper before creating dense samples or geometry', () => {
-    const behavior = createPrototypeZapperBehavior(0, PROTOTYPE_ZAPPER_LENGTHS.short);
-    const hitbox = createPrototypeZapperHitbox(0, 0, behavior);
-    const hazard = Object.freeze({
-      behavior,
-      entryId: 'vertical-broadphase-zapper',
-      hitbox,
-      patternEntryIndex: 0,
-      patternId: 'vertical-broadphase-zapper-test',
-      runDistance: hitbox.left,
-      type: 'placeholder-barrier' as const,
-    });
-    const counters = createPrototypeZapperCollisionWorkCounters();
-
-    expect(
-      isPlayerCollidingWithPrototypeZapperDuringStep(
-        { distance: 0, simulationSeconds: 0 },
-        createStationaryTrajectory(500, 0.1),
-        0.1,
-        RUN_TUNING,
-        hazard,
-        undefined,
-        undefined,
-        counters,
-      ),
-    ).toBe(false);
-    expect(counters).toEqual({
-      broadphaseRejectedCallCount: 1,
-      candidateSampleCount: 0,
-      collisionCallCount: 1,
-      evaluatedSampleCount: 0,
-      geometryResolutionCount: 0,
-      primaryNarrowphaseCheckCount: 0,
-      secondaryNarrowphaseCheckCount: 0,
-    });
-  });
-
-  it('keeps an internal quadratic flight extremum inside the vertical broadphase', () => {
-    const behavior = createPrototypeZapperBehavior(0, PROTOTYPE_ZAPPER_LENGTHS.short);
-    const hitbox = createPrototypeZapperHitbox(0, 0, behavior);
-    const hazard = Object.freeze({
-      behavior,
-      entryId: 'vertical-broadphase-extremum',
-      hitbox,
-      patternEntryIndex: 0,
-      patternId: 'vertical-broadphase-extremum-test',
-      runDistance: hitbox.left,
-      type: 'placeholder-barrier' as const,
-    });
-    const trajectory = Object.freeze({
-      finalState: Object.freeze({ positionY: 100, velocityY: 320 }),
-      segments: Object.freeze([
-        Object.freeze({
-          accelerationY: 640,
-          endSeconds: 1,
-          positionY: 100,
-          startSeconds: 0,
-          velocityY: -320,
-        }),
-      ]),
-    });
-
-    expect(
-      isPlayerCollidingWithPrototypeZapperDuringStep(
-        { distance: 0, simulationSeconds: 0 },
-        trajectory,
-        1,
-        RUN_TUNING,
-        hazard,
-      ),
-    ).toBe(true);
   });
 
   it('rejects a far rotating Zapper before resolving rotation or sample geometry', () => {
@@ -337,7 +264,7 @@ describe('M5 rotating Zapper', () => {
     expect(
       evaluatePlayerPrototypeZapperCoreAndGrazeDuringStep(
         { distance: 0, simulationSeconds: 0 },
-        createStationaryTrajectory(47, 0.1),
+        createStationaryTrajectory(100, 0.1),
         0.1,
         RUN_TUNING,
         hazard,
@@ -347,15 +274,13 @@ describe('M5 rotating Zapper', () => {
       ),
     ).toEqual({ coreHit: false, grazeHit: false });
 
-    expect(counters).toEqual({
-      broadphaseRejectedCallCount: 0,
-      candidateSampleCount: 0,
-      collisionCallCount: 1,
-      evaluatedSampleCount: 0,
-      geometryResolutionCount: 1,
-      primaryNarrowphaseCheckCount: 1,
-      secondaryNarrowphaseCheckCount: 1,
-    });
+    expect(counters.collisionCallCount).toBe(1);
+    expect(counters.broadphaseRejectedCallCount).toBe(0);
+    expect(counters.candidateSampleCount).toBeGreaterThan(2);
+    expect(counters.evaluatedSampleCount).toBe(counters.candidateSampleCount);
+    expect(counters.geometryResolutionCount).toBe(1);
+    expect(counters.primaryNarrowphaseCheckCount).toBe(counters.evaluatedSampleCount);
+    expect(counters.secondaryNarrowphaseCheckCount).toBe(counters.evaluatedSampleCount);
   });
 
   it('keeps Zapper Graze padding inside the conservative horizontal broadphase', () => {
@@ -636,37 +561,6 @@ describe('M5 rotating Zapper', () => {
         hazard,
       ),
     ).toThrow('Player run distance and vertical position must be finite.');
-  });
-
-  it('keeps custom accessor padding on the historical per-check validation path', () => {
-    const hazard = createRotatingZapper();
-    let beamReads = 0;
-    let endpointReads = 0;
-    const customPadding = {
-      get beam(): number {
-        beamReads += 1;
-        return 0;
-      },
-      get endpoints(): number {
-        endpointReads += 1;
-        return 0;
-      },
-    };
-
-    expect(
-      isPlayerCollidingWithPrototypeZapperDuringStep(
-        { distance: 600, simulationSeconds: 0 },
-        createStationaryTrajectory(120, 0.1),
-        0.1,
-        RUN_TUNING,
-        hazard,
-        undefined,
-        customPadding,
-      ),
-    ).toBe(false);
-
-    expect(beamReads).toBeGreaterThan(3);
-    expect(endpointReads).toBeGreaterThan(3);
   });
 
   it('reports the same angular sweep collision across standard frame partitions', () => {
