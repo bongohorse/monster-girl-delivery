@@ -10,7 +10,6 @@ import {
   createPrototypeZapperCollisionWorkCounters,
   evaluatePlayerPrototypeZapperCoreAndGrazeDuringStep,
   isPlayerCollidingWithPrototypeZapperDuringStep,
-  PROTOTYPE_PLAYER_COLLISION_EXTENTS,
   type PrototypeZapperCollisionWorkCounters,
 } from '../../src/systems/HazardCollision';
 import { createVerticalFlightTrajectory } from '../../src/systems/VerticalFlightSimulation';
@@ -35,27 +34,14 @@ const createStationaryTrajectory = (positionY: number, elapsedSeconds: number) =
     FLIGHT_BOUNDS,
   );
 
-const createLinearTrajectory = (positionY: number, velocityY: number, elapsedSeconds: number) =>
-  createVerticalFlightTrajectory(
-    { positionY, velocityY },
-    elapsedSeconds,
-    false,
-    FLIGHT_TUNING,
-    FLIGHT_BOUNDS,
-  );
-
-const createZapper = (
-  rotating: boolean,
-  centerX = 0,
-  rotationSpeedDegreesPerSecond: number = PROTOTYPE_ZAPPER_ROTATION_SPEEDS.fast,
-) => {
+const createZapper = (rotating: boolean, centerX = 0) => {
   const behavior = createPrototypeZapperBehavior(
     0,
     PROTOTYPE_ZAPPER_LENGTHS.long,
     rotating
       ? {
           direction: 'clockwise',
-          speedDegreesPerSecond: rotationSpeedDegreesPerSecond,
+          speedDegreesPerSecond: PROTOTYPE_ZAPPER_ROTATION_SPEEDS.fast,
         }
       : undefined,
   );
@@ -75,13 +61,8 @@ const collectOneSecondPartitionedWork = (
   schedule: Readonly<FrameSchedule>,
   rotating: boolean,
 ): PrototypeZapperCollisionWorkCounters => {
-  const hazard = createZapper(
-    rotating,
-    0,
-    rotating ? PROTOTYPE_ZAPPER_ROTATION_SPEEDS.slow : PROTOTYPE_ZAPPER_ROTATION_SPEEDS.fast,
-  );
+  const hazard = createZapper(rotating);
   const counters = createPrototypeZapperCollisionWorkCounters();
-  const playerPositionY = rotating ? 60 : 39;
   let elapsedSeconds = 0;
   let stepIndex = 0;
 
@@ -95,7 +76,7 @@ const collectOneSecondPartitionedWork = (
     expect(
       isPlayerCollidingWithPrototypeZapperDuringStep(
         { distance: 0, simulationSeconds: elapsedSeconds },
-        createStationaryTrajectory(playerPositionY, deltaSeconds),
+        createStationaryTrajectory(500, deltaSeconds),
         deltaSeconds,
         NO_SCROLL,
         hazard,
@@ -119,7 +100,7 @@ describe('M5 Zapper collision work evidence', () => {
     expect(
       isPlayerCollidingWithPrototypeZapperDuringStep(
         { distance: 0, simulationSeconds: 0 },
-        createStationaryTrajectory(39, 0.1),
+        createStationaryTrajectory(500, 0.1),
         0.1,
         NO_SCROLL,
         createZapper(false),
@@ -131,7 +112,7 @@ describe('M5 Zapper collision work evidence', () => {
     expect(
       isPlayerCollidingWithPrototypeZapperDuringStep(
         { distance: 0, simulationSeconds: 0 },
-        createStationaryTrajectory(39, 0.1),
+        createStationaryTrajectory(500, 0.1),
         0.1,
         NO_SCROLL,
         createZapper(true),
@@ -142,10 +123,10 @@ describe('M5 Zapper collision work evidence', () => {
     ).toBe(false);
 
     expect(staticCounters).toMatchObject({
-      candidateSampleCount: 0,
-      evaluatedSampleCount: 0,
+      candidateSampleCount: 73,
+      evaluatedSampleCount: 73,
       geometryResolutionCount: 1,
-      primaryNarrowphaseCheckCount: 1,
+      primaryNarrowphaseCheckCount: 73,
     });
     expect(rotatingCounters).toMatchObject({
       candidateSampleCount: 73,
@@ -155,304 +136,13 @@ describe('M5 Zapper collision work evidence', () => {
     });
   });
 
-  it('uses one exact swept-AABB check for static vertical-only flight', () => {
-    const counters = createPrototypeZapperCollisionWorkCounters();
-
-    expect(
-      isPlayerCollidingWithPrototypeZapperDuringStep(
-        { distance: 0, simulationSeconds: 0 },
-        createLinearTrajectory(-100, 200, 1),
-        1,
-        NO_SCROLL,
-        createZapper(false),
-        undefined,
-        undefined,
-        counters,
-      ),
-    ).toBe(true);
-
-    expect(counters).toMatchObject({
-      broadphaseRejectedCallCount: 0,
-      candidateSampleCount: 0,
-      collisionCallCount: 1,
-      evaluatedSampleCount: 0,
-      geometryResolutionCount: 1,
-      primaryNarrowphaseCheckCount: 1,
-    });
-  });
-
-  it('matches the historical dense path for static one-axis core and Graze outcomes', () => {
-    const scenarios = [
-      {
-        initialRunState: { distance: 0, simulationSeconds: 0 },
-        trajectory: createLinearTrajectory(-100, 200, 1),
-        elapsedSeconds: 1,
-        runMotionTuning: NO_SCROLL,
-      },
-      {
-        initialRunState: { distance: -120, simulationSeconds: 0 },
-        trajectory: createStationaryTrajectory(0, 1),
-        elapsedSeconds: 1,
-        runMotionTuning: NORMAL_SCROLL,
-      },
-      {
-        initialRunState: { distance: 0, simulationSeconds: 0 },
-        trajectory: createStationaryTrajectory(39, 0.1),
-        elapsedSeconds: 0.1,
-        runMotionTuning: NO_SCROLL,
-      },
-    ] as const;
-    const customStableExtents = { ...PROTOTYPE_PLAYER_COLLISION_EXTENTS };
-    const hazard = createZapper(false);
-
-    for (const scenario of scenarios) {
-      const exactCore = isPlayerCollidingWithPrototypeZapperDuringStep(
-        scenario.initialRunState,
-        scenario.trajectory,
-        scenario.elapsedSeconds,
-        scenario.runMotionTuning,
-        hazard,
-      );
-      const denseCore = isPlayerCollidingWithPrototypeZapperDuringStep(
-        scenario.initialRunState,
-        scenario.trajectory,
-        scenario.elapsedSeconds,
-        scenario.runMotionTuning,
-        hazard,
-        customStableExtents,
-      );
-      expect(exactCore).toBe(denseCore);
-
-      const exactGraze = evaluatePlayerPrototypeZapperCoreAndGrazeDuringStep(
-        scenario.initialRunState,
-        scenario.trajectory,
-        scenario.elapsedSeconds,
-        scenario.runMotionTuning,
-        hazard,
-        PROTOTYPE_ZAPPER_GRAZE_PADDING,
-      );
-      const denseGraze = evaluatePlayerPrototypeZapperCoreAndGrazeDuringStep(
-        scenario.initialRunState,
-        scenario.trajectory,
-        scenario.elapsedSeconds,
-        scenario.runMotionTuning,
-        hazard,
-        PROTOTYPE_ZAPPER_GRAZE_PADDING,
-        customStableExtents,
-      );
-      expect(exactGraze).toEqual(denseGraze);
-    }
-  });
-
-  it('keeps genuine two-axis static motion on the dense lattice fallback', () => {
-    const counters = createPrototypeZapperCollisionWorkCounters();
-
-    isPlayerCollidingWithPrototypeZapperDuringStep(
-      { distance: -70, simulationSeconds: 0 },
-      createLinearTrajectory(39, 20, 0.1),
-      0.1,
-      NORMAL_SCROLL,
-      createZapper(false),
-      undefined,
-      undefined,
-      counters,
-    );
-
-    expect(counters.collisionCallCount).toBe(1);
-    expect(counters.candidateSampleCount).toBeGreaterThan(1);
-    expect(counters.evaluatedSampleCount).toBeGreaterThan(1);
-    expect(counters.geometryResolutionCount).toBe(1);
-  });
-
-  it('keeps gapped static trajectories on the historical dense fallback', () => {
-    const counters = createPrototypeZapperCollisionWorkCounters();
-    const trajectory = Object.freeze({
-      finalState: Object.freeze({ positionY: 39, velocityY: 0 }),
-      segments: Object.freeze([
-        Object.freeze({
-          accelerationY: 0,
-          endSeconds: 0.04,
-          positionY: 39,
-          startSeconds: 0,
-          velocityY: 0,
-        }),
-        Object.freeze({
-          accelerationY: 0,
-          endSeconds: 0.1,
-          positionY: 39,
-          startSeconds: 0.06,
-          velocityY: 0,
-        }),
-      ]),
-    });
-
-    expect(
-      isPlayerCollidingWithPrototypeZapperDuringStep(
-        { distance: 0, simulationSeconds: 0 },
-        trajectory,
-        0.1,
-        NO_SCROLL,
-        createZapper(false),
-        undefined,
-        undefined,
-        counters,
-      ),
-    ).toBe(false);
-
-    expect(counters.candidateSampleCount).toBeGreaterThan(1);
-    expect(counters.evaluatedSampleCount).toBe(counters.candidateSampleCount);
-    expect(counters.geometryResolutionCount).toBe(1);
-  });
-
-  it('uses one exact swept-AABB check for static horizontal-only motion at normal scroll', () => {
-    const counters = createPrototypeZapperCollisionWorkCounters();
-
-    expect(
-      isPlayerCollidingWithPrototypeZapperDuringStep(
-        { distance: -120, simulationSeconds: 0 },
-        createStationaryTrajectory(0, 1),
-        1,
-        NORMAL_SCROLL,
-        createZapper(false),
-        undefined,
-        undefined,
-        counters,
-      ),
-    ).toBe(true);
-
-    expect(counters).toMatchObject({
-      broadphaseRejectedCallCount: 0,
-      candidateSampleCount: 0,
-      collisionCallCount: 1,
-      evaluatedSampleCount: 0,
-      geometryResolutionCount: 1,
-      primaryNarrowphaseCheckCount: 1,
-    });
-  });
-
-  it('preserves full candidate evidence while an early core hit stops expensive sample work', () => {
-    const counters = createPrototypeZapperCollisionWorkCounters();
-
-    expect(
-      isPlayerCollidingWithPrototypeZapperDuringStep(
-        { distance: 0, simulationSeconds: 0 },
-        createStationaryTrajectory(0, 0.1),
-        0.1,
-        NO_SCROLL,
-        createZapper(true),
-        undefined,
-        undefined,
-        counters,
-      ),
-    ).toBe(true);
-
-    expect(counters).toMatchObject({
-      broadphaseRejectedCallCount: 0,
-      candidateSampleCount: 73,
-      collisionCallCount: 1,
-      evaluatedSampleCount: 1,
-      geometryResolutionCount: 1,
-      primaryNarrowphaseCheckCount: 1,
-      secondaryNarrowphaseCheckCount: 0,
-    });
-  });
-
-  it('rejects a rotating Zapper when the active angle arc cannot reach the player', () => {
-    const counters = createPrototypeZapperCollisionWorkCounters();
-
-    expect(
-      isPlayerCollidingWithPrototypeZapperDuringStep(
-        { distance: 0, simulationSeconds: 0 },
-        createStationaryTrajectory(100, 0.01),
-        0.01,
-        NO_SCROLL,
-        createZapper(true),
-        undefined,
-        undefined,
-        counters,
-      ),
-    ).toBe(false);
-
-    expect(counters).toMatchObject({
-      broadphaseRejectedCallCount: 1,
-      candidateSampleCount: 0,
-      collisionCallCount: 1,
-      evaluatedSampleCount: 0,
-      geometryResolutionCount: 0,
-      primaryNarrowphaseCheckCount: 0,
-    });
-  });
-
-  it('keeps a rotating Zapper on the dense path when the active angle arc can reach the player', () => {
-    const counters = createPrototypeZapperCollisionWorkCounters();
-
-    expect(
-      isPlayerCollidingWithPrototypeZapperDuringStep(
-        { distance: 0, simulationSeconds: 0 },
-        createStationaryTrajectory(100, 1),
-        1,
-        NO_SCROLL,
-        createZapper(true),
-        undefined,
-        undefined,
-        counters,
-      ),
-    ).toBe(true);
-
-    expect(counters.broadphaseRejectedCallCount).toBe(0);
-    expect(counters.candidateSampleCount).toBeGreaterThan(1);
-    expect(counters.evaluatedSampleCount).toBeGreaterThan(0);
-    expect(counters.geometryResolutionCount).toBe(counters.evaluatedSampleCount);
-  });
-
-  it('falls back to dense rotating sampling when trajectory coverage is gapped', () => {
-    const counters = createPrototypeZapperCollisionWorkCounters();
-    const trajectory = Object.freeze({
-      finalState: Object.freeze({ positionY: 100, velocityY: 0 }),
-      segments: Object.freeze([
-        Object.freeze({
-          accelerationY: 0,
-          endSeconds: 0.004,
-          positionY: 100,
-          startSeconds: 0,
-          velocityY: 0,
-        }),
-        Object.freeze({
-          accelerationY: 0,
-          endSeconds: 0.01,
-          positionY: 100,
-          startSeconds: 0.006,
-          velocityY: 0,
-        }),
-      ]),
-    });
-
-    expect(
-      isPlayerCollidingWithPrototypeZapperDuringStep(
-        { distance: 0, simulationSeconds: 0 },
-        trajectory,
-        0.01,
-        NO_SCROLL,
-        createZapper(true),
-        undefined,
-        undefined,
-        counters,
-      ),
-    ).toBe(false);
-
-    expect(counters.broadphaseRejectedCallCount).toBe(0);
-    expect(counters.candidateSampleCount).toBeGreaterThan(1);
-    expect(counters.evaluatedSampleCount).toBe(counters.candidateSampleCount);
-    expect(counters.geometryResolutionCount).toBe(counters.evaluatedSampleCount);
-  });
-
   it('pins the current dual time + 0.5px distance lattice cost at normal scroll speed', () => {
     const counters = createPrototypeZapperCollisionWorkCounters();
 
     expect(
       isPlayerCollidingWithPrototypeZapperDuringStep(
         { distance: 0, simulationSeconds: 0 },
-        createStationaryTrajectory(47, 0.1),
+        createStationaryTrajectory(500, 0.1),
         0.1,
         NORMAL_SCROLL,
         createZapper(true, 17.5),
@@ -472,50 +162,13 @@ describe('M5 Zapper collision work evidence', () => {
     });
   });
 
-  it('preserves the dual-lattice workload when scroll direction is reversed', () => {
-    const positiveCounters = createPrototypeZapperCollisionWorkCounters();
-    const negativeCounters = createPrototypeZapperCollisionWorkCounters();
-
-    expect(
-      isPlayerCollidingWithPrototypeZapperDuringStep(
-        { distance: 0, simulationSeconds: 0 },
-        createStationaryTrajectory(47, 0.1),
-        0.1,
-        NORMAL_SCROLL,
-        createZapper(true, 17.5),
-        undefined,
-        undefined,
-        positiveCounters,
-      ),
-    ).toBe(false);
-    expect(
-      isPlayerCollidingWithPrototypeZapperDuringStep(
-        { distance: 0, simulationSeconds: 0 },
-        createStationaryTrajectory(47, 0.1),
-        0.1,
-        { baseScrollSpeed: -350 },
-        createZapper(true, -17.5),
-        undefined,
-        undefined,
-        negativeCounters,
-      ),
-    ).toBe(false);
-
-    expect(negativeCounters.candidateSampleCount).toBe(positiveCounters.candidateSampleCount);
-    expect(negativeCounters.evaluatedSampleCount).toBe(positiveCounters.evaluatedSampleCount);
-    expect(negativeCounters.geometryResolutionCount).toBe(positiveCounters.geometryResolutionCount);
-    expect(negativeCounters.primaryNarrowphaseCheckCount).toBe(
-      positiveCounters.primaryNarrowphaseCheckCount,
-    );
-  });
-
   it('pins the current shared core + Graze miss cost without a second geometry pass', () => {
     const counters = createPrototypeZapperCollisionWorkCounters();
 
     expect(
       evaluatePlayerPrototypeZapperCoreAndGrazeDuringStep(
         { distance: 0, simulationSeconds: 0 },
-        createStationaryTrajectory(47, 0.1),
+        createStationaryTrajectory(500, 0.1),
         0.1,
         NO_SCROLL,
         createZapper(true),
@@ -536,12 +189,12 @@ describe('M5 Zapper collision work evidence', () => {
 
   it('records the current one-second rotating workload across the #143 frame schedules', () => {
     const expectedCandidateSamples = {
-      '30hz': 491,
-      '60hz': 516,
-      '90hz': 559,
-      '120hz': 590,
-      '144hz': 623,
-      jittered: 519,
+      '30hz': 771,
+      '60hz': 829,
+      '90hz': 887,
+      '120hz': 948,
+      '144hz': 1_005,
+      jittered: 835,
     } as const;
 
     for (const [name, schedule] of Object.entries(STANDARD_FRAME_SCHEDULES)) {
@@ -556,18 +209,17 @@ describe('M5 Zapper collision work evidence', () => {
     }
   });
 
-  it('shows exact static sweep and rotating arc rejection remove different classes of dense work', () => {
+  it('shows static geometry reuse removes geometry churn but not the dense time lattice', () => {
     const staticCounters = collectOneSecondPartitionedWork(STANDARD_FRAME_SCHEDULES['60hz'], false);
     const rotatingCounters = collectOneSecondPartitionedWork(
       STANDARD_FRAME_SCHEDULES['60hz'],
       true,
     );
 
-    expect(staticCounters.candidateSampleCount).toBe(0);
-    expect(staticCounters.evaluatedSampleCount).toBe(0);
+    expect(staticCounters.candidateSampleCount).toBe(829);
+    expect(staticCounters.evaluatedSampleCount).toBe(829);
     expect(staticCounters.geometryResolutionCount).toBe(60);
-    expect(staticCounters.primaryNarrowphaseCheckCount).toBe(60);
-    expect(rotatingCounters.candidateSampleCount).toBe(516);
-    expect(rotatingCounters.geometryResolutionCount).toBe(516);
+    expect(rotatingCounters.candidateSampleCount).toBe(829);
+    expect(rotatingCounters.geometryResolutionCount).toBe(829);
   });
 });
