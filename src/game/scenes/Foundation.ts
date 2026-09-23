@@ -840,6 +840,7 @@ export class Foundation extends Scene {
         startNormalPerformancePreset: this.startDirectorNormalPerformancePreset,
         startZapperPerformancePreset: this.startDirectorZapperPerformancePreset,
         startMemoryEvidenceBenchmark: this.startDirectorMemoryEvidenceBenchmark,
+        cancelMemoryEvidenceBenchmark: this.clearDirectorMemoryEvidenceBenchmark,
         readMemoryEvidenceProgress: this.readDirectorMemoryEvidenceProgress,
         readRuntimeMetrics: this.readDirectorPerformanceRuntimeMetrics,
         resetWorkCounters: () => {
