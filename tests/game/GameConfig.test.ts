@@ -32,7 +32,7 @@ describe('StartGame browser configuration', () => {
       expect.objectContaining({
         disableContextMenu: true,
         input: {
-          activePointers: 2,
+          activePointers: 6,
           keyboard: true,
           mouse: {
             preventDefaultWheel: true,
