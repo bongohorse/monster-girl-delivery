@@ -9,6 +9,10 @@ import { createDirectorResponsiveLayout } from '../../devtools/DirectorResponsiv
 import { DirectorRunControls } from '../../devtools/DirectorRunControls';
 import { DirectorTuningControls } from '../../devtools/DirectorTuningControls';
 import {
+  type MemoryEvidenceResult,
+  MemoryEvidenceSampler,
+} from '../../devtools/MemoryEvidenceSampler';
+import {
   createPerformanceEvidenceReport,
   type PerformanceEvidenceCaptureMetadata,
   type PerformanceEvidenceReport,
@@ -110,8 +114,10 @@ const RUNNING_INSTRUCTIONS =
   'M5 in progress — hazards, Graze + collectibles\nHold touch, mouse, or Space to thrust.';
 const RETRY_READY_INSTRUCTIONS = 'Tap, click, or press Space to retry.';
 const DIRECTOR_NORMAL_PERFORMANCE_PRESET_ID = 'normal-run-v1';
+const DIRECTOR_MEMORY_EVIDENCE_PRESET_ID = 'allocation-long-run-v1';
 const DIRECTOR_ZAPPER_OFFSCREEN_PADDING = 24;
 const DIRECTOR_LAST_PERFORMANCE_EVIDENCE_STORAGE_KEY = 'mgd:last-performance-evidence';
+const DIRECTOR_LAST_MEMORY_EVIDENCE_STORAGE_KEY = 'mgd:last-memory-evidence';
 const formatDeadInstructions = (
   result: Readonly<PrototypeRunResultSnapshot>,
   retryReady: boolean,
@@ -245,6 +251,12 @@ export class Foundation extends Scene {
   private directorSimulationFrozen = false;
   private directorWireframesEnabled = false;
   private directorPerformancePresetId: string | null = null;
+  private memoryEvidenceSampler?: MemoryEvidenceSampler;
+  private memoryEvidenceStartRuntime?: Readonly<PerformanceRuntimeMetrics>;
+  private memoryEvidenceStartViewport?: ReturnType<ViewportService['getSnapshot']>;
+  private memoryEvidenceStartFlightTuning?: ReturnType<AppServices['flightTuning']['getSnapshot']>;
+  private memoryEvidenceStartRunMotion?: ReturnType<AppServices['runMotion']['getSnapshot']>;
+  private memoryEvidenceCompleted = false;
   private directorHazardSerial = 0;
   private directorLaserVariantIndex = 0;
   private directorZapperVariantIndex = 0;
@@ -307,6 +319,9 @@ export class Foundation extends Scene {
           triggerDeath: this.handleDirectorDeath,
           startNormalPerformancePreset: this.startDirectorNormalPerformancePreset,
           startZapperPerformancePreset: this.startDirectorZapperPerformancePreset,
+          startMemoryEvidenceBenchmark: this.startDirectorMemoryEvidenceBenchmark,
+          cancelMemoryEvidenceBenchmark: this.clearDirectorMemoryEvidenceBenchmark,
+          readMemoryEvidenceProgress: this.readDirectorMemoryEvidenceProgress,
           readRuntimeMetrics: this.readDirectorPerformanceRuntimeMetrics,
           resetWorkCounters: () => {
             if (this.directorBroadphaseWorkCounters) {
@@ -409,10 +424,17 @@ export class Foundation extends Scene {
         : undefined;
 
     if (this.directorPerformanceHud && directorLifecycle) {
+      const discardCurrentPerformanceSample =
+        !directorLifecycle.paused && delta > 0 && normalizedSimulationDeltaSeconds === 0;
       this.directorPerformanceHud.update(
         time,
         directorLifecycle.paused,
-        !directorLifecycle.paused && delta > 0 && normalizedSimulationDeltaSeconds === 0,
+        discardCurrentPerformanceSample,
+      );
+      this.updateDirectorMemoryEvidenceBenchmark(
+        directorLifecycle.paused,
+        simulationDeltaSeconds,
+        discardCurrentPerformanceSample,
       );
     }
 
@@ -749,6 +771,175 @@ export class Foundation extends Scene {
         zapperPresentationCount: hazardPresentation?.getZapperPresentationCount() ?? 0,
       });
     };
+
+  private readonly startDirectorMemoryEvidenceBenchmark = (): void => {
+    if (!this.viewportService) {
+      return;
+    }
+
+    this.restartRun(this.viewportService.getSnapshot(), PROTOTYPE_LIVE_RUN_SEED);
+    this.directorPerformancePresetId = DIRECTOR_MEMORY_EVIDENCE_PRESET_ID;
+    this.memoryEvidenceSampler = new MemoryEvidenceSampler();
+    this.memoryEvidenceSampler.start(this.readDiagnosticsNow());
+    this.memoryEvidenceStartRuntime = this.readDirectorPerformanceRuntimeMetrics();
+    this.memoryEvidenceStartViewport = this.viewportService.getSnapshot();
+    this.memoryEvidenceStartFlightTuning = this.services.flightTuning.getSnapshot();
+    this.memoryEvidenceStartRunMotion = this.services.runMotion.getSnapshot();
+    this.memoryEvidenceCompleted = false;
+  };
+
+  private readonly readDirectorMemoryEvidenceProgress = (): number | null => {
+    if (this.memoryEvidenceSampler) {
+      return this.memoryEvidenceSampler.getProgress();
+    }
+    return this.memoryEvidenceCompleted ? 1 : null;
+  };
+
+  private updateDirectorMemoryEvidenceBenchmark(
+    paused: boolean,
+    simulationDeltaSeconds: number,
+    discardCurrentSample: boolean,
+  ): void {
+    const sampler = this.memoryEvidenceSampler;
+    if (!sampler?.isRunning()) {
+      return;
+    }
+
+    if (
+      this.services.input.isThrustHeld() ||
+      this.viewportService?.getSnapshot() !== this.memoryEvidenceStartViewport ||
+      this.services.flightTuning.getSnapshot() !== this.memoryEvidenceStartFlightTuning ||
+      this.services.runMotion.getSnapshot() !== this.memoryEvidenceStartRunMotion ||
+      this.directorPerformancePresetId !== DIRECTOR_MEMORY_EVIDENCE_PRESET_ID
+    ) {
+      this.clearDirectorMemoryEvidenceBenchmark();
+      return;
+    }
+
+    const completed = sampler.sample(
+      this.readDiagnosticsNow(),
+      paused,
+      simulationDeltaSeconds,
+      discardCurrentSample,
+    );
+    if (!completed) {
+      return;
+    }
+
+    const result = sampler.createResult();
+    this.exportDirectorMemoryEvidence(result);
+    this.memoryEvidenceCompleted = true;
+  }
+
+  private exportDirectorMemoryEvidence(result: Readonly<MemoryEvidenceResult>): void {
+    if (!this.viewportService) {
+      return;
+    }
+
+    const viewport = this.viewportService.getSnapshot();
+    const report = Object.freeze({
+      benchmark: Object.freeze({
+        id: DIRECTOR_MEMORY_EVIDENCE_PRESET_ID,
+        activeWallDurationMilliseconds: result.activeWallDurationMilliseconds,
+        simulationDurationMilliseconds: result.simulationDurationMilliseconds,
+        config: result.config,
+        frame: result.frame,
+        heap: result.heap,
+        schemaVersion: result.schemaVersion,
+      }),
+      build: Object.freeze({
+        commit: __MGD_BUILD_COMMIT__,
+        mode: import.meta.env.DEV ? 'development' : 'production',
+      }),
+      capturedAtIso: new Date().toISOString(),
+      context: Object.freeze({
+        diagnosticsEnabled: false,
+        endRuntime: this.readDirectorPerformanceRuntimeMetrics(),
+        heapDropInterpretation:
+          'Heap drops are inferred from usedJSHeapSize decreases and are not authoritative GC events.',
+        heapTrendInterpretation:
+          '1 Hz heap deltas are endpoint differences, not allocated bytes or a GC timeline.',
+        inputProtocol: 'no-thrust-cancel-on-input',
+        performancePresetId: DIRECTOR_MEMORY_EVIDENCE_PRESET_ID,
+        runDistance: this.runState.motion.distance,
+        runSeed: this.hazardStream?.generationState.seed ?? null,
+        startRuntime: this.memoryEvidenceStartRuntime ?? null,
+      }),
+      display: Object.freeze({
+        canvasBackingHeight: this.game.canvas.height,
+        canvasBackingWidth: this.game.canvas.width,
+        devicePixelRatio: typeof window === 'undefined' ? 1 : window.devicePixelRatio,
+        renderScale: this.cameras.main.zoom,
+        userAgent: typeof navigator === 'undefined' ? 'unknown' : navigator.userAgent,
+        viewportHeight: viewport.height,
+        viewportWidth: viewport.width,
+      }),
+      schemaVersion: 1,
+    });
+    const serialized = JSON.stringify(report, null, 2);
+
+    if (typeof window !== 'undefined') {
+      try {
+        window.localStorage?.setItem(DIRECTOR_LAST_MEMORY_EVIDENCE_STORAGE_KEY, serialized);
+      } catch {
+        // Native/download and clipboard fallbacks still have the completed in-memory payload.
+      }
+    }
+
+    this.downloadDirectorMemoryEvidence(report, serialized);
+
+    const clipboard = typeof navigator === 'undefined' ? undefined : navigator.clipboard;
+    if (clipboard?.writeText) {
+      void clipboard.writeText(serialized).catch(() => {
+        console.info('MGD memory evidence', serialized);
+      });
+      return;
+    }
+
+    console.info('MGD memory evidence', serialized);
+  }
+
+  private downloadDirectorMemoryEvidence(
+    report: Readonly<{
+      readonly build: Readonly<{ readonly commit: string }>;
+      readonly capturedAtIso: string;
+    }>,
+    serialized: string,
+  ): void {
+    if (
+      typeof document === 'undefined' ||
+      typeof Blob === 'undefined' ||
+      typeof URL === 'undefined' ||
+      typeof URL.createObjectURL !== 'function'
+    ) {
+      return;
+    }
+
+    const timestamp = report.capturedAtIso.replace(/[:.]/g, '-');
+    const commit = report.build.commit.slice(0, 12);
+    const filename = `mgd-memory-${DIRECTOR_MEMORY_EVIDENCE_PRESET_ID}-${commit}-${timestamp}.json`;
+    const objectUrl = URL.createObjectURL(
+      new Blob([serialized], { type: 'application/json;charset=utf-8' }),
+    );
+    const anchor = document.createElement('a');
+    anchor.href = objectUrl;
+    anchor.download = filename;
+    anchor.hidden = true;
+    document.body?.append(anchor);
+    anchor.click();
+    anchor.remove();
+    window.setTimeout(() => URL.revokeObjectURL(objectUrl), 0);
+  }
+
+  private clearDirectorMemoryEvidenceBenchmark(): void {
+    this.memoryEvidenceSampler?.reset();
+    this.memoryEvidenceSampler = undefined;
+    this.memoryEvidenceStartRuntime = undefined;
+    this.memoryEvidenceStartViewport = undefined;
+    this.memoryEvidenceStartFlightTuning = undefined;
+    this.memoryEvidenceStartRunMotion = undefined;
+    this.memoryEvidenceCompleted = false;
+  }
 
   private readonly handleDirectorPerformanceEvidenceExport = (
     snapshot: Readonly<PerformanceSnapshot>,
@@ -1159,6 +1350,7 @@ export class Foundation extends Scene {
     viewport: ReturnType<ViewportService['getSnapshot']>,
     seed: Parameters<typeof createGeneratedHazardStream>[0] = PROTOTYPE_LIVE_RUN_SEED,
   ): void {
+    this.clearDirectorMemoryEvidenceBenchmark();
     this.directorPerformancePresetId = null;
     this.directorPanel?.reset();
     this.retainedGeneratedTelegraphedHazards = Object.freeze([]);
@@ -1293,6 +1485,10 @@ export class Foundation extends Scene {
     });
   }
 
+  private readDiagnosticsNow(): number {
+    return typeof performance === 'undefined' ? Date.now() : performance.now();
+  }
+
   private readonly handleShutdown = (): void => {
     if (this.shutdownHandled) {
       return;
@@ -1324,6 +1520,7 @@ export class Foundation extends Scene {
     this.retainedGeneratedTelegraphedHazards = Object.freeze([]);
     this.directorManualHazards = Object.freeze([]);
     this.hazardStream = undefined;
+    this.clearDirectorMemoryEvidenceBenchmark();
     this.telegraphedHazardState = createTelegraphedHazardSimulationState();
     this.timedZapperState = createTimedZapperSimulationState();
     this.directorLaserVariantIndex = 0;
