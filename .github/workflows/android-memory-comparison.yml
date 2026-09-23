@@ -1,0 +1,151 @@
+name: Android MEM comparison
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/android-memory-comparison.yml'
+      - 'android/app/build.gradle'
+      - 'docs/329_APK_COMPARISON.md'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/android-memory-comparison.yml'
+      - 'android/app/build.gradle'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-pair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      BEFORE_SHA: 7a84e3232336b2192897502869dfe0c2990dcfc9
+      MGD_ANDROID_DIRECTOR_BUILD: '1'
+      MGD_ANDROID_COMPARISON_BUILD: '1'
+      MGD_ANDROID_TEST_KEYSTORE_FILE: ${{ runner.temp }}/mgd-memory-test.p12
+      MGD_ANDROID_TEST_KEYSTORE_PASSWORD: memorytestpair
+      MGD_ANDROID_TEST_KEY_ALIAS: memorytest
+      MGD_ANDROID_TEST_KEY_PASSWORD: memorytestpair
+    steps:
+      - name: Check out AFTER source and Android shell
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          path: after
+
+      - name: Check out pinned instrumented BEFORE source
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ env.BEFORE_SHA }}
+          path: before
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: after/.bun-version
+
+      - name: Set up Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - name: Install locked dependencies and build both web sources
+        shell: bash
+        run: |
+          (cd before && bun install --frozen-lockfile && bun run build)
+          (cd after && bun install --frozen-lockfile && bun run build)
+          grep -R -l -F 'chromium-performance-memory' before/dist/assets > /dev/null
+          grep -R -l -F 'chromium-performance-memory' after/dist/assets > /dev/null
+          test "$(git -C before rev-parse HEAD)" = "$BEFORE_SHA"
+
+      - name: Generate one temporary signing key for both APKs
+        shell: bash
+        run: |
+          keytool -genkeypair -noprompt -keystore "$MGD_ANDROID_TEST_KEYSTORE_FILE" \
+            -storetype PKCS12 -storepass "$MGD_ANDROID_TEST_KEYSTORE_PASSWORD" \
+            -alias "$MGD_ANDROID_TEST_KEY_ALIAS" -keypass "$MGD_ANDROID_TEST_KEY_PASSWORD" \
+            -keyalg RSA -keysize 2048 -validity 3 -dname 'CN=MGD Memory Comparison'
+
+      - name: Package BEFORE web source with current Android shell
+        shell: bash
+        env:
+          MGD_ANDROID_VERSION_CODE: '1'
+          MGD_ANDROID_VERSION_NAME: 329-before
+        run: |
+          rm -rf after/dist
+          cp -a before/dist after/dist
+          (cd after && bunx cap sync android)
+          cmp before/dist/index.html after/android/app/src/main/assets/public/index.html
+          (cd after/android && ./gradlew assembleDebug --stacktrace)
+          mkdir -p reports/android-memory
+          cp after/android/app/build/outputs/apk/debug/app-debug.apk \
+            "reports/android-memory/MGD-MEM-BEFORE-${BEFORE_SHA:0:12}.apk"
+
+      - name: Package AFTER web source with the same Android shell and signing key
+        shell: bash
+        env:
+          MGD_ANDROID_VERSION_CODE: '2'
+          MGD_ANDROID_VERSION_NAME: 329-after
+        run: |
+          (cd after && bun run android:sync)
+          cmp after/dist/index.html after/android/app/src/main/assets/public/index.html
+          (cd after/android && ./gradlew clean assembleDebug --stacktrace)
+          AFTER_SHA="$(git -C after rev-parse HEAD)"
+          cp after/android/app/build/outputs/apk/debug/app-debug.apk \
+            "reports/android-memory/MGD-MEM-AFTER-${AFTER_SHA:0:12}.apk"
+
+      - name: Verify package identity, signature, embedded web sources and provenance
+        shell: bash
+        run: |
+          set -euo pipefail
+          BEFORE_APK="reports/android-memory/MGD-MEM-BEFORE-${BEFORE_SHA:0:12}.apk"
+          AFTER_SHA="$(git -C after rev-parse HEAD)"
+          AFTER_APK="reports/android-memory/MGD-MEM-AFTER-${AFTER_SHA:0:12}.apk"
+          AAPT="$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -n 1)"
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+          test -x "$AAPT" && test -x "$APKSIGNER"
+          "$AAPT" dump badging "$BEFORE_APK" > reports/android-memory/before-badging.txt
+          "$AAPT" dump badging "$AFTER_APK" > reports/android-memory/after-badging.txt
+          grep -F "package: name='com.bongohorse.monstergirldelivery.memorytest' versionCode='1' versionName='329-before'" reports/android-memory/before-badging.txt
+          grep -F "package: name='com.bongohorse.monstergirldelivery.memorytest' versionCode='2' versionName='329-after'" reports/android-memory/after-badging.txt
+          "$APKSIGNER" verify --verbose --print-certs "$BEFORE_APK" > reports/android-memory/before-signature.txt
+          "$APKSIGNER" verify --verbose --print-certs "$AFTER_APK" > reports/android-memory/after-signature.txt
+          grep -F 'Signer #1 certificate SHA-256 digest:' reports/android-memory/before-signature.txt > reports/android-memory/before-cert.txt
+          grep -F 'Signer #1 certificate SHA-256 digest:' reports/android-memory/after-signature.txt > reports/android-memory/after-cert.txt
+          cmp reports/android-memory/before-cert.txt reports/android-memory/after-cert.txt
+          cmp before/dist/index.html <(unzip -p "$BEFORE_APK" assets/public/index.html)
+          cmp after/dist/index.html <(unzip -p "$AFTER_APK" assets/public/index.html)
+          test "$(sha256sum "$BEFORE_APK" | cut -d' ' -f1)" != "$(sha256sum "$AFTER_APK" | cut -d' ' -f1)"
+          (cd reports/android-memory && sha256sum MGD-MEM-*.apk > SHA256SUMS.txt)
+          export AFTER_SHA
+          node --input-type=module <<'NODE'
+          import { readFileSync, writeFileSync } from 'node:fs';
+          const info = {
+            beforeGameCommit: process.env.BEFORE_SHA,
+            afterGameAndAndroidCommit: process.env.AFTER_SHA,
+            androidShellCommit: process.env.AFTER_SHA,
+            measurement: '60-second MEM, 1 Hz optional performance.memory',
+            applicationId: 'com.bongohorse.monstergirldelivery.memorytest',
+            signing: 'one temporary key shared within this workflow run',
+            runId: process.env.GITHUB_RUN_ID,
+            runAttempt: process.env.GITHUB_RUN_ATTEMPT,
+            beforeCertificateSha256: readFileSync('reports/android-memory/before-cert.txt', 'utf8').trim(),
+          };
+          writeFileSync('reports/android-memory/build-info.json', JSON.stringify(info, null, 2) + '\n');
+          NODE
+
+      - name: Upload paired test APKs and verification evidence
+        uses: actions/upload-artifact@v7
+        with:
+          name: mgd-mem-pair-${{ github.run_id }}-${{ github.run_attempt }}
+          path: reports/android-memory/
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
+
+      - name: Remove temporary signing key
+        if: always()
+        run: rm -f "$MGD_ANDROID_TEST_KEYSTORE_FILE"
