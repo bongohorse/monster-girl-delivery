@@ -81,7 +81,7 @@ The production Play signing key is a separate future concern and must not reuse 
 
 ## GitHub Releases for Obtainium
 
-Direct tester updates use GitHub Releases rather than a self-updater inside MGD. The `Android Release` workflow runs when a stable SemVer tag such as `v0.4.1` is pushed.
+Direct tester updates use GitHub Releases rather than a self-updater inside MGD. The normal path is automatic: when `package.json` is bumped to a new stable SemVer version and that change lands on `main`, the `Android Release` workflow builds, signs and verifies the APK, then creates the matching `vMAJOR.MINOR.PATCH` GitHub Release and tag in the same workflow. Manually pushed stable SemVer tags remain supported as a fallback.
 
 Release safety rules:
 
@@ -118,14 +118,14 @@ Before the first release, create the dedicated stable test keystore, configure t
 For each release:
 
 1. Update `package.json` to the intended stable version and merge that change to `main`.
-2. Confirm CI is green on that `main` commit.
-3. Create the matching tag, for example `v0.4.1`, on that commit.
-4. Push the tag to GitHub.
-5. Confirm the `Android Release` workflow finishes successfully.
-6. Verify the GitHub Release contains exactly one MGD APK plus the evidence files above and that `apk-cert-sha256.txt` matches the pinned certificate fingerprint.
-7. For the first stable-key release, uninstall any previously installed `ephemeral-debug` APK and install the release APK on representative Android hardware.
-8. Verify launch, package identity, landscape/touch/back-gesture behavior and the device features required for the release.
-9. Before calling the update path proven, publish a later version signed by the same stable key and verify that Obtainium/Android performs a real in-place update without uninstalling the prior stable-key release.
+2. GitHub Actions automatically detects the new version, runs the release quality gates, builds/signs/verifies the APK, and creates the matching tag and GitHub Release. No Oracle server, local Git command, or manual tag push is required.
+3. Confirm the `Android Release` workflow finishes successfully.
+4. Verify the GitHub Release contains exactly one MGD APK plus the evidence files above and that `apk-cert-sha256.txt` matches the pinned certificate fingerprint.
+5. For the first stable-key release, uninstall any previously installed `ephemeral-debug` APK and install the release APK on representative Android hardware.
+6. Verify launch, package identity, landscape/touch/back-gesture behavior and the device features required for the release.
+7. Before calling the update path proven, publish a later version signed by the same stable key and verify that Obtainium/Android performs a real in-place update without uninstalling the prior stable-key release.
+
+A `package.json` edit that keeps an already-published version does not publish another release. If the intended version tag already exists on a different commit, the workflow fails rather than moving or reusing it. The automated release/tag is created only after the APK has passed the release checks, so a failed build does not consume a version.
 
 Do not move or reuse a published version tag for different source code. Do not overwrite an existing GitHub Release. Publish a new version instead.
 
