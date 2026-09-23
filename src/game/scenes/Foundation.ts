@@ -1167,8 +1167,6 @@ export class Foundation extends Scene {
     fullyOffscreen: boolean,
     mapCenterY: (centerY: number) => number = identityCenterMapper,
   ): void {
-    this.diagnosticsAccess?.setEligible(false);
-    this.diagnosticsTouchRetryPending = false;
     this.directorPerformancePresetId = null;
     if (!this.viewportService || this.runState.phase !== 'running') {
       return;
