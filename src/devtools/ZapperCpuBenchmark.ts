@@ -84,7 +84,15 @@ const createZapper = (rotating: boolean, centerX = 0) => {
   });
 };
 
-const STATIC_MISS = Object.freeze({
+interface ZapperCpuScenario {
+  readonly elapsedSeconds: number;
+  readonly hazard: ReturnType<typeof createZapper>;
+  readonly initialRunState: Readonly<{ distance: number; simulationSeconds: number }>;
+  readonly runMotionTuning: Readonly<{ baseScrollSpeed: number }>;
+  readonly trajectory: ReturnType<typeof createStationaryTrajectory>;
+}
+
+const STATIC_MISS: Readonly<ZapperCpuScenario> = Object.freeze({
   elapsedSeconds: 0.1,
   hazard: createZapper(false),
   initialRunState: Object.freeze({ distance: 0, simulationSeconds: 0 }),
@@ -92,7 +100,7 @@ const STATIC_MISS = Object.freeze({
   trajectory: createStationaryTrajectory(39, 0.1),
 });
 
-const ROTATING_DENSE_MISS = Object.freeze({
+const ROTATING_DENSE_MISS: Readonly<ZapperCpuScenario> = Object.freeze({
   elapsedSeconds: 0.1,
   hazard: createZapper(true, 17.5),
   initialRunState: Object.freeze({ distance: 0, simulationSeconds: 0 }),
@@ -100,7 +108,7 @@ const ROTATING_DENSE_MISS = Object.freeze({
   trajectory: createStationaryTrajectory(47, 0.1),
 });
 
-const ROTATING_ARC_MISS = Object.freeze({
+const ROTATING_ARC_MISS: Readonly<ZapperCpuScenario> = Object.freeze({
   elapsedSeconds: 0.01,
   hazard: createZapper(true),
   initialRunState: Object.freeze({ distance: 0, simulationSeconds: 0 }),
@@ -108,16 +116,14 @@ const ROTATING_ARC_MISS = Object.freeze({
   trajectory: createStationaryTrajectory(100, 0.01),
 });
 
-type Scenario = typeof STATIC_MISS;
-
-const SCENARIOS: ReadonlyArray<Scenario> = Object.freeze([
+const SCENARIOS: ReadonlyArray<Readonly<ZapperCpuScenario>> = Object.freeze([
   STATIC_MISS,
   ROTATING_DENSE_MISS,
   ROTATING_ARC_MISS,
 ]);
 
 const runScenario = (
-  scenario: Scenario,
+  scenario: Readonly<ZapperCpuScenario>,
   workCounters?: PrototypeZapperCollisionWorkCounters,
 ): number => {
   const result = evaluatePlayerPrototypeZapperCoreAndGrazeDuringStep(
@@ -173,7 +179,7 @@ export const summarizeZapperCpuBenchmark = (
   const medianBatchMilliseconds = median(sorted);
   const totalMeasuredMilliseconds = durationsMilliseconds.reduce((sum, value) => sum + value, 0);
   return Object.freeze({
-    maximumBatchMilliseconds: sorted.at(-1) ?? 0,
+    maximumBatchMilliseconds: sorted[sorted.length - 1] ?? 0,
     medianBatchMilliseconds,
     medianOperationsPerSecond:
       medianBatchMilliseconds > 0 ? (operationsPerBatch * 1_000) / medianBatchMilliseconds : 0,
