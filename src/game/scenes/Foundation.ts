@@ -3,6 +3,7 @@ import type { AppServices } from '../../core/AppServices';
 import { PhaserLifecycleAdapter } from '../../core/PhaserLifecycleAdapter';
 import { readSafeAreaInsets, ViewportService } from '../../core/ViewportService';
 import { DiagnosticsAccess } from '../../devtools/DiagnosticsAccess';
+import { DiagnosticsGestureOverlay } from '../../devtools/DiagnosticsGestureOverlay';
 import { DirectorDebugOverlay } from '../../devtools/DirectorDebugOverlay';
 import { DirectorPanel } from '../../devtools/DirectorPanel';
 import { DirectorPerformanceHud } from '../../devtools/DirectorPerformanceHud';
@@ -209,6 +210,8 @@ export class Foundation extends Scene {
   private instructions?: Phaser.GameObjects.Text;
   private diagnosticsBadge?: Phaser.GameObjects.Text;
   private diagnosticsAccess?: DiagnosticsAccess;
+  private diagnosticsGestureOverlay?: DiagnosticsGestureOverlay;
+  private diagnosticsGestureHideAt: number | null = null;
   private diagnosticsTouchRetryPending = false;
   private productionDiagnosticsEnabled = false;
   private viewportService?: ViewportService;
@@ -413,6 +416,7 @@ export class Foundation extends Scene {
       if (diagnosticsToggle !== null) {
         this.handleProductionDiagnosticsToggle(diagnosticsToggle);
       }
+      this.renderDiagnosticsGesture();
 
       const retrySource = this.services.input.consumePrimaryActionPressSource();
       if (retryReady && retrySource !== null) {
@@ -439,6 +443,7 @@ export class Foundation extends Scene {
       }
     } else {
       this.diagnosticsAccess?.setEligible(false);
+      this.destroyDiagnosticsGestureOverlay();
       this.diagnosticsTouchRetryPending = false;
       // While running, primary presses are thrust input rather than queued restart requests.
       this.services.input.consumePrimaryActionPress();
@@ -677,6 +682,7 @@ export class Foundation extends Scene {
       ?.setPosition(centerX, instructionsY)
       .setWordWrapWidth(Math.max(120, safeWidth - 32));
     this.diagnosticsBadge?.setPosition(Math.max(safeLeft + 8, safeRightEdge - 8), safeTop + 8);
+    this.diagnosticsGestureOverlay?.layout(safeLeft, safeTop);
     this.renderRun(viewport);
     this.directorPerformanceHud?.layout(viewport);
     this.directorPanel?.layout(viewport);
@@ -712,6 +718,7 @@ export class Foundation extends Scene {
     this.input.off(Input.Events.POINTER_UP, this.handleDiagnosticsPointerUp);
     this.input.off(Input.Events.POINTER_UP_OUTSIDE, this.handleDiagnosticsPointerUp);
     this.diagnosticsAccess.setEligible(false);
+    this.destroyDiagnosticsGestureOverlay();
   }
 
   private readonly handleDiagnosticsPointerDown = (pointer: Phaser.Input.Pointer): void => {
@@ -724,6 +731,7 @@ export class Foundation extends Scene {
       this.diagnosticsTouchRetryPending = false;
       this.services.input.releaseAll();
     }
+    this.renderDiagnosticsGesture();
   };
 
   private readonly handleDiagnosticsPointerMove = (pointer: Phaser.Input.Pointer): void => {
@@ -732,6 +740,7 @@ export class Foundation extends Scene {
     }
 
     this.diagnosticsAccess?.pointerMove(pointer.id, pointer.x, pointer.y);
+    this.renderDiagnosticsGesture();
   };
 
   private readonly handleDiagnosticsPointerUp = (pointer: Phaser.Input.Pointer): void => {
@@ -740,7 +749,36 @@ export class Foundation extends Scene {
     }
 
     this.diagnosticsAccess?.pointerUp(pointer.id);
+    this.renderDiagnosticsGesture();
   };
+
+  private renderDiagnosticsGesture(): void {
+    if (!this.diagnosticsAccess?.isGestureClaimed() || !this.viewportService) {
+      this.diagnosticsGestureHideAt = null;
+      this.destroyDiagnosticsGestureOverlay();
+      return;
+    }
+    if (
+      this.diagnosticsGestureHideAt !== null &&
+      this.readDiagnosticsNow() >= this.diagnosticsGestureHideAt
+    ) {
+      this.destroyDiagnosticsGestureOverlay();
+      return;
+    }
+    if (!this.diagnosticsGestureOverlay) {
+      this.diagnosticsGestureOverlay = new DiagnosticsGestureOverlay(this);
+      const viewport = this.viewportService.getSnapshot();
+      this.diagnosticsGestureOverlay.layout(viewport.safeArea.left, viewport.safeArea.top);
+    }
+    this.diagnosticsGestureOverlay.render(
+      this.diagnosticsAccess.getGestureSnapshot(this.readDiagnosticsNow()),
+    );
+  }
+
+  private destroyDiagnosticsGestureOverlay(): void {
+    this.diagnosticsGestureOverlay?.destroy();
+    this.diagnosticsGestureOverlay = undefined;
+  }
 
   private readDiagnosticsNow(): number {
     return typeof performance === 'undefined' ? Date.now() : performance.now();
@@ -748,6 +786,7 @@ export class Foundation extends Scene {
 
   private handleProductionDiagnosticsToggle(enabled: boolean): void {
     this.productionDiagnosticsEnabled = enabled;
+    this.diagnosticsGestureHideAt = this.readDiagnosticsNow() + 400;
     this.diagnosticsTouchRetryPending = false;
     this.services.input.releaseAll();
 
@@ -1370,6 +1409,7 @@ export class Foundation extends Scene {
   private enterRunFailState(finalResult: Readonly<PrototypeRunResultSnapshot>): void {
     this.deathRetryState = enterPrototypeFailState(finalResult);
     this.diagnosticsAccess?.setEligible(false);
+    this.destroyDiagnosticsGestureOverlay();
     this.diagnosticsTouchRetryPending = false;
     this.services.input.releaseAll();
     this.instructions?.setText(formatDeadInstructions(finalResult, false));
@@ -1380,6 +1420,7 @@ export class Foundation extends Scene {
     seed: Parameters<typeof createGeneratedHazardStream>[0] = PROTOTYPE_LIVE_RUN_SEED,
   ): void {
     this.diagnosticsAccess?.setEligible(false);
+    this.destroyDiagnosticsGestureOverlay();
     this.diagnosticsTouchRetryPending = false;
     this.directorPerformancePresetId = null;
     this.directorPanel?.reset();
@@ -1581,6 +1622,7 @@ export class Foundation extends Scene {
     this.scale.off(Scale.Events.RESIZE, this.handleResize);
     this.destroyDirectorTools();
     this.destroyProductionDiagnosticsInput();
+    this.destroyDiagnosticsGestureOverlay();
     this.diagnosticsBadge?.destroy();
     this.diagnosticsBadge = undefined;
     this.diagnosticsAccess = undefined;

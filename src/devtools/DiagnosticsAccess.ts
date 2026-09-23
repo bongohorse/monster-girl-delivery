@@ -1,24 +1,30 @@
 export const DIAGNOSTICS_STORAGE_KEY = 'mgd:diagnostics-enabled';
-export const DIAGNOSTICS_REQUIRED_TOUCH_COUNT = 5;
-export const DIAGNOSTICS_JOIN_WINDOW_MILLISECONDS = 450;
+export const DIAGNOSTICS_REQUIRED_TOUCH_COUNT = 4;
+export const DIAGNOSTICS_JOIN_WINDOW_MILLISECONDS = 1_000;
 export const DIAGNOSTICS_HOLD_MILLISECONDS = 2_000;
-export const DIAGNOSTICS_MAX_MOVEMENT_PIXELS = 32;
 
 interface DiagnosticsStorage {
   getItem(key: string): string | null;
   setItem(key: string, value: string): void;
 }
 
-interface TrackedTouch {
-  readonly startX: number;
-  readonly startY: number;
+export type DiagnosticsGesturePhase =
+  | 'idle'
+  | 'joining'
+  | 'holding'
+  | 'failed-await-release'
+  | 'completed-await-release';
+
+export interface DiagnosticsGestureSnapshot {
+  readonly phase: DiagnosticsGesturePhase;
+  readonly touches: ReadonlyArray<Readonly<{ x: number; y: number }>>;
+  readonly joinElapsedMilliseconds: number;
+  readonly holdElapsedMilliseconds: number;
+  readonly claimed: boolean;
 }
 
 const readPersistedDiagnosticsEnabled = (storage: DiagnosticsStorage | null): boolean => {
-  if (!storage) {
-    return false;
-  }
-
+  if (!storage) return false;
   try {
     return storage.getItem(DIAGNOSTICS_STORAGE_KEY) === 'true';
   } catch {
@@ -27,10 +33,7 @@ const readPersistedDiagnosticsEnabled = (storage: DiagnosticsStorage | null): bo
 };
 
 const persistDiagnosticsEnabled = (storage: DiagnosticsStorage | null, enabled: boolean): void => {
-  if (!storage) {
-    return;
-  }
-
+  if (!storage) return;
   try {
     storage.setItem(DIAGNOSTICS_STORAGE_KEY, String(enabled));
   } catch {
@@ -38,22 +41,17 @@ const persistDiagnosticsEnabled = (storage: DiagnosticsStorage | null, enabled: 
   }
 };
 
-/**
- * Pure state owner for the hidden production diagnostics gesture.
- *
- * It deliberately does not know about Phaser or gameplay input. Foundation feeds touch
- * contacts into it only while the run-end screen is retry-ready, then uses
- * isGestureClaimed() to suppress the ordinary single-touch retry path.
- */
+/** Owns the retry-ready, one-shot production diagnostics touch sequence. */
 export class DiagnosticsAccess {
-  private readonly touches = new Map<number, TrackedTouch>();
+  private readonly touches = new Map<number, { x: number; y: number }>();
   private eligible = false;
   private enabled: boolean;
-  private gestureClaimed = false;
-  private gestureInvalid = false;
-  private gestureStartedAtMilliseconds: number | null = null;
-  private holdStartedAtMilliseconds: number | null = null;
-  private toggledForCurrentGesture = false;
+  private claimed = false;
+  private phase: DiagnosticsGesturePhase = 'idle';
+  private startedAt: number | null = null;
+  private holdStartedAt: number | null = null;
+  private joinElapsed = 0;
+  private holdElapsed = 0;
 
   constructor(private readonly storage: DiagnosticsStorage | null) {
     this.enabled = readPersistedDiagnosticsEnabled(storage);
@@ -64,117 +62,117 @@ export class DiagnosticsAccess {
   }
 
   isGestureClaimed(): boolean {
-    return this.gestureClaimed;
+    return this.claimed;
   }
 
   setEligible(eligible: boolean): void {
-    if (this.eligible === eligible) {
-      return;
-    }
-
+    if (this.eligible === eligible) return;
     this.eligible = eligible;
-    if (!eligible) {
-      this.resetGesture();
-    }
+    if (!eligible) this.resetGesture();
   }
 
   pointerDown(pointerId: number, x: number, y: number, nowMilliseconds: number): void {
-    if (!this.eligible || !Number.isFinite(nowMilliseconds) || this.touches.has(pointerId)) {
-      return;
-    }
-
+    if (!this.eligible || !Number.isFinite(nowMilliseconds) || this.touches.has(pointerId)) return;
+    this.expireJoin(nowMilliseconds);
     if (this.touches.size === 0) {
-      this.gestureStartedAtMilliseconds = nowMilliseconds;
-      this.gestureInvalid = false;
-      this.toggledForCurrentGesture = false;
+      this.phase = 'joining';
+      this.startedAt = nowMilliseconds;
     }
+    this.touches.set(pointerId, { x, y });
+    if (this.touches.size >= 2) this.claimed = true;
 
-    const gestureStartedAtMilliseconds = this.gestureStartedAtMilliseconds;
-    if (
-      gestureStartedAtMilliseconds === null ||
-      nowMilliseconds - gestureStartedAtMilliseconds > DIAGNOSTICS_JOIN_WINDOW_MILLISECONDS
-    ) {
-      this.gestureInvalid = true;
-      this.holdStartedAtMilliseconds = null;
-    }
-
-    this.touches.set(pointerId, { startX: x, startY: y });
-
-    if (this.touches.size >= 2) {
-      this.gestureClaimed = true;
-    }
-
+    if (this.phase === 'failed-await-release' || this.phase === 'completed-await-release') return;
     if (this.touches.size > DIAGNOSTICS_REQUIRED_TOUCH_COUNT) {
-      this.gestureInvalid = true;
-      this.holdStartedAtMilliseconds = null;
-      return;
-    }
-
-    if (this.touches.size === DIAGNOSTICS_REQUIRED_TOUCH_COUNT && !this.gestureInvalid) {
-      this.holdStartedAtMilliseconds = nowMilliseconds;
+      this.fail();
+    } else if (this.touches.size === DIAGNOSTICS_REQUIRED_TOUCH_COUNT) {
+      this.joinElapsed = Math.min(
+        nowMilliseconds - (this.startedAt ?? nowMilliseconds),
+        DIAGNOSTICS_JOIN_WINDOW_MILLISECONDS,
+      );
+      this.phase = 'holding';
+      this.holdStartedAt = nowMilliseconds;
     }
   }
 
   pointerMove(pointerId: number, x: number, y: number): void {
     const touch = this.touches.get(pointerId);
-    if (!touch || this.gestureInvalid) {
-      return;
-    }
-
-    const deltaX = x - touch.startX;
-    const deltaY = y - touch.startY;
-    if (
-      deltaX * deltaX + deltaY * deltaY >
-      DIAGNOSTICS_MAX_MOVEMENT_PIXELS * DIAGNOSTICS_MAX_MOVEMENT_PIXELS
-    ) {
-      this.gestureInvalid = true;
-      this.holdStartedAtMilliseconds = null;
+    if (touch) {
+      touch.x = x;
+      touch.y = y;
     }
   }
 
   pointerUp(pointerId: number): void {
-    if (!this.touches.delete(pointerId)) {
-      return;
-    }
-
-    if (!this.toggledForCurrentGesture && this.touches.size < DIAGNOSTICS_REQUIRED_TOUCH_COUNT) {
-      this.holdStartedAtMilliseconds = null;
-    }
-
+    if (!this.touches.delete(pointerId)) return;
     if (this.touches.size === 0) {
       this.resetGesture();
+    } else if (this.phase === 'holding') {
+      this.fail();
     }
   }
 
   update(nowMilliseconds: number): boolean | null {
-    if (
-      !this.eligible ||
-      this.gestureInvalid ||
-      this.toggledForCurrentGesture ||
-      this.touches.size !== DIAGNOSTICS_REQUIRED_TOUCH_COUNT ||
-      this.holdStartedAtMilliseconds === null ||
-      !Number.isFinite(nowMilliseconds) ||
-      nowMilliseconds - this.holdStartedAtMilliseconds < DIAGNOSTICS_HOLD_MILLISECONDS
-    ) {
-      return null;
-    }
-
-    this.toggledForCurrentGesture = true;
+    if (!this.eligible || !Number.isFinite(nowMilliseconds)) return null;
+    this.expireJoin(nowMilliseconds);
+    if (this.phase !== 'holding' || this.holdStartedAt === null) return null;
+    this.holdElapsed = Math.min(
+      DIAGNOSTICS_HOLD_MILLISECONDS,
+      Math.max(0, nowMilliseconds - this.holdStartedAt),
+    );
+    if (this.holdElapsed < DIAGNOSTICS_HOLD_MILLISECONDS) return null;
+    this.phase = 'completed-await-release';
     this.enabled = !this.enabled;
     persistDiagnosticsEnabled(this.storage, this.enabled);
     return this.enabled;
+  }
+
+  getGestureSnapshot(nowMilliseconds: number): DiagnosticsGestureSnapshot {
+    this.expireJoin(nowMilliseconds);
+    const joinElapsedMilliseconds =
+      this.phase === 'joining' && this.startedAt !== null && Number.isFinite(nowMilliseconds)
+        ? Math.min(
+            DIAGNOSTICS_JOIN_WINDOW_MILLISECONDS,
+            Math.max(0, nowMilliseconds - this.startedAt),
+          )
+        : this.joinElapsed;
+    return {
+      phase: this.phase,
+      touches: Array.from(this.touches.values(), (touch) => ({ ...touch })),
+      joinElapsedMilliseconds,
+      holdElapsedMilliseconds: this.holdElapsed,
+      claimed: this.claimed,
+    };
   }
 
   resetTransientGesture(): void {
     this.resetGesture();
   }
 
+  private expireJoin(nowMilliseconds: number): void {
+    if (
+      this.phase === 'joining' &&
+      this.startedAt !== null &&
+      Number.isFinite(nowMilliseconds) &&
+      nowMilliseconds - this.startedAt > DIAGNOSTICS_JOIN_WINDOW_MILLISECONDS
+    ) {
+      this.joinElapsed = DIAGNOSTICS_JOIN_WINDOW_MILLISECONDS;
+      this.fail();
+    }
+  }
+
+  private fail(): void {
+    this.phase = 'failed-await-release';
+    this.holdStartedAt = null;
+    this.holdElapsed = 0;
+  }
+
   private resetGesture(): void {
     this.touches.clear();
-    this.gestureClaimed = false;
-    this.gestureInvalid = false;
-    this.gestureStartedAtMilliseconds = null;
-    this.holdStartedAtMilliseconds = null;
-    this.toggledForCurrentGesture = false;
+    this.claimed = false;
+    this.phase = 'idle';
+    this.startedAt = null;
+    this.holdStartedAt = null;
+    this.joinElapsed = 0;
+    this.holdElapsed = 0;
   }
 }

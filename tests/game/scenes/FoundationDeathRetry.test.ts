@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createAppServices } from '../../../src/core/AppServices';
 import { ViewportService } from '../../../src/core/ViewportService';
+import { DiagnosticsAccess } from '../../../src/devtools/DiagnosticsAccess';
 import { createPrototypeFlightBounds } from '../../../src/game/PrototypeFlightLayout';
 import { Foundation } from '../../../src/game/scenes/Foundation';
 import { PROTOTYPE_PATTERN_REACHABILITY_CONTEXT } from '../../../src/generation/FlightReachability';
@@ -25,6 +26,14 @@ import { createPrototypeRunResultSnapshot } from '../../../src/systems/Prototype
 import type { PrototypeRunState } from '../../../src/systems/PrototypeRunSimulation';
 
 vi.mock('phaser', () => ({
+  Input: {
+    Events: {
+      POINTER_DOWN: 'pointerdown',
+      POINTER_MOVE: 'pointermove',
+      POINTER_UP: 'pointerup',
+      POINTER_UP_OUTSIDE: 'pointerupoutside',
+    },
+  },
   Scale: { Events: { RESIZE: 'resize' } },
   Scene: class {},
   Scenes: { Events: { SHUTDOWN: 'shutdown' } },
@@ -154,6 +163,134 @@ afterEach(() => {
 });
 
 describe('Foundation M5 death-to-retry flow', () => {
+  it('removes production touch listeners and live gesture graphics on scene shutdown', () => {
+    const { foundation } = createHarness();
+    const on = vi.fn();
+    const off = vi.fn();
+    Reflect.set(foundation, 'input', { on, off });
+    const destroyed = vi.fn();
+    Reflect.set(foundation, 'add', {
+      text: () => ({
+        setDepth() {
+          return this;
+        },
+        setPosition() {
+          return this;
+        },
+        setText() {
+          return this;
+        },
+        setColor() {
+          return this;
+        },
+        destroy: destroyed,
+      }),
+      graphics: () => ({
+        setDepth() {
+          return this;
+        },
+        clear() {
+          return this;
+        },
+        lineStyle() {
+          return this;
+        },
+        strokeCircle() {
+          return this;
+        },
+        destroy: destroyed,
+      }),
+    });
+    const initialize = Reflect.get(foundation, 'initializeProductionDiagnostics') as () => void;
+    initialize.call(foundation);
+    expect(on).toHaveBeenCalledTimes(4);
+    const access = Reflect.get(foundation, 'diagnosticsAccess') as DiagnosticsAccess;
+    access.setEligible(true);
+    const pointerDown = Reflect.get(foundation, 'handleDiagnosticsPointerDown') as (
+      pointer: unknown,
+    ) => void;
+    for (let id = 1; id <= 2; id += 1) {
+      pointerDown.call(foundation, { id, x: id * 20, y: 100, button: 0, wasTouch: true });
+    }
+    const shutdown = Reflect.get(foundation, 'handleShutdown') as () => void;
+    shutdown.call(foundation);
+    expect(off).toHaveBeenCalledTimes(4);
+    expect(destroyed).toHaveBeenCalledTimes(4);
+    expect(Reflect.get(foundation, 'diagnosticsAccess')).toBeUndefined();
+  });
+
+  it('claims a failed multi-touch diagnostics attempt without retrying, then allows a normal single-touch retry', () => {
+    const { foundation, services } = createHarness();
+    forceLethalCollision(foundation);
+    for (let frame = 0; frame < 15; frame += 1) foundation.update(0, 50);
+    expect(getDeathRetryState(foundation).phase).toBe('retry-ready');
+
+    const access = new DiagnosticsAccess(null);
+    access.setEligible(true);
+    Reflect.set(foundation, 'diagnosticsAccess', access);
+    const destroyed = vi.fn();
+    const createText = () => ({
+      setDepth() {
+        return this;
+      },
+      setPosition() {
+        return this;
+      },
+      setText() {
+        return this;
+      },
+      setColor() {
+        return this;
+      },
+      destroy: destroyed,
+    });
+    const graphics = {
+      setDepth() {
+        return this;
+      },
+      clear() {
+        return this;
+      },
+      lineStyle() {
+        return this;
+      },
+      strokeCircle: vi.fn(),
+      destroy: destroyed,
+    };
+    Reflect.set(foundation, 'add', { text: createText, graphics: () => graphics });
+    const pointerDown = Reflect.get(foundation, 'handleDiagnosticsPointerDown') as (
+      pointer: unknown,
+    ) => void;
+    const pointerUp = Reflect.get(foundation, 'handleDiagnosticsPointerUp') as (
+      pointer: unknown,
+    ) => void;
+    const touch = (id: number) => ({ id, x: id * 20, y: 120, button: 0, wasTouch: true });
+
+    services.input.pressPointer(1, 'touch');
+    pointerDown(touch(1));
+    pointerDown(touch(2));
+    pointerDown(touch(3));
+    pointerDown(touch(4));
+    pointerDown(touch(5));
+    foundation.update(0, 0);
+    expect(access.isGestureClaimed()).toBe(true);
+    expect(access.getGestureSnapshot(performance.now()).phase).toBe('failed-await-release');
+    expect(getRunState(foundation).phase).toBe('dead');
+    for (let id = 1; id <= 5; id += 1) pointerUp(touch(id));
+    foundation.update(0, 0);
+    expect(getRunState(foundation).phase).toBe('dead');
+    expect(destroyed).toHaveBeenCalledTimes(4);
+
+    services.input.pressPointer(3, 'touch');
+    pointerDown(touch(3));
+    foundation.update(0, 0);
+    expect(getRunState(foundation).phase).toBe('dead');
+    services.input.releasePointer(3);
+    pointerUp(touch(3));
+    foundation.update(0, 0);
+    expect(getRunState(foundation).phase).toBe('running');
+  });
+
   it('freezes authoritative run truth through aftermath and accepts exactly one fresh post-ready retry action', () => {
     const {
       foundation,
