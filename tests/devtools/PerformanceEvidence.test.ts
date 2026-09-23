@@ -45,6 +45,7 @@ describe('PerformanceEvidence', () => {
         canvasBackingWidth: 1688,
         capturedAtIso: '2026-09-19T18:00:00.000Z',
         devicePixelRatio: 2,
+        diagnosticsEnabled: true,
         directorAutoHazardsEnabled: false,
         directorGodModeEnabled: true,
         directorSimulationFrozen: false,
@@ -131,6 +132,7 @@ describe('PerformanceEvidence', () => {
         },
       },
       context: {
+        diagnosticsEnabled: true,
         directorAutoHazardsEnabled: false,
         directorGodModeEnabled: true,
         directorSimulationFrozen: false,
@@ -157,7 +159,7 @@ describe('PerformanceEvidence', () => {
         viewportWidth: 844,
       },
       capturedAtIso: '2026-09-19T18:00:00.000Z',
-      schemaVersion: 6,
+      schemaVersion: 7,
     });
     expect(Object.isFrozen(report)).toBe(true);
     expect(Object.isFrozen(report.capture.frameTime)).toBe(true);
@@ -177,6 +179,7 @@ describe('PerformanceEvidence', () => {
         canvasBackingWidth: 844,
         capturedAtIso: '2026-09-19T18:00:00.000Z',
         devicePixelRatio: 1,
+        diagnosticsEnabled: false,
         directorAutoHazardsEnabled: true,
         directorGodModeEnabled: false,
         directorSimulationFrozen: false,
@@ -214,7 +217,7 @@ describe('PerformanceEvidence', () => {
     expect(report.capture.runtime).toBeNull();
     expect(report.capture.zapperWork).toBeNull();
     const serialized = serializePerformanceEvidenceReport(report);
-    expect(serialized).toContain('"schemaVersion": 6');
+    expect(serialized).toContain('"schemaVersion": 7');
     expect(JSON.parse(serialized)).toEqual(report);
   });
 });
