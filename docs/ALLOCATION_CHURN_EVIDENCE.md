@@ -193,6 +193,36 @@ Merged validation includes:
 Performance-only assertions are kept separate from gameplay truth: container identity/counters may
 prove work was avoided, but gameplay outcomes remain asserted through the existing authorities.
 
+## Mobile memory evidence harness
+
+The closeout branch adds a production-diagnostics `MEM` benchmark so representative Android
+evidence can be collected with the same simple APK workflow used for #330/#332.
+
+`MEM` normalizes the run to the standard 60 FPS / God mode / AUTO-hazard production-style preset,
+restarts on the canonical seed and records **60 seconds of active gameplay time**. Lifecycle pauses
+and the first resume sample are excluded.
+
+The recording path is deliberately bounded:
+
+- frame intervals use a preallocated typed-array buffer and report average/P95/P99/worst plus the
+  existing 25 ms slow-frame threshold;
+- Chromium `performance.memory`, when exposed by the Android WebView/browser, is sampled once per
+  second rather than every frame;
+- heap evidence records first/last/min/max used heap, max total heap, cumulative positive/negative
+  deltas, largest observed drop and the number of used-heap drops >= 64 KiB;
+- those drops are labelled **heap drops**, not garbage-collection events. The browser API does not
+  expose authoritative GC event timing;
+- if `performance.memory` is unavailable, the report says `source: "unavailable"` rather than
+  inventing a heap/GC measurement;
+- summary arrays/objects and percentile sorting are materialized only after the 60-second
+  measurement has completed so the profiler does not add recurring per-frame allocation churn.
+
+The completed report is persisted separately as `mgd:last-memory-evidence`, copied to the clipboard
+when permitted, and sent through the existing Android native evidence-share path.
+
+This harness measures browser/WebView JS-heap behavior plus game-step slow-frame pressure. It does
+not claim Android process PSS, native heap, or authoritative GC pause duration.
+
 ## Device/browser evidence still required
 
 #329 should remain open until a same-device before/after long-run comparison is recorded.
