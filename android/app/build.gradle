@@ -19,7 +19,7 @@ android {
     namespace = "com.bongohorse.monstergirldelivery"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.bongohorse.monstergirldelivery"
+        applicationId "com.bongohorse.monstergirldelivery.perf330before"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode androidVersionCode
