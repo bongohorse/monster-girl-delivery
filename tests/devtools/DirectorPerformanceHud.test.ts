@@ -675,7 +675,9 @@ describe('DirectorPerformanceHud', () => {
     expect(memoryEvidenceButton.textContent).toBe('MEM 0s');
 
     readMemoryEvidenceProgress.mockReturnValue(0.5);
-    updateHud(hud, 16, false);
+    for (let frame = 0; frame < 16; frame += 1) {
+      updateHud(hud, 16, false);
+    }
     expect(memoryEvidenceButton.textContent).toBe('MEM 30s');
 
     readMemoryEvidenceProgress.mockReturnValue(1);
