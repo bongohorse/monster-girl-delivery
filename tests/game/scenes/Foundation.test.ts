@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createAppServices } from '../../../src/core/AppServices';
 import { ViewportService } from '../../../src/core/ViewportService';
+import { MemoryEvidenceSampler } from '../../../src/devtools/MemoryEvidenceSampler';
 import {
   createPrototypeFlightBounds,
   getPrototypeVerticalProjection,
@@ -188,6 +189,28 @@ afterEach(() => {
 });
 
 describe('Foundation scene gameplay orchestration', () => {
+  it('keeps a no-input MEM capture active across equivalent snapshots and cancels on thrust', () => {
+    const { foundation, services, viewportService } = createFoundationHarness();
+    const sampler = new MemoryEvidenceSampler(() => null);
+    const initialViewport = viewportService.getSnapshot();
+    expect(viewportService.getSnapshot()).not.toBe(initialViewport);
+    sampler.start(performance.now());
+    Reflect.set(foundation, 'directorPerformanceHud', { update: vi.fn() });
+    Reflect.set(foundation, 'memoryEvidenceSampler', sampler);
+    Reflect.set(foundation, 'memoryEvidenceStartViewport', initialViewport);
+    Reflect.set(foundation, 'memoryEvidenceStartFlightTuning', services.flightTuning.getSnapshot());
+    Reflect.set(foundation, 'memoryEvidenceStartRunMotion', services.runMotion.getSnapshot());
+    Reflect.set(foundation, 'directorPerformancePresetId', 'allocation-long-run-v1');
+
+    foundation.update(16, 16);
+    expect(sampler.isRunning()).toBe(true);
+
+    services.input.pressPointer(1, 'touch');
+    foundation.update(32, 16);
+    expect(sampler.isRunning()).toBe(false);
+    expect(Reflect.get(foundation, 'memoryEvidenceSampler')).toBeUndefined();
+  });
+
   it('passes the lifecycle-resolved collision intervals into the authoritative run step', () => {
     const { foundation } = createFoundationHarness();
     const schedule = scheduleNextPattern({
