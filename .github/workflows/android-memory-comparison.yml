@@ -24,7 +24,7 @@ jobs:
       BEFORE_SHA: 7a84e3232336b2192897502869dfe0c2990dcfc9
       MGD_ANDROID_DIRECTOR_BUILD: '1'
       MGD_ANDROID_COMPARISON_BUILD: '1'
-      MGD_ANDROID_TEST_KEYSTORE_FILE: ${{ runner.temp }}/mgd-memory-test.p12
+      MGD_ANDROID_TEST_KEYSTORE_FILE: ${{ github.workspace }}/mgd-memory-test.p12
       MGD_ANDROID_TEST_KEYSTORE_PASSWORD: memorytestpair
       MGD_ANDROID_TEST_KEY_ALIAS: memorytest
       MGD_ANDROID_TEST_KEY_PASSWORD: memorytestpair
