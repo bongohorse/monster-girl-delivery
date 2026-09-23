@@ -26,10 +26,7 @@ const readPersistedDiagnosticsEnabled = (storage: DiagnosticsStorage | null): bo
   }
 };
 
-const persistDiagnosticsEnabled = (
-  storage: DiagnosticsStorage | null,
-  enabled: boolean,
-): void => {
+const persistDiagnosticsEnabled = (storage: DiagnosticsStorage | null, enabled: boolean): void => {
   if (!storage) {
     return;
   }
@@ -81,12 +78,7 @@ export class DiagnosticsAccess {
     }
   }
 
-  pointerDown(
-    pointerId: number,
-    x: number,
-    y: number,
-    nowMilliseconds: number,
-  ): void {
+  pointerDown(pointerId: number, x: number, y: number, nowMilliseconds: number): void {
     if (!this.eligible || !Number.isFinite(nowMilliseconds) || this.touches.has(pointerId)) {
       return;
     }
@@ -118,10 +110,7 @@ export class DiagnosticsAccess {
       return;
     }
 
-    if (
-      this.touches.size === DIAGNOSTICS_REQUIRED_TOUCH_COUNT &&
-      !this.gestureInvalid
-    ) {
+    if (this.touches.size === DIAGNOSTICS_REQUIRED_TOUCH_COUNT && !this.gestureInvalid) {
       this.holdStartedAtMilliseconds = nowMilliseconds;
     }
   }
@@ -148,10 +137,7 @@ export class DiagnosticsAccess {
       return;
     }
 
-    if (
-      !this.toggledForCurrentGesture &&
-      this.touches.size < DIAGNOSTICS_REQUIRED_TOUCH_COUNT
-    ) {
+    if (!this.toggledForCurrentGesture && this.touches.size < DIAGNOSTICS_REQUIRED_TOUCH_COUNT) {
       this.holdStartedAtMilliseconds = null;
     }
 
