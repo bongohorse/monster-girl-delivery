@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   MEMORY_EVIDENCE_DURATION_MILLISECONDS,
   MEMORY_EVIDENCE_HEAP_DROP_THRESHOLD_BYTES,
@@ -74,6 +74,27 @@ describe('MemoryEvidenceSampler', () => {
     expect(result.activeDurationMilliseconds).toBe(32);
     expect(result.frame.frameSampleCount).toBe(2);
     expect(result.frame.averageFrameTimeMilliseconds).toBe(16);
+  });
+
+  it('does not burst heap reads to catch up after a long frame stall', () => {
+    const reader = vi.fn(() => ({
+      jsHeapSizeLimit: 256_000_000,
+      totalJSHeapSize: 32_000_000,
+      usedJSHeapSize: 10_000_000,
+    }));
+    const sampler = new MemoryEvidenceSampler(reader);
+    sampler.start(0);
+    expect(reader).toHaveBeenCalledTimes(1);
+
+    sampler.sample(5_000, false);
+    expect(reader).toHaveBeenCalledTimes(2);
+
+    sampler.sample(5_016, false);
+    sampler.sample(5_032, false);
+    expect(reader).toHaveBeenCalledTimes(2);
+
+    sampler.sample(6_000, false);
+    expect(reader).toHaveBeenCalledTimes(3);
   });
 
   it('reports unavailable heap evidence explicitly when Chromium memory is absent', () => {
