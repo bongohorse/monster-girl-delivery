@@ -105,6 +105,8 @@ const createHarness = () => {
   const triggerDeath = vi.fn();
   const startNormalPerformancePreset = vi.fn();
   const startZapperPerformancePreset = vi.fn();
+  const startMemoryEvidenceBenchmark = vi.fn();
+  const readMemoryEvidenceProgress = vi.fn<() => number | null>(() => null);
   const resetWorkCounters = vi.fn();
   const readRuntimeMetrics = vi.fn(() => ({
     activeCollectibleCount: 5,
@@ -144,6 +146,8 @@ const createHarness = () => {
       triggerDeath,
       startNormalPerformancePreset,
       startZapperPerformancePreset,
+      startMemoryEvidenceBenchmark,
+      readMemoryEvidenceProgress,
       readRuntimeMetrics,
       resetWorkCounters,
       exportPerformanceEvidence,
@@ -174,6 +178,7 @@ const createHarness = () => {
   const deathButton = playgroundControls?.children[8];
   const normalPerformanceButton = playgroundControls?.children[9];
   const zapperPerformanceButton = playgroundControls?.children[10];
+  const memoryEvidenceButton = playgroundControls?.children[11];
 
   if (
     !root ||
@@ -199,7 +204,8 @@ const createHarness = () => {
     !freezeButton ||
     !deathButton ||
     !normalPerformanceButton ||
-    !zapperPerformanceButton
+    !zapperPerformanceButton ||
+    !memoryEvidenceButton
   ) {
     throw new Error('Expected the Director HUD structure.');
   }
@@ -223,10 +229,12 @@ const createHarness = () => {
     missileButton,
     normalPerformanceButton,
     playgroundControls,
+    readMemoryEvidenceProgress,
     readRuntimeMetrics,
     resetButton,
     resetWorkCounters,
     root,
+    startMemoryEvidenceBenchmark,
     runtimeValue,
     sampler,
     setAutoHazardsEnabled,
@@ -248,6 +256,7 @@ const createHarness = () => {
     zapperButton,
     zapperGroupButton,
     zapperPerformanceButton,
+    memoryEvidenceButton,
     zapperWorkCounters,
     zapperWorkValue,
   };
@@ -290,7 +299,7 @@ describe('DirectorPerformanceHud', () => {
     expect(fixedControls.children).toHaveLength(5);
     expect(values.children).toHaveLength(5);
     expect(wireframeLabel.children).toHaveLength(2);
-    expect(playgroundControls.children).toHaveLength(11);
+    expect(playgroundControls.children).toHaveLength(12);
   });
 
   it('samples every frame but refreshes formatted values at most every 250 ms', () => {
@@ -640,6 +649,43 @@ describe('DirectorPerformanceHud', () => {
     });
   });
 
+  it('starts the 60-second memory evidence preset and reflects progress', () => {
+    const {
+      autoHazardsButton,
+      hud,
+      memoryEvidenceButton,
+      readMemoryEvidenceProgress,
+      setAutoHazardsEnabled,
+      setFpsLimit,
+      setGodModeEnabled,
+      startMemoryEvidenceBenchmark,
+    } = createHarness();
+
+    autoHazardsButton.dispatch('click');
+    expect(autoHazardsButton.dataset.active).toBe('false');
+
+    readMemoryEvidenceProgress.mockReturnValue(0);
+    memoryEvidenceButton.dispatch('click');
+
+    expect(setFpsLimit).toHaveBeenLastCalledWith(60);
+    expect(setGodModeEnabled).toHaveBeenLastCalledWith(true);
+    expect(setAutoHazardsEnabled).toHaveBeenLastCalledWith(true);
+    expect(startMemoryEvidenceBenchmark).toHaveBeenCalledOnce();
+    expect(memoryEvidenceButton.dataset.benchmarkState).toBe('running');
+    expect(memoryEvidenceButton.textContent).toBe('MEM 0s');
+
+    readMemoryEvidenceProgress.mockReturnValue(0.5);
+    updateHud(hud, 16, false);
+    expect(memoryEvidenceButton.textContent).toBe('MEM 30s');
+
+    readMemoryEvidenceProgress.mockReturnValue(1);
+    for (let frame = 0; frame < 16; frame += 1) {
+      updateHud(hud, 16, false);
+    }
+    expect(memoryEvidenceButton.textContent).toBe('MEM✓');
+    expect(memoryEvidenceButton.dataset.benchmarkState).toBe('captured');
+  });
+
   it('cancels automated capture when a manual workload control changes the run', () => {
     const {
       benchmarkStatusValue,
@@ -803,6 +849,7 @@ describe('DirectorPerformanceHud', () => {
       harness.deathButton,
       harness.normalPerformanceButton,
       harness.zapperPerformanceButton,
+      harness.memoryEvidenceButton,
     ]) {
       expect([...element.listeners.values()].every((listeners) => listeners.size === 0)).toBe(true);
     }
