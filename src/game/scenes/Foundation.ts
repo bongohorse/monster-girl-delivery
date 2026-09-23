@@ -18,6 +18,7 @@ import {
   serializePerformanceEvidenceReport,
 } from '../../devtools/PerformanceEvidence';
 import type { PerformanceSnapshot } from '../../devtools/PerformanceSampler';
+import { runZapperCollisionCpuBenchmark } from '../../devtools/ZapperCpuBenchmark';
 import { GeneratedCollectiblePresentation } from '../../entities/GeneratedCollectiblePresentation';
 import { GeneratedHazardPresentation } from '../../entities/GeneratedHazardPresentation';
 import { PrototypePlayerPresentation } from '../../entities/PrototypePlayerPresentation';
@@ -114,6 +115,7 @@ const RETRY_READY_INSTRUCTIONS = 'Tap, click, or press Space to retry.';
 const DIRECTOR_NORMAL_PERFORMANCE_PRESET_ID = 'normal-run-v1';
 const DIRECTOR_ZAPPER_OFFSCREEN_PADDING = 24;
 const DIRECTOR_LAST_PERFORMANCE_EVIDENCE_STORAGE_KEY = 'mgd:last-performance-evidence';
+const DIRECTOR_LAST_ZAPPER_CPU_EVIDENCE_STORAGE_KEY = 'mgd:last-zapper-cpu-evidence';
 const formatDeadInstructions = (
   result: Readonly<PrototypeRunResultSnapshot>,
   retryReady: boolean,
@@ -824,6 +826,7 @@ export class Foundation extends Scene {
         triggerDeath: this.handleDirectorDeath,
         startNormalPerformancePreset: this.startDirectorNormalPerformancePreset,
         startZapperPerformancePreset: this.startDirectorZapperPerformancePreset,
+        runZapperCpuBenchmark: this.handleDirectorZapperCpuBenchmark,
         readRuntimeMetrics: this.readDirectorPerformanceRuntimeMetrics,
         resetWorkCounters: () => {
           if (this.directorBroadphaseWorkCounters) {
@@ -959,6 +962,56 @@ export class Foundation extends Scene {
         zapperPresentationCount: hazardPresentation?.getZapperPresentationCount() ?? 0,
       });
     };
+
+  private readonly handleDirectorZapperCpuBenchmark = (): void => {
+    if (!this.viewportService) {
+      return;
+    }
+
+    const viewport = this.viewportService.getSnapshot();
+    const result = runZapperCollisionCpuBenchmark();
+    const report = Object.freeze({
+      benchmark: Object.freeze({
+        id: 'zapper-collision-cpu-v1',
+        ...result,
+      }),
+      build: Object.freeze({
+        commit: __MGD_BUILD_COMMIT__,
+        mode: import.meta.env.DEV ? 'development' : 'production',
+      }),
+      capturedAtIso: new Date().toISOString(),
+      display: Object.freeze({
+        canvasBackingHeight: this.game.canvas.height,
+        canvasBackingWidth: this.game.canvas.width,
+        devicePixelRatio: typeof window === 'undefined' ? 1 : window.devicePixelRatio,
+        renderScale: this.cameras.main.zoom,
+        userAgent: typeof navigator === 'undefined' ? 'unknown' : navigator.userAgent,
+        viewportHeight: viewport.height,
+        viewportWidth: viewport.width,
+      }),
+      diagnosticsEnabled: this.productionDiagnosticsEnabled,
+      schemaVersion: 1,
+    });
+    const serialized = JSON.stringify(report, null, 2);
+
+    if (typeof window !== 'undefined') {
+      try {
+        window.localStorage?.setItem(DIRECTOR_LAST_ZAPPER_CPU_EVIDENCE_STORAGE_KEY, serialized);
+      } catch {
+        // Clipboard/console export still works when local storage is unavailable.
+      }
+    }
+
+    const clipboard = typeof navigator === 'undefined' ? undefined : navigator.clipboard;
+    if (clipboard?.writeText) {
+      void clipboard.writeText(serialized).catch(() => {
+        console.info('MGD Zapper CPU evidence', serialized);
+      });
+      return;
+    }
+
+    console.info('MGD Zapper CPU evidence', serialized);
+  };
 
   private readonly handleDirectorPerformanceEvidenceExport = (
     snapshot: Readonly<PerformanceSnapshot>,
