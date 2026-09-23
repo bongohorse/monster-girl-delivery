@@ -106,6 +106,7 @@ const createHarness = () => {
   const startNormalPerformancePreset = vi.fn();
   const startZapperPerformancePreset = vi.fn();
   const startMemoryEvidenceBenchmark = vi.fn();
+  const cancelMemoryEvidenceBenchmark = vi.fn();
   const readMemoryEvidenceProgress = vi.fn<() => number | null>(() => null);
   const resetWorkCounters = vi.fn();
   const readRuntimeMetrics = vi.fn(() => ({
@@ -147,6 +148,7 @@ const createHarness = () => {
       startNormalPerformancePreset,
       startZapperPerformancePreset,
       startMemoryEvidenceBenchmark,
+      cancelMemoryEvidenceBenchmark,
       readMemoryEvidenceProgress,
       readRuntimeMetrics,
       resetWorkCounters,
@@ -213,6 +215,7 @@ const createHarness = () => {
   return {
     autoHazardsButton,
     benchmarkStatusValue,
+    cancelMemoryEvidenceBenchmark,
     clearButton,
     clearHazards,
     container,
@@ -686,6 +689,25 @@ describe('DirectorPerformanceHud', () => {
     }
     expect(memoryEvidenceButton.textContent).toBe('MEM✓');
     expect(memoryEvidenceButton.dataset.benchmarkState).toBe('captured');
+  });
+
+  it('cancels an active memory evidence run when a workload control changes', () => {
+    const {
+      cancelMemoryEvidenceBenchmark,
+      memoryEvidenceButton,
+      missileButton,
+      readMemoryEvidenceProgress,
+    } = createHarness();
+
+    readMemoryEvidenceProgress.mockReturnValue(0);
+    memoryEvidenceButton.dispatch('click');
+    expect(memoryEvidenceButton.dataset.benchmarkState).toBe('running');
+
+    missileButton.dispatch('click');
+
+    expect(cancelMemoryEvidenceBenchmark).toHaveBeenCalledOnce();
+    expect(memoryEvidenceButton.textContent).toBe('MEM');
+    expect(memoryEvidenceButton.dataset.benchmarkState).toBeUndefined();
   });
 
   it('cancels automated capture when a manual workload control changes the run', () => {
