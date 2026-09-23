@@ -43,6 +43,9 @@ android {
     }
     buildTypes {
         debug {
+            if (System.getenv("MGD_ANDROID_COMPARISON_BUILD") == "1") {
+                applicationIdSuffix ".memorytest"
+            }
             if (stableTestSigningEnabled) {
                 signingConfig signingConfigs.test
             }

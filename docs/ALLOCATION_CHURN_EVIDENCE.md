@@ -235,24 +235,24 @@ Do not use a `MEM` report by itself to satisfy #329's allocation/GC acceptance c
 
 ## Matched BEFORE/AFTER workflow
 
-The canonical BEFORE allocation baseline is `perf/329-mobile-baseline` at `0eb3d9c4d6ec9a0f697389fa8c8d4f444effa0e3`.
-It predates both the MEM harness and the Android project. The instrumented BEFORE branch is `perf/329-memory-instrumented-before` (draft PR #450;
-use its current head SHA). It adds the same MEM sampler and
-UI without importing the later allocation optimizations; the canonical BEFORE ref remains intact.
-Both builds must use the **development Director mode** in the same mobile browser on the same device:
-the historical BEFORE commit has no production diagnostics and no Android project. Use the same
-Director visibility, display settings and profiler connection. Neither build should be labelled an
-APK-to-APK or production-vs-production comparison. An AFTER APK run can separately check the export
-and production WebView behavior, but it cannot substitute for the matched BEFORE browser run.
+The canonical BEFORE allocation baseline is `perf/329-mobile-baseline` at
+`0eb3d9c4d6ec9a0f697389fa8c8d4f444effa0e3`. It predates both the MEM harness and the
+Android project. The instrumented BEFORE game source is pinned to
+`7a84e3232336b2192897502869dfe0c2990dcfc9` (draft PR #450). It adds the same MEM sampler
+and UI without importing the later allocation optimizations; the canonical BEFORE ref stays intact.
 
-For each branch, start its Vite development server with `bun install --frozen-lockfile` and
-`bun run dev`, open it on the same mobile browser, and use the visible Director `MEM` control.
-Restart the server and reload the page when switching branches. Capture the MEM JSON on both builds
-using the no-thrust protocol and record the exact commits, device, browser version, display size/DPR,
-run distance, simulation duration and active content counts.
-For the allocation/GC question, also record comparable Chrome DevTools Memory allocation sampling or
-Performance traces on both builds. Profiling instrumentation can perturb frame timings; compare
-instrumented traces with one another and use the unprofiled MEM frame evidence separately.
+The [paired Android MEM comparison workflow](329_APK_COMPARISON.md) packages this historical
+BEFORE web source and the current AFTER web source with **one current Android shell** and an isolated
+test package ID. Both APKs in one artifact use the same ephemeral signing key. Follow the linked
+same-device install/uninstall and no-thrust instructions; record both MEM JSON reports and exact
+game source commits. The wrapper is current on both sides, so this compares gameplay bundles in a
+matched WebView rather than comparing two historical Android releases.
+
+A mobile-browser comparison remains possible by serving the two game sources in development
+Director mode on the same device with matched settings. For the allocation/GC question, also record
+comparable Chrome DevTools Memory allocation sampling or Performance traces on both builds.
+Profiling instrumentation can perturb frame timings; compare instrumented traces with one another
+and use the unprofiled MEM frame evidence separately.
 
 ## Device/browser evidence still required
 
