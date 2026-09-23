@@ -238,8 +238,9 @@ Do not use a `MEM` report by itself to satisfy #329's allocation/GC acceptance c
 The canonical BEFORE allocation baseline is `perf/329-mobile-baseline` at
 `0eb3d9c4d6ec9a0f697389fa8c8d4f444effa0e3`. It predates both the MEM harness and the
 Android project. The instrumented BEFORE game source is pinned to
-`7a84e3232336b2192897502869dfe0c2990dcfc9` (draft PR #450). It adds the same MEM sampler
-and UI without importing the later allocation optimizations; the canonical BEFORE ref stays intact.
+`0d63b63504726fcd342c0275677a7a241d74b9c9` (draft PR #450). It adds the same MEM sampler
+and UI plus the #437 wall-clock time correction, without importing the later allocation optimizations;
+the canonical BEFORE ref stays intact.
 
 The [paired Android MEM comparison workflow](329_APK_COMPARISON.md) packages this historical
 BEFORE web source and the current AFTER web source with **one current Android shell** and an isolated
