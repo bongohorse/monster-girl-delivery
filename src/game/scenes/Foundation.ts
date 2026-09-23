@@ -11,16 +11,16 @@ import { createDirectorResponsiveLayout } from '../../devtools/DirectorResponsiv
 import { DirectorRunControls } from '../../devtools/DirectorRunControls';
 import { DirectorTuningControls } from '../../devtools/DirectorTuningControls';
 import {
+  type MemoryEvidenceResult,
+  MemoryEvidenceSampler,
+} from '../../devtools/MemoryEvidenceSampler';
+import {
   createPerformanceEvidenceReport,
   type PerformanceEvidenceCaptureMetadata,
   type PerformanceEvidenceReport,
   type PerformanceRuntimeMetrics,
   serializePerformanceEvidenceReport,
 } from '../../devtools/PerformanceEvidence';
-import {
-  MemoryEvidenceSampler,
-  type MemoryEvidenceResult,
-} from '../../devtools/MemoryEvidenceSampler';
 import type { PerformanceSnapshot } from '../../devtools/PerformanceSampler';
 import { GeneratedCollectiblePresentation } from '../../entities/GeneratedCollectiblePresentation';
 import { GeneratedHazardPresentation } from '../../entities/GeneratedHazardPresentation';
