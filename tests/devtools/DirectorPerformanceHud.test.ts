@@ -105,6 +105,7 @@ const createHarness = () => {
   const triggerDeath = vi.fn();
   const startNormalPerformancePreset = vi.fn();
   const startZapperPerformancePreset = vi.fn();
+  const runZapperCpuBenchmark = vi.fn();
   const resetWorkCounters = vi.fn();
   const readRuntimeMetrics = vi.fn(() => ({
     activeCollectibleCount: 5,
@@ -144,6 +145,7 @@ const createHarness = () => {
       triggerDeath,
       startNormalPerformancePreset,
       startZapperPerformancePreset,
+      runZapperCpuBenchmark,
       readRuntimeMetrics,
       resetWorkCounters,
       exportPerformanceEvidence,
@@ -174,6 +176,7 @@ const createHarness = () => {
   const deathButton = playgroundControls?.children[8];
   const normalPerformanceButton = playgroundControls?.children[9];
   const zapperPerformanceButton = playgroundControls?.children[10];
+  const zapperCpuBenchmarkButton = playgroundControls?.children[11];
 
   if (
     !root ||
@@ -199,7 +202,8 @@ const createHarness = () => {
     !freezeButton ||
     !deathButton ||
     !normalPerformanceButton ||
-    !zapperPerformanceButton
+    !zapperPerformanceButton ||
+    !zapperCpuBenchmarkButton
   ) {
     throw new Error('Expected the Director HUD structure.');
   }
@@ -227,6 +231,7 @@ const createHarness = () => {
     resetButton,
     resetWorkCounters,
     root,
+    runZapperCpuBenchmark,
     runtimeValue,
     sampler,
     setAutoHazardsEnabled,
@@ -248,6 +253,7 @@ const createHarness = () => {
     zapperButton,
     zapperGroupButton,
     zapperPerformanceButton,
+    zapperCpuBenchmarkButton,
     zapperWorkCounters,
     zapperWorkValue,
   };
@@ -290,7 +296,7 @@ describe('DirectorPerformanceHud', () => {
     expect(fixedControls.children).toHaveLength(5);
     expect(values.children).toHaveLength(5);
     expect(wireframeLabel.children).toHaveLength(2);
-    expect(playgroundControls.children).toHaveLength(11);
+    expect(playgroundControls.children).toHaveLength(12);
   });
 
   it('samples every frame but refreshes formatted values at most every 250 ms', () => {
@@ -640,6 +646,27 @@ describe('DirectorPerformanceHud', () => {
     });
   });
 
+  it('runs the isolated Zapper CPU benchmark without using frame-sampler capture', () => {
+    const {
+      benchmarkStatusValue,
+      exportPerformanceEvidence,
+      normalPerformanceButton,
+      runZapperCpuBenchmark,
+      zapperCpuBenchmarkButton,
+    } = createHarness();
+
+    normalPerformanceButton.dispatch('click');
+    expect(normalPerformanceButton.dataset.benchmarkState).toBe('running');
+
+    zapperCpuBenchmarkButton.dispatch('click');
+
+    expect(runZapperCpuBenchmark).toHaveBeenCalledOnce();
+    expect(exportPerformanceEvidence).not.toHaveBeenCalled();
+    expect(benchmarkStatusValue.hidden).toBe(true);
+    expect(zapperCpuBenchmarkButton.textContent).toBe('CPU✓');
+    expect(zapperCpuBenchmarkButton.dataset.benchmarkState).toBe('captured');
+  });
+
   it('cancels automated capture when a manual workload control changes the run', () => {
     const {
       benchmarkStatusValue,
@@ -803,6 +830,7 @@ describe('DirectorPerformanceHud', () => {
       harness.deathButton,
       harness.normalPerformanceButton,
       harness.zapperPerformanceButton,
+      harness.zapperCpuBenchmarkButton,
     ]) {
       expect([...element.listeners.values()].every((listeners) => listeners.size === 0)).toBe(true);
     }
