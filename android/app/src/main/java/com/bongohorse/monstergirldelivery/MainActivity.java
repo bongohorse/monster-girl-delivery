@@ -75,7 +75,7 @@ public class MainActivity extends BridgeActivity {
                 + JSONObject.quote(evidenceStorageKey)
                 + ");"
                 + "if(typeof content!=='string'||content.length===0){"
-                + "throw new Error('Stored MGD performance evidence is unavailable.');"
+                + "throw new Error('Stored MGD evidence is unavailable.');"
                 + "}"
                 + "await window.Capacitor.Plugins.EvidenceExport.share({filename:"
                 + JSONObject.quote(safeFilename)
