@@ -158,6 +158,13 @@ The gesture is intentionally unavailable during live gameplay. A normal one-fing
 
 Production diagnostics may change FPS limits, God mode, hazard generation/spawns, wireframes and simulation freeze for testing. Disabling diagnostics restores safe runtime defaults. Performance evidence records `diagnosticsEnabled` explicitly so diagnostic captures cannot be confused with ordinary production play.
 
+The `MEM` diagnostics control runs the #329 allocation/GC-pressure evidence preset: 60 seconds of
+canonical normal play at 60 FPS with God mode and AUTO hazards enabled. It records bounded frame-time
+statistics and, when Chromium/WebView exposes `performance.memory`, one JS-heap sample per second.
+Observed used-heap decreases are reported only as heap drops; they are not labelled as authoritative
+GC events. On completion the JSON is stored separately and exported through the native evidence-share
+path.
+
 This hidden control is convenience, not a security boundary. Never place secrets, privileged server operations, signing material, or other sensitive capabilities behind it.
 
 ## Optional Firebase App Distribution
