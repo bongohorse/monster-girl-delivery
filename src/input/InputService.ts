@@ -1,4 +1,5 @@
 export type PointerSource = 'mouse' | 'touch' | 'pen' | 'unknown';
+export type PrimaryActionSource = PointerSource | 'keyboard';
 
 export interface InputSnapshot {
   activePointerId: number | null;
@@ -15,6 +16,7 @@ export class InputService {
   private activePointerSource: PointerSource | null = null;
   private gameplayBlocked = false;
   private primaryActionPressed = false;
+  private primaryActionSource: PrimaryActionSource | null = null;
   private spaceHeld = false;
 
   pressPointer(pointerId: number, source: PointerSource): void {
@@ -25,6 +27,7 @@ export class InputService {
     this.activePointerId = pointerId;
     this.activePointerSource = source;
     this.primaryActionPressed = true;
+    this.primaryActionSource = source;
   }
 
   releasePointer(pointerId: number): void {
@@ -49,6 +52,7 @@ export class InputService {
     if (!this.gameplayBlocked) {
       if (!this.spaceHeld) {
         this.primaryActionPressed = true;
+        this.primaryActionSource = 'keyboard';
       }
       this.spaceHeld = true;
     }
@@ -56,9 +60,19 @@ export class InputService {
 
   /** Consumes a fresh accepted touch, primary-mouse, or Space press exactly once. */
   consumePrimaryActionPress(): boolean {
-    const pressed = this.primaryActionPressed;
+    return this.consumePrimaryActionPressSource() !== null;
+  }
+
+  /** Returns the accepted action source so run-end touch retry can wait for pointer release. */
+  consumePrimaryActionPressSource(): PrimaryActionSource | null {
+    if (!this.primaryActionPressed) {
+      return null;
+    }
+
+    const source = this.primaryActionSource;
     this.primaryActionPressed = false;
-    return pressed;
+    this.primaryActionSource = null;
+    return source;
   }
 
   setGameplayBlocked(blocked: boolean): void {
@@ -77,6 +91,7 @@ export class InputService {
     this.activePointerId = null;
     this.activePointerSource = null;
     this.primaryActionPressed = false;
+    this.primaryActionSource = null;
     this.spaceHeld = false;
   }
 
