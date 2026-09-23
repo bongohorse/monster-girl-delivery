@@ -7,12 +7,9 @@ import {
 import {
   createPrototypeZapperGeometryScratch,
   doesHitboxOverlapPrototypeZapper,
-  doesHitboxOverlapPrototypeZapperWithCanonicalPadding,
   isPrototypeZapperHazard,
-  PROTOTYPE_ZAPPER_GRAZE_PADDING,
   PROTOTYPE_ZAPPER_LETHAL_PADDING,
   type PrototypeZapperGeometryPadding,
-  resolvePrototypeZapperAngleDegrees,
   resolvePrototypeZapperGeometry,
   resolvePrototypeZapperGeometryInto,
 } from '../hazards/PrototypeZapperHazard';
@@ -382,375 +379,34 @@ const getRelativeVerticalRange = (
   return { maximum, minimum };
 };
 
-const canFlightTrajectoryOverlapVerticalRange = (
-  trajectory: Readonly<VerticalFlightTrajectory>,
-  interval: Readonly<LogicalHazardCollisionInterval>,
-  minimumCenterY: number,
-  maximumCenterY: number,
-): boolean => {
-  let minimum = Number.POSITIVE_INFINITY;
-  let maximum = Number.NEGATIVE_INFINITY;
-  let foundSegment = false;
-
-  for (const segment of trajectory.segments) {
-    const startSeconds = Math.max(interval.startSeconds, segment.startSeconds);
-    const endSeconds = Math.min(interval.endSeconds, segment.endSeconds);
-    if (endSeconds < startSeconds) {
-      continue;
-    }
-
-    const startPositionY = evaluateFlightSegmentPosition(segment, startSeconds);
-    const endPositionY = evaluateFlightSegmentPosition(segment, endSeconds);
-    if (!Number.isFinite(startPositionY) || !Number.isFinite(endPositionY)) {
-      return true;
-    }
-    foundSegment = true;
-    minimum = Math.min(minimum, startPositionY, endPositionY);
-    maximum = Math.max(maximum, startPositionY, endPositionY);
-
-    if (segment.accelerationY !== 0) {
-      const vertexSeconds = segment.startSeconds - segment.velocityY / segment.accelerationY;
-      if (vertexSeconds > startSeconds && vertexSeconds < endSeconds) {
-        const vertexPositionY = evaluateFlightSegmentPosition(segment, vertexSeconds);
-        if (!Number.isFinite(vertexPositionY)) {
-          return true;
-        }
-        minimum = Math.min(minimum, vertexPositionY);
-        maximum = Math.max(maximum, vertexPositionY);
-      }
-    }
-  }
-
-  if (!foundSegment) {
-    return true;
-  }
-  return maximum > minimumCenterY && minimum < maximumCenterY;
-};
-
-interface VerticalFlightIntervalRange {
-  readonly maximum: number;
-  readonly minimum: number;
-}
-
-const resolveCoveredFlightTrajectoryVerticalRange = (
-  trajectory: Readonly<VerticalFlightTrajectory>,
-  interval: Readonly<LogicalHazardCollisionInterval>,
-): Readonly<VerticalFlightIntervalRange> | null => {
-  let minimum = Number.POSITIVE_INFINITY;
-  let maximum = Number.NEGATIVE_INFINITY;
-  let coveredUntilSeconds = interval.startSeconds;
-  let previousEndPositionY: number | undefined;
-  let foundSegment = false;
-
-  for (const segment of trajectory.segments) {
-    const startSeconds = Math.max(interval.startSeconds, segment.startSeconds);
-    const endSeconds = Math.min(interval.endSeconds, segment.endSeconds);
-    if (endSeconds < startSeconds) {
-      continue;
-    }
-
-    if (foundSegment && startSeconds !== coveredUntilSeconds) {
-      return null;
-    }
-    if (!foundSegment && startSeconds !== interval.startSeconds) {
-      return null;
-    }
-
-    const startPositionY = evaluateFlightSegmentPosition(segment, startSeconds);
-    const endPositionY = evaluateFlightSegmentPosition(segment, endSeconds);
-    if (!Number.isFinite(startPositionY) || !Number.isFinite(endPositionY)) {
-      return null;
-    }
-    if (previousEndPositionY !== undefined && startPositionY !== previousEndPositionY) {
-      return null;
-    }
-
-    foundSegment = true;
-    minimum = Math.min(minimum, startPositionY, endPositionY);
-    maximum = Math.max(maximum, startPositionY, endPositionY);
-
-    if (segment.accelerationY !== 0) {
-      const vertexSeconds = segment.startSeconds - segment.velocityY / segment.accelerationY;
-      if (vertexSeconds > startSeconds && vertexSeconds < endSeconds) {
-        const vertexPositionY = evaluateFlightSegmentPosition(segment, vertexSeconds);
-        if (!Number.isFinite(vertexPositionY)) {
-          return null;
-        }
-        minimum = Math.min(minimum, vertexPositionY);
-        maximum = Math.max(maximum, vertexPositionY);
-      }
-    }
-
-    coveredUntilSeconds = endSeconds;
-    previousEndPositionY = endPositionY;
-    if (coveredUntilSeconds === interval.endSeconds) {
-      break;
-    }
-  }
-
-  return foundSegment && coveredUntilSeconds === interval.endSeconds ? { maximum, minimum } : null;
-};
-
-const intervalContainsPeriodicPhase = (
-  minimum: number,
-  maximum: number,
-  phase: number,
-  period: number,
-): boolean => {
-  const firstIndex = Math.ceil((minimum - phase) / period);
-  return phase + firstIndex * period <= maximum;
-};
-
-const getMaximumAbsoluteCosine = (minimumRadians: number, maximumRadians: number): number =>
-  intervalContainsPeriodicPhase(minimumRadians, maximumRadians, 0, Math.PI)
-    ? 1
-    : Math.max(Math.abs(Math.cos(minimumRadians)), Math.abs(Math.cos(maximumRadians)));
-
-const getMaximumAbsoluteSine = (minimumRadians: number, maximumRadians: number): number =>
-  intervalContainsPeriodicPhase(minimumRadians, maximumRadians, Math.PI / 2, Math.PI)
-    ? 1
-    : Math.max(Math.abs(Math.sin(minimumRadians)), Math.abs(Math.sin(maximumRadians)));
-
-const canRotatingZapperAngularSweepReachPlayer = (
-  initialRunState: Readonly<RunMotionState>,
-  trajectory: Readonly<VerticalFlightTrajectory>,
-  runMotionTuning: Readonly<RunMotionValues>,
-  hazard: Readonly<LogicalHazard>,
-  interval: Readonly<LogicalHazardCollisionInterval>,
-  maximumPadding: number,
-): boolean => {
-  if (!isPrototypeZapperHazard(hazard) || hazard.behavior.rotation === undefined) {
-    return true;
-  }
-
-  const verticalRange = resolveCoveredFlightTrajectoryVerticalRange(trajectory, interval);
-  if (!verticalRange) {
-    return true;
-  }
-
-  const startDistance =
-    initialRunState.distance + runMotionTuning.baseScrollSpeed * interval.startSeconds;
-  const endDistance =
-    initialRunState.distance + runMotionTuning.baseScrollSpeed * interval.endSeconds;
-  if (!Number.isFinite(startDistance) || !Number.isFinite(endDistance)) {
-    return true;
-  }
-
-  const playerBottom = verticalRange.maximum + PROTOTYPE_PLAYER_COLLISION_EXTENTS.bottom;
-  const playerLeft = Math.min(startDistance, endDistance) - PROTOTYPE_PLAYER_COLLISION_EXTENTS.left;
-  const playerRight =
-    Math.max(startDistance, endDistance) + PROTOTYPE_PLAYER_COLLISION_EXTENTS.right;
-  const playerTop = verticalRange.minimum - PROTOTYPE_PLAYER_COLLISION_EXTENTS.top;
-
-  const centerX = (hazard.hitbox.left + hazard.hitbox.right) / 2;
-  const centerY = (hazard.hitbox.top + hazard.hitbox.bottom) / 2;
-  if (!Number.isFinite(centerX) || !Number.isFinite(centerY)) {
-    return true;
-  }
-
-  const rotation = hazard.behavior.rotation;
-  const direction = rotation.direction === 'clockwise' ? 1 : -1;
-  const initialSimulationSeconds = initialRunState.simulationSeconds ?? 0;
-  const startDegrees = resolvePrototypeZapperAngleDegrees(
-    hazard.behavior,
-    initialSimulationSeconds + interval.startSeconds,
-  );
-  const sweepDegrees =
-    direction * rotation.speedDegreesPerSecond * (interval.endSeconds - interval.startSeconds);
-  if (!Number.isFinite(startDegrees) || !Number.isFinite(sweepDegrees)) {
-    return true;
-  }
-
-  const firstRadians = (startDegrees * Math.PI) / 180;
-  const secondRadians = ((startDegrees + sweepDegrees) * Math.PI) / 180;
-  const minimumRadians = Math.min(firstRadians, secondRadians);
-  const maximumRadians = Math.max(firstRadians, secondRadians);
-  const halfLength = hazard.behavior.length / 2;
-  const maximumRadius =
-    Math.max(hazard.behavior.beamThickness / 2, hazard.behavior.endpointDiameter / 2) +
-    maximumPadding;
-  const horizontalExtent =
-    halfLength * getMaximumAbsoluteCosine(minimumRadians, maximumRadians) + maximumRadius;
-  const verticalExtent =
-    halfLength * getMaximumAbsoluteSine(minimumRadians, maximumRadians) + maximumRadius;
-
-  const zapperBottom = centerY + verticalExtent;
-  const zapperLeft = centerX - horizontalExtent;
-  const zapperRight = centerX + horizontalExtent;
-  const zapperTop = centerY - verticalExtent;
-
-  return (
-    playerLeft < zapperRight &&
-    playerRight > zapperLeft &&
-    playerTop < zapperBottom &&
-    playerBottom > zapperTop
-  );
-};
-
-const evaluateStaticZapperOneAxisSweep = (
-  initialRunState: Readonly<RunMotionState>,
-  trajectory: Readonly<VerticalFlightTrajectory>,
-  runMotionTuning: Readonly<RunMotionValues>,
-  hazard: Readonly<LogicalHazard>,
-  interval: Readonly<LogicalHazardCollisionInterval>,
-  primaryPadding: Readonly<PrototypeZapperGeometryPadding>,
-  secondaryPadding: Readonly<PrototypeZapperGeometryPadding> | undefined,
-  workCounters: PrototypeZapperCollisionWorkCounters | undefined,
-): Readonly<PrototypeZapperPaddingPairContacts> | null => {
-  if (!isPrototypeZapperHazard(hazard) || hazard.behavior.rotation !== undefined) {
-    return null;
-  }
-
-  let minimumPositionY = Number.POSITIVE_INFINITY;
-  let maximumPositionY = Number.NEGATIVE_INFINITY;
-  let coveredUntilSeconds = interval.startSeconds;
-  let previousEndPositionY: number | undefined;
-  let foundSegment = false;
-
-  for (const segment of trajectory.segments) {
-    const startSeconds = Math.max(interval.startSeconds, segment.startSeconds);
-    const endSeconds = Math.min(interval.endSeconds, segment.endSeconds);
-    if (endSeconds < startSeconds) {
-      continue;
-    }
-
-    if (foundSegment && startSeconds !== coveredUntilSeconds) {
-      return null;
-    }
-    if (!foundSegment && startSeconds !== interval.startSeconds) {
-      return null;
-    }
-
-    const startPositionY = evaluateFlightSegmentPosition(segment, startSeconds);
-    const endPositionY = evaluateFlightSegmentPosition(segment, endSeconds);
-    if (!Number.isFinite(startPositionY) || !Number.isFinite(endPositionY)) {
-      return null;
-    }
-    if (previousEndPositionY !== undefined && startPositionY !== previousEndPositionY) {
-      return null;
-    }
-
-    foundSegment = true;
-    minimumPositionY = Math.min(minimumPositionY, startPositionY, endPositionY);
-    maximumPositionY = Math.max(maximumPositionY, startPositionY, endPositionY);
-
-    if (segment.accelerationY !== 0) {
-      const vertexSeconds = segment.startSeconds - segment.velocityY / segment.accelerationY;
-      if (vertexSeconds > startSeconds && vertexSeconds < endSeconds) {
-        const vertexPositionY = evaluateFlightSegmentPosition(segment, vertexSeconds);
-        if (!Number.isFinite(vertexPositionY)) {
-          return null;
-        }
-        minimumPositionY = Math.min(minimumPositionY, vertexPositionY);
-        maximumPositionY = Math.max(maximumPositionY, vertexPositionY);
-      }
-    }
-
-    coveredUntilSeconds = endSeconds;
-    previousEndPositionY = endPositionY;
-    if (coveredUntilSeconds === interval.endSeconds) {
-      break;
-    }
-  }
-
-  if (!foundSegment || coveredUntilSeconds !== interval.endSeconds) {
-    return null;
-  }
-
-  const scrollSpeed = runMotionTuning.baseScrollSpeed;
-  const verticalOnly = scrollSpeed === 0;
-  const horizontalOnly = minimumPositionY === maximumPositionY;
-  if (!verticalOnly && !horizontalOnly) {
-    return null;
-  }
-
-  const startDistance = initialRunState.distance + scrollSpeed * interval.startSeconds;
-  const endDistance = initialRunState.distance + scrollSpeed * interval.endSeconds;
-  if (!Number.isFinite(startDistance) || !Number.isFinite(endDistance)) {
-    return null;
-  }
-
-  const sweptPlayerHitbox: LogicalHitbox = {
-    bottom: maximumPositionY + PROTOTYPE_PLAYER_COLLISION_EXTENTS.bottom,
-    left: Math.min(startDistance, endDistance) - PROTOTYPE_PLAYER_COLLISION_EXTENTS.left,
-    right: Math.max(startDistance, endDistance) + PROTOTYPE_PLAYER_COLLISION_EXTENTS.right,
-    top: minimumPositionY - PROTOTYPE_PLAYER_COLLISION_EXTENTS.top,
-  };
-  const geometry = resolvePrototypeZapperGeometry(hazard, initialRunState.simulationSeconds ?? 0);
-  if (!geometry) {
-    return null;
-  }
-
-  if (workCounters) {
-    workCounters.geometryResolutionCount += 1;
-    workCounters.primaryNarrowphaseCheckCount += 1;
-  }
-  if (
-    doesHitboxOverlapPrototypeZapperOnValidatedPath(sweptPlayerHitbox, geometry, primaryPadding)
-  ) {
-    return PROTOTYPE_ZAPPER_PRIMARY_CONTACT;
-  }
-
-  if (secondaryPadding) {
-    if (workCounters) {
-      workCounters.secondaryNarrowphaseCheckCount += 1;
-    }
-    if (
-      doesHitboxOverlapPrototypeZapperOnValidatedPath(sweptPlayerHitbox, geometry, secondaryPadding)
-    ) {
-      return PROTOTYPE_ZAPPER_SECONDARY_ONLY_CONTACT;
-    }
-  }
-
-  return NO_PROTOTYPE_ZAPPER_PADDING_PAIR_CONTACT;
-};
-
 const ZAPPER_MAX_COLLISION_SAMPLE_DISTANCE = 0.5;
 const ZAPPER_MAX_COLLISION_SAMPLE_SECONDS = 1 / 720;
 
-interface ZapperCollisionSampleCursor {
-  next(): number | null;
-}
-
-const createZapperCollisionSampleCursor = (
+const createZapperCollisionSampleTimes = (
   trajectory: Readonly<VerticalFlightTrajectory>,
   initialDistance: number,
   initialSimulationSeconds: number,
   scrollSpeed: number,
   interval: Readonly<LogicalHazardCollisionInterval>,
-): ZapperCollisionSampleCursor => {
+): number[] => {
   if (!Number.isFinite(initialSimulationSeconds) || initialSimulationSeconds < 0) {
     throw new RangeError('Zapper initial simulation time must be non-negative and finite.');
   }
 
-  // Trajectory events are the only unsorted source and remain a tiny set relative to the dense
-  // globally anchored lattices.
-  const eventCandidates = [interval.startSeconds, interval.endSeconds];
+  const candidates = [interval.startSeconds, interval.endSeconds];
   for (const segment of trajectory.segments) {
-    addCandidate(eventCandidates, segment.startSeconds, interval.startSeconds, interval.endSeconds);
-    addCandidate(eventCandidates, segment.endSeconds, interval.startSeconds, interval.endSeconds);
+    addCandidate(candidates, segment.startSeconds, interval.startSeconds, interval.endSeconds);
+    addCandidate(candidates, segment.endSeconds, interval.startSeconds, interval.endSeconds);
     if (segment.accelerationY !== 0) {
       addCandidate(
-        eventCandidates,
+        candidates,
         segment.startSeconds - segment.velocityY / segment.accelerationY,
         interval.startSeconds,
         interval.endSeconds,
       );
     }
   }
-  eventCandidates.sort((first, second) => first - second);
-  let eventUniqueCount = 0;
-  for (const candidate of eventCandidates) {
-    if (eventUniqueCount === 0 || candidate !== eventCandidates[eventUniqueCount - 1]) {
-      eventCandidates[eventUniqueCount] = candidate;
-      eventUniqueCount += 1;
-    }
-  }
-  eventCandidates.length = eventUniqueCount;
 
-  let distanceIndex = 0;
-  let distanceLastIndex = -1;
-  let distanceStep = 1;
   if (scrollSpeed !== 0) {
     const firstDistance = initialDistance + scrollSpeed * interval.startSeconds;
     const lastDistance = initialDistance + scrollSpeed * interval.endSeconds;
@@ -758,14 +414,10 @@ const createZapperCollisionSampleCursor = (
     const maximumDistance = Math.max(firstDistance, lastDistance);
     const firstIndex = Math.ceil(minimumDistance / ZAPPER_MAX_COLLISION_SAMPLE_DISTANCE);
     const lastIndex = Math.floor(maximumDistance / ZAPPER_MAX_COLLISION_SAMPLE_DISTANCE);
-    if (scrollSpeed > 0) {
-      distanceIndex = firstIndex;
-      distanceLastIndex = lastIndex;
-      distanceStep = 1;
-    } else {
-      distanceIndex = lastIndex;
-      distanceLastIndex = firstIndex;
-      distanceStep = -1;
+    for (let index = firstIndex; index <= lastIndex; index += 1) {
+      const distance = index * ZAPPER_MAX_COLLISION_SAMPLE_DISTANCE;
+      const seconds = (distance - initialDistance) / scrollSpeed;
+      addCandidate(candidates, seconds, interval.startSeconds, interval.endSeconds);
     }
   }
 
@@ -773,77 +425,27 @@ const createZapperCollisionSampleCursor = (
   // world scroll is zero or changes independently of Zapper rotation.
   const absoluteStartSeconds = initialSimulationSeconds + interval.startSeconds;
   const absoluteEndSeconds = initialSimulationSeconds + interval.endSeconds;
-  let timeIndex = Math.ceil(absoluteStartSeconds / ZAPPER_MAX_COLLISION_SAMPLE_SECONDS);
-  const timeLastIndex = Math.floor(absoluteEndSeconds / ZAPPER_MAX_COLLISION_SAMPLE_SECONDS);
-
-  let eventIndex = 0;
-  let previousCandidate: number | undefined;
-
-  return {
-    next(): number | null {
-      while (true) {
-        const eventSeconds =
-          eventIndex < eventCandidates.length
-            ? (eventCandidates[eventIndex] ?? Number.POSITIVE_INFINITY)
-            : Number.POSITIVE_INFINITY;
-
-        let distanceSeconds = Number.POSITIVE_INFINITY;
-        while (
-          scrollSpeed !== 0 &&
-          (distanceStep > 0
-            ? distanceIndex <= distanceLastIndex
-            : distanceIndex >= distanceLastIndex)
-        ) {
-          const candidate =
-            (distanceIndex * ZAPPER_MAX_COLLISION_SAMPLE_DISTANCE - initialDistance) / scrollSpeed;
-          if (candidate >= interval.startSeconds && candidate <= interval.endSeconds) {
-            distanceSeconds = candidate;
-            break;
-          }
-          distanceIndex += distanceStep;
-        }
-
-        let timeSeconds = Number.POSITIVE_INFINITY;
-        while (timeIndex <= timeLastIndex) {
-          const candidate =
-            timeIndex * ZAPPER_MAX_COLLISION_SAMPLE_SECONDS - initialSimulationSeconds;
-          if (candidate >= interval.startSeconds && candidate <= interval.endSeconds) {
-            timeSeconds = candidate;
-            break;
-          }
-          timeIndex += 1;
-        }
-
-        const nextCandidate = Math.min(eventSeconds, distanceSeconds, timeSeconds);
-        if (nextCandidate === Number.POSITIVE_INFINITY) {
-          return null;
-        }
-
-        if (eventSeconds === nextCandidate) {
-          eventIndex += 1;
-        }
-        if (distanceSeconds === nextCandidate) {
-          distanceIndex += distanceStep;
-        }
-        if (timeSeconds === nextCandidate) {
-          timeIndex += 1;
-        }
-
-        if (previousCandidate === undefined || nextCandidate !== previousCandidate) {
-          previousCandidate = nextCandidate;
-          return nextCandidate;
-        }
-      }
-    },
-  };
-};
-
-const countRemainingZapperCollisionSamples = (cursor: ZapperCollisionSampleCursor): number => {
-  let count = 0;
-  while (cursor.next() !== null) {
-    count += 1;
+  const firstTimeIndex = Math.ceil(absoluteStartSeconds / ZAPPER_MAX_COLLISION_SAMPLE_SECONDS);
+  const lastTimeIndex = Math.floor(absoluteEndSeconds / ZAPPER_MAX_COLLISION_SAMPLE_SECONDS);
+  for (let index = firstTimeIndex; index <= lastTimeIndex; index += 1) {
+    addCandidate(
+      candidates,
+      index * ZAPPER_MAX_COLLISION_SAMPLE_SECONDS - initialSimulationSeconds,
+      interval.startSeconds,
+      interval.endSeconds,
+    );
   }
-  return count;
+
+  candidates.sort((first, second) => first - second);
+  let uniqueCount = 0;
+  for (const candidate of candidates) {
+    if (uniqueCount === 0 || candidate !== candidates[uniqueCount - 1]) {
+      candidates[uniqueCount] = candidate;
+      uniqueCount += 1;
+    }
+  }
+  candidates.length = uniqueCount;
+  return candidates;
 };
 
 interface PrototypeZapperPaddingPairContacts {
@@ -899,20 +501,6 @@ const assertValidPrototypeZapperPadding = (
     throw new RangeError('Zapper geometry padding must be finite and non-negative.');
   }
 };
-
-const isCanonicalPrototypeZapperPadding = (
-  padding: Readonly<PrototypeZapperGeometryPadding>,
-): boolean =>
-  padding === PROTOTYPE_ZAPPER_LETHAL_PADDING || padding === PROTOTYPE_ZAPPER_GRAZE_PADDING;
-
-const doesHitboxOverlapPrototypeZapperOnValidatedPath = (
-  hitbox: Readonly<LogicalHitbox>,
-  geometry: NonNullable<ReturnType<typeof resolvePrototypeZapperGeometry>>,
-  padding: Readonly<PrototypeZapperGeometryPadding>,
-): boolean =>
-  padding === PROTOTYPE_ZAPPER_LETHAL_PADDING || padding === PROTOTYPE_ZAPPER_GRAZE_PADDING
-    ? doesHitboxOverlapPrototypeZapperWithCanonicalPadding(hitbox, geometry, padding)
-    : doesHitboxOverlapPrototypeZapper(hitbox, geometry, padding);
 
 const evaluatePrototypeZapperPaddingPairDuringStep = (
   initialRunState: Readonly<RunMotionState>,
@@ -1010,72 +598,16 @@ const evaluatePrototypeZapperPaddingPairDuringStep = (
     return NO_PROTOTYPE_ZAPPER_PADDING_PAIR_CONTACT;
   }
 
-  if (playerExtents === PROTOTYPE_PLAYER_COLLISION_EXTENTS) {
-    const minimumPlayerCenterY =
-      hazard.hitbox.top - maximumPadding - PROTOTYPE_PLAYER_COLLISION_EXTENTS.bottom;
-    const maximumPlayerCenterY =
-      hazard.hitbox.bottom + maximumPadding + PROTOTYPE_PLAYER_COLLISION_EXTENTS.top;
-    if (
-      !canFlightTrajectoryOverlapVerticalRange(
-        trajectory,
-        interval,
-        minimumPlayerCenterY,
-        maximumPlayerCenterY,
-      )
-    ) {
-      if (workCounters) {
-        workCounters.broadphaseRejectedCallCount += 1;
-      }
-      return NO_PROTOTYPE_ZAPPER_PADDING_PAIR_CONTACT;
-    }
-  }
-
-  const canUseCanonicalAngularBroadphase =
-    isCanonicalPrototypeZapperPadding(primaryPadding) &&
-    (secondaryPadding === undefined || isCanonicalPrototypeZapperPadding(secondaryPadding));
-
-  if (
-    playerExtents === PROTOTYPE_PLAYER_COLLISION_EXTENTS &&
-    hazard.behavior.rotation !== undefined &&
-    canUseCanonicalAngularBroadphase &&
-    !canRotatingZapperAngularSweepReachPlayer(
-      initialRunState,
-      trajectory,
-      runMotionTuning,
-      hazard,
-      interval,
-      maximumPadding,
-    )
-  ) {
-    if (workCounters) {
-      workCounters.broadphaseRejectedCallCount += 1;
-    }
-    return NO_PROTOTYPE_ZAPPER_PADDING_PAIR_CONTACT;
-  }
-
-  if (playerExtents === PROTOTYPE_PLAYER_COLLISION_EXTENTS) {
-    const staticOneAxisContacts = evaluateStaticZapperOneAxisSweep(
-      initialRunState,
-      trajectory,
-      runMotionTuning,
-      hazard,
-      interval,
-      primaryPadding,
-      secondaryPadding,
-      workCounters,
-    );
-    if (staticOneAxisContacts !== null) {
-      return staticOneAxisContacts;
-    }
-  }
-
-  const sampleCursor = createZapperCollisionSampleCursor(
+  const sampleTimes = createZapperCollisionSampleTimes(
     trajectory,
     initialRunState.distance,
     initialSimulationSeconds,
     runMotionTuning.baseScrollSpeed,
     interval,
   );
+  if (workCounters) {
+    workCounters.candidateSampleCount += sampleTimes.length;
+  }
   const rotatingGeometryScratch =
     hazard.behavior.rotation === undefined ? null : createPrototypeZapperGeometryScratch();
   let staticGeometry: ReturnType<typeof resolvePrototypeZapperGeometry> | undefined;
@@ -1085,13 +617,8 @@ const evaluatePrototypeZapperPaddingPairDuringStep = (
   const canReusePlayerHitboxScratch = playerExtents === PROTOTYPE_PLAYER_COLLISION_EXTENTS;
   const playerHitboxScratch: LogicalHitbox = { bottom: 0, left: 0, right: 0, top: 0 };
 
-  while (true) {
-    const seconds = sampleCursor.next();
-    if (seconds === null) {
-      break;
-    }
+  for (const seconds of sampleTimes) {
     if (workCounters) {
-      workCounters.candidateSampleCount += 1;
       workCounters.evaluatedSampleCount += 1;
     }
     let trajectorySegment = trajectorySegments[trajectorySegmentIndex];
@@ -1153,19 +680,14 @@ const evaluatePrototypeZapperPaddingPairDuringStep = (
     if (workCounters) {
       workCounters.primaryNarrowphaseCheckCount += 1;
     }
-    if (doesHitboxOverlapPrototypeZapperOnValidatedPath(playerHitbox, geometry, primaryPadding)) {
-      if (workCounters) {
-        workCounters.candidateSampleCount += countRemainingZapperCollisionSamples(sampleCursor);
-      }
+    if (doesHitboxOverlapPrototypeZapper(playerHitbox, geometry, primaryPadding)) {
       return PROTOTYPE_ZAPPER_PRIMARY_CONTACT;
     }
     if (secondaryPadding && !secondaryHit) {
       if (workCounters) {
         workCounters.secondaryNarrowphaseCheckCount += 1;
       }
-      if (
-        doesHitboxOverlapPrototypeZapperOnValidatedPath(playerHitbox, geometry, secondaryPadding)
-      ) {
+      if (doesHitboxOverlapPrototypeZapper(playerHitbox, geometry, secondaryPadding)) {
         secondaryHit = true;
       }
     }
@@ -1178,21 +700,11 @@ const evaluatePrototypeZapperPaddingPairDuringStep = (
 
 /**
  * Continuous-step authority for static and rotating Zappers. The authored Zapper hitbox is a
- * conservative horizontal envelope; rotating Zappers reserve their full angular sweep. Cheap
- * horizontal plus exact canonical-extents vertical trajectory broadphases reject envelopes that
- * cannot reach the player during the active interval before dense sample times or geometry are
- * created. Rotating Zappers then use the actual authoritative angle arc to build a conservative
- * swept geometry AABB, rejecting parts of the authored full-rotation reservation box that the active
- * arc cannot reach. Static Zappers also collapse canonical one-axis player motion into one exact swept AABB:
- * vertical-only continuous flight or horizontal-only scrolling therefore needs one geometry check
- * instead of the dense lattice. Two-axis motion and unusual/gapped trajectories retain the lattice.
- * Custom extents retain the historical path. Samples remain anchored to absolute world
- * distance plus an authoritative 1/720-second simulation-time lattice. The three ordered sample
- * sources are consumed through one deduplicating cursor instead of materializing a dense output
- * array; after an early core hit, only the lightweight cursor is drained to preserve the full
- * candidate-count diagnostic contract. Evaluated samples still stop immediately. Sorted samples
- * advance one monotonic flight-segment cursor instead of linearly searching the trajectory again per
- * sample.
+ * conservative horizontal envelope; rotating Zappers reserve their full angular sweep. A cheap
+ * player-sweep broadphase rejects envelopes that cannot reach the player during the active interval
+ * before any dense sample times or geometry are created. Samples remain anchored to absolute world
+ * distance plus an authoritative 1/720-second simulation-time lattice. Sorted samples advance one
+ * monotonic flight-segment cursor instead of linearly searching the trajectory again per sample.
  * The canonical frozen player extents reuse one local hitbox scratch instead of allocating transient
  * run-state, flight-state, and hitbox objects per sample. Custom extents keep the historical
  * per-sample validation/allocation path so dynamic runtime inputs preserve their previous contract.
