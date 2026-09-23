@@ -58,6 +58,19 @@ describe('InputService', () => {
     expect(input.isThrustHeld()).toBe(false);
   });
 
+  it('reports the source of a fresh primary action exactly once', () => {
+    const input = new InputService();
+
+    input.pressPointer(3, 'touch');
+    expect(input.consumePrimaryActionPressSource()).toBe('touch');
+    expect(input.consumePrimaryActionPressSource()).toBeNull();
+
+    input.releasePointer(3);
+    input.setSpaceHeld(true);
+    expect(input.consumePrimaryActionPressSource()).toBe('keyboard');
+    expect(input.consumePrimaryActionPress()).toBe(false);
+  });
+
   it('clears input when blocked and ignores presses that start while blocked', () => {
     const input = new InputService();
 
