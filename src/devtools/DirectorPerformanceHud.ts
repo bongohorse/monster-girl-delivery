@@ -37,6 +37,8 @@ export interface DirectorPerformanceHudControls {
   readonly triggerDeath?: () => void;
   readonly startNormalPerformancePreset?: () => void;
   readonly startZapperPerformancePreset?: () => void;
+  readonly startMemoryEvidenceBenchmark?: () => void;
+  readonly readMemoryEvidenceProgress?: () => number | null;
   readonly readRuntimeMetrics?: () => Readonly<PerformanceRuntimeMetrics>;
   readonly resetWorkCounters?: () => void;
   readonly exportPerformanceEvidence?: (
@@ -128,6 +130,7 @@ export class DirectorPerformanceHud {
   private readonly evidenceButton: HTMLButtonElement;
   private readonly normalPerformanceButton: HTMLButtonElement;
   private readonly zapperPerformanceButton: HTMLButtonElement;
+  private readonly memoryEvidenceButton: HTMLButtonElement;
   private destroyed = false;
   private discardNextPerformanceSample = false;
   private elapsedSinceRefreshMilliseconds = Number.POSITIVE_INFINITY;
@@ -242,6 +245,11 @@ export class DirectorPerformanceHud {
       'ZP',
       'Run 60 FPS Zapper benchmark and auto-capture when the sample window is full',
     );
+    this.memoryEvidenceButton = this.createButton(
+      ownerDocument,
+      'MEM',
+      'Run 60-second normal-play heap/slow-frame evidence capture',
+    );
     this.playgroundControls.append(
       this.godModeButton,
       this.autoHazardsButton,
@@ -254,6 +262,7 @@ export class DirectorPerformanceHud {
       this.deathButton,
       this.normalPerformanceButton,
       this.zapperPerformanceButton,
+      this.memoryEvidenceButton,
     );
     this.setToggleState(this.godModeButton, false);
     this.setToggleState(this.autoHazardsButton, true);
@@ -298,6 +307,7 @@ export class DirectorPerformanceHud {
     this.addControlListeners(this.deathButton, this.handleDeathClick);
     this.addControlListeners(this.normalPerformanceButton, this.handleNormalPerformanceClick);
     this.addControlListeners(this.zapperPerformanceButton, this.handleZapperPerformanceClick);
+    this.addControlListeners(this.memoryEvidenceButton, this.handleMemoryEvidenceClick);
     this.addControlListeners(this.resetButton, this.handleResetClick);
     this.addControlListeners(this.evidenceButton, this.handleEvidenceClick);
     this.addTogglePointerListeners(this.wireframeLabel);
@@ -387,6 +397,7 @@ export class DirectorPerformanceHud {
     this.removeControlListeners(this.deathButton, this.handleDeathClick);
     this.removeControlListeners(this.normalPerformanceButton, this.handleNormalPerformanceClick);
     this.removeControlListeners(this.zapperPerformanceButton, this.handleZapperPerformanceClick);
+    this.removeControlListeners(this.memoryEvidenceButton, this.handleMemoryEvidenceClick);
     this.removeControlListeners(this.resetButton, this.handleResetClick);
     this.removeControlListeners(this.evidenceButton, this.handleEvidenceClick);
     this.removeTogglePointerListeners(this.wireframeLabel);
@@ -585,6 +596,25 @@ export class DirectorPerformanceHud {
     this.startAutomatedBenchmark('zapper');
   };
 
+  private readonly handleMemoryEvidenceClick = (event: Event): void => {
+    this.stopControlEvent(event);
+    this.clearAutomatedBenchmark();
+    const benchmarkFpsIndex = DIRECTOR_FPS_LIMIT_OPTIONS.indexOf(
+      DIRECTOR_AUTOMATED_BENCHMARK_FPS_LIMIT,
+    );
+    if (benchmarkFpsIndex < 0) {
+      throw new RangeError('Memory evidence benchmark FPS limit is unavailable.');
+    }
+
+    this.fpsLimitIndex = benchmarkFpsIndex;
+    this.controls?.setFpsLimit(DIRECTOR_AUTOMATED_BENCHMARK_FPS_LIMIT);
+    this.refreshFpsLimitTitle();
+    this.preparePerformancePreset(true);
+    this.memoryEvidenceButton.dataset.benchmarkState = 'running';
+    this.controls?.startMemoryEvidenceBenchmark?.();
+    this.refreshMemoryEvidenceStatus();
+  };
+
   private readonly handleEvidenceClick = (event: Event): void => {
     this.stopControlEvent(event);
     this.exportPerformanceEvidence({ targetSampleCount: null, trigger: 'manual' });
@@ -769,11 +799,33 @@ export class DirectorPerformanceHud {
       setTextIfChanged(this.runtimeValue, this.formatRuntimeMetrics(runtime));
     }
     this.refreshAutomatedBenchmarkStatus();
+    this.refreshMemoryEvidenceStatus();
     setHealthIfChanged(this.fpsValue, getFpsHealth(measuredFramesPerSecond ?? 0));
     setHealthIfChanged(
       this.frameTimeValue,
       getFrameTimeHealth(snapshot.currentFrameTimeMilliseconds),
     );
+  }
+
+  private refreshMemoryEvidenceStatus(): void {
+    const progress = this.controls?.readMemoryEvidenceProgress?.() ?? null;
+    if (progress === null) {
+      if (this.memoryEvidenceButton.dataset.benchmarkState !== 'captured') {
+        this.memoryEvidenceButton.textContent = 'MEM';
+        delete this.memoryEvidenceButton.dataset.benchmarkState;
+      }
+      return;
+    }
+
+    const clampedProgress = Math.min(1, Math.max(0, progress));
+    if (clampedProgress >= 1) {
+      this.memoryEvidenceButton.textContent = 'MEM✓';
+      this.memoryEvidenceButton.dataset.benchmarkState = 'captured';
+      return;
+    }
+
+    this.memoryEvidenceButton.textContent = `MEM ${Math.round(clampedProgress * 60)}s`;
+    this.memoryEvidenceButton.dataset.benchmarkState = 'running';
   }
 
   private formatStatistics(snapshot: Readonly<PerformanceSnapshot>): string {
