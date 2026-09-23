@@ -704,7 +704,6 @@ export class Foundation extends Scene {
     this.diagnosticsAccess = new DiagnosticsAccess(storage);
     this.productionDiagnosticsEnabled = this.diagnosticsAccess.isEnabled();
     this.input.on(Input.Events.POINTER_DOWN, this.handleDiagnosticsPointerDown);
-    this.input.on(Input.Events.POINTER_MOVE, this.handleDiagnosticsPointerMove);
     this.input.on(Input.Events.POINTER_UP, this.handleDiagnosticsPointerUp);
     this.input.on(Input.Events.POINTER_UP_OUTSIDE, this.handleDiagnosticsPointerUp);
   }
@@ -715,7 +714,6 @@ export class Foundation extends Scene {
     }
 
     this.input.off(Input.Events.POINTER_DOWN, this.handleDiagnosticsPointerDown);
-    this.input.off(Input.Events.POINTER_MOVE, this.handleDiagnosticsPointerMove);
     this.input.off(Input.Events.POINTER_UP, this.handleDiagnosticsPointerUp);
     this.input.off(Input.Events.POINTER_UP_OUTSIDE, this.handleDiagnosticsPointerUp);
     this.diagnosticsAccess.setEligible(false);
@@ -727,20 +725,11 @@ export class Foundation extends Scene {
       return;
     }
 
-    this.diagnosticsAccess.pointerDown(pointer.id, pointer.x, pointer.y, this.readDiagnosticsNow());
+    this.diagnosticsAccess.pointerDown(pointer.id, this.readDiagnosticsNow());
     if (this.diagnosticsAccess.isGestureClaimed()) {
       this.diagnosticsTouchRetryPending = false;
       this.services.input.releaseAll();
     }
-    this.renderDiagnosticsGesture();
-  };
-
-  private readonly handleDiagnosticsPointerMove = (pointer: Phaser.Input.Pointer): void => {
-    if (!pointer.wasTouch) {
-      return;
-    }
-
-    this.diagnosticsAccess?.pointerMove(pointer.id, pointer.x, pointer.y);
     this.renderDiagnosticsGesture();
   };
 

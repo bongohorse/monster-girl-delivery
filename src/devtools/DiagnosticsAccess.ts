@@ -17,7 +17,7 @@ export type DiagnosticsGesturePhase =
 
 export interface DiagnosticsGestureSnapshot {
   readonly phase: DiagnosticsGesturePhase;
-  readonly touches: ReadonlyArray<Readonly<{ x: number; y: number }>>;
+  readonly touchCount: number;
   readonly joinElapsedMilliseconds: number;
   readonly holdElapsedMilliseconds: number;
   readonly claimed: boolean;
@@ -43,7 +43,7 @@ const persistDiagnosticsEnabled = (storage: DiagnosticsStorage | null, enabled: 
 
 /** Owns the one-shot production diagnostics touch sequence on the death screen. */
 export class DiagnosticsAccess {
-  private readonly touches = new Map<number, { x: number; y: number }>();
+  private readonly touches = new Set<number>();
   private eligible = false;
   private enabled: boolean;
   private claimed = false;
@@ -71,14 +71,14 @@ export class DiagnosticsAccess {
     if (!eligible) this.resetGesture();
   }
 
-  pointerDown(pointerId: number, x: number, y: number, nowMilliseconds: number): void {
+  pointerDown(pointerId: number, nowMilliseconds: number): void {
     if (!this.eligible || !Number.isFinite(nowMilliseconds) || this.touches.has(pointerId)) return;
     this.expireJoin(nowMilliseconds);
     if (this.touches.size === 0) {
       this.phase = 'joining';
       this.startedAt = nowMilliseconds;
     }
-    this.touches.set(pointerId, { x, y });
+    this.touches.add(pointerId);
     if (this.touches.size >= 2) this.claimed = true;
 
     if (this.phase === 'failed-await-release' || this.phase === 'completed-await-release') return;
@@ -91,14 +91,6 @@ export class DiagnosticsAccess {
       );
       this.phase = 'holding';
       this.holdStartedAt = nowMilliseconds;
-    }
-  }
-
-  pointerMove(pointerId: number, x: number, y: number): void {
-    const touch = this.touches.get(pointerId);
-    if (touch) {
-      touch.x = x;
-      touch.y = y;
     }
   }
 
@@ -137,7 +129,7 @@ export class DiagnosticsAccess {
         : this.joinElapsed;
     return {
       phase: this.phase,
-      touches: Array.from(this.touches.values(), (touch) => ({ ...touch })),
+      touchCount: this.touches.size,
       joinElapsedMilliseconds,
       holdElapsedMilliseconds: this.holdElapsed,
       claimed: this.claimed,

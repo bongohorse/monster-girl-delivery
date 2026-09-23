@@ -19,7 +19,7 @@ const createStorage = (initial: Record<string, string> = {}) => {
 
 const putFourTouchesDown = (access: DiagnosticsAccess, startedAt = 1_000): number => {
   for (let index = 0; index < 4; index += 1) {
-    access.pointerDown(index + 1, 100 + index * 10, 100, startedAt + index * 20);
+    access.pointerDown(index + 1, startedAt + index * 20);
   }
   return startedAt + 60;
 };
@@ -51,10 +51,10 @@ describe('DiagnosticsAccess', () => {
   it('keeps ordinary one-finger input unclaimed and three contacts below activation', () => {
     const access = new DiagnosticsAccess(createStorage());
     access.setEligible(true);
-    access.pointerDown(1, 10, 10, 100);
+    access.pointerDown(1, 100);
     expect(access.isGestureClaimed()).toBe(false);
-    access.pointerDown(2, 20, 20, 200);
-    access.pointerDown(3, 30, 30, 300);
+    access.pointerDown(2, 200);
+    access.pointerDown(3, 300);
     expect(access.isGestureClaimed()).toBe(true);
     expect(access.update(10_000)).toBeNull();
     expect(access.getGestureSnapshot(10_000).phase).toBe('failed-await-release');
@@ -63,12 +63,12 @@ describe('DiagnosticsAccess', () => {
   it('rejects the fourth contact beyond the join deadline and requires full release', () => {
     const access = new DiagnosticsAccess(createStorage());
     access.setEligible(true);
-    for (let id = 1; id <= 3; id += 1) access.pointerDown(id, id, id, id * 10);
-    access.pointerDown(4, 4, 4, 11 + DIAGNOSTICS_JOIN_WINDOW_MILLISECONDS);
+    for (let id = 1; id <= 3; id += 1) access.pointerDown(id, id * 10);
+    access.pointerDown(4, 11 + DIAGNOSTICS_JOIN_WINDOW_MILLISECONDS);
     expect(access.getGestureSnapshot(1_030).phase).toBe('failed-await-release');
     expect(access.update(10_000)).toBeNull();
     for (let id = 1; id <= 3; id += 1) access.pointerUp(id);
-    access.pointerDown(5, 5, 5, 1_040);
+    access.pointerDown(5, 1_040);
     expect(access.getGestureSnapshot(1_040).phase).toBe('failed-await-release');
     access.pointerUp(4);
     access.pointerUp(5);
@@ -77,13 +77,12 @@ describe('DiagnosticsAccess', () => {
     expect(access.update(holdStart + 2_000)).toBe(true);
   });
 
-  it('tracks natural movement without canceling the hold and rejects a fifth contact', () => {
+  it('rejects a fifth contact without toggling and accepts a new four-finger hold', () => {
     const access = new DiagnosticsAccess(createStorage());
     access.setEligible(true);
     const holdStart = putFourTouchesDown(access);
-    access.pointerMove(3, 400, 300);
-    expect(access.getGestureSnapshot(holdStart).touches[2]).toEqual({ x: 400, y: 300 });
-    access.pointerDown(5, 200, 100, holdStart + 1);
+    expect(access.getGestureSnapshot(holdStart).touchCount).toBe(4);
+    access.pointerDown(5, holdStart + 1);
     expect(access.getGestureSnapshot(holdStart + 1)).toMatchObject({
       phase: 'failed-await-release',
       claimed: true,
@@ -91,7 +90,6 @@ describe('DiagnosticsAccess', () => {
     expect(access.update(holdStart + 5_000)).toBeNull();
     for (let id = 1; id <= 5; id += 1) access.pointerUp(id);
     const nextHold = putFourTouchesDown(access, 10_000);
-    access.pointerMove(3, 1_000, 1_000);
     expect(access.update(nextHold + DIAGNOSTICS_HOLD_MILLISECONDS)).toBe(true);
   });
 
@@ -100,13 +98,13 @@ describe('DiagnosticsAccess', () => {
     access.setEligible(true);
     let holdStart = putFourTouchesDown(access);
     access.pointerUp(4);
-    access.pointerDown(5, 100, 100, holdStart + 100);
+    access.pointerDown(5, holdStart + 100);
     expect(access.update(holdStart + 3_000)).toBeNull();
     for (const id of [1, 2, 3, 5]) access.pointerUp(id);
     holdStart = putFourTouchesDown(access, 10_000);
     expect(access.update(holdStart + 2_000)).toBe(true);
     access.pointerUp(1);
-    access.pointerDown(5, 100, 100, holdStart + 2_010);
+    access.pointerDown(5, holdStart + 2_010);
     expect(access.update(holdStart + 5_000)).toBeNull();
     expect(access.isEnabled()).toBe(true);
   });

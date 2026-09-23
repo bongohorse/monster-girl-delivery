@@ -6,13 +6,9 @@ import {
   type DiagnosticsGestureSnapshot,
 } from './DiagnosticsAccess';
 
-const RED = 0xff5c64;
-const GREEN = 0x61e6a1;
-
 /** Temporary production-only gesture feedback; all objects belong to the scene. */
 export class DiagnosticsGestureOverlay {
   private readonly lines: Array<Phaser.GameObjects.Text>;
-  private readonly circles: Phaser.GameObjects.Graphics;
 
   constructor(scene: Scene) {
     this.lines = Array.from({ length: 3 }, () =>
@@ -25,7 +21,6 @@ export class DiagnosticsGestureOverlay {
         })
         .setDepth(20_001),
     );
-    this.circles = scene.add.graphics().setDepth(20_000);
   }
 
   layout(safeLeft: number, safeTop: number): void {
@@ -39,8 +34,8 @@ export class DiagnosticsGestureOverlay {
     const completed = snapshot.phase === 'completed-await-release';
     const statuses = [
       {
-        text: `FINGERS  ${snapshot.touches.length}/${DIAGNOSTICS_REQUIRED_TOUCH_COUNT}`,
-        green: validHold && snapshot.touches.length === DIAGNOSTICS_REQUIRED_TOUCH_COUNT,
+        text: `FINGERS  ${snapshot.touchCount}/${DIAGNOSTICS_REQUIRED_TOUCH_COUNT}`,
+        green: validHold && snapshot.touchCount === DIAGNOSTICS_REQUIRED_TOUCH_COUNT,
       },
       {
         text: `JOIN     ${(snapshot.joinElapsedMilliseconds / 1_000).toFixed(2)} / ${(DIAGNOSTICS_JOIN_WINDOW_MILLISECONDS / 1_000).toFixed(2)} s`,
@@ -56,16 +51,9 @@ export class DiagnosticsGestureOverlay {
       if (status)
         this.lines[index]?.setText(status.text).setColor(status.green ? '#61e6a1' : '#ff5c64');
     }
-    this.circles.clear();
-    if (snapshot.phase === 'failed-await-release' || completed) return;
-    this.circles.lineStyle(3, validHold ? GREEN : RED, 1);
-    for (const touch of snapshot.touches) {
-      this.circles.strokeCircle(touch.x, touch.y, 45);
-    }
   }
 
   destroy(): void {
     for (const line of this.lines) line.destroy();
-    this.circles.destroy();
   }
 }
