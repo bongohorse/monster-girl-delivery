@@ -245,8 +245,11 @@ Director visibility, display settings and profiler connection. Neither build sho
 APK-to-APK or production-vs-production comparison. An AFTER APK run can separately check the export
 and production WebView behavior, but it cannot substitute for the matched BEFORE browser run.
 
-Capture the MEM JSON on both builds using the no-thrust protocol and record the exact commits, device,
-browser/WebView version, display size/DPR, run distance, simulation duration and active content counts.
+For each branch, start its Vite development server with `bun install --frozen-lockfile` and
+`bun run dev`, open it on the same mobile browser, and use the visible Director `MEM` control.
+Restart the server and reload the page when switching branches. Capture the MEM JSON on both builds
+using the no-thrust protocol and record the exact commits, device, browser version, display size/DPR,
+run distance, simulation duration and active content counts.
 For the allocation/GC question, also record comparable Chrome DevTools Memory allocation sampling or
 Performance traces on both builds. Profiling instrumentation can perturb frame timings; compare
 instrumented traces with one another and use the unprofiled MEM frame evidence separately.
