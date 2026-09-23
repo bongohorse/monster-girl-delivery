@@ -689,6 +689,13 @@ describe('DirectorPerformanceHud', () => {
     }
     expect(memoryEvidenceButton.textContent).toBe('MEM✓');
     expect(memoryEvidenceButton.dataset.benchmarkState).toBe('captured');
+
+    readMemoryEvidenceProgress.mockReturnValue(null);
+    for (let frame = 0; frame < 16; frame += 1) {
+      updateHud(hud, 16, false);
+    }
+    expect(memoryEvidenceButton.textContent).toBe('MEM');
+    expect(memoryEvidenceButton.dataset.benchmarkState).toBeUndefined();
   });
 
   it('cancels an active memory evidence run when a workload control changes', () => {
