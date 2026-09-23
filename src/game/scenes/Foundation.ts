@@ -1382,6 +1382,8 @@ export class Foundation extends Scene {
     viewport: ReturnType<ViewportService['getSnapshot']>,
     seed: Parameters<typeof createGeneratedHazardStream>[0] = PROTOTYPE_LIVE_RUN_SEED,
   ): void {
+    this.diagnosticsAccess?.setEligible(false);
+    this.diagnosticsTouchRetryPending = false;
     this.directorPerformancePresetId = null;
     this.directorPanel?.reset();
     this.retainedGeneratedTelegraphedHazards = Object.freeze([]);
