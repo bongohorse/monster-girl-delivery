@@ -703,11 +703,15 @@ export class Foundation extends Scene {
   }
 
   private destroyProductionDiagnosticsInput(): void {
+    if (!this.diagnosticsAccess) {
+      return;
+    }
+
     this.input.off(Input.Events.POINTER_DOWN, this.handleDiagnosticsPointerDown);
     this.input.off(Input.Events.POINTER_MOVE, this.handleDiagnosticsPointerMove);
     this.input.off(Input.Events.POINTER_UP, this.handleDiagnosticsPointerUp);
     this.input.off(Input.Events.POINTER_UP_OUTSIDE, this.handleDiagnosticsPointerUp);
-    this.diagnosticsAccess?.setEligible(false);
+    this.diagnosticsAccess.setEligible(false);
   }
 
   private readonly handleDiagnosticsPointerDown = (pointer: Phaser.Input.Pointer): void => {
