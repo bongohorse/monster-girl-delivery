@@ -293,28 +293,11 @@ jobs:
           retention-days: 30
           compression-level: 0
 
-      - name: Create release tag automatically
-        if: steps.source.outputs.should_release == 'true' && steps.source.outputs.mode == 'main'
-        env:
-          RELEASE_TAG: ${{ steps.version.outputs.tag }}
-          RELEASE_VERSION_NAME: ${{ steps.version.outputs.versionName }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          git fetch origin --tags
-          if git rev-parse -q --verify "refs/tags/$RELEASE_TAG" >/dev/null; then
-            echo "::error::Release tag $RELEASE_TAG appeared while the build was running. Refusing to move or replace it."
-            exit 1
-          fi
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git tag -a "$RELEASE_TAG" "$BUILT_SHA" -m "MGD $RELEASE_VERSION_NAME"
-          git push origin "refs/tags/$RELEASE_TAG"
-
       - name: Publish immutable GitHub Release for Obtainium
         if: steps.source.outputs.should_release == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
+          RELEASE_MODE: ${{ steps.source.outputs.mode }}
           RELEASE_TAG: ${{ steps.version.outputs.tag }}
           RELEASE_VERSION_NAME: ${{ steps.version.outputs.versionName }}
         shell: bash
@@ -334,10 +317,22 @@ jobs:
             exit 1
           fi
 
-          gh release create "$RELEASE_TAG" "${assets[@]}" \
-            --verify-tag \
-            --generate-notes \
-            --title "MGD ${RELEASE_VERSION_NAME}"
+          if [ "$RELEASE_MODE" = 'main' ]; then
+            git fetch origin --tags
+            if git rev-parse -q --verify "refs/tags/$RELEASE_TAG" >/dev/null; then
+              echo "::error::Release tag $RELEASE_TAG appeared while the build was running. Refusing to move or replace it."
+              exit 1
+            fi
+            gh release create "$RELEASE_TAG" "${assets[@]}" \
+              --target "$BUILT_SHA" \
+              --generate-notes \
+              --title "MGD ${RELEASE_VERSION_NAME}"
+          else
+            gh release create "$RELEASE_TAG" "${assets[@]}" \
+              --verify-tag \
+              --generate-notes \
+              --title "MGD ${RELEASE_VERSION_NAME}"
+          fi
 
       - name: Remove temporary signing keystore
         if: always() && steps.source.outputs.should_release == 'true'
