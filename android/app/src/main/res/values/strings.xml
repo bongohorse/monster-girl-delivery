@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">MGD</string>
-    <string name="title_activity_main">MGD</string>
-    <string name="package_name">com.bongohorse.monstergirldelivery</string>
-    <string name="custom_url_scheme">com.bongohorse.monstergirldelivery</string>
+    <string name="app_name">MGD 330 BEFORE</string>
+    <string name="title_activity_main">MGD 330 BEFORE</string>
+    <string name="package_name">com.bongohorse.monstergirldelivery.perf330before</string>
+    <string name="custom_url_scheme">com.bongohorse.monstergirldelivery.perf330before</string>
 </resources>
