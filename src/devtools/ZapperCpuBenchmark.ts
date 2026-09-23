@@ -150,10 +150,7 @@ const percentileNearestRank = (sorted: ReadonlyArray<number>, percentile: number
   if (sorted.length === 0) {
     return 0;
   }
-  const index = Math.min(
-    sorted.length - 1,
-    Math.max(0, Math.ceil(percentile * sorted.length) - 1),
-  );
+  const index = Math.min(sorted.length - 1, Math.max(0, Math.ceil(percentile * sorted.length) - 1));
   return sorted[index] ?? 0;
 };
 
