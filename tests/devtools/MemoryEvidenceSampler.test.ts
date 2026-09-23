@@ -34,6 +34,10 @@ describe('MemoryEvidenceSampler', () => {
 
     const result = sampler.createResult();
     expect(result.activeDurationMilliseconds).toBe(MEMORY_EVIDENCE_DURATION_MILLISECONDS);
+    expect(result.config).toMatchObject({
+      heapDropThresholdBytes: MEMORY_EVIDENCE_HEAP_DROP_THRESHOLD_BYTES,
+      targetDurationMilliseconds: MEMORY_EVIDENCE_DURATION_MILLISECONDS,
+    });
     expect(result.frame.frameSampleCount).toBe(60);
     expect(result.frame.averageFrameTimeMilliseconds).toBe(1_000);
     expect(result.frame.slowFrameCount).toBe(60);
