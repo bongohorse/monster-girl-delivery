@@ -1028,6 +1028,7 @@ export class Foundation extends Scene {
       benchmark: Object.freeze({
         id: DIRECTOR_MEMORY_EVIDENCE_PRESET_ID,
         activeDurationMilliseconds: result.activeDurationMilliseconds,
+        config: result.config,
         frame: result.frame,
         heap: result.heap,
         schemaVersion: result.schemaVersion,
