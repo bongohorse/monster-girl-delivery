@@ -236,8 +236,9 @@ Do not use a `MEM` report by itself to satisfy #329's allocation/GC acceptance c
 ## Matched BEFORE/AFTER workflow
 
 The canonical BEFORE allocation baseline is `perf/329-mobile-baseline` at `0eb3d9c4d6ec9a0f697389fa8c8d4f444effa0e3`.
-It predates both the MEM harness and the Android project. A dedicated instrumentation branch from that
-commit must add the **same** MEM sampler and UI without importing the later allocation optimizations.
+It predates both the MEM harness and the Android project. The instrumented BEFORE branch is `perf/329-memory-instrumented-before` at
+`f7413cc57c067401918a3bc8aceb359cef36c305` (draft PR #450). It adds the same MEM sampler and
+UI without importing the later allocation optimizations; the canonical BEFORE ref remains intact.
 Both builds must use the **development Director mode** in the same mobile browser on the same device:
 the historical BEFORE commit has no production diagnostics and no Android project. Use the same
 Director visibility, display settings and profiler connection. Neither build should be labelled an
