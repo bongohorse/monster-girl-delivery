@@ -37,6 +37,7 @@ export interface DirectorPerformanceHudControls {
   readonly triggerDeath?: () => void;
   readonly startNormalPerformancePreset?: () => void;
   readonly startZapperPerformancePreset?: () => void;
+  readonly runZapperCpuBenchmark?: () => void;
   readonly readRuntimeMetrics?: () => Readonly<PerformanceRuntimeMetrics>;
   readonly resetWorkCounters?: () => void;
   readonly exportPerformanceEvidence?: (
@@ -128,6 +129,7 @@ export class DirectorPerformanceHud {
   private readonly evidenceButton: HTMLButtonElement;
   private readonly normalPerformanceButton: HTMLButtonElement;
   private readonly zapperPerformanceButton: HTMLButtonElement;
+  private readonly zapperCpuBenchmarkButton: HTMLButtonElement;
   private destroyed = false;
   private discardNextPerformanceSample = false;
   private elapsedSinceRefreshMilliseconds = Number.POSITIVE_INFINITY;
@@ -242,6 +244,11 @@ export class DirectorPerformanceHud {
       'ZP',
       'Run 60 FPS Zapper benchmark and auto-capture when the sample window is full',
     );
+    this.zapperCpuBenchmarkButton = this.createButton(
+      ownerDocument,
+      'CPU',
+      'Run isolated Zapper collision main-thread benchmark and copy JSON',
+    );
     this.playgroundControls.append(
       this.godModeButton,
       this.autoHazardsButton,
@@ -254,6 +261,7 @@ export class DirectorPerformanceHud {
       this.deathButton,
       this.normalPerformanceButton,
       this.zapperPerformanceButton,
+      this.zapperCpuBenchmarkButton,
     );
     this.setToggleState(this.godModeButton, false);
     this.setToggleState(this.autoHazardsButton, true);
@@ -298,6 +306,7 @@ export class DirectorPerformanceHud {
     this.addControlListeners(this.deathButton, this.handleDeathClick);
     this.addControlListeners(this.normalPerformanceButton, this.handleNormalPerformanceClick);
     this.addControlListeners(this.zapperPerformanceButton, this.handleZapperPerformanceClick);
+    this.addControlListeners(this.zapperCpuBenchmarkButton, this.handleZapperCpuBenchmarkClick);
     this.addControlListeners(this.resetButton, this.handleResetClick);
     this.addControlListeners(this.evidenceButton, this.handleEvidenceClick);
     this.addTogglePointerListeners(this.wireframeLabel);
@@ -387,6 +396,7 @@ export class DirectorPerformanceHud {
     this.removeControlListeners(this.deathButton, this.handleDeathClick);
     this.removeControlListeners(this.normalPerformanceButton, this.handleNormalPerformanceClick);
     this.removeControlListeners(this.zapperPerformanceButton, this.handleZapperPerformanceClick);
+    this.removeControlListeners(this.zapperCpuBenchmarkButton, this.handleZapperCpuBenchmarkClick);
     this.removeControlListeners(this.resetButton, this.handleResetClick);
     this.removeControlListeners(this.evidenceButton, this.handleEvidenceClick);
     this.removeTogglePointerListeners(this.wireframeLabel);
@@ -583,6 +593,22 @@ export class DirectorPerformanceHud {
   private readonly handleZapperPerformanceClick = (event: Event): void => {
     this.stopControlEvent(event);
     this.startAutomatedBenchmark('zapper');
+  };
+
+  private readonly handleZapperCpuBenchmarkClick = (event: Event): void => {
+    this.stopControlEvent(event);
+    this.clearAutomatedBenchmark();
+    this.zapperCpuBenchmarkButton.textContent = 'CPU…';
+    this.zapperCpuBenchmarkButton.dataset.benchmarkState = 'running';
+    try {
+      this.controls?.runZapperCpuBenchmark?.();
+      this.zapperCpuBenchmarkButton.textContent = 'CPU✓';
+      this.zapperCpuBenchmarkButton.dataset.benchmarkState = 'captured';
+    } catch (error) {
+      this.zapperCpuBenchmarkButton.textContent = 'CPU!';
+      this.zapperCpuBenchmarkButton.dataset.benchmarkState = 'failed';
+      throw error;
+    }
   };
 
   private readonly handleEvidenceClick = (event: Event): void => {
