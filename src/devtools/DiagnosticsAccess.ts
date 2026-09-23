@@ -41,7 +41,7 @@ const persistDiagnosticsEnabled = (storage: DiagnosticsStorage | null, enabled: 
   }
 };
 
-/** Owns the retry-ready, one-shot production diagnostics touch sequence. */
+/** Owns the one-shot production diagnostics touch sequence on the death screen. */
 export class DiagnosticsAccess {
   private readonly touches = new Map<number, { x: number; y: number }>();
   private eligible = false;
