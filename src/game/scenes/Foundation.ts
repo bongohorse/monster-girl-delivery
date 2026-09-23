@@ -396,22 +396,20 @@ export class Foundation extends Scene {
         ? this.services.lifecycle.getSnapshot()
         : undefined;
 
+    const discardCurrentPerformanceSample =
+      directorLifecycle?.paused === false && delta > 0 && normalizedSimulationDeltaSeconds === 0;
     if (this.directorPerformanceHud && directorLifecycle) {
-      const discardCurrentPerformanceSample =
-        !directorLifecycle.paused && delta > 0 && normalizedSimulationDeltaSeconds === 0;
       this.directorPerformanceHud.update(
         time,
         directorLifecycle.paused,
         discardCurrentPerformanceSample,
       );
-      this.updateDirectorMemoryEvidenceBenchmark(
-        directorLifecycle.paused,
-        simulationDeltaSeconds,
-        discardCurrentPerformanceSample,
-      );
     }
 
     if (this.runState.phase === 'dead') {
+      if (this.memoryEvidenceSampler?.isRunning()) {
+        this.clearDirectorMemoryEvidenceBenchmark();
+      }
       const previousRetryPhase = this.deathRetryState.phase;
       this.deathRetryState = stepPrototypeDeathRetryState(
         this.deathRetryState,
@@ -469,6 +467,16 @@ export class Foundation extends Scene {
       this.services.input.consumePrimaryActionPress();
       const requestedRunMotion = this.services.runMotion.getSnapshot();
       const flightTuning = this.services.flightTuning.getSnapshot();
+      if (this.directorPerformanceHud && directorLifecycle) {
+        this.updateDirectorMemoryEvidenceBenchmark(
+          directorLifecycle.paused,
+          simulationDeltaSeconds,
+          discardCurrentPerformanceSample,
+          viewport,
+          flightTuning,
+          requestedRunMotion,
+        );
+      }
       const flightBounds = this.getCachedFlightBounds(viewport);
       const hazardStreamContext = this.getCachedLiveHazardStreamContext(flightTuning);
       // Resolve parameters before movement, without aging or admitting new content.
@@ -1010,17 +1018,34 @@ export class Foundation extends Scene {
     paused: boolean,
     simulationDeltaSeconds: number,
     discardCurrentSample: boolean,
+    viewport: ReturnType<ViewportService['getSnapshot']>,
+    flightTuning: ReturnType<AppServices['flightTuning']['getSnapshot']>,
+    runMotion: ReturnType<AppServices['runMotion']['getSnapshot']>,
   ): void {
     const sampler = this.memoryEvidenceSampler;
     if (!sampler?.isRunning()) {
       return;
     }
 
+    const initialViewport = this.memoryEvidenceStartViewport;
+    const initialFlightTuning = this.memoryEvidenceStartFlightTuning;
+    const initialRunMotion = this.memoryEvidenceStartRunMotion;
     if (
       this.services.input.isThrustHeld() ||
-      this.viewportService?.getSnapshot() !== this.memoryEvidenceStartViewport ||
-      this.services.flightTuning.getSnapshot() !== this.memoryEvidenceStartFlightTuning ||
-      this.services.runMotion.getSnapshot() !== this.memoryEvidenceStartRunMotion ||
+      !initialViewport ||
+      viewport.width !== initialViewport.width ||
+      viewport.height !== initialViewport.height ||
+      viewport.safeArea.top !== initialViewport.safeArea.top ||
+      viewport.safeArea.right !== initialViewport.safeArea.right ||
+      viewport.safeArea.bottom !== initialViewport.safeArea.bottom ||
+      viewport.safeArea.left !== initialViewport.safeArea.left ||
+      !initialFlightTuning ||
+      flightTuning.gravity !== initialFlightTuning.gravity ||
+      flightTuning.thrust !== initialFlightTuning.thrust ||
+      flightTuning.maxFallVelocity !== initialFlightTuning.maxFallVelocity ||
+      flightTuning.maxRiseVelocity !== initialFlightTuning.maxRiseVelocity ||
+      !initialRunMotion ||
+      runMotion.baseScrollSpeed !== initialRunMotion.baseScrollSpeed ||
       this.directorPerformancePresetId !== DIRECTOR_MEMORY_EVIDENCE_PRESET_ID
     ) {
       this.clearDirectorMemoryEvidenceBenchmark();
