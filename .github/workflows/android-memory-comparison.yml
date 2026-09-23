@@ -118,8 +118,8 @@ jobs:
           echo 'AFTER signer details:'
           cat reports/android-memory/after-signature.txt
           echo 'Comparing signer certificates and embedded web source'
-          grep -F 'Signer #1 certificate SHA-256 digest:' reports/android-memory/before-signature.txt > reports/android-memory/before-cert.txt
-          grep -F 'Signer #1 certificate SHA-256 digest:' reports/android-memory/after-signature.txt > reports/android-memory/after-cert.txt
+          grep -F 'certificate SHA-256 digest:' reports/android-memory/before-signature.txt > reports/android-memory/before-cert.txt
+          grep -F 'certificate SHA-256 digest:' reports/android-memory/after-signature.txt > reports/android-memory/after-cert.txt
           cmp reports/android-memory/before-cert.txt reports/android-memory/after-cert.txt
           echo 'Signer fingerprints match'
           cmp before/dist/index.html <(unzip -p "$BEFORE_APK" assets/public/index.html)
