@@ -817,10 +817,8 @@ export class DirectorPerformanceHud {
   private refreshMemoryEvidenceStatus(): void {
     const progress = this.controls?.readMemoryEvidenceProgress?.() ?? null;
     if (progress === null) {
-      if (this.memoryEvidenceButton.dataset.benchmarkState !== 'captured') {
-        this.memoryEvidenceButton.textContent = 'MEM';
-        delete this.memoryEvidenceButton.dataset.benchmarkState;
-      }
+      this.memoryEvidenceButton.textContent = 'MEM';
+      delete this.memoryEvidenceButton.dataset.benchmarkState;
       return;
     }
 
