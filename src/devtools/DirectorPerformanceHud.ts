@@ -249,7 +249,7 @@ export class DirectorPerformanceHud {
     this.memoryEvidenceButton = this.createButton(
       ownerDocument,
       'MEM',
-      'Run 60-second normal-play heap/slow-frame evidence capture',
+      'Run 60-second no-thrust heap/slow-frame trend; input cancels capture',
     );
     this.playgroundControls.append(
       this.godModeButton,

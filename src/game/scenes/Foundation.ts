@@ -272,6 +272,9 @@ export class Foundation extends Scene {
   private directorPerformancePresetId: string | null = null;
   private memoryEvidenceSampler?: MemoryEvidenceSampler;
   private memoryEvidenceStartRuntime?: Readonly<PerformanceRuntimeMetrics>;
+  private memoryEvidenceStartViewport?: ReturnType<ViewportService['getSnapshot']>;
+  private memoryEvidenceStartFlightTuning?: ReturnType<AppServices['flightTuning']['getSnapshot']>;
+  private memoryEvidenceStartRunMotion?: ReturnType<AppServices['runMotion']['getSnapshot']>;
   private memoryEvidenceCompleted = false;
   private directorHazardSerial = 0;
   private directorLaserVariantIndex = 0;
@@ -403,6 +406,7 @@ export class Foundation extends Scene {
       );
       this.updateDirectorMemoryEvidenceBenchmark(
         directorLifecycle.paused,
+        simulationDeltaSeconds,
         discardCurrentPerformanceSample,
       );
     }
@@ -989,6 +993,9 @@ export class Foundation extends Scene {
     this.memoryEvidenceSampler = new MemoryEvidenceSampler();
     this.memoryEvidenceSampler.start(this.readDiagnosticsNow());
     this.memoryEvidenceStartRuntime = this.readDirectorPerformanceRuntimeMetrics();
+    this.memoryEvidenceStartViewport = this.viewportService.getSnapshot();
+    this.memoryEvidenceStartFlightTuning = this.services.flightTuning.getSnapshot();
+    this.memoryEvidenceStartRunMotion = this.services.runMotion.getSnapshot();
     this.memoryEvidenceCompleted = false;
   };
 
@@ -1001,6 +1008,7 @@ export class Foundation extends Scene {
 
   private updateDirectorMemoryEvidenceBenchmark(
     paused: boolean,
+    simulationDeltaSeconds: number,
     discardCurrentSample: boolean,
   ): void {
     const sampler = this.memoryEvidenceSampler;
@@ -1008,7 +1016,23 @@ export class Foundation extends Scene {
       return;
     }
 
-    const completed = sampler.sample(this.readDiagnosticsNow(), paused, discardCurrentSample);
+    if (
+      this.services.input.isThrustHeld() ||
+      this.viewportService?.getSnapshot() !== this.memoryEvidenceStartViewport ||
+      this.services.flightTuning.getSnapshot() !== this.memoryEvidenceStartFlightTuning ||
+      this.services.runMotion.getSnapshot() !== this.memoryEvidenceStartRunMotion ||
+      this.directorPerformancePresetId !== DIRECTOR_MEMORY_EVIDENCE_PRESET_ID
+    ) {
+      this.clearDirectorMemoryEvidenceBenchmark();
+      return;
+    }
+
+    const completed = sampler.sample(
+      this.readDiagnosticsNow(),
+      paused,
+      simulationDeltaSeconds,
+      discardCurrentSample,
+    );
     if (!completed) {
       return;
     }
@@ -1027,7 +1051,8 @@ export class Foundation extends Scene {
     const report = Object.freeze({
       benchmark: Object.freeze({
         id: DIRECTOR_MEMORY_EVIDENCE_PRESET_ID,
-        activeDurationMilliseconds: result.activeDurationMilliseconds,
+        activeWallDurationMilliseconds: result.activeWallDurationMilliseconds,
+        simulationDurationMilliseconds: result.simulationDurationMilliseconds,
         config: result.config,
         frame: result.frame,
         heap: result.heap,
@@ -1043,6 +1068,9 @@ export class Foundation extends Scene {
         endRuntime: this.readDirectorPerformanceRuntimeMetrics(),
         heapDropInterpretation:
           'Heap drops are inferred from usedJSHeapSize decreases and are not authoritative GC events.',
+        heapTrendInterpretation:
+          '1 Hz heap deltas are endpoint differences, not allocated bytes or a GC timeline.',
+        inputProtocol: 'no-thrust-cancel-on-input',
         performancePresetId: DIRECTOR_MEMORY_EVIDENCE_PRESET_ID,
         runDistance: this.runState.motion.distance,
         runSeed: this.hazardStream?.generationState.seed ?? null,
@@ -1118,6 +1146,9 @@ export class Foundation extends Scene {
     this.memoryEvidenceSampler?.reset();
     this.memoryEvidenceSampler = undefined;
     this.memoryEvidenceStartRuntime = undefined;
+    this.memoryEvidenceStartViewport = undefined;
+    this.memoryEvidenceStartFlightTuning = undefined;
+    this.memoryEvidenceStartRunMotion = undefined;
     this.memoryEvidenceCompleted = false;
   }
 

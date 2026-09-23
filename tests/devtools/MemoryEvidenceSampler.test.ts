@@ -26,18 +26,20 @@ describe('MemoryEvidenceSampler', () => {
     sampler.start(0);
 
     for (let elapsed = 1_000; elapsed <= MEMORY_EVIDENCE_DURATION_MILLISECONDS; elapsed += 1_000) {
-      sampler.sample(elapsed, false);
+      sampler.sample(elapsed, false, 0.05);
     }
 
     expect(sampler.isRunning()).toBe(false);
     expect(sampler.getProgress()).toBe(1);
 
     const result = sampler.createResult();
-    expect(result.activeDurationMilliseconds).toBe(MEMORY_EVIDENCE_DURATION_MILLISECONDS);
+    expect(result.activeWallDurationMilliseconds).toBe(MEMORY_EVIDENCE_DURATION_MILLISECONDS);
     expect(result.config).toMatchObject({
       heapDropThresholdBytes: MEMORY_EVIDENCE_HEAP_DROP_THRESHOLD_BYTES,
       targetDurationMilliseconds: MEMORY_EVIDENCE_DURATION_MILLISECONDS,
     });
+    expect(result.simulationDurationMilliseconds).toBeCloseTo(3_000);
+    expect(result.config.durationClock).toBe('active-wall-clock');
     expect(result.frame.frameSampleCount).toBe(60);
     expect(result.frame.averageFrameTimeMilliseconds).toBe(1_000);
     expect(result.frame.slowFrameCount).toBe(60);
@@ -55,8 +57,8 @@ describe('MemoryEvidenceSampler', () => {
       createMemoryReader([1_000_000, 1_500_000, 1_500_000 - drop]),
     );
     sampler.start(0);
-    sampler.sample(1_000, false);
-    sampler.sample(2_000, false);
+    sampler.sample(1_000, false, 0.05);
+    sampler.sample(2_000, false, 0.05);
 
     const heap = sampler.createResult().heap;
     expect(heap.positiveHeapDeltaBytes).toBe(500_000);
@@ -69,13 +71,14 @@ describe('MemoryEvidenceSampler', () => {
     const sampler = new MemoryEvidenceSampler(createMemoryReader([1_000_000]));
     sampler.start(0);
 
-    sampler.sample(16, false);
-    sampler.sample(1_016, true);
-    sampler.sample(2_016, false);
-    sampler.sample(2_032, false);
+    sampler.sample(16, false, 0.016);
+    sampler.sample(1_016, true, 0);
+    sampler.sample(2_016, false, 0, true);
+    sampler.sample(2_032, false, 0.016);
 
     const result = sampler.createResult();
-    expect(result.activeDurationMilliseconds).toBe(32);
+    expect(result.activeWallDurationMilliseconds).toBe(32);
+    expect(result.simulationDurationMilliseconds).toBe(32);
     expect(result.frame.frameSampleCount).toBe(2);
     expect(result.frame.averageFrameTimeMilliseconds).toBe(16);
   });
@@ -90,21 +93,33 @@ describe('MemoryEvidenceSampler', () => {
     sampler.start(0);
     expect(reader).toHaveBeenCalledTimes(1);
 
-    sampler.sample(5_000, false);
+    sampler.sample(5_000, false, 0.05);
     expect(reader).toHaveBeenCalledTimes(2);
 
-    sampler.sample(5_016, false);
-    sampler.sample(5_032, false);
+    sampler.sample(5_016, false, 0.016);
+    sampler.sample(5_032, false, 0.016);
     expect(reader).toHaveBeenCalledTimes(2);
 
-    sampler.sample(6_000, false);
+    sampler.sample(6_000, false, 0.05);
     expect(reader).toHaveBeenCalledTimes(3);
+  });
+
+  it('keeps long stalls in frame evidence without claiming matching simulation time', () => {
+    const sampler = new MemoryEvidenceSampler(() => null);
+    sampler.start(0);
+    sampler.sample(5_000, false, 0.05);
+
+    const result = sampler.createResult();
+    expect(result.activeWallDurationMilliseconds).toBe(5_000);
+    expect(result.simulationDurationMilliseconds).toBe(50);
+    expect(result.frame.worstFrameTimeMilliseconds).toBe(5_000);
+    expect(result.frame.slowFrameCount).toBe(1);
   });
 
   it('reports unavailable heap evidence explicitly when Chromium memory is absent', () => {
     const sampler = new MemoryEvidenceSampler(() => null);
     sampler.start(0);
-    sampler.sample(16, false);
+    sampler.sample(16, false, 0.016);
 
     const heap = sampler.createResult().heap;
     expect(heap).toMatchObject({

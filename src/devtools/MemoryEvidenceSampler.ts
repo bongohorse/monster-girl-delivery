@@ -48,8 +48,10 @@ export interface MemoryEvidenceHeapSummary {
 }
 
 export interface MemoryEvidenceResult {
-  readonly activeDurationMilliseconds: number;
+  readonly activeWallDurationMilliseconds: number;
+  readonly simulationDurationMilliseconds: number;
   readonly config: {
+    readonly durationClock: 'active-wall-clock';
     readonly heapDropThresholdBytes: number;
     readonly heapSampleIntervalMilliseconds: number;
     readonly maxFrameSamples: number;
@@ -57,7 +59,7 @@ export interface MemoryEvidenceResult {
   };
   readonly frame: Readonly<MemoryEvidenceFrameSummary>;
   readonly heap: Readonly<MemoryEvidenceHeapSummary>;
-  readonly schemaVersion: 1;
+  readonly schemaVersion: 2;
 }
 
 export type ChromiumPerformanceMemoryReader = () => Readonly<ChromiumPerformanceMemory> | null;
@@ -100,6 +102,7 @@ export class MemoryEvidenceSampler {
   private readonly heapTotalBytes = new Float64Array(MEMORY_EVIDENCE_MAX_HEAP_SAMPLES);
   private readonly heapLimitBytes = new Float64Array(MEMORY_EVIDENCE_MAX_HEAP_SAMPLES);
   private activeElapsedMilliseconds = 0;
+  private simulationElapsedMilliseconds = 0;
   private frameSampleCount = 0;
   private frameSamplesTruncated = false;
   private heapSampleCount = 0;
@@ -126,6 +129,7 @@ export class MemoryEvidenceSampler {
   sample(
     gameStepTimestampMilliseconds: number,
     paused: boolean,
+    simulationDeltaSeconds: number,
     discardCurrentSample = false,
   ): boolean {
     if (!this.running) {
@@ -159,6 +163,7 @@ export class MemoryEvidenceSampler {
 
     const intervalMilliseconds = gameStepTimestampMilliseconds - previousTimestampMilliseconds;
     this.activeElapsedMilliseconds += intervalMilliseconds;
+    this.simulationElapsedMilliseconds += simulationDeltaSeconds * 1_000;
 
     if (this.frameSampleCount < this.frameSamples.length) {
       this.frameSamples[this.frameSampleCount] = intervalMilliseconds;
@@ -244,8 +249,10 @@ export class MemoryEvidenceSampler {
     }
 
     return Object.freeze({
-      activeDurationMilliseconds: this.activeElapsedMilliseconds,
+      activeWallDurationMilliseconds: this.activeElapsedMilliseconds,
+      simulationDurationMilliseconds: this.simulationElapsedMilliseconds,
       config: Object.freeze({
+        durationClock: 'active-wall-clock',
         heapDropThresholdBytes: MEMORY_EVIDENCE_HEAP_DROP_THRESHOLD_BYTES,
         heapSampleIntervalMilliseconds: MEMORY_EVIDENCE_HEAP_SAMPLE_INTERVAL_MILLISECONDS,
         maxFrameSamples: MEMORY_EVIDENCE_MAX_FRAME_SAMPLES,
@@ -276,7 +283,7 @@ export class MemoryEvidenceSampler {
         samples: Object.freeze(heapSamples),
         source: heapSamples.length > 0 ? 'chromium-performance-memory' : 'unavailable',
       }),
-      schemaVersion: 1,
+      schemaVersion: 2,
     });
   }
 
@@ -287,6 +294,7 @@ export class MemoryEvidenceSampler {
     this.heapTotalBytes.fill(0);
     this.heapLimitBytes.fill(0);
     this.activeElapsedMilliseconds = 0;
+    this.simulationElapsedMilliseconds = 0;
     this.frameSampleCount = 0;
     this.frameSamplesTruncated = false;
     this.heapSampleCount = 0;
