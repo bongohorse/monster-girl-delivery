@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      BEFORE_SHA: 7a84e3232336b2192897502869dfe0c2990dcfc9
+      BEFORE_SHA: 0d63b63504726fcd342c0275677a7a241d74b9c9
       MGD_ANDROID_DIRECTOR_BUILD: '1'
       MGD_ANDROID_COMPARISON_BUILD: '1'
       MGD_ANDROID_TEST_KEYSTORE_FILE: ${{ github.workspace }}/mgd-memory-test.p12
