@@ -38,6 +38,7 @@ export interface DirectorPerformanceHudControls {
   readonly startNormalPerformancePreset?: () => void;
   readonly startZapperPerformancePreset?: () => void;
   readonly startMemoryEvidenceBenchmark?: () => void;
+  readonly cancelMemoryEvidenceBenchmark?: () => void;
   readonly readMemoryEvidenceProgress?: () => number | null;
   readonly readRuntimeMetrics?: () => Readonly<PerformanceRuntimeMetrics>;
   readonly resetWorkCounters?: () => void;
@@ -667,6 +668,12 @@ export class DirectorPerformanceHud {
   }
 
   private clearAutomatedBenchmark(): void {
+    if (this.memoryEvidenceButton.dataset.benchmarkState === 'running') {
+      this.controls?.cancelMemoryEvidenceBenchmark?.();
+      this.memoryEvidenceButton.textContent = 'MEM';
+      delete this.memoryEvidenceButton.dataset.benchmarkState;
+    }
+
     if (this.automatedBenchmark === null) {
       return;
     }
