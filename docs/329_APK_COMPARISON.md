@@ -25,4 +25,34 @@ The validated pair from workflow run [35925512359](https://github.com/bongohorse
 4. Share the MEM JSON for that run, if desired, and save the profile **on the Windows PC**. Uninstall just **MGD memory test** to clear its local state; install the other APK from the **same workflow artifact**. Keep the phone in the same orientation and display/power settings. Repeat step 3 with the second variant. Name the two files unambiguously BEFORE and AFTER.
 5. Send both allocation profiles (or screenshots), their recording durations and the MEM JSONs. Do not compare profiled frame times with the previous unprofiled reports; DevTools itself adds overhead. Allocation sampling estimates allocations by function and is not an exact count of every allocated byte or a GC-event log.
 
-If GC pauses also need investigation, make **separate** matched BEFORE/AFTER recordings using DevTools **Performance > Record** with **Memory** enabled and **Screenshots** and **Screencast** disabled. Run MEM while recording and export both traces. Do not click **Collect garbage** during these comparison recordings. Inspect the JS heap track and GC-related activity together with frame stalls; profiling changes timing. [Chrome's Performance memory guide](https://developer.chrome.com/docs/devtools/performance/reference#view-memory-metrics). The minimum next evidence for allocation hotspots is the two Memory allocation profiles above.
+If GC pauses also need investigation, make **separate** matched BEFORE/AFTER recordings using DevTools **Performance > Record** with **Memory** enabled and **Screenshots** and **Screencast** disabled. Run MEM while recording and export both traces. Do not click **Collect garbage** during these comparison recordings. Inspect the JS heap track and GC-related activity together with frame stalls; profiling changes timing. [Chrome's Performance memory guide](https://developer.chrome.com/docs/devtools/performance/reference#view-memory-metrics).
+
+## Follow-up after the 2026-09-24 matched traces
+
+The first paired allocation-sampling profiles and 60-second Performance traces have been analyzed in
+[#329](https://github.com/bongohorse/monster-girl-delivery/issues/329) and
+[`ALLOCATION_CHURN_EVIDENCE.md`](ALLOCATION_CHURN_EVIDENCE.md). The traces show frequent MinorGC on
+both builds, but the sparse sampling profiles include setup/export and do not establish which
+function produces the recurring allocations. Do not repeat the same 60-second recordings on these
+unchanged APKs just to get another GC count.
+
+To identify a source before making a larger hot-path change, make **one short allocation-timeline
+recording** on the already installed AFTER test APK (`bb1f1ff6e33d`), if it is still present:
+
+1. Connect its WebView through `chrome://inspect/#devices` as above. Turn **Screencast off**.
+   In DevTools **Memory**, select **Allocations on timeline** (also labelled **Allocation
+   instrumentation on timeline** in some versions), rather than **Allocation sampling**.
+2. On the phone, press **MEM** and leave the game untouched. When the MEM indicator reaches about
+   5 seconds, press **Start** on the desktop; record about **10 seconds** and press **Stop** before
+   MEM finishes and exports its JSON. Do not press **Collect garbage**. Stop recording early if
+   profiling makes the app unresponsive.
+3. Save/export the recording from DevTools if available. In its allocation timeline, inspect both
+   the **gray bars** (objects collected during the recording) and blue bars (still live at its end).
+   Send the recording, or screenshots with the selected bar, top constructors and allocation stack
+   if exporting is unavailable. Name it `after-allocation-timeline-5s-to-15s` and state the
+   actual start/end times. A short window keeps setup and the MEM export outside the attribution.
+
+This recording is for **allocation attribution**, not a comparable 60-second FPS/GC result: the
+instrumentation can materially change timing. Once a specific source is identified and changed,
+capture a matched same-device comparison on the new candidate build. Chrome explains what the gray
+and blue allocation bars mean in its [Allocation Timeline guide](https://developer.chrome.com/docs/devtools/memory-problems/allocation-profiler).
