@@ -55,6 +55,7 @@ export const EMPTY_PROTOTYPE_GRAZE_RUN_STATE: Readonly<PrototypeGrazeRunState> =
   count: 0,
   pendingOccurrenceIds: Object.freeze([]),
 });
+const EMPTY_RESOLVED_LETHAL_HAZARDS: ReadonlyArray<Readonly<LogicalHazard>> = Object.freeze([]);
 
 type IdentifiedLogicalHazard = LogicalHazard & {
   readonly grazeOccurrenceId?: unknown;
@@ -383,6 +384,20 @@ export const evaluatePrototypeGrazeStep = (
     };
   }
 
+  if (
+    hazards.length === 0 &&
+    contactHazards.length === 0 &&
+    state.consumedOccurrenceIds.length === 0 &&
+    state.pendingOccurrenceIds.length === 0
+  ) {
+    return {
+      grazeDelta: 0,
+      lethalCollision: false,
+      resolvedLethalHazards: EMPTY_RESOLVED_LETHAL_HAZARDS,
+      state,
+    };
+  }
+
   // Persistent hazards remain until stream eviction; telegraphed occurrences have one contiguous
   // Active phase and never reactivate. On positive steps absence therefore retires their history.
   const retainedOccurrenceIds = new Set<string>();
@@ -503,26 +518,28 @@ export const evaluatePrototypeGrazeStep = (
     }
   }
 
-  const awardedOccurrenceIds = [...resolvedCandidates]
-    .filter(
-      ([occurrenceId, resolutionSeconds]) =>
-        !lethalOccurrenceIds.has(occurrenceId) &&
-        (!lethalCollision ||
-          !lethalHazards.some((hazard) =>
-            hasLethalCollisionBy(
-              initialRunState,
-              trajectory,
-              elapsedSeconds,
-              runMotionTuning,
-              hazard,
-              resolutionSeconds,
-              workCounters,
-              broadphaseWorkCounters,
-            ),
-          )),
-    )
-    .map(([occurrenceId]) => occurrenceId)
-    .sort();
+  const awardedOccurrenceIds: string[] = [];
+  for (const [occurrenceId, resolutionSeconds] of resolvedCandidates) {
+    if (
+      !lethalOccurrenceIds.has(occurrenceId) &&
+      (!lethalCollision ||
+        !lethalHazards.some((hazard) =>
+          hasLethalCollisionBy(
+            initialRunState,
+            trajectory,
+            elapsedSeconds,
+            runMotionTuning,
+            hazard,
+            resolutionSeconds,
+            workCounters,
+            broadphaseWorkCounters,
+          ),
+        ))
+    ) {
+      awardedOccurrenceIds.push(occurrenceId);
+    }
+  }
+  awardedOccurrenceIds.sort();
 
   for (const occurrenceId of awardedOccurrenceIds) {
     pending.delete(occurrenceId);

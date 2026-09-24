@@ -131,13 +131,15 @@ frame-partition correctness and deterministic replay evidence consume that traje
 change with simulation time and are not stale wrapper copies. They remain intentional until profiling
 shows a specific material problem that can be solved without weakening the authority.
 
-### Keep for now: Graze qualification containers
+### Reduce Graze qualification containers on empty steps
 
 PrototypeGraze currently uses retained/consumed/pending/lethal identity Sets plus a resolved-candidate
-Map and result arrays on positive simulation steps. This is the most obvious remaining general
-container candidate in the authoritative run step.
+Map and result arrays on positive simulation steps. A positive step without hazards or occurrence
+history can return the existing state and one shared empty lethal-result array without building those
+containers. The resolved-candidate loop can also append directly to its sorted award array, instead
+of building spread/filter/map intermediates on every positive step.
 
-It is **not** being rewritten speculatively. Those containers encode:
+The remaining containers encode:
 
 - occurrence retirement;
 - pending-to-consumed qualification;
@@ -145,9 +147,10 @@ It is **not** being rewritten speculatively. Those containers encode:
 - different-hazard terminal ordering;
 - deterministic sorted publication.
 
-That code already carries sensitive frame-partition and terminal-ordering regressions. A replacement
-should be driven by allocation profiling and accompanied by equivalent ordering evidence rather than
-by a blanket ban on Set/Map.
+That code already carries sensitive frame-partition and terminal-ordering regressions. Further
+replacement should be driven by allocation profiling and accompanied by equivalent ordering evidence
+rather than by a blanket ban on Set/Map. These narrow structural reductions alone are not evidence
+that device GC pressure improved.
 
 ### Keep for now: motion-planning context publication
 
@@ -195,8 +198,8 @@ prove work was avoided, but gameplay outcomes remain asserted through the existi
 
 ## Mobile memory evidence harness
 
-The closeout branch adds a production-diagnostics `MEM` benchmark so representative Android
-evidence can be collected with the same simple APK workflow used for #330/#332.
+The production-diagnostics `MEM` benchmark collects representative Android
+evidence with the same simple APK workflow used for #330/#332.
 
 `MEM` normalizes the run to the standard 60 FPS / God mode / AUTO-hazard production-style preset,
 restarts on the canonical seed and records **60 seconds of active wall-clock time**. Lifecycle
@@ -255,9 +258,29 @@ comparable Chrome DevTools Memory allocation sampling or Performance traces on b
 Profiling instrumentation can perturb frame timings; compare instrumented traces with one another
 and use the unprofiled MEM frame evidence separately.
 
-## Device/browser evidence still required
+## Matched Android evidence: 2026-09-24
 
-#329 should remain open until a same-device before/after long-run comparison is recorded.
+The paired debug APKs from workflow run `35925512359` used the same Android 12 phone, WebView
+152.0.7977.88, seed 3433278918 and display. Both unprofiled MEM runs completed 3591 frames and
+approximately 60 seconds of simulation. BEFORE/AFTER average frame time was 16.710/16.708 ms,
+P95 was 17.3/17.3 ms and slow-frame count was 3/4. The 60 one-second `performance.memory`
+samples were constant within each run; they did not reveal the actual GC activity.
+
+Separate matched Chrome DevTools Performance traces of the same APK pair, restricted to exactly
+60 seconds after MEM was pressed, counted 1221 BEFORE and 1212 AFTER `MinorGC` events. Their total
+recorded durations were 1046.16 and 1082.01 ms, respectively; neither trace recorded a `MajorGC`
+event in that window. The small count change and slightly higher summed pauses show **no material
+GC or frame improvement** from the prior structural gates in this pair. Sparse Allocation Sampling
+profiles also include setup/export and cannot establish comparable allocated bytes. CPU sampling
+shows most sampled JS time in Phaser render call stacks, but CPU time does not identify the
+producer of the GC allocations. Exact trace hashes and the analysis boundary are recorded in
+[#329](https://github.com/bongohorse/monster-girl-delivery/issues/329).
+
+## Device/browser follow-up required
+
+#329 remains open because the completed comparison did not show the required improvement. Do not
+repeat the unchanged APK pair. After a targeted source change, compare it with a matched baseline
+and use allocation attribution to choose further work if GC/slow-frame pressure stays the same.
 
 Use the same device, browser, seed/preset, render scale and run duration for both samples. Record the
 existing canonical frame-time statistics (average/P95/P99/worst/slow-frame count) and active content
@@ -287,9 +310,8 @@ Satisfied structurally:
 
 Still required:
 
-- representative browser/device allocation evidence sufficient to judge the remaining Graze/context
-  candidates;
-- long mobile same-device GC/slow-frame comparison;
+- attributable allocation evidence sufficient to select the next material hot-path change;
+- a long same-device GC/slow-frame comparison showing improvement after that change;
 - final resize/restart/Director/lifecycle acceptance after that run;
 - final #143/full-CI confirmation on the closeout head.
 
