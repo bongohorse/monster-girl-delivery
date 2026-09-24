@@ -144,6 +144,12 @@ const collectVerticalCorridorIssues = (
   reachabilityContext: Readonly<PatternReachabilityContext>,
 ): ReadonlyArray<Readonly<PatternValidationIssue>> => {
   const verticallyRelevantEntries = pattern.entries.filter((entry) => {
+    // A Missile commits to one player's Y before crossing horizontally. Its possible target
+    // heights are mutually exclusive, so treating the entire target range as one simultaneous
+    // solid barrier would reject every full-height Missile regardless of its warning/lock time.
+    if (entry.behavior.kind === 'target-lock-strike' && entry.behavior.missile) {
+      return false;
+    }
     const sweptHitbox = getHazardSweptHitbox(entry);
     return (
       sweptHitbox.bottom > constraints.playableTop && sweptHitbox.top < constraints.playableBottom

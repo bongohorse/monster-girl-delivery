@@ -66,14 +66,11 @@ uniform vec2 uProjectionY;
 uniform vec4 uSegments[MAX_ZAPPERS];
 uniform vec4 uParams[MAX_ZAPPERS];
 
-float capsuleDistance(vec2 p, vec2 a, vec2 b, float wave) {
+float capsuleDistance(vec2 p, vec2 a, vec2 b) {
   vec2 ab = b - a;
   float denominator = max(dot(ab, ab), 0.0001);
   float t = clamp(dot(p - a, ab) / denominator, 0.0, 1.0);
-  vec2 tangent = ab / max(length(ab), 0.0001);
-  vec2 normal = vec2(-tangent.y, tangent.x);
-  vec2 q = a + ab * t + normal * wave;
-  return length(p - q);
+  return length(p - (a + ab * t));
 }
 
 float ringMask(float distanceFromCenter, float radius, float thickness) {
@@ -113,10 +110,8 @@ void main() {
         vec2 ab = b - a;
         float segmentLength = max(length(ab), 0.0001);
         float along = clamp(dot(p - a, ab) / (segmentLength * segmentLength), 0.0, 1.0);
-        float wave =
-          sin(along * 34.0 + uTime * 11.0 + float(i) * 2.17) * 1.15 +
-          sin(along * 67.0 - uTime * 7.0 + float(i) * 0.91) * 0.55;
-        float beamDistance = capsuleDistance(p, a, b, state > 1.5 ? wave : wave * charge * 0.5);
+        // The rendered beam follows the same straight capsule as collision at every angle.
+        float beamDistance = capsuleDistance(p, a, b);
         float endpointDistance = min(length(p - a), length(p - b));
         float flicker = 0.92 + 0.08 * sin(uTime * 29.0 + float(i) * 4.73);
 

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { scheduleNextPattern } from '../../src/generation/PatternSpawnScheduler';
 import { PROTOTYPE_MISSILE_PATTERN } from '../../src/generation/PrototypeHazardPatternFixtures';
+import { createPrototypeHazardVerticalDomain } from '../../src/generation/PrototypeHazardVerticalDomain';
 import { createRunGenerationState } from '../../src/generation/RunGenerationState';
 import { isTargetLockStrikeHazardBehavior } from '../../src/hazards/HazardArchetype';
 import {
@@ -50,6 +51,51 @@ const getLifecycle = (
 };
 
 describe('M5 bait-and-dodge Missile', () => {
+  it('can track the player throughout the whole flight band, including the floor and a tall viewport ceiling', () => {
+    for (const bounds of [
+      { ceilingY: 28, floorY: 362 },
+      { ceilingY: -272, floorY: 362 },
+    ]) {
+      const domain = createPrototypeHazardVerticalDomain(bounds, [PROTOTYPE_MISSILE_PATTERN]);
+      const schedule = scheduleNextPattern({
+        catalog: domain.catalog,
+        constraints: domain.constraints,
+        patternStartDistance: 0,
+        state: createRunGenerationState('full-height-missile'),
+      });
+      expect(schedule.status).toBe('accepted');
+      if (schedule.status !== 'accepted' || !schedule.spawns[0]) {
+        throw new Error('Expected an accepted Missile at this flight height.');
+      }
+      const spawn = schedule.spawns[0];
+      for (const playerY of [bounds.ceilingY, bounds.floorY]) {
+        let state = stepTelegraphedHazardSimulation(
+          createTelegraphedHazardSimulationState(),
+          [spawn],
+          0,
+          { positionY: playerY, runDistance: 0 },
+        );
+        state = stepTelegraphedHazardSimulation(state, [spawn], 2.2, {
+          positionY: playerY,
+          runDistance: 770,
+        });
+        expect(getLifecycle(state, spawn).phase).toBe('lock');
+        expect(getLifecycle(state, spawn).lockedTarget?.positionY).toBe(playerY);
+        state = stepTelegraphedHazardSimulation(state, [spawn], 0.8, {
+          positionY: bounds.ceilingY,
+          runDistance: 1050,
+        });
+        expect(getLifecycle(state, spawn).phase).toBe('active');
+        expect(
+          getLethalHazardsForTelegraphedSimulation(state, [spawn], MISSILE_LAYOUT)[0]?.hitbox,
+        ).toMatchObject({
+          top: playerY - 24,
+          bottom: playerY + 24,
+        });
+      }
+    }
+  });
+
   it('trails fast player movement during warning at a bounded chase speed', () => {
     const spawn = createMissileSpawn();
     let state = stepTelegraphedHazardSimulation(
@@ -114,11 +160,11 @@ describe('M5 bait-and-dodge Missile', () => {
     state = stepTelegraphedHazardSimulation(
       state,
       [spawn],
-      1.4,
+      2.2,
       { positionY: 100, runDistance: 0 },
       (delta) => ({
-        positionY: 100 + 50 * delta,
-        runDistance: 350 * delta,
+        positionY: 100 + (70 / 2.2) * delta,
+        runDistance: (490 / 2.2) * delta,
       }),
     );
 
@@ -129,7 +175,7 @@ describe('M5 bait-and-dodge Missile', () => {
     expect(locked.lockedTarget?.positionY).toBeCloseTo(170, 9);
     expect(locked.lockedTarget?.runDistance).toBeCloseTo(490, 9);
 
-    state = stepTelegraphedHazardSimulation(state, [spawn], 0.4, {
+    state = stepTelegraphedHazardSimulation(state, [spawn], 0.8, {
       positionY: 72,
       runDistance: 630,
     });
@@ -173,14 +219,14 @@ describe('M5 bait-and-dodge Missile', () => {
     state = stepTelegraphedHazardSimulation(
       state,
       [spawn],
-      1.4,
+      2.2,
       { positionY: 100, runDistance: 0 },
-      (delta) => ({ positionY: 100 + 50 * delta, runDistance: 350 * delta }),
+      (delta) => ({ positionY: 100 + (70 / 2.2) * delta, runDistance: (490 / 2.2) * delta }),
     );
     state = stepTelegraphedHazardSimulation(
       state,
       [spawn],
-      0.4,
+      0.8,
       { positionY: 72, runDistance: 630 },
       undefined,
       MISSILE_LAYOUT,
@@ -268,7 +314,7 @@ describe('M5 bait-and-dodge Missile', () => {
       0,
       { positionY: 100, runDistance: 0 },
     );
-    state = stepTelegraphedHazardSimulation(state, [spawn], 0.7, {
+    state = stepTelegraphedHazardSimulation(state, [spawn], 1.1, {
       positionY: 150,
       runDistance: 245,
     });
@@ -284,11 +330,11 @@ describe('M5 bait-and-dodge Missile', () => {
     state = stepTelegraphedHazardSimulation(
       paused,
       [spawn],
-      0.7,
+      1.1,
       beforePause.latestObservedTarget,
       (delta) => ({
-        positionY: 150 + 20 * delta,
-        runDistance: 245 + 350 * delta,
+        positionY: 150 + (14 / 1.1) * delta,
+        runDistance: 245 + (245 / 1.1) * delta,
       }),
     );
 
@@ -312,7 +358,7 @@ describe('M5 bait-and-dodge Missile', () => {
         );
         let elapsed = 0;
         let steps = 0;
-        const targetTime = 2;
+        const targetTime = 3.2;
 
         while (elapsed < targetTime - 1e-12) {
           const delta = Math.min(schedule.getNextDelta(elapsed, steps), targetTime - elapsed);
@@ -322,12 +368,12 @@ describe('M5 bait-and-dodge Missile', () => {
             [spawn],
             delta,
             {
-              positionY: 100 + 50 * stepStart,
-              runDistance: 350 * stepStart,
+              positionY: 100 + (70 / 2.2) * stepStart,
+              runDistance: (490 / 2.2) * stepStart,
             },
             (subDelta) => ({
-              positionY: 100 + 50 * (stepStart + subDelta),
-              runDistance: 350 * (stepStart + subDelta),
+              positionY: 100 + (70 / 2.2) * (stepStart + subDelta),
+              runDistance: (490 / 2.2) * (stepStart + subDelta),
             }),
           );
           elapsed += delta;

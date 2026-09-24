@@ -46,17 +46,17 @@ describe('M5 Missile mid-frame launch collision', () => {
     state = stepTelegraphedHazardSimulation(
       state,
       [spawn],
-      1.4,
+      2.2,
       { positionY: 100, runDistance: 0 },
-      (delta) => ({ positionY: 100 + 50 * delta, runDistance: 350 * delta }),
+      (delta) => ({ positionY: 100 + (70 / 2.2) * delta, runDistance: (490 / 2.2) * delta }),
     );
     expect(getTelegraphedHazardLifecycle(state, spawn)?.phase).toBe('lock');
 
-    // Lock lasts 0.4s, so this 0.5s frame enters Active 0.4s into the frame.
+    // Lock lasts 0.8s, so this 0.9s frame enters Active 0.8s into the frame.
     state = stepTelegraphedHazardSimulation(
       state,
       [spawn],
-      0.5,
+      0.9,
       { positionY: 72, runDistance: MISSILE_LAYOUT.playerRunDistance },
       undefined,
       MISSILE_LAYOUT,
@@ -75,13 +75,13 @@ describe('M5 Missile mid-frame launch collision', () => {
       throw new Error('Expected an Active Missile collision interval and horizontal velocity.');
     }
 
-    expect(collision.collisionInterval.startSeconds).toBeCloseTo(0.4, 9);
-    expect(collision.collisionInterval.endSeconds).toBeCloseTo(0.5, 9);
+    expect(collision.collisionInterval.startSeconds).toBeCloseTo(0.8, 9);
+    expect(collision.collisionInterval.endSeconds).toBeCloseTo(0.9, 9);
     expect(collision.horizontalVelocity).toBe(-350);
 
-    // At frame start the linear trajectory is intentionally extrapolated 0.4s backward.
-    expect(collision.hitbox.left).toBeCloseTo(1258, 9);
-    expect(collision.hitbox.right).toBeCloseTo(1322, 9);
+    // At frame start the linear trajectory is intentionally extrapolated 0.8s backward.
+    expect(collision.hitbox.left).toBeCloseTo(1538, 9);
+    expect(collision.hitbox.right).toBeCloseTo(1602, 9);
     expect(collision.hitbox.top).toBeCloseTo(146, 9);
     expect(collision.hitbox.bottom).toBeCloseTo(194, 9);
 
@@ -95,29 +95,29 @@ describe('M5 Missile mid-frame launch collision', () => {
 
     const trajectory = createVerticalFlightTrajectory(
       { positionY: 170, velocityY: 0 },
-      0.5,
+      0.9,
       false,
       { gravity: 0, thrust: 0, maxFallVelocity: 1000, maxRiseVelocity: 1000 },
       { ceilingY: 0, floorY: 300 },
     );
 
-    // A player overlapping the back-extrapolated path during pre-launch (t < 0.4s) must not collide.
+    // A player overlapping the back-extrapolated path during pre-launch (t < 0.8s) must not collide.
     expect(
       isPlayerCollidingWithHazardDuringStep(
         { distance: 1118 },
         trajectory,
-        0.5,
+        0.9,
         { baseScrollSpeed: 350 },
         collision,
       ),
     ).toBe(false);
 
-    // A player overlapping the authoritative path during the Active slice [0.4s, 0.5s] must collide.
+    // A player overlapping the authoritative path during the Active slice [0.8s, 0.9s] must collide.
     expect(
       isPlayerCollidingWithHazardDuringStep(
         { distance: 943 },
         trajectory,
-        0.5,
+        0.9,
         { baseScrollSpeed: 350 },
         collision,
       ),

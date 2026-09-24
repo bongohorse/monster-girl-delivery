@@ -124,11 +124,11 @@ describe('DirectorDebugOverlay geometry', () => {
     telegraphedHazards = stepTelegraphedHazardSimulation(
       telegraphedHazards,
       [missile],
-      1.4,
+      2.2,
       { positionY: 100, runDistance: 0 },
-      (delta) => ({ positionY: 100 + 50 * delta, runDistance: 350 * delta }),
+      (delta) => ({ positionY: 100 + (70 / 2.2) * delta, runDistance: (490 / 2.2) * delta }),
     );
-    telegraphedHazards = stepTelegraphedHazardSimulation(telegraphedHazards, [missile], 0.4, {
+    telegraphedHazards = stepTelegraphedHazardSimulation(telegraphedHazards, [missile], 0.8, {
       positionY: 72,
       runDistance: 630,
     });
