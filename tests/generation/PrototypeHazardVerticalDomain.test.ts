@@ -112,8 +112,8 @@ describe('prototype hazard vertical domain', () => {
       throw new Error('Expected target-lock behavior.');
     }
 
-    expect(adapted.behavior.minimumTargetY).toBe(-228);
-    expect(adapted.behavior.maximumTargetY).toBe(222);
+    expect(adapted.behavior.minimumTargetY).toBe(bounds.ceilingY);
+    expect(adapted.behavior.maximumTargetY).toBe(bounds.floorY);
     expect(adapted.behavior.strikeHeight).toBe(48);
   });
 

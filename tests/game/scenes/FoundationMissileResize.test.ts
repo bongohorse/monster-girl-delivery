@@ -82,9 +82,9 @@ describe('Foundation M5 Missile resize integration', () => {
     telegraphedState = stepTelegraphedHazardSimulation(
       telegraphedState,
       [missile],
-      1.4,
+      2.2,
       { positionY: 100, runDistance: 0 },
-      (delta) => ({ positionY: 100 + 50 * delta, runDistance: 350 * delta }),
+      (delta) => ({ positionY: 100 + (70 / 2.2) * delta, runDistance: (490 / 2.2) * delta }),
     );
     expect(getTelegraphedHazardLifecycle(telegraphedState, missile)?.phase).toBe('lock');
 

@@ -80,16 +80,16 @@ describe('M5 Missile presentation', () => {
     state = stepTelegraphedHazardSimulation(
       state,
       [spawn],
-      1.4,
+      2.2,
       { positionY: 100, runDistance: 0 },
-      (delta) => ({ positionY: 100 + 50 * delta, runDistance: 350 * delta }),
+      (delta) => ({ positionY: 100 + (70 / 2.2) * delta, runDistance: (490 / 2.2) * delta }),
     );
     presentation.render({ distance: 490 }, 100, getTelegraphedHazardLifecycle(state, spawn));
     expect(graphics.setPosition).toHaveBeenLastCalledWith(354, 148);
     expect(graphics.fillStyle).toHaveBeenCalledWith(0xff9f1c, 0.64);
     expect(graphics.lineStyle).toHaveBeenCalledWith(6, 0xffffff, 1);
 
-    state = stepTelegraphedHazardSimulation(state, [spawn], 0.4, {
+    state = stepTelegraphedHazardSimulation(state, [spawn], 0.8, {
       positionY: 72,
       runDistance: 630,
     });
@@ -117,9 +117,9 @@ describe('M5 Missile presentation', () => {
     state = stepTelegraphedHazardSimulation(
       state,
       [spawn],
-      1.4,
+      2.2,
       { positionY: 100, runDistance: 0 },
-      (delta) => ({ positionY: 100 + 50 * delta, runDistance: 350 * delta }),
+      (delta) => ({ positionY: 100 + (70 / 2.2) * delta, runDistance: (490 / 2.2) * delta }),
     );
 
     const locked = getTelegraphedHazardLifecycle(state, spawn);
@@ -137,7 +137,7 @@ describe('M5 Missile presentation', () => {
     expect(locked.lockedTarget.positionY).toBeCloseTo(170, 9);
     expect(graphics.setPosition).toHaveBeenLastCalledWith(594, 148);
 
-    state = stepTelegraphedHazardSimulation(state, [spawn], 0.4, {
+    state = stepTelegraphedHazardSimulation(state, [spawn], 0.8, {
       positionY: 40,
       runDistance: 630,
     });
@@ -159,14 +159,14 @@ describe('M5 Missile presentation', () => {
     state = stepTelegraphedHazardSimulation(
       state,
       [spawn],
-      1.4,
+      2.2,
       { positionY: 100, runDistance: 0 },
-      (delta) => ({ positionY: 100 + 50 * delta, runDistance: 350 * delta }),
+      (delta) => ({ positionY: 100 + (70 / 2.2) * delta, runDistance: (490 / 2.2) * delta }),
     );
     state = stepTelegraphedHazardSimulation(
       state,
       [spawn],
-      0.4,
+      0.8,
       { positionY: 72, runDistance: 630 },
       undefined,
       { playerRunDistance: 630, playerScreenX: 100, viewportLeft: 0, viewportRight: 400 },

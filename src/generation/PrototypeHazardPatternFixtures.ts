@@ -1,3 +1,4 @@
+import { PROTOTYPE_LOGICAL_FLIGHT_BOUNDS } from '../game/PrototypeFlightLayout';
 import { createPrototypeLaserBehavior } from '../hazards/PrototypeLaserHazard';
 import {
   createPrototypeZapperBehavior,
@@ -360,8 +361,8 @@ export const PROTOTYPE_MISSILE_PATTERN = createHazardPattern({
         kind: 'target-lock-strike',
         lifecycle: {
           durations: {
-            warningSeconds: 1.4,
-            lockSeconds: 0.4,
+            warningSeconds: 2.2,
+            lockSeconds: 0.8,
             activeSeconds: 3.2,
           },
           warningGeometry: {
@@ -371,8 +372,8 @@ export const PROTOTYPE_MISSILE_PATTERN = createHazardPattern({
             bottomOffset: 22,
           },
         },
-        minimumTargetY: 72,
-        maximumTargetY: 222,
+        minimumTargetY: PROTOTYPE_LOGICAL_FLIGHT_BOUNDS.ceilingY,
+        maximumTargetY: PROTOTYPE_LOGICAL_FLIGHT_BOUNDS.floorY,
         strikeHeight: 48,
         missile: {
           launchSide: 'right',
