@@ -290,6 +290,10 @@ export class PrototypeZapperPresentation {
     const simulationSeconds = runState.simulationSeconds ?? 0;
     const resolveGameplayState = stateSources.resolveGameplayState;
     const timedZappers = stateSources.timedZappers;
+    const camera = this.scene.cameras?.main;
+    const cameraZoom = camera?.zoom && camera.zoom > 0 ? camera.zoom : 1;
+    const viewportWidth = (camera?.width ?? Number.POSITIVE_INFINITY) / cameraZoom;
+    const viewportHeight = (camera?.height ?? Number.POSITIVE_INFINITY) / cameraZoom;
     let shaderCount = 0;
     let unionLeft = Number.POSITIVE_INFINITY;
     let unionRight = Number.NEGATIVE_INFINITY;
@@ -306,13 +310,6 @@ export class PrototypeZapperPresentation {
       if (!geometry) {
         continue;
       }
-      const gameplayState = resolveGameplayState?.(spawn) ?? 'active';
-      const timedLifecycle = timedZappers ? getTimedZapperLifecycle(timedZappers, spawn) : null;
-      const sample = resolvePrototypeZapperPresentationSample(spawn, timedLifecycle, gameplayState);
-      if (sample.state === 'destroyed') {
-        continue;
-      }
-
       const ax = playerScreenX + geometry.endpointA.center.x - runState.distance;
       const ay = geometry.endpointA.center.y;
       const bx = playerScreenX + geometry.endpointB.center.x - runState.distance;
@@ -325,17 +322,25 @@ export class PrototypeZapperPresentation {
         beamWidth + padding.beam,
         32,
       );
+      const left = Math.min(ax, bx) - visualPadding;
+      const right = Math.max(ax, bx) + visualPadding;
+      const top = projection.offsetY + (Math.min(ay, by) - visualPadding) * projection.scaleY;
+      const bottom = projection.offsetY + (Math.max(ay, by) + visualPadding) * projection.scaleY;
+      if (right < 0 || left > viewportWidth || bottom < 0 || top > viewportHeight) {
+        continue;
+      }
 
-      unionLeft = Math.min(unionLeft, ax - visualPadding, bx - visualPadding);
-      unionRight = Math.max(unionRight, ax + visualPadding, bx + visualPadding);
-      unionTop = Math.min(
-        unionTop,
-        projection.offsetY + (Math.min(ay, by) - visualPadding) * projection.scaleY,
-      );
-      unionBottom = Math.max(
-        unionBottom,
-        projection.offsetY + (Math.max(ay, by) + visualPadding) * projection.scaleY,
-      );
+      const gameplayState = resolveGameplayState?.(spawn) ?? 'active';
+      const timedLifecycle = timedZappers ? getTimedZapperLifecycle(timedZappers, spawn) : null;
+      const sample = resolvePrototypeZapperPresentationSample(spawn, timedLifecycle, gameplayState);
+      if (sample.state === 'destroyed') {
+        continue;
+      }
+
+      unionLeft = Math.min(unionLeft, left);
+      unionRight = Math.max(unionRight, right);
+      unionTop = Math.min(unionTop, top);
+      unionBottom = Math.max(unionBottom, bottom);
 
       this.drawFallback(
         graphics,

@@ -18,11 +18,11 @@ const createSpawn = (
   entryId: string,
   angleDegrees: number,
   centerX: number,
-  options: Readonly<{ rotating?: boolean; timed?: boolean }> = {},
+  options: Readonly<{ length?: number; rotating?: boolean; timed?: boolean }> = {},
 ): Readonly<LogicalHazardSpawnInstance> => {
   const baseBehavior = createPrototypeZapperBehavior(
     angleDegrees,
-    PROTOTYPE_ZAPPER_LENGTHS.medium,
+    options.length ?? PROTOTYPE_ZAPPER_LENGTHS.medium,
     options.rotating
       ? {
           direction: 'clockwise',
@@ -106,7 +106,7 @@ const createShaderMock = () => {
   return shader;
 };
 
-const createSceneFake = (withShader: boolean) => {
+const createSceneFake = (withShader: boolean, viewportWidth = 400, zoom = 1) => {
   const graphics = createGraphicsMock();
   const shader = createShaderMock();
   let shaderConfig: unknown;
@@ -118,7 +118,10 @@ const createSceneFake = (withShader: boolean) => {
     graphics: vi.fn(() => graphics),
     ...(withShader ? { shader: addShader } : {}),
   };
-  const scene = { add } as unknown as Scene;
+  const scene = {
+    add,
+    cameras: { main: { width: viewportWidth * zoom, height: 390 * zoom, zoom } },
+  } as unknown as Scene;
   return { addShader, graphics, scene, shader, getShaderConfig: () => shaderConfig };
 };
 
@@ -135,8 +138,36 @@ const readUniforms = (config: unknown) => {
 };
 
 describe('PrototypeZapperPresentation', () => {
+  it('reserves shader slots for visible Zappers even when older spawns remain offscreen', () => {
+    const { scene, shader, getShaderConfig } = createSceneFake(true, 400, 2);
+    const presentation = new PrototypeZapperPresentation(scene);
+    const offscreen = Array.from({ length: PROTOTYPE_ZAPPER_SHARED_SHADER_CAPACITY }, (_, i) =>
+      createSpawn(`old-${i}`, 90, 100 + i * 10),
+    );
+    const visible = createSpawn('visible-long-horizontal', 0, 850, {
+      length: PROTOTYPE_ZAPPER_LENGTHS.long,
+    });
+    const outsideLogicalViewport = createSpawn('future-long-horizontal', 0, 1_300, {
+      length: PROTOTYPE_ZAPPER_LENGTHS.long,
+    });
+
+    presentation.render(
+      [...offscreen, visible, outsideLogicalViewport],
+      { distance: 700, simulationSeconds: 0 },
+      100,
+    );
+
+    const uniforms = readUniforms(getShaderConfig());
+    expect(uniforms.get('uCount')).toBe(1);
+    expect(Array.from((uniforms.get('uSegments[0]') as Float32Array).slice(0, 4))).toEqual([
+      150, 195, 350, 195,
+    ]);
+    expect(shader.setPosition).toHaveBeenLastCalledWith(118, 163);
+    expect(shader.setSize).toHaveBeenLastCalledWith(264, 64);
+  });
+
   it('shares one shader and one fallback layer across horizontal, vertical, diagonal, and rotating Zappers', () => {
-    const { addShader, graphics, scene, shader, getShaderConfig } = createSceneFake(true);
+    const { addShader, graphics, scene, shader, getShaderConfig } = createSceneFake(true, 1_300);
     const presentation = new PrototypeZapperPresentation(scene);
     const spawns = [
       createSpawn('horizontal', 0, 280),
@@ -240,7 +271,7 @@ describe('PrototypeZapperPresentation', () => {
   });
 
   it('uses authoritative simulation time for rotation/flicker and keeps resize projection explicit', () => {
-    const { scene, getShaderConfig } = createSceneFake(true);
+    const { scene, getShaderConfig } = createSceneFake(true, 900);
     const presentation = new PrototypeZapperPresentation(scene);
     const spawn = createSpawn('rotating', 45, 400, { rotating: true });
 
