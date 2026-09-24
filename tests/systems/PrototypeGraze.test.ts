@@ -1,11 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import type { LogicalHazard } from '../../src/systems/HazardCollision';
-import { filterPrototypeHazardCandidatesForStep } from '../../src/systems/PrototypeGraze';
+import {
+  EMPTY_PROTOTYPE_GRAZE_RUN_STATE,
+  evaluatePrototypeGrazeStep,
+  filterPrototypeHazardCandidatesForStep,
+} from '../../src/systems/PrototypeGraze';
 import {
   createPrototypeRunState,
   type PrototypeRunState,
   stepPrototypeRun,
 } from '../../src/systems/PrototypeRunSimulation';
+import { createVerticalFlightTrajectory } from '../../src/systems/VerticalFlightSimulation';
 
 const BOUNDS = Object.freeze({ ceilingY: -100, floorY: 100 });
 const FLIGHT = Object.freeze({
@@ -86,6 +91,43 @@ const LATER_VERTICAL_LETHAL_SCHEDULES: ReadonlyArray<readonly [string, ReadonlyA
 ];
 
 describe('prototype Graze skill layer', () => {
+  it('reuses the empty lethal result while a hazard-free run has no occurrence history', () => {
+    const trajectory = createVerticalFlightTrajectory(START.flight, 0.016, false, FLIGHT, BOUNDS);
+    const evaluate = () =>
+      evaluatePrototypeGrazeStep(
+        EMPTY_PROTOTYPE_GRAZE_RUN_STATE,
+        START.motion,
+        trajectory,
+        0.016,
+        MOTION,
+        [],
+      );
+
+    const first = evaluate();
+    const second = evaluate();
+    expect(first.resolvedLethalHazards).toEqual([]);
+    expect(first.resolvedLethalHazards).toBe(second.resolvedLethalHazards);
+    expect(first.state).toBe(EMPTY_PROTOTYPE_GRAZE_RUN_STATE);
+    expect(first.lethalCollision).toBe(false);
+
+    const scoredState = Object.freeze({ ...EMPTY_PROTOTYPE_GRAZE_RUN_STATE, count: 2 });
+    expect(
+      evaluatePrototypeGrazeStep(scoredState, START.motion, trajectory, 0.016, MOTION, []).state,
+    ).toBe(scoredState);
+
+    const pausedTrajectory = createVerticalFlightTrajectory(START.flight, 0, false, FLIGHT, BOUNDS);
+    expect(
+      evaluatePrototypeGrazeStep(
+        EMPTY_PROTOTYPE_GRAZE_RUN_STATE,
+        START.motion,
+        pausedTrajectory,
+        0,
+        MOTION,
+        [],
+      ).resolvedLethalHazards,
+    ).toBeNull();
+  });
+
   it('preserves the original hazard array when every retained hazard can reach the player', () => {
     const hazards = [hazard('near-a', 25, 30, 20, 30), hazard('near-b', -30, -25, 70, 80)] as const;
 
