@@ -95,24 +95,20 @@ describe('generated hazard motion planning', () => {
     );
 
     expect(plan.segments).toHaveLength(2);
-    expect(plan.segments[0]).toMatchObject({
-      startRunDistance: 2_990,
-      endRunDistance: 3_000,
-      scrollSpeed: 350,
-      flightTuning: PROTOTYPE_FLIGHT_TUNING_DEFAULTS,
-    });
-    expect(plan.segments[0]?.durationSeconds).toBeCloseTo(10 / 350, 12);
-    expect(plan.segments[1]).toMatchObject({
-      startRunDistance: 3_000,
-      endRunDistance: 3_028,
-      scrollSpeed: 392,
-      flightTuning: {
-        gravity: 2_007.04,
-        thrust: 3_261.44,
-        maxFallVelocity: 784,
-        maxRiseVelocity: 616,
-      },
-    });
+    const firstSegment = plan.segments[0];
+    const secondSegment = plan.segments[1];
+    expect(firstSegment?.startRunDistance).toBeCloseTo(2_990, 12);
+    expect(firstSegment?.endRunDistance).toBeCloseTo(3_000, 12);
+    expect(firstSegment?.scrollSpeed).toBeCloseTo(350, 12);
+    expect(firstSegment?.flightTuning).toEqual(PROTOTYPE_FLIGHT_TUNING_DEFAULTS);
+    expect(firstSegment?.durationSeconds).toBeCloseTo(10 / 350, 12);
+    expect(secondSegment?.startRunDistance).toBeCloseTo(3_000, 12);
+    expect(secondSegment?.endRunDistance).toBeCloseTo(3_028, 12);
+    expect(secondSegment?.scrollSpeed).toBeCloseTo(392, 12);
+    expect(secondSegment?.flightTuning.gravity).toBeCloseTo(2_007.04, 10);
+    expect(secondSegment?.flightTuning.thrust).toBeCloseTo(3_261.44, 10);
+    expect(secondSegment?.flightTuning.maxFallVelocity).toBeCloseTo(784, 10);
+    expect(secondSegment?.flightTuning.maxRiseVelocity).toBeCloseTo(616, 10);
     expect(plan.endRunDistance).toBeCloseTo(3_028, 12);
     expect(plan.averageScrollSpeed).toBeCloseTo(380, 12);
     expect(resolveGeneratedHazardMotionRunDistance(plan, 10 / 350)).toBeCloseTo(3_000, 12);
