@@ -700,7 +700,10 @@ describe('Foundation scene gameplay orchestration', () => {
       })),
     });
 
-    const handleOrientationChange = Reflect.get(foundation, 'handleOrientationChange') as () => void;
+    const handleOrientationChange = Reflect.get(
+      foundation,
+      'handleOrientationChange',
+    ) as () => void;
 
     handleOrientationChange();
     expect(viewportService.getSnapshot()).toMatchObject({
