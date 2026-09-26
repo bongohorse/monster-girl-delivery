@@ -83,13 +83,7 @@ export const M5_SEGMENT_ZAPPER_HORIZONTAL_UPPER: Readonly<HazardPattern> = creat
   runLength: 640,
   profile: createSingleSegmentProfile('static-barrier', 0, 'm5-zapper-horizontal'),
   entries: [
-    createZapperEntry(
-      'upper-horizontal-zapper',
-      280,
-      100,
-      0,
-      PROTOTYPE_ZAPPER_LENGTHS.short,
-    ),
+    createZapperEntry('upper-horizontal-zapper', 280, 100, 0, PROTOTYPE_ZAPPER_LENGTHS.short),
   ],
   collectiblePaths: [
     createUniformPolylineCollectiblePath({
@@ -109,13 +103,7 @@ export const M5_SEGMENT_ZAPPER_DIAGONAL_LOWER: Readonly<HazardPattern> = createH
   runLength: 640,
   profile: createSingleSegmentProfile('static-barrier', 0, 'm5-zapper-diagonal'),
   entries: [
-    createZapperEntry(
-      'lower-diagonal-zapper',
-      280,
-      280,
-      45,
-      PROTOTYPE_ZAPPER_LENGTHS.short,
-    ),
+    createZapperEntry('lower-diagonal-zapper', 280, 280, 45, PROTOTYPE_ZAPPER_LENGTHS.short),
   ],
   collectiblePaths: [
     createUniformPolylineCollectiblePath({
@@ -135,14 +123,9 @@ export const M5_SEGMENT_ZAPPER_ROTATING_UPPER: Readonly<HazardPattern> = createH
   runLength: 640,
   profile: createSingleSegmentProfile('moving-barrier', 0, 'm5-zapper-rotating'),
   entries: [
-    createZapperEntry(
-      'upper-rotating-zapper',
-      280,
-      110,
-      0,
-      PROTOTYPE_ZAPPER_LENGTHS.short,
-      { rotation: true },
-    ),
+    createZapperEntry('upper-rotating-zapper', 280, 110, 0, PROTOTYPE_ZAPPER_LENGTHS.short, {
+      rotation: true,
+    }),
   ],
   collectiblePaths: [
     createSineCollectiblePath({
@@ -163,13 +146,7 @@ export const M5_SEGMENT_ZAPPER_VERTICAL_UPPER: Readonly<HazardPattern> = createH
   runLength: 640,
   profile: createSingleSegmentProfile('static-barrier', 1, 'm5-zapper-vertical'),
   entries: [
-    createZapperEntry(
-      'upper-vertical-zapper',
-      280,
-      110,
-      90,
-      PROTOTYPE_ZAPPER_LENGTHS.short,
-    ),
+    createZapperEntry('upper-vertical-zapper', 280, 110, 90, PROTOTYPE_ZAPPER_LENGTHS.short),
   ],
   collectiblePaths: [
     createUniformPolylineCollectiblePath({
@@ -189,14 +166,9 @@ export const M5_SEGMENT_ZAPPER_TIMED_CENTER: Readonly<HazardPattern> = createHaz
   runLength: 640,
   profile: createSingleSegmentProfile('timed-pulse', 1, 'm5-zapper-timed', 1, 3),
   entries: [
-    createZapperEntry(
-      'timed-center-zapper',
-      280,
-      195,
-      0,
-      PROTOTYPE_ZAPPER_LENGTHS.medium,
-      { timed: true },
-    ),
+    createZapperEntry('timed-center-zapper', 280, 195, 0, PROTOTYPE_ZAPPER_LENGTHS.medium, {
+      timed: true,
+    }),
   ],
   collectiblePaths: [
     createUniformPolylineCollectiblePath({
