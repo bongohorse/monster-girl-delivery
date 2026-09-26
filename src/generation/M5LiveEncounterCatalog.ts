@@ -27,7 +27,4 @@ export const M5_LIVE_SINGLE_ENCOUNTER_SEGMENTS: ReadonlyArray<Readonly<HazardPat
   ]);
 
 export const PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG: ReadonlyArray<Readonly<HazardPattern>> =
-  Object.freeze([
-    ...M5_LIVE_SINGLE_ENCOUNTER_SEGMENTS,
-    ...M5_AUTHORED_PRESSURE_ENCOUNTER_SEGMENTS,
-  ]);
+  Object.freeze([...M5_LIVE_SINGLE_ENCOUNTER_SEGMENTS, ...M5_AUTHORED_PRESSURE_ENCOUNTER_SEGMENTS]);
