@@ -72,8 +72,9 @@ describe('PrototypePlayerPresentation', () => {
 
     presentation.setScale(1, 0.5);
 
-    expect(PROTOTYPE_PLAYER_PRESENTATION_SCALE).toBe(0.84);
-    expect(graphics.setScale).toHaveBeenLastCalledWith(0.84, 0.42);
+    expect(PROTOTYPE_PLAYER_PRESENTATION_SCALE).toBe(6 / 7);
+    expect(PROTOTYPE_PLAYER_PRESENTATION_SCALE * 28).toBe(24);
+    expect(graphics.setScale).toHaveBeenLastCalledWith(6 / 7, 3 / 7);
   });
 
   it('rejects non-finite presentation rotation', () => {
