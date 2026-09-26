@@ -13,9 +13,9 @@ import {
   type LiveEncounterPolicyConfig,
   PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG,
 } from '../../src/generation/LiveEncounterPolicy';
+import { PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG } from '../../src/generation/M5LiveEncounterCatalog';
 import type { RejectedPatternCandidate } from '../../src/generation/PatternSpawnScheduler';
 import { PROTOTYPE_PATTERN_VALIDATION_CONSTRAINTS } from '../../src/generation/PatternValidator';
-import { PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES } from '../../src/generation/PrototypeHazardPatternFixtures';
 
 export interface EncounterTraceEntry {
   readonly runDistance: number;
@@ -50,7 +50,7 @@ export class LongRunEncounterHarness {
   constructor(
     private readonly catalog: ReadonlyArray<
       Readonly<HazardPattern>
-    > = PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES,
+    > = PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG,
     private readonly policy: Readonly<LiveEncounterPolicyConfig> = PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG,
   ) {}
 
