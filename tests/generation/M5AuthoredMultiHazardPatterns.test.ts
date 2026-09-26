@@ -35,12 +35,12 @@ const getKinds = (pattern: (typeof M5_AUTHORED_MULTI_HAZARD_PATTERNS)[number]) =
   pattern.entries.map((entry) => entry.behavior.kind);
 
 const evaluateUnderLivePolicy = (pattern: (typeof M5_AUTHORED_MULTI_HAZARD_PATTERNS)[number]) => {
-  // First production high-pressure window: tier 2 and high pacing, so these combinations cannot
-  // pollute the opening/low/medium run but are evaluated by the real live policy once eligible.
-  const runDistance = 6_400;
+  // First production peak window: cross-family combinations stay out of ordinary pressure beats
+  // and are evaluated by the real live policy only at the strongest authored challenge beat.
+  const runDistance = 11_500;
   const state = createLiveEncounterPolicyState(runDistance, REACHABILITY);
   const selection = selectLiveEncounterCandidates([pattern], runDistance, state);
-  expect(selection.pacing.intensity).toBe('high');
+  expect(selection.pacing.intensity).toBe('peak');
   expect(selection.primaryCatalog).toEqual([pattern]);
 
   const evaluation = evaluateLiveEncounterReadability(
@@ -98,7 +98,7 @@ describe('M5 authored multi-hazard patterns', () => {
       expect(validatePattern(pattern)).toEqual({ valid: true, issues: [] });
       expect(pattern.profile).toMatchObject({
         difficultyTierRange: { minimumTierIndex: 1, maximumTierIndex: null },
-        pacingIntensities: ['high', 'peak'],
+        pacingIntensities: ['peak'],
         varietyFamilyId: 'm5-multi-hazard',
       });
       expect(pattern.entries).toHaveLength(2);
@@ -106,7 +106,7 @@ describe('M5 authored multi-hazard patterns', () => {
   );
 
   it.each(M5_AUTHORED_MULTI_HAZARD_PATTERNS)(
-    '$id is admitted through the real high-pressure live readability policy',
+    '$id is admitted through the real peak-pressure live readability policy',
     (pattern) => {
       const evaluation = evaluateUnderLivePolicy(pattern);
       expect(evaluation).toMatchObject({
