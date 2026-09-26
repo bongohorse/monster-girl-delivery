@@ -41,6 +41,8 @@ const FAMILY_A_PATTERN = createPattern('family-a-pattern', 'family-a');
 const FAMILY_A_ALTERNATIVE = createPattern('family-a-alternative', 'family-a');
 const FAMILY_B_PATTERN = createPattern('family-b-pattern', 'family-b');
 const FAMILY_C_PATTERN = createPattern('family-c-pattern', 'family-c');
+const FAMILY_D_PATTERN = createPattern('family-d-pattern', 'family-d');
+const FAMILY_E_PATTERN = createPattern('family-e-pattern', 'family-e');
 const CATALOG = Object.freeze([FAMILY_A_PATTERN, FAMILY_B_PATTERN, FAMILY_C_PATTERN]);
 
 const BLOCKED_PATTERN = createHazardPattern({
@@ -146,7 +148,7 @@ describe('encounter variety policy', () => {
     expect(initial.recentFamilyIds).toEqual([]);
     expect(afterA.recentFamilyIds).toEqual(['family-a']);
     expect(afterB.recentFamilyIds).toEqual(['family-a', 'family-b']);
-    expect(afterC.recentFamilyIds).toEqual(['family-b', 'family-c']);
+    expect(afterC.recentFamilyIds).toEqual(['family-a', 'family-b', 'family-c']);
     expect(Object.isFrozen(afterC)).toBe(true);
     expect(Object.isFrozen(afterC.recentFamilyIds)).toBe(true);
 
@@ -154,7 +156,41 @@ describe('encounter variety policy', () => {
     for (let index = 0; index < 100; index += 1) {
       repeated = recordAcceptedEncounterForVariety(repeated, FAMILY_A_PATTERN);
     }
-    expect(repeated.recentFamilyIds).toEqual(['family-a', 'family-a']);
+    expect(repeated.recentFamilyIds).toEqual([
+      'family-a',
+      'family-a',
+      'family-a',
+      'family-a',
+    ]);
+  });
+
+  it('prefers a fresh fifth family over the four most recent accepted families', () => {
+    const state = createEncounterVarietyHistoryState([
+      'family-a',
+      'family-b',
+      'family-c',
+      'family-d',
+    ]);
+    const selection = selectPatternsForVariety(
+      [
+        FAMILY_A_PATTERN,
+        FAMILY_B_PATTERN,
+        FAMILY_C_PATTERN,
+        FAMILY_D_PATTERN,
+        FAMILY_E_PATTERN,
+      ],
+      state,
+    );
+
+    expect(PROTOTYPE_ENCOUNTER_VARIETY_POLICY.recentFamilyWindowSize).toBe(4);
+    expect(selection.candidateCatalog).toEqual([FAMILY_E_PATTERN]);
+    expect(selection.deferredCatalog).toEqual([
+      FAMILY_A_PATTERN,
+      FAMILY_B_PATTERN,
+      FAMILY_C_PATTERN,
+      FAMILY_D_PATTERN,
+    ]);
+    expect(selection.fallbackUsed).toBe(false);
   });
 
   it('falls back deterministically for one-entry and fully recent small catalogs', () => {
@@ -200,7 +236,7 @@ describe('encounter variety policy', () => {
       expect(first.patternIds[index]).not.toBe(first.patternIds[index - 1]);
       expect(first.patternIds[index]).not.toBe(first.patternIds[index - 2]);
     }
-    expect(first.variety.recentFamilyIds).toHaveLength(2);
+    expect(first.variety.recentFamilyIds).toHaveLength(4);
   });
 
   it('never reintroduces pacing-ineligible content and defers repetition behind hard fairness', () => {
@@ -310,9 +346,15 @@ describe('encounter variety policy', () => {
         repeatableFamilyIds: ['family-a', 'family-a'],
       }),
     ).toThrow(TypeError);
-    expect(() => createEncounterVarietyHistoryState(['family-a', 'family-b', 'family-c'])).toThrow(
-      RangeError,
-    );
+    expect(() =>
+      createEncounterVarietyHistoryState([
+        'family-a',
+        'family-b',
+        'family-c',
+        'family-d',
+        'family-e',
+      ]),
+    ).toThrow(RangeError);
     expect(() => createEncounterVarietyHistoryState([' family-a'])).toThrow(TypeError);
     expect(() =>
       selectPatternsForVariety(
