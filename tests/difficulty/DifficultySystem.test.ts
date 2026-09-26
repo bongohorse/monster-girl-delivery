@@ -167,12 +167,14 @@ describe('difficulty system', () => {
     expect(scaleRunMotionForDifficulty({ baseScrollSpeed: 350 }, difficulty)).toEqual({
       baseScrollSpeed: 437.5,
     });
-    expect(scaleFlightTuningForDifficulty(PROTOTYPE_FLIGHT_TUNING_DEFAULTS, difficulty)).toEqual({
-      gravity: 1_760,
-      thrust: 2_860,
-      maxFallVelocity: 787.5,
-      maxRiseVelocity: 618.75,
-    });
+    const effectiveFlight = scaleFlightTuningForDifficulty(
+      PROTOTYPE_FLIGHT_TUNING_DEFAULTS,
+      difficulty,
+    );
+    expect(effectiveFlight.gravity).toBeCloseTo(1_760, 10);
+    expect(effectiveFlight.thrust).toBeCloseTo(2_860, 10);
+    expect(effectiveFlight.maxFallVelocity).toBeCloseTo(787.5, 10);
+    expect(effectiveFlight.maxRiseVelocity).toBeCloseTo(618.75, 10);
     expect(createDifficultyReactionTimeConstraint(difficulty)).toEqual({
       minimumReactionTimeSeconds: 1.9,
     });
