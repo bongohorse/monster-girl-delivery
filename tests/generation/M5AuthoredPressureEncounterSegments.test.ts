@@ -7,10 +7,7 @@ import {
   selectLiveEncounterCandidates,
 } from '../../src/generation/LiveEncounterPolicy';
 import { PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG } from '../../src/generation/M5AuthoredMultiHazardPatterns';
-import {
-  M5_AUTHORED_PRESSURE_ENCOUNTER_SEGMENTS,
-  M5_PRESSURE_MISSILE_ZAPPER_BAIT,
-} from '../../src/generation/M5AuthoredPressureEncounterSegments';
+import { M5_AUTHORED_PRESSURE_ENCOUNTER_SEGMENTS } from '../../src/generation/M5AuthoredPressureEncounterSegments';
 import { M5_AUTHORED_SINGLE_ENCOUNTER_SEGMENTS } from '../../src/generation/M5AuthoredSingleEncounterSegments';
 import { scheduleNextPattern } from '../../src/generation/PatternSpawnScheduler';
 import { validatePattern } from '../../src/generation/PatternValidator';
@@ -132,15 +129,9 @@ describe('M5 authored pressure encounter segments', () => {
     },
   );
 
-  it('keeps routes sparse and leaves the dynamic Missile combo uncluttered', () => {
+  it('keeps every pressure route sparse and single-purpose', () => {
     for (const pattern of M5_AUTHORED_PRESSURE_ENCOUNTER_SEGMENTS) {
       const collectibleCount = countCollectibles(pattern);
-      if (pattern === M5_PRESSURE_MISSILE_ZAPPER_BAIT) {
-        expect(pattern.collectiblePaths).toBeUndefined();
-        expect(collectibleCount).toBe(0);
-        continue;
-      }
-
       expect(pattern.collectiblePaths).toHaveLength(1);
       expect(collectibleCount).toBeGreaterThan(5);
       expect(collectibleCount).toBeLessThanOrEqual(20);
