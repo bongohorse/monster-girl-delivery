@@ -250,12 +250,13 @@ export const scaleRunMotionForDifficulty = (
   return Object.freeze({ baseScrollSpeed });
 };
 
+const FLIGHT_ACCELERATION_RESPONSE_GAIN = 0.4;
+const FLIGHT_VELOCITY_RESPONSE_GAIN = 0.5;
+
 /**
- * Keeps useful vertical authority as horizontal reaction time shrinks.
- *
- * Velocity caps follow the level-speed multiplier linearly. Acceleration follows its square, so a
- * similarly shaped vertical correction completes in proportionally less time as the world speeds up.
- * The caller still owns the base Director tuning; this derives only the effective difficulty snapshot.
+ * Keeps some extra vertical authority as horizontal reaction time shrinks without making late-run
+ * input twitchy. World speed remains the difficulty authority; flight only follows a softened share
+ * of that increase so the one-button arc keeps the same general feel throughout the run.
  */
 export const scaleFlightTuningForDifficulty = (
   baseFlightTuning: Readonly<FlightTuningValues>,
@@ -263,8 +264,9 @@ export const scaleFlightTuningForDifficulty = (
 ): Readonly<FlightTuningValues> => {
   assertValidFlightTuningValues(baseFlightTuning);
   assertValidParameters(difficulty);
-  const velocityMultiplier = difficulty.scrollSpeedMultiplier;
-  const accelerationMultiplier = velocityMultiplier * velocityMultiplier;
+  const speedIncrease = difficulty.scrollSpeedMultiplier - 1;
+  const accelerationMultiplier = 1 + speedIncrease * FLIGHT_ACCELERATION_RESPONSE_GAIN;
+  const velocityMultiplier = 1 + speedIncrease * FLIGHT_VELOCITY_RESPONSE_GAIN;
   const flightTuning = {
     gravity: baseFlightTuning.gravity * accelerationMultiplier,
     thrust: baseFlightTuning.thrust * accelerationMultiplier,
