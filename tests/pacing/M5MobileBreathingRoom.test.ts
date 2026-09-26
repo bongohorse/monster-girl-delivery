@@ -4,10 +4,8 @@ import {
   createLiveEncounterPolicyState,
   selectLiveEncounterCandidates,
 } from '../../src/generation/LiveEncounterPolicy';
-import {
-  M5_AUTHORED_MULTI_HAZARD_PATTERNS,
-  PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG,
-} from '../../src/generation/M5AuthoredMultiHazardPatterns';
+import { M5_AUTHORED_PRESSURE_ENCOUNTER_SEGMENTS } from '../../src/generation/M5AuthoredPressureEncounterSegments';
+import { PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG } from '../../src/generation/M5LiveEncounterCatalog';
 import { calculatePacing, PROTOTYPE_PACING_CONFIG } from '../../src/pacing/PacingSystem';
 
 const REACHABILITY = Object.freeze({
@@ -67,17 +65,21 @@ describe('M5 mobile breathing-room pacing', () => {
     expect(medium.every((pattern) => pattern.entries.length === 1)).toBe(true);
   });
 
-  it('keeps high readable while reserving authored cross-family challenges for peak', () => {
-    const high = candidatesAt(6_400);
+  it('keeps tier-one High simple and introduces authored pressure only from tier two', () => {
+    const tierOneHigh = candidatesAt(6_400);
+    const tierTwoHigh = candidatesAt(7_200);
     const peak = candidatesAt(11_500);
     expect(calculatePacing(6_400).intensity).toBe('high');
+    expect(calculatePacing(7_200).intensity).toBe('high');
     expect(calculatePacing(11_500).intensity).toBe('peak');
-    expect(high.length).toBeGreaterThan(0);
-    for (const pattern of M5_AUTHORED_MULTI_HAZARD_PATTERNS) {
-      expect(high).not.toContain(pattern);
+    expect(tierOneHigh.length).toBeGreaterThan(0);
+    for (const pattern of M5_AUTHORED_PRESSURE_ENCOUNTER_SEGMENTS) {
+      expect(tierOneHigh).not.toContain(pattern);
+      expect(tierTwoHigh).toContain(pattern);
       expect(peak).toContain(pattern);
     }
-    expect(high.every((pattern) => pattern.entries.length <= 2)).toBe(true);
+    expect(tierOneHigh.every((pattern) => pattern.entries.length === 1)).toBe(true);
+    expect(tierTwoHigh.every((pattern) => pattern.entries.length <= 2)).toBe(true);
     expect(peak.every((pattern) => pattern.entries.length <= 2)).toBe(true);
   });
 });
