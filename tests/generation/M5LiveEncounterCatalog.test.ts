@@ -6,19 +6,16 @@ import {
   scaleLiveEncounterRunMotion,
   selectLiveEncounterCandidates,
 } from '../../src/generation/LiveEncounterPolicy';
+import { M5_AUTHORED_PRESSURE_ENCOUNTER_SEGMENTS } from '../../src/generation/M5AuthoredPressureEncounterSegments';
+import { M5_SEGMENT_MISSILE_BAIT_DODGE } from '../../src/generation/M5AuthoredSingleEncounterSegments';
 import {
   M5_LIVE_SINGLE_ENCOUNTER_SEGMENTS,
   PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG,
 } from '../../src/generation/M5LiveEncounterCatalog';
-import { M5_AUTHORED_PRESSURE_ENCOUNTER_SEGMENTS } from '../../src/generation/M5AuthoredPressureEncounterSegments';
-import { M5_SEGMENT_MISSILE_BAIT_DODGE } from '../../src/generation/M5AuthoredSingleEncounterSegments';
 import { validatePattern } from '../../src/generation/PatternValidator';
 
 const candidatesAt = (runDistance: number) => {
-  const state = createLiveEncounterPolicyState(
-    runDistance,
-    PROTOTYPE_PATTERN_REACHABILITY_CONTEXT,
-  );
+  const state = createLiveEncounterPolicyState(runDistance, PROTOTYPE_PATTERN_REACHABILITY_CONTEXT);
   const selection = selectLiveEncounterCandidates(
     PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG,
     runDistance,
@@ -32,17 +29,13 @@ describe('M5 authored live encounter catalog candidate', () => {
     expect(M5_LIVE_SINGLE_ENCOUNTER_SEGMENTS).toHaveLength(6);
     expect(M5_AUTHORED_PRESSURE_ENCOUNTER_SEGMENTS).toHaveLength(5);
     expect(PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG).toHaveLength(11);
-    expect(PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG).not.toContain(
-      M5_SEGMENT_MISSILE_BAIT_DODGE,
-    );
-    expect(new Set(PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG.map((pattern) => pattern.id)).size).toBe(
-      11,
-    );
+    expect(PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG).not.toContain(M5_SEGMENT_MISSILE_BAIT_DODGE);
+    expect(
+      new Set(PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG.map((pattern) => pattern.id)).size,
+    ).toBe(11);
     expect(
       new Set(
-        PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG.map(
-          (pattern) => pattern.profile.varietyFamilyId,
-        ),
+        PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG.map((pattern) => pattern.profile.varietyFamilyId),
       ).size,
     ).toBe(11);
   });
@@ -59,7 +52,9 @@ describe('M5 authored live encounter catalog candidate', () => {
     expect(low.pacing.intensity).toBe('low');
     expect([...low.primaryCatalog, ...low.deferredCatalog]).toHaveLength(3);
     expect(
-      [...low.primaryCatalog, ...low.deferredCatalog].every((pattern) => pattern.entries.length === 1),
+      [...low.primaryCatalog, ...low.deferredCatalog].every(
+        (pattern) => pattern.entries.length === 1,
+      ),
     ).toBe(true);
 
     const medium = candidatesAt(4_000).selection;
