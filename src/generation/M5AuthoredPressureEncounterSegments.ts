@@ -3,9 +3,7 @@ import {
   createPrototypeZapperHitbox,
   PROTOTYPE_ZAPPER_LENGTHS,
 } from '../hazards/PrototypeZapperHazard';
-import {
-  createUniformPolylineCollectiblePath,
-} from './CollectibleFormationGenerator';
+import { createUniformPolylineCollectiblePath } from './CollectibleFormationGenerator';
 import type { EncounterBehaviorTag } from './EncounterProfile';
 import { createHazardPattern, type HazardPattern } from './HazardPattern';
 import {
@@ -56,11 +54,7 @@ const getOnlyEntry = (pattern: Readonly<HazardPattern>, name: string) => {
 const LASER_TEMPLATE_ENTRY = getOnlyEntry(PROTOTYPE_LASER_PATTERN, 'Laser');
 const MISSILE_TEMPLATE_ENTRY = getOnlyEntry(PROTOTYPE_MISSILE_PATTERN, 'Missile');
 
-const createLaserEntry = (
-  id: string,
-  top: number,
-  bottom: number,
-) => ({
+const createLaserEntry = (id: string, top: number, bottom: number) => ({
   behavior: LASER_TEMPLATE_ENTRY.behavior,
   id,
   type: LASER_TEMPLATE_ENTRY.type,
@@ -75,20 +69,8 @@ export const M5_PRESSURE_ZAPPER_SWITCH_LOW_TO_HIGH: Readonly<HazardPattern> = cr
   runLength: 780,
   profile: createPressureProfile(['static-barrier'], 'm5-pressure-zapper-low-high', 3, 3),
   entries: [
-    createStaticZapperEntry(
-      'upper-horizontal-zapper',
-      180,
-      100,
-      0,
-      PROTOTYPE_ZAPPER_LENGTHS.short,
-    ),
-    createStaticZapperEntry(
-      'lower-diagonal-zapper',
-      500,
-      280,
-      45,
-      PROTOTYPE_ZAPPER_LENGTHS.short,
-    ),
+    createStaticZapperEntry('upper-horizontal-zapper', 180, 100, 0, PROTOTYPE_ZAPPER_LENGTHS.short),
+    createStaticZapperEntry('lower-diagonal-zapper', 500, 280, 45, PROTOTYPE_ZAPPER_LENGTHS.short),
   ],
   collectiblePaths: [
     createUniformPolylineCollectiblePath({
@@ -110,20 +92,8 @@ export const M5_PRESSURE_ZAPPER_SWITCH_HIGH_TO_LOW: Readonly<HazardPattern> = cr
   runLength: 780,
   profile: createPressureProfile(['static-barrier'], 'm5-pressure-zapper-high-low', 3, 3),
   entries: [
-    createStaticZapperEntry(
-      'lower-diagonal-zapper',
-      180,
-      280,
-      45,
-      PROTOTYPE_ZAPPER_LENGTHS.short,
-    ),
-    createStaticZapperEntry(
-      'upper-vertical-zapper',
-      500,
-      110,
-      90,
-      PROTOTYPE_ZAPPER_LENGTHS.short,
-    ),
+    createStaticZapperEntry('lower-diagonal-zapper', 180, 280, 45, PROTOTYPE_ZAPPER_LENGTHS.short),
+    createStaticZapperEntry('upper-vertical-zapper', 500, 110, 90, PROTOTYPE_ZAPPER_LENGTHS.short),
   ],
   collectiblePaths: [
     createUniformPolylineCollectiblePath({
@@ -151,13 +121,7 @@ export const M5_PRESSURE_LASER_HIGH_ZAPPER_LOW: Readonly<HazardPattern> = create
   ),
   entries: [
     createLaserEntry('high-laser', 84, 108),
-    createStaticZapperEntry(
-      'lower-diagonal-zapper',
-      360,
-      280,
-      45,
-      PROTOTYPE_ZAPPER_LENGTHS.short,
-    ),
+    createStaticZapperEntry('lower-diagonal-zapper', 360, 280, 45, PROTOTYPE_ZAPPER_LENGTHS.short),
   ],
   collectiblePaths: [
     createUniformPolylineCollectiblePath({
@@ -183,13 +147,7 @@ export const M5_PRESSURE_LASER_LOW_ZAPPER_HIGH: Readonly<HazardPattern> = create
   ),
   entries: [
     createLaserEntry('low-laser', 282, 306),
-    createStaticZapperEntry(
-      'upper-diagonal-zapper',
-      360,
-      110,
-      -45,
-      PROTOTYPE_ZAPPER_LENGTHS.short,
-    ),
+    createStaticZapperEntry('upper-diagonal-zapper', 360, 110, -45, PROTOTYPE_ZAPPER_LENGTHS.short),
   ],
   collectiblePaths: [
     createUniformPolylineCollectiblePath({
