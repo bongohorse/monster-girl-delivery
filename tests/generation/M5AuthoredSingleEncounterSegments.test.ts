@@ -7,10 +7,6 @@ import {
   selectLiveEncounterCandidates,
 } from '../../src/generation/LiveEncounterPolicy';
 import {
-  M5_LIVE_SINGLE_ENCOUNTER_SEGMENTS,
-  PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG,
-} from '../../src/generation/M5LiveEncounterCatalog';
-import {
   M5_AUTHORED_SINGLE_ENCOUNTER_SEGMENTS,
   M5_OPENING_SINGLE_ENCOUNTER_SEGMENTS,
   M5_SEGMENT_LASER_HIGH,
@@ -18,6 +14,10 @@ import {
   M5_SEGMENT_ZAPPER_TIMED_CENTER,
   M5_SEGMENT_ZAPPER_VERTICAL_UPPER,
 } from '../../src/generation/M5AuthoredSingleEncounterSegments';
+import {
+  M5_LIVE_SINGLE_ENCOUNTER_SEGMENTS,
+  PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG,
+} from '../../src/generation/M5LiveEncounterCatalog';
 import { scheduleNextPattern } from '../../src/generation/PatternSpawnScheduler';
 import { validatePattern } from '../../src/generation/PatternValidator';
 import { createRunGenerationState } from '../../src/generation/RunGenerationState';
@@ -44,9 +44,7 @@ describe('M5 authored single-decision encounter segments', () => {
     for (const pattern of M5_LIVE_SINGLE_ENCOUNTER_SEGMENTS) {
       expect(PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG).toContain(pattern);
     }
-    expect(PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG).not.toContain(
-      M5_SEGMENT_MISSILE_BAIT_DODGE,
-    );
+    expect(PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG).not.toContain(M5_SEGMENT_MISSILE_BAIT_DODGE);
   });
 
   it.each(M5_AUTHORED_SINGLE_ENCOUNTER_SEGMENTS)(
