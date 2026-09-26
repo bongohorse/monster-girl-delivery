@@ -194,10 +194,7 @@ export const M5_SEGMENT_ZAPPER_TIMED_CENTER: Readonly<HazardPattern> = createHaz
 export const M5_SEGMENT_LASER_HIGH: Readonly<HazardPattern> = createHazardPattern({
   id: 'm5-segment-laser-high',
   runLength: 640,
-  profile: createSingleSegmentProfile('timed-pulse', 1, 'm5-laser-lane', 1, 3, [
-    'high',
-    'peak',
-  ]),
+  profile: createSingleSegmentProfile('timed-pulse', 1, 'm5-laser-lane', 1, 3, ['high', 'peak']),
   entries: [
     {
       behavior: LASER_TEMPLATE_ENTRY.behavior,
