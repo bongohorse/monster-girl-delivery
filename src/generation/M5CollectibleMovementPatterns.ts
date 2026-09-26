@@ -1,8 +1,6 @@
 import {
-  createBitmapCollectiblePaths,
-  createGridCollectiblePaths,
+  createSineCollectiblePath,
   createUniformPolylineCollectiblePath,
-  M5_DENSE_COIN_SPACING,
 } from './CollectibleFormationGenerator';
 import { type CollectiblePath, createHazardPattern, type HazardPattern } from './HazardPattern';
 import {
@@ -12,33 +10,8 @@ import {
   PROTOTYPE_ZAPPER_PATTERN,
 } from './PrototypeHazardPatternFixtures';
 
-const HEART_BITMAP = Object.freeze([
-  '.##...##.',
-  '####.####',
-  '#########',
-  '.#######.',
-  '..#####..',
-  '...###...',
-  '....##...',
-]);
-
-const STAR_BITMAP = Object.freeze([
-  '...###...',
-  '#########',
-  '.#######.',
-  '..#####..',
-  '.#######.',
-  '###...###',
-  '.##...##.',
-]);
-
-const COINS_BITMAP = Object.freeze([
-  '###.###.###.#..#.###.##',
-  '#...#.#..#..##.#.#...##',
-  '#...#.#..#..#.##.###.##',
-  '#...#.#..#..#..#...#...',
-  '###.###.###.#..#.###.##',
-]);
+const M5_LIVE_ROUTE_SPACING = 48;
+const M5_LIVE_RISK_ROUTE_SPACING = 44;
 
 const copyEntries = (pattern: Readonly<HazardPattern>) =>
   pattern.entries.map((entry) => ({
@@ -62,9 +35,8 @@ const enrichPattern = (
   });
 
 /**
- * Teaching vocabulary layered onto the existing three-barrier live slot. The guide is resampled by
- * actual path length, so the climb/crest/descent no longer produces visibly irregular coin gaps.
- * A compact heart begins only after the last barrier's conservative player-expanded clearance.
+ * Teaching vocabulary layered onto the existing three-barrier live slot. One sparse route carries
+ * the entire movement message; decorative bitmap rewards are intentionally kept out of normal play.
  */
 export const M5_TEACHING_FLIGHT_ARC_PATTERN: Readonly<HazardPattern> = enrichPattern(
   PROTOTYPE_LINE_PATTERN,
@@ -72,7 +44,7 @@ export const M5_TEACHING_FLIGHT_ARC_PATTERN: Readonly<HazardPattern> = enrichPat
     createUniformPolylineCollectiblePath({
       id: 'teaching-flight-arc',
       intent: 'safe-guide',
-      spacing: M5_DENSE_COIN_SPACING,
+      spacing: M5_LIVE_ROUTE_SPACING,
       controlPoints: [
         { runDistance: 0, y: 195 },
         { runDistance: 70, y: 150 },
@@ -83,40 +55,31 @@ export const M5_TEACHING_FLIGHT_ARC_PATTERN: Readonly<HazardPattern> = enrichPat
         { runDistance: 600, y: 195 },
       ],
     }),
-    ...createBitmapCollectiblePaths({
-      id: 'teaching-heart-reward',
+  ],
+);
+
+/**
+ * The corridor uses one centered guide instead of a dense reward block. The route remains obvious
+ * while leaving the hazard geometry and surrounding screen visually quiet.
+ */
+export const M5_CORRIDOR_REWARD_PATTERN: Readonly<HazardPattern> = enrichPattern(
+  PROTOTYPE_CORRIDOR_PATTERN,
+  [
+    createUniformPolylineCollectiblePath({
+      id: 'corridor-center-route',
       intent: 'safe-guide',
-      bitmap: HEART_BITMAP,
-      cellSpacingX: 12,
-      cellSpacingY: 10,
-      originRunDistance: 500,
-      originY: 160,
+      spacing: M5_LIVE_ROUTE_SPACING,
+      controlPoints: [
+        { runDistance: 48, y: 195 },
+        { runDistance: 352, y: 195 },
+      ],
     }),
   ],
 );
 
 /**
- * The corridor becomes an explicit 3x10 reward lane: three aligned rows with exactly equal X gaps.
- * All thirty coins sit inside the already validated center corridor, so following the dense block is
- * rewarding rather than a trap.
- */
-export const M5_CORRIDOR_REWARD_PATTERN: Readonly<HazardPattern> = enrichPattern(
-  PROTOTYPE_CORRIDOR_PATTERN,
-  createGridCollectiblePaths({
-    id: 'corridor-triple-row',
-    intent: 'safe-guide',
-    columns: 10,
-    rows: 3,
-    columnSpacing: M5_DENSE_COIN_SPACING,
-    rowSpacing: 23,
-    startRunDistance: 48,
-    centerY: 195,
-  }),
-);
-
-/**
- * The established optional Graze line is made denser and evenly spaced. The star starts after the
- * second barrier's conservative clearance; tighter 15px cells let the full shape fit in runLength.
+ * The optional Graze line stays explicit but no longer terminates in a dense star formation. The
+ * player sees one coherent risk invitation instead of route guidance plus a second visual reward.
  */
 export const M5_OFFSET_RISK_REWARD_PATTERN: Readonly<HazardPattern> = enrichPattern(
   PROTOTYPE_OFFSET_PAIR_PATTERN,
@@ -124,40 +87,33 @@ export const M5_OFFSET_RISK_REWARD_PATTERN: Readonly<HazardPattern> = enrichPatt
     createUniformPolylineCollectiblePath({
       id: 'offset-graze-route',
       intent: 'risk-reward',
-      spacing: M5_DENSE_COIN_SPACING,
+      spacing: M5_LIVE_RISK_ROUTE_SPACING,
       controlPoints: [
         { runDistance: 32, y: 195 },
         { runDistance: 488, y: 195 },
       ],
     }),
-    ...createBitmapCollectiblePaths({
-      id: 'offset-star-reward',
-      intent: 'safe-guide',
-      bitmap: STAR_BITMAP,
-      cellSpacingX: 15,
-      cellSpacingY: 10,
-      originRunDistance: 400,
-      originY: 165,
-    }),
   ],
 );
 
 /**
- * Recovery vocabulary layered onto the existing rotating-Zapper slot. A compact COINS! formation
- * lives entirely in the generous lower safe field: downtime pays out visibly without pointing the
- * player back toward the Zapper.
+ * Recovery vocabulary layered onto the rotating-Zapper slot. A gentle lower-field wave gives the
+ * player something satisfying to follow without turning the recovery beat into another screen-filling event.
  */
 export const M5_RECOVERY_ROUTE_PATTERN: Readonly<HazardPattern> = enrichPattern(
   PROTOTYPE_ZAPPER_PATTERN,
-  createBitmapCollectiblePaths({
-    id: 'recovery-coins-text',
-    intent: 'safe-guide',
-    bitmap: COINS_BITMAP,
-    cellSpacingX: 12,
-    cellSpacingY: 16,
-    originRunDistance: 340,
-    originY: 228,
-  }),
+  [
+    createSineCollectiblePath({
+      id: 'recovery-wave',
+      intent: 'safe-guide',
+      startRunDistance: 180,
+      endRunDistance: 600,
+      centerY: 235,
+      amplitudeY: 18,
+      cycles: 1,
+      spacing: M5_LIVE_ROUTE_SPACING,
+    }),
+  ],
 );
 
 export const M5_COLLECTIBLE_MOVEMENT_PATTERNS: ReadonlyArray<Readonly<HazardPattern>> =

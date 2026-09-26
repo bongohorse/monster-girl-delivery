@@ -45,7 +45,7 @@ const REPRESENTATIVE_ROUTES = Object.freeze([
   Object.freeze({
     role: 'safe-route',
     pattern: M5_CORRIDOR_REWARD_PATTERN,
-    pathId: 'corridor-triple-row-row-2',
+    pathId: 'corridor-center-route',
     intent: 'safe-guide',
   }),
   Object.freeze({
@@ -57,7 +57,7 @@ const REPRESENTATIVE_ROUTES = Object.freeze([
   Object.freeze({
     role: 'recovery',
     pattern: M5_RECOVERY_ROUTE_PATTERN,
-    pathId: 'recovery-coins-text-row-1',
+    pathId: 'recovery-wave',
     intent: 'safe-guide',
   }),
   Object.freeze({
@@ -108,55 +108,38 @@ describe('M5 collectible movement language', () => {
     }
   });
 
-  it('uses an exact 3x10 aligned reward block through the safe corridor', () => {
-    const rows = M5_CORRIDOR_REWARD_PATTERN.collectiblePaths ?? [];
-    expect(rows).toHaveLength(3);
-    expect(rows.map((row) => row.points.length)).toEqual([10, 10, 10]);
-    expect(rows.map((row) => row.points[0]?.y)).toEqual([172, 195, 218]);
+  it('keeps normal live collectible routes sparse and single-purpose', () => {
+    expect(M5_CORRIDOR_REWARD_PATTERN.collectiblePaths).toHaveLength(1);
+    expect(M5_OFFSET_RISK_REWARD_PATTERN.collectiblePaths).toHaveLength(1);
+    expect(M5_RECOVERY_ROUTE_PATTERN.collectiblePaths).toHaveLength(1);
+    expect(M5_TEACHING_FLIGHT_ARC_PATTERN.collectiblePaths).toHaveLength(1);
 
-    for (const row of rows) {
-      const gaps = row.points.slice(1).map((point, index) => {
-        const previous = row.points[index];
-        if (!previous) {
-          throw new Error('Missing previous corridor coin.');
-        }
-        return point.runDistance - previous.runDistance;
-      });
-      expect(gaps).toEqual(Array(9).fill(32));
+    for (const pattern of M5_COLLECTIBLE_MOVEMENT_PATTERNS) {
+      expect(countCollectibles(pattern)).toBeGreaterThan(0);
+      expect(countCollectibles(pattern)).toBeLessThanOrEqual(20);
     }
   });
 
-  it('ships visible heart, star, and COINS! reward formations without adding hazard slots', () => {
-    expect(
-      M5_TEACHING_FLIGHT_ARC_PATTERN.collectiblePaths?.some((path) =>
-        path.id.startsWith('teaching-heart-reward-row-'),
-      ),
-    ).toBe(true);
-    expect(
-      M5_OFFSET_RISK_REWARD_PATTERN.collectiblePaths?.some((path) =>
-        path.id.startsWith('offset-star-reward-row-'),
-      ),
-    ).toBe(true);
-    expect(
-      M5_RECOVERY_ROUTE_PATTERN.collectiblePaths?.some((path) =>
-        path.id.startsWith('recovery-coins-text-row-'),
-      ),
-    ).toBe(true);
+  it('keeps decorative bitmap/grid reward formations out of the normal live movement patterns', () => {
+    const livePathIds = M5_COLLECTIBLE_MOVEMENT_PATTERNS.flatMap(
+      (pattern) => pattern.collectiblePaths?.map((path) => path.id) ?? [],
+    );
+
+    expect(livePathIds).not.toContain('corridor-triple-row-row-1');
+    expect(livePathIds.some((id) => id.startsWith('teaching-heart-reward-row-'))).toBe(false);
+    expect(livePathIds.some((id) => id.startsWith('offset-star-reward-row-'))).toBe(false);
+    expect(livePathIds.some((id) => id.startsWith('recovery-coins-text-row-'))).toBe(false);
     expect(M5_COLLECTIBLE_MOVEMENT_PATTERNS).toHaveLength(4);
   });
 
-  it('keeps risky guidance optional while placing separate safe reward geometry after it', () => {
+  it('keeps risky guidance optional without adding a second visual reward formation', () => {
     const riskPath = getPath(M5_OFFSET_RISK_REWARD_PATTERN, 'offset-graze-route');
     expect(riskPath.intent).toBe('risk-reward');
-    expect(
-      M5_OFFSET_RISK_REWARD_PATTERN.collectiblePaths?.some(
-        (path) => path.intent === 'safe-guide' && path.id.startsWith('offset-star-reward-row-'),
-      ),
-    ).toBe(true);
+    expect(M5_OFFSET_RISK_REWARD_PATTERN.collectiblePaths).toEqual([riskPath]);
     expect(validatePattern(M5_OFFSET_RISK_REWARD_PATTERN)).toEqual({ valid: true, issues: [] });
   });
 
-  it('materializes dense authored formations deterministically with stable identities', () => {
+  it('materializes sparse authored routes deterministically with stable identities', () => {
     const schedule = () =>
       scheduleNextPattern({
         catalog: [M5_TEACHING_FLIGHT_ARC_PATTERN],
@@ -188,7 +171,8 @@ describe('M5 collectible movement language', () => {
 
     expect(first).toEqual(second);
     expect(first).toHaveLength(countCollectibles(M5_TEACHING_FLIGHT_ARC_PATTERN));
-    expect(first.length).toBeGreaterThan(30);
+    expect(first.length).toBeGreaterThan(5);
+    expect(first.length).toBeLessThanOrEqual(20);
     expect(new Set(first.map((spawn) => `${spawn.pathId}:${spawn.pathPointIndex}`)).size).toBe(
       first.length,
     );
