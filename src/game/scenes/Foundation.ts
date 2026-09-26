@@ -378,7 +378,9 @@ export class Foundation extends Scene {
     this.syncDiagnosticsBadge();
 
     this.scale.on(Scale.Events.RESIZE, this.handleResize);
-    window.addEventListener('orientationchange', this.handleOrientationChange);
+    if (typeof window !== 'undefined') {
+      window.addEventListener('orientationchange', this.handleOrientationChange);
+    }
     this.events.once(Scenes.Events.SHUTDOWN, this.handleShutdown);
     this.layout(viewport);
   }
@@ -1842,7 +1844,9 @@ export class Foundation extends Scene {
 
     this.shutdownHandled = true;
     this.scale.off(Scale.Events.RESIZE, this.handleResize);
-    window.removeEventListener('orientationchange', this.handleOrientationChange);
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('orientationchange', this.handleOrientationChange);
+    }
     this.destroyDirectorTools();
     this.destroyProductionDiagnosticsInput();
     this.destroyDiagnosticsGestureOverlay();
