@@ -34,7 +34,7 @@ export interface EncounterVarietySelection {
 }
 
 export const PROTOTYPE_ENCOUNTER_VARIETY_POLICY: Readonly<EncounterVarietyPolicy> = Object.freeze({
-  recentFamilyWindowSize: 2,
+  recentFamilyWindowSize: 4,
   repeatableFamilyIds: Object.freeze([]),
 });
 
@@ -103,10 +103,10 @@ const assertValidCatalog = (catalog: ReadonlyArray<Readonly<HazardPattern>>): vo
 
 /**
  * Narrows only the already-eligible input catalog and consumes no randomness. Preferred candidates
- * avoid recent families unless their family is explicitly repeatable. If no preferred candidate
- * exists, authored catalog order is retained as a deterministic fallback. When preferred content
- * exists, recent candidates remain separately available for callers to try only after hard
- * fairness rejects the primary catalog. Full live orchestration belongs to #120.
+ * avoid recent families unless their family is explicitly repeatable. If every candidate is recent,
+ * the least-recent family tier becomes the primary deterministic fallback while newer recent content
+ * remains deferred for hard-fairness recovery. When fresh content exists, all recent candidates stay
+ * deferred behind it. Full live orchestration belongs to #120.
  */
 export const selectPatternsForVariety = (
   catalog: ReadonlyArray<Readonly<HazardPattern>>,
@@ -142,10 +142,24 @@ export const selectPatternsForVariety = (
   const preferredCatalog = catalog.filter((pattern) => preferredPatternIds.has(pattern.id));
   const recentCatalog = catalog.filter((pattern) => !preferredPatternIds.has(pattern.id));
   const fallbackUsed = catalog.length > 0 && preferredCatalog.length === 0;
+  const oldestRecentDistance = fallbackUsed
+    ? Math.max(...evaluations.map((evaluation) => evaluation.selectionsSinceLastUse ?? 0))
+    : null;
+  const fallbackPatternIds = new Set(
+    fallbackUsed
+      ? evaluations
+          .filter((evaluation) => evaluation.selectionsSinceLastUse === oldestRecentDistance)
+          .map((evaluation) => evaluation.patternId)
+      : [],
+  );
+  const fallbackCatalog = catalog.filter((pattern) => fallbackPatternIds.has(pattern.id));
+  const newerRecentCatalog = catalog.filter(
+    (pattern) => fallbackUsed && !fallbackPatternIds.has(pattern.id),
+  );
 
   return Object.freeze({
-    candidateCatalog: Object.freeze(fallbackUsed ? [...catalog] : preferredCatalog),
-    deferredCatalog: Object.freeze(fallbackUsed ? [] : recentCatalog),
+    candidateCatalog: Object.freeze(fallbackUsed ? fallbackCatalog : preferredCatalog),
+    deferredCatalog: Object.freeze(fallbackUsed ? newerRecentCatalog : recentCatalog),
     evaluations: Object.freeze(evaluations),
     fallbackUsed,
   });
