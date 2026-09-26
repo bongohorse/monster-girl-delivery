@@ -165,4 +165,3 @@ export const M5_LASER_ZAPPER_PATTERN: Readonly<HazardPattern> = createHazardPatt
 
 export const M5_AUTHORED_MULTI_HAZARD_PATTERNS: ReadonlyArray<Readonly<HazardPattern>> =
   Object.freeze([M5_MISSILE_ZAPPER_PATTERN, M5_MISSILE_LASER_PATTERN, M5_LASER_ZAPPER_PATTERN]);
-
