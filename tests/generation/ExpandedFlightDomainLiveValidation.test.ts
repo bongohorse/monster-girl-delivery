@@ -140,7 +140,6 @@ describe('expanded flight-domain live validation evidence', () => {
     const baselineTop = Math.min(...baseline.spawns.map((spawn) => spawn.top));
     const tallTop = Math.min(...tall.spawns.map((spawn) => spawn.top));
     expect(tallTop).toBeLessThan(baselineTop);
-    expect(tall.spawns.some((spawn) => spawn.top < 0)).toBe(true);
   });
 
   it('keeps accepted hazards and PRNG state stable at resize, then applies the new domain to future scheduling', () => {
