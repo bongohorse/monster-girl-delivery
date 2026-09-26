@@ -56,33 +56,36 @@ describe('M5 mobile breathing-room pacing', () => {
     }
   });
 
-  it('restricts low and medium normal play to single-hazard encounters', () => {
+  it('restricts low, medium and high normal play to single-hazard encounters', () => {
     const low = candidatesAt(1_700);
     const medium = candidatesAt(4_000);
+    const high = candidatesAt(6_400);
     expect(calculatePacing(1_700).intensity).toBe('low');
     expect(calculatePacing(4_000).intensity).toBe('medium');
+    expect(calculatePacing(6_400).intensity).toBe('high');
     expect(low.length).toBeGreaterThan(0);
     expect(medium.length).toBeGreaterThan(0);
+    expect(high.length).toBeGreaterThan(0);
     expect(low.every((pattern) => pattern.entries.length === 1)).toBe(true);
     expect(medium.every((pattern) => pattern.entries.length === 1)).toBe(true);
-    expect(low.some((pattern) => pattern.profile.varietyFamilyId === 'm5-multi-hazard')).toBe(
-      false,
-    );
-    expect(medium.some((pattern) => pattern.profile.varietyFamilyId === 'm5-multi-hazard')).toBe(
-      false,
-    );
+    expect(high.every((pattern) => pattern.entries.length === 1)).toBe(true);
+    for (const catalog of [low, medium, high]) {
+      expect(catalog.some((pattern) => pattern.profile.varietyFamilyId === 'm5-multi-hazard')).toBe(
+        false,
+      );
+    }
   });
 
-  it('admits authored two-family challenge vocabulary only in high and peak beats', () => {
+  it('reserves authored two-family challenge vocabulary for peak beats', () => {
     const high = candidatesAt(6_400);
     const peak = candidatesAt(11_500);
     expect(calculatePacing(6_400).intensity).toBe('high');
     expect(calculatePacing(11_500).intensity).toBe('peak');
     for (const pattern of M5_AUTHORED_MULTI_HAZARD_PATTERNS) {
-      expect(high).toContain(pattern);
+      expect(high).not.toContain(pattern);
       expect(peak).toContain(pattern);
     }
-    expect(high.every((pattern) => pattern.entries.length <= 2)).toBe(true);
+    expect(high.every((pattern) => pattern.entries.length === 1)).toBe(true);
     expect(peak.every((pattern) => pattern.entries.length <= 2)).toBe(true);
   });
 });

@@ -45,7 +45,7 @@ const createComboProfile = (
 ) => ({
   behaviorTags,
   difficultyTierRange: { minimumTierIndex: 1, maximumTierIndex: null },
-  pacingIntensities: ['high', 'peak'] as const,
+  pacingIntensities: ['peak'] as const,
   pressureCost,
   readabilityCost,
   varietyFamilyId: 'm5-multi-hazard',

@@ -81,10 +81,10 @@ describe('generated hazard motion planning', () => {
     );
     const beforeBoundary = advanceGeneratedHazardStream(
       initial,
-      2_490,
+      2_990,
       EMPTY_POLICY_CONTEXT,
       PROTOTYPE_RUN_MOTION_DEFAULTS,
-      2_490 / PROTOTYPE_RUN_MOTION_DEFAULTS.baseScrollSpeed,
+      2_990 / PROTOTYPE_RUN_MOTION_DEFAULTS.baseScrollSpeed,
       false,
     );
     const plan = planGeneratedHazardMotion(
@@ -96,20 +96,27 @@ describe('generated hazard motion planning', () => {
 
     expect(plan.segments).toHaveLength(2);
     expect(plan.segments[0]).toMatchObject({
-      startRunDistance: 2_490,
-      endRunDistance: 2_500,
+      startRunDistance: 2_990,
+      endRunDistance: 3_000,
       scrollSpeed: 350,
+      flightTuning: PROTOTYPE_FLIGHT_TUNING_DEFAULTS,
     });
     expect(plan.segments[0]?.durationSeconds).toBeCloseTo(10 / 350, 12);
     expect(plan.segments[1]).toMatchObject({
-      startRunDistance: 2_500,
-      endRunDistance: 2_527,
-      scrollSpeed: 378,
+      startRunDistance: 3_000,
+      endRunDistance: 3_028,
+      scrollSpeed: 392,
+      flightTuning: {
+        gravity: 2_007.04,
+        thrust: 3_261.44,
+        maxFallVelocity: 784,
+        maxRiseVelocity: 616,
+      },
     });
-    expect(plan.endRunDistance).toBeCloseTo(2_527, 12);
-    expect(plan.averageScrollSpeed).toBeCloseTo(370, 12);
-    expect(resolveGeneratedHazardMotionRunDistance(plan, 10 / 350)).toBeCloseTo(2_500, 12);
-    expect(resolveGeneratedHazardMotionRunDistance(plan, 0.1)).toBeCloseTo(2_527, 12);
+    expect(plan.endRunDistance).toBeCloseTo(3_028, 12);
+    expect(plan.averageScrollSpeed).toBeCloseTo(380, 12);
+    expect(resolveGeneratedHazardMotionRunDistance(plan, 10 / 350)).toBeCloseTo(3_000, 12);
+    expect(resolveGeneratedHazardMotionRunDistance(plan, 0.1)).toBeCloseTo(3_028, 12);
     expect(plan.stream.generationState).toBe(beforeBoundary.generationState);
     expect(plan.stream.scheduledPatternCount).toBe(beforeBoundary.scheduledPatternCount);
   });
