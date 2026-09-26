@@ -1,12 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { PROTOTYPE_LOGICAL_FLIGHT_BOUNDS } from '../../src/game/PrototypeFlightLayout';
 import { createHazardPattern } from '../../src/generation/HazardPattern';
-import { PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG } from '../../src/generation/M5AuthoredMultiHazardPatterns';
+import { M5_SEGMENT_ZAPPER_HORIZONTAL_UPPER } from '../../src/generation/M5AuthoredSingleEncounterSegments';
+import { PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG } from '../../src/generation/M5LiveEncounterCatalog';
 import { PROTOTYPE_PATTERN_VALIDATION_CONSTRAINTS } from '../../src/generation/PatternValidator';
-import {
-  PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES,
-  PROTOTYPE_TARGET_LOCK_STRIKE_PATTERN,
-} from '../../src/generation/PrototypeHazardPatternFixtures';
+import { PROTOTYPE_TARGET_LOCK_STRIKE_PATTERN } from '../../src/generation/PrototypeHazardPatternFixtures';
 import { createPrototypeHazardVerticalDomain } from '../../src/generation/PrototypeHazardVerticalDomain';
 
 const getPattern = (
@@ -47,11 +45,15 @@ describe('prototype hazard vertical domain', () => {
     const bounds = { ceilingY: -272, floorY: 362 };
     const domain = createPrototypeHazardVerticalDomain(bounds);
     const authored = getEntry(
-      PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES,
-      'prototype-corridor',
-      'corridor-top',
+      [M5_SEGMENT_ZAPPER_HORIZONTAL_UPPER],
+      'm5-segment-zapper-horizontal-upper',
+      'upper-horizontal-zapper',
     );
-    const adapted = getEntry(domain.catalog, 'prototype-corridor', 'corridor-top');
+    const adapted = getEntry(
+      domain.catalog,
+      'm5-segment-zapper-horizontal-upper',
+      'upper-horizontal-zapper',
+    );
     const authoredCenter = (authored.hitbox.top + authored.hitbox.bottom) / 2;
     const adaptedCenter = (adapted.hitbox.top + adapted.hitbox.bottom) / 2;
 
@@ -97,7 +99,9 @@ describe('prototype hazard vertical domain', () => {
 
   it('expands target-lock coverage with the flight-bound edges while preserving strike size', () => {
     const bounds = { ceilingY: -272, floorY: 362 };
-    const domain = createPrototypeHazardVerticalDomain(bounds);
+    const domain = createPrototypeHazardVerticalDomain(bounds, [
+      PROTOTYPE_TARGET_LOCK_STRIKE_PATTERN,
+    ]);
     const adapted = getEntry(
       domain.catalog,
       'prototype-target-lock-strike',
