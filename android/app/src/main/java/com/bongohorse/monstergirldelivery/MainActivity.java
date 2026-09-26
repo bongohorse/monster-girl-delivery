@@ -20,7 +20,6 @@ public class MainActivity extends BridgeActivity {
     protected void onCreate(Bundle savedInstanceState) {
         registerPlugin(EvidenceExportPlugin.class);
         super.onCreate(savedInstanceState);
-        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         installEvidenceDownloadHandler();
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
@@ -115,6 +114,9 @@ public class MainActivity extends BridgeActivity {
     }
 
     private void applyImmersiveFullscreen() {
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+        DisplayCutoutPolicy.apply(getWindow(), android.os.Build.VERSION.SDK_INT);
+
         WindowInsetsControllerCompat insetsController =
                 WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
         if (insetsController == null) {

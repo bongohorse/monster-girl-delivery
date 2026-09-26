@@ -683,6 +683,46 @@ describe('Foundation scene gameplay orchestration', () => {
     expect(playerPresentation.setPosition).toHaveBeenLastCalledWith(200, 460);
   });
 
+  it('refreshes left/right safe-area insets across same-size landscape rotation', () => {
+    const { foundation, viewportService } = createFoundationHarness();
+    const probe = {} as HTMLElement;
+    let leftInset = 44;
+    let rightInset = 0;
+    vi.stubGlobal('document', {
+      getElementById: vi.fn((id: string) => (id === 'safe-area-probe' ? probe : null)),
+    });
+    vi.stubGlobal('window', {
+      getComputedStyle: vi.fn(() => ({
+        paddingTop: '0px',
+        paddingRight: `${rightInset}px`,
+        paddingBottom: '0px',
+        paddingLeft: `${leftInset}px`,
+      })),
+    });
+
+    const handleOrientationChange = Reflect.get(
+      foundation,
+      'handleOrientationChange',
+    ) as () => void;
+
+    handleOrientationChange();
+    expect(viewportService.getSnapshot()).toMatchObject({
+      width: 400,
+      height: 800,
+      safeArea: { top: 0, right: 0, bottom: 0, left: 44 },
+    });
+
+    leftInset = 0;
+    rightInset = 44;
+    handleOrientationChange();
+
+    expect(viewportService.getSnapshot()).toMatchObject({
+      width: 400,
+      height: 800,
+      safeArea: { top: 0, right: 44, bottom: 0, left: 0 },
+    });
+  });
+
   it('flies into the added upper room and clamps on shrink without resetting the run', () => {
     const { foundation, services, playerPresentation } = createFoundationHarness();
     vi.stubGlobal('document', { getElementById: vi.fn(() => null) });

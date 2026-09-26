@@ -378,6 +378,9 @@ export class Foundation extends Scene {
     this.syncDiagnosticsBadge();
 
     this.scale.on(Scale.Events.RESIZE, this.handleResize);
+    if (typeof window !== 'undefined') {
+      window.addEventListener('orientationchange', this.handleOrientationChange);
+    }
     this.events.once(Scenes.Events.SHUTDOWN, this.handleShutdown);
     this.layout(viewport);
   }
@@ -644,16 +647,26 @@ export class Foundation extends Scene {
   }
 
   private readonly handleResize = (gameSize: Phaser.Structs.Size): void => {
+    this.refreshViewport(gameSize.width, gameSize.height);
+  };
+
+  private readonly handleOrientationChange = (): void => {
+    // A 180° landscape rotation can move a display cutout from left to right without changing
+    // viewport dimensions. Re-read CSS safe-area env() values even when Phaser has no resize.
+    this.refreshViewport(this.scale.width, this.scale.height);
+  };
+
+  private refreshViewport(backingWidth: number, backingHeight: number): void {
     if (!this.viewportService) {
       return;
     }
 
     const renderViewport = getLogicalViewportFromBacking(
-      gameSize.width,
-      gameSize.height,
+      backingWidth,
+      backingHeight,
       this.scale.zoom,
     );
-    this.cameras.resize(gameSize.width, gameSize.height);
+    this.cameras.resize(backingWidth, backingHeight);
     this.cameras.main.setOrigin(0, 0).setZoom(renderViewport.renderScale);
     this.instructions?.setResolution(renderViewport.renderScale);
     this.viewportService.resize(
@@ -679,7 +692,7 @@ export class Foundation extends Scene {
       };
     }
     this.layout(viewport);
-  };
+  }
 
   private layout(viewport: ReturnType<ViewportService['getSnapshot']>): void {
     const safeLeft = Math.min(viewport.width, viewport.safeArea.left);
@@ -1831,6 +1844,9 @@ export class Foundation extends Scene {
 
     this.shutdownHandled = true;
     this.scale.off(Scale.Events.RESIZE, this.handleResize);
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('orientationchange', this.handleOrientationChange);
+    }
     this.destroyDirectorTools();
     this.destroyProductionDiagnosticsInput();
     this.destroyDiagnosticsGestureOverlay();
