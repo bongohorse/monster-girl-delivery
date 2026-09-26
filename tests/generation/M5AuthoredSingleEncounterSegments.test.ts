@@ -6,7 +6,10 @@ import {
   scaleLiveEncounterRunMotion,
   selectLiveEncounterCandidates,
 } from '../../src/generation/LiveEncounterPolicy';
-import { PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG } from '../../src/generation/M5AuthoredMultiHazardPatterns';
+import {
+  M5_LIVE_SINGLE_ENCOUNTER_SEGMENTS,
+  PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG,
+} from '../../src/generation/M5LiveEncounterCatalog';
 import {
   M5_AUTHORED_SINGLE_ENCOUNTER_SEGMENTS,
   M5_OPENING_SINGLE_ENCOUNTER_SEGMENTS,
@@ -23,7 +26,7 @@ const countCollectibles = (pattern: (typeof M5_AUTHORED_SINGLE_ENCOUNTER_SEGMENT
   (pattern.collectiblePaths ?? []).reduce((total, path) => total + path.points.length, 0);
 
 describe('M5 authored single-decision encounter segments', () => {
-  it('defines seven unique one-entry segments without changing the current live catalog', () => {
+  it('defines seven unique singles while keeping only six pacing-compatible segments live', () => {
     expect(M5_AUTHORED_SINGLE_ENCOUNTER_SEGMENTS).toHaveLength(7);
     expect(new Set(M5_AUTHORED_SINGLE_ENCOUNTER_SEGMENTS.map((pattern) => pattern.id)).size).toBe(
       7,
@@ -36,8 +39,14 @@ describe('M5 authored single-decision encounter segments', () => {
 
     for (const pattern of M5_AUTHORED_SINGLE_ENCOUNTER_SEGMENTS) {
       expect(pattern.entries).toHaveLength(1);
-      expect(PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG).not.toContain(pattern);
     }
+    expect(M5_LIVE_SINGLE_ENCOUNTER_SEGMENTS).toHaveLength(6);
+    for (const pattern of M5_LIVE_SINGLE_ENCOUNTER_SEGMENTS) {
+      expect(PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG).toContain(pattern);
+    }
+    expect(PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG).not.toContain(
+      M5_SEGMENT_MISSILE_BAIT_DODGE,
+    );
   });
 
   it.each(M5_AUTHORED_SINGLE_ENCOUNTER_SEGMENTS)(
