@@ -258,7 +258,7 @@ They may **not** assume that final art direction, final balance, Delivery Mode, 
 - [x] Unfinished work is explicitly deferred/routed before milestone closeout.
 - [x] Required Game Director acceptance is recorded in #483.
 - [ ] Native GitHub Milestone closed after this factual closeout merges.
-- [ ] `bun run ci:check` passes on the closeout PR.
-- [ ] `bun run typecheck` passes on the closeout PR.
-- [ ] `bun run test` passes on the closeout PR.
-- [ ] `bun run build` passes on the closeout PR.
+- [x] `bun run ci:check` passes on the closeout PR.
+- [x] `bun run typecheck` passes on the closeout PR.
+- [x] `bun run test` passes on the closeout PR.
+- [x] `bun run build` passes on the closeout PR.
