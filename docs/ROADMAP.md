@@ -119,7 +119,7 @@ Director tooling uses authoritative runtime state and must not become a second i
 
 # Completed milestones
 
-M0–M4 are complete. Reports own delivered scope, acceptance, and limitations; later correctness work does not rewrite history.
+M0–M5 are complete. Reports own delivered scope, acceptance, and limitations; later correctness work does not rewrite history.
 
 | Milestone | Version | Closeout | Supporting evidence |
 |---|---:|---|---|
@@ -128,6 +128,7 @@ M0–M4 are complete. Reports own delivered scope, acceptance, and limitations; 
 | M2 — Horizontal Run & First Hazard | `0.2` | [Report](milestones/M2-horizontal-run-first-hazard.md) | Parent #49 |
 | M3 — Seeded Generation & Fairness | `0.3` | [Report](milestones/M3-seeded-generation-fairness.md) | [Validation](milestones/M3-seeded-run-validation.md), parent #57 |
 | M4 — Run Pacing & Hazard Language | `0.4` | [Report](milestones/M4-run-pacing-hazard-language.md) | [Validation](milestones/M4-run-pacing-validation.md), parent #116 |
+| M5 — Complete Arcade Loop & Skill Layer | `0.5` | [Report](milestones/M5-complete-arcade-loop-skill-layer.md) | Director acceptance #483, parent #197 |
 
 ---
 
@@ -160,6 +161,8 @@ KEEP and justified DEFER are valid outcomes. No rewrite, reference-game parity, 
 # Core-game proof phase
 
 ## M5 / v0.5 — Complete Arcade Loop & Skill Layer
+
+**Status:** COMPLETE — factual closeout recorded in [M5 completion report](milestones/M5-complete-arcade-loop-skill-layer.md).
 
 **Purpose:** turn the procedural runner into a coherent arcade game that has a meaningful skill layer and encourages immediate replay before a large meta layer is built.
 

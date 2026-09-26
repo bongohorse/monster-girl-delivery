@@ -2,8 +2,8 @@
 
 **Document status:** Living product/game specification  
 **Project status:** Pre-Production  
-**Current milestone:** M5 — Complete Arcade Loop & Skill Layer (in progress; parent #197)
-**Current version:** `0.4` (`package.json`: `0.4.0`), with M5 in progress toward factual closeout / `0.5`
+**Current phase:** M5 complete; Product Gate A + Art Gate before M6 production work  
+**Current version:** `0.5` (`package.json`: `0.5.0`)
 
 **Human role:** Game Director / Product Owner  
 **Coding-agent role:** Implementation / Engineering
