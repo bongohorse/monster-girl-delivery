@@ -198,8 +198,8 @@ describe('encounter variety policy', () => {
     });
     expect(small).toEqual(replay);
     expect(small).toMatchObject({
-      candidateCatalog: [FAMILY_A_PATTERN, FAMILY_B_PATTERN],
-      deferredCatalog: [],
+      candidateCatalog: [FAMILY_A_PATTERN],
+      deferredCatalog: [FAMILY_B_PATTERN],
       fallbackUsed: true,
     });
 
@@ -214,6 +214,7 @@ describe('encounter variety policy', () => {
       state: createRunGenerationState('small-variety-fallback'),
     });
     expect(replaySchedule).toEqual(firstSchedule);
+    expect(firstSchedule).toMatchObject({ status: 'accepted', patternId: 'family-a-pattern' });
   });
 
   it('replays the same sequence from the same seed and explicit history state', () => {
