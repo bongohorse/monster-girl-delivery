@@ -1,7 +1,6 @@
 import type { Scene } from 'phaser';
 import { describe, expect, it, vi } from 'vitest';
 import {
-  PROTOTYPE_ZAPPER_SHARED_SHADER_CAPACITY,
   PrototypeZapperPresentation,
   resolvePrototypeZapperPresentationSample,
 } from '../../src/entities/PrototypeZapperPresentation';
@@ -83,37 +82,9 @@ const createGraphicsMock = () => {
   return graphics;
 };
 
-const createShaderMock = () => {
-  const shader = {
-    destroy: vi.fn(),
-    setDepth: vi.fn(),
-    setDisplaySize: vi.fn(),
-    setOrigin: vi.fn(),
-    setPosition: vi.fn(),
-    setSize: vi.fn(),
-    setVisible: vi.fn(),
-  };
-  for (const method of [
-    shader.setDepth,
-    shader.setDisplaySize,
-    shader.setOrigin,
-    shader.setPosition,
-    shader.setSize,
-    shader.setVisible,
-  ]) {
-    method.mockReturnValue(shader);
-  }
-  return shader;
-};
-
 const createSceneFake = (withShader: boolean, viewportWidth = 400, zoom = 1) => {
   const graphics = createGraphicsMock();
-  const shader = createShaderMock();
-  let shaderConfig: unknown;
-  const addShader = vi.fn((config: unknown) => {
-    shaderConfig = config;
-    return shader;
-  });
+  const addShader = vi.fn();
   const add = {
     graphics: vi.fn(() => graphics),
     ...(withShader ? { shader: addShader } : {}),
@@ -122,26 +93,31 @@ const createSceneFake = (withShader: boolean, viewportWidth = 400, zoom = 1) => 
     add,
     cameras: { main: { width: viewportWidth * zoom, height: 390 * zoom, zoom } },
   } as unknown as Scene;
-  return { addShader, graphics, scene, shader, getShaderConfig: () => shaderConfig };
-};
-
-const readUniforms = (config: unknown) => {
-  const setupUniforms = (
-    config as { setupUniforms?: (set: (name: string, value: unknown) => void) => void }
-  ).setupUniforms;
-  if (!setupUniforms) {
-    throw new Error('Expected shared Zapper shader setupUniforms callback.');
-  }
-  const uniforms = new Map<string, unknown>();
-  setupUniforms((name, value) => uniforms.set(name, value));
-  return uniforms;
+  return { addShader, graphics, scene };
 };
 
 describe('PrototypeZapperPresentation', () => {
-  it('reserves shader slots for visible Zappers even when older spawns remain offscreen', () => {
-    const { scene, shader, getShaderConfig } = createSceneFake(true, 400, 2);
+  it('draws every visible long beam with the same layered glow without a shader or slot limit', () => {
+    const { addShader, graphics, scene } = createSceneFake(true, 2_200);
     const presentation = new PrototypeZapperPresentation(scene);
-    const offscreen = Array.from({ length: PROTOTYPE_ZAPPER_SHARED_SHADER_CAPACITY }, (_, i) =>
+    const spawns = Array.from({ length: 14 }, (_, index) =>
+      createSpawn(`long-${index}`, 0, 150 + index * 140, {
+        length: PROTOTYPE_ZAPPER_LENGTHS.long,
+      }),
+    );
+
+    presentation.render(spawns, { distance: 0, simulationSeconds: 0 }, 100);
+
+    expect(addShader).not.toHaveBeenCalled();
+    expect(graphics.strokePath).toHaveBeenCalledTimes(spawns.length * 4);
+    expect(graphics.lineStyle).toHaveBeenCalledWith(46, 0xff9f1c, 0.14);
+    expect(graphics.lineStyle).toHaveBeenCalledWith(32, 0xff9f1c, 0.24);
+  });
+
+  it('draws visible Zappers without redrawing older or future offscreen spawns', () => {
+    const { graphics, scene } = createSceneFake(true, 400, 2);
+    const presentation = new PrototypeZapperPresentation(scene);
+    const offscreen = Array.from({ length: 12 }, (_, i) =>
       createSpawn(`old-${i}`, 90, 100 + i * 10),
     );
     const visible = createSpawn('visible-long-horizontal', 0, 850, {
@@ -157,17 +133,13 @@ describe('PrototypeZapperPresentation', () => {
       100,
     );
 
-    const uniforms = readUniforms(getShaderConfig());
-    expect(uniforms.get('uCount')).toBe(1);
-    expect(Array.from((uniforms.get('uSegments[0]') as Float32Array).slice(0, 4))).toEqual([
-      150, 195, 350, 195,
-    ]);
-    expect(shader.setPosition).toHaveBeenLastCalledWith(118, 163);
-    expect(shader.setSize).toHaveBeenLastCalledWith(264, 64);
+    expect(graphics.strokePath).toHaveBeenCalledTimes(4);
+    expect(graphics.moveTo).toHaveBeenCalledWith(150, 195);
+    expect(graphics.lineTo).toHaveBeenCalledWith(350, 195);
   });
 
-  it('shares one shader and one fallback layer across horizontal, vertical, diagonal, and rotating Zappers', () => {
-    const { addShader, graphics, scene, shader, getShaderConfig } = createSceneFake(true, 1_300);
+  it('shares one Graphics layer across horizontal, vertical, diagonal, and rotating Zappers', () => {
+    const { addShader, graphics, scene } = createSceneFake(true, 1_300);
     const presentation = new PrototypeZapperPresentation(scene);
     const spawns = [
       createSpawn('horizontal', 0, 280),
@@ -180,39 +152,15 @@ describe('PrototypeZapperPresentation', () => {
     presentation.render(spawns, { distance: 20, simulationSeconds: 0.1 }, 100);
 
     expect(scene.add.graphics).toHaveBeenCalledOnce();
-    expect(addShader).toHaveBeenCalledOnce();
-    expect(shader.setVisible).toHaveBeenLastCalledWith(true);
+    expect(addShader).not.toHaveBeenCalled();
+    expect(graphics.strokePath).toHaveBeenCalledTimes(spawns.length * 4 * 2);
     expect(graphics.setVisible).toHaveBeenLastCalledWith(true);
 
-    const uniforms = readUniforms(getShaderConfig());
-    expect(uniforms.get('uCount')).toBe(4);
-    expect(uniforms.get('uSegments[0]')).toBeInstanceOf(Float32Array);
-    expect((uniforms.get('uSegments[0]') as Float32Array).length).toBe(
-      PROTOTYPE_ZAPPER_SHARED_SHADER_CAPACITY * 4,
-    );
-    expect(uniforms.get('uParams[0]')).toBeInstanceOf(Float32Array);
-
     presentation.destroy();
-    expect(shader.destroy).toHaveBeenCalledOnce();
     expect(graphics.destroy).toHaveBeenCalledOnce();
   });
 
-  it('pads the shared shader quad beyond endpoint glow so Zapper sides are not clipped', () => {
-    const { scene, shader } = createSceneFake(true);
-    const presentation = new PrototypeZapperPresentation(scene);
-
-    presentation.render(
-      [createSpawn('padding', 0, 280)],
-      { distance: 0, simulationSeconds: 0 },
-      100,
-    );
-
-    expect(shader.setPosition).toHaveBeenLastCalledWith(278, 163);
-    expect(shader.setSize).toHaveBeenLastCalledWith(204, 64);
-    expect(shader.setDisplaySize).toHaveBeenLastCalledWith(204, 64);
-  });
-
-  it('keeps the vector fallback readable when no Shader factory is available', () => {
+  it('draws the same glow when the Shader factory is unavailable', () => {
     const { graphics, scene } = createSceneFake(false);
     const presentation = new PrototypeZapperPresentation(scene);
 
@@ -225,6 +173,7 @@ describe('PrototypeZapperPresentation', () => {
     expect(scene.add.graphics).toHaveBeenCalledOnce();
     expect(graphics.strokePath).toHaveBeenCalled();
     expect(graphics.fillCircle).toHaveBeenCalled();
+    expect(graphics.lineStyle).toHaveBeenCalledWith(46, 0xff9f1c, 0.14);
     expect(graphics.setVisible).toHaveBeenLastCalledWith(true);
   });
 
@@ -270,8 +219,8 @@ describe('PrototypeZapperPresentation', () => {
     ).toEqual({ chargeProgress: 0, state: 'destroyed' });
   });
 
-  it('uses authoritative simulation time for rotation/flicker and keeps resize projection explicit', () => {
-    const { scene, getShaderConfig } = createSceneFake(true, 900);
+  it('uses authoritative simulation time for rotation and keeps resize projection explicit', () => {
+    const { graphics, scene } = createSceneFake(true, 900);
     const presentation = new PrototypeZapperPresentation(scene);
     const spawn = createSpawn('rotating', 45, 400, { rotating: true });
 
@@ -279,19 +228,15 @@ describe('PrototypeZapperPresentation', () => {
       offsetY: 0,
       scaleY: 1,
     });
-    const firstUniforms = readUniforms(getShaderConfig());
-    const firstSegments = Array.from(firstUniforms.get('uSegments[0]') as Float32Array);
+    const firstEndpoint = graphics.moveTo.mock.lastCall;
 
     presentation.render([spawn], { distance: 0, simulationSeconds: 1 }, 100, {
       offsetY: 20,
       scaleY: 0.5,
     });
-    const secondUniforms = readUniforms(getShaderConfig());
-    const secondSegments = Array.from(secondUniforms.get('uSegments[0]') as Float32Array);
-
-    expect(secondUniforms.get('uTime')).toBe(1);
-    expect(secondUniforms.get('uProjectionY')).toEqual([20, 0.5]);
-    expect(secondSegments.slice(0, 4)).not.toEqual(firstSegments.slice(0, 4));
+    expect(graphics.setPosition).toHaveBeenLastCalledWith(0, 20);
+    expect(graphics.setScale).toHaveBeenLastCalledWith(1, 0.5);
+    expect(graphics.moveTo.mock.lastCall).not.toEqual(firstEndpoint);
   });
 
   it('makes timed CHARGE structurally dashed while OFF has no beam and ON has a continuous beam', () => {
@@ -334,6 +279,6 @@ describe('PrototypeZapperPresentation', () => {
       },
     });
     expect(onFake.graphics.fillCircle).toHaveBeenCalled();
-    expect(onFake.graphics.strokePath).toHaveBeenCalledTimes(3);
+    expect(onFake.graphics.strokePath).toHaveBeenCalledTimes(4);
   });
 });
