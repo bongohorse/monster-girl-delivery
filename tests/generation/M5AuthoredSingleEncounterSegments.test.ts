@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { PROTOTYPE_PATTERN_REACHABILITY_CONTEXT } from '../../src/generation/FlightReachability';
 import {
+  createLiveEncounterPolicyState,
+  selectLiveEncounterCandidates,
+} from '../../src/generation/LiveEncounterPolicy';
+import { PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG } from '../../src/generation/M5AuthoredMultiHazardPatterns';
+import {
   M5_AUTHORED_SINGLE_ENCOUNTER_SEGMENTS,
   M5_LATER_SINGLE_ENCOUNTER_SEGMENTS,
   M5_OPENING_SINGLE_ENCOUNTER_SEGMENTS,
 } from '../../src/generation/M5AuthoredSingleEncounterSegments';
-import { PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG } from '../../src/generation/M5AuthoredMultiHazardPatterns';
-import {
-  createLiveEncounterPolicyState,
-  selectLiveEncounterCandidates,
-} from '../../src/generation/LiveEncounterPolicy';
 import { scheduleNextPattern } from '../../src/generation/PatternSpawnScheduler';
 import { validatePattern } from '../../src/generation/PatternValidator';
 import { createRunGenerationState } from '../../src/generation/RunGenerationState';
