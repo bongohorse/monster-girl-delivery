@@ -26,6 +26,7 @@ Historical native-milestone backfill is audited **one milestone at a time: M0 ->
 | M2 — Horizontal Run & First Hazard | Deterministic left-to-right run foundation with one lethal hazard, death/restart, and accepted Landscape validation | [`M2-horizontal-run-first-hazard.md`](M2-horizontal-run-first-hazard.md) | automated and Director-reported device/browser evidence recorded in report |
 | M3 — Seeded Generation & Fairness | Deterministic seeded generator → validator → scheduler → live-stream pipeline with same-seed Director tooling | [`M3-seeded-generation-fairness.md`](M3-seeded-generation-fairness.md) | [`M3-seeded-run-validation.md`](M3-seeded-run-validation.md) |
 | M4 — Run Pacing & Hazard Language | Deterministic difficulty progression, 7,100m pacing cycle with breathers, time-to-impact fairness, reachability, transition validation, 3 hazard archetypes, variety and readability budgets, and Director-accepted gameplay validation | [`M4-run-pacing-hazard-language.md`](M4-run-pacing-hazard-language.md) | [`M4-run-pacing-validation.md`](M4-run-pacing-validation.md) |
+| M5 — Complete Arcade Loop & Skill Layer | Complete arcade loop, Graze/score/collectible skill layer, authored encounter vocabulary, bounded speed/flight feel pass, and Director-accepted Android gameplay | [`M5-complete-arcade-loop-skill-layer.md`](M5-complete-arcade-loop-skill-layer.md) | #483 final real-device acceptance; #270 gameplay gate |
 
 ## Current / future milestones
 
@@ -33,9 +34,9 @@ Do not create historical reports in advance. Current and future milestone planni
 
 A new report is added here only when the milestone has factual implementation and validation evidence to close out.
 
-M4 — Run Pacing & Hazard Language is complete. Its factual closeout is recorded in [`M4-run-pacing-hazard-language.md`](M4-run-pacing-hazard-language.md) with supporting evidence in [`M4-run-pacing-validation.md`](M4-run-pacing-validation.md).
+M5 — Complete Arcade Loop & Skill Layer is complete. Its factual closeout is recorded in [`M5-complete-arcade-loop-skill-layer.md`](M5-complete-arcade-loop-skill-layer.md).
 
-The current milestone is M5 — Complete Arcade Loop & Skill Layer. Its active umbrella/parent is Issue #197; the project remains on version `0.4.x` until M5 passes its exit gate and factual closeout.
+The project is now on version `0.5.0`. Product Gate A and the Art Gate are the next decision work before M6 production implementation is treated as current.
 
 ## Closeout rule for M2+
 
