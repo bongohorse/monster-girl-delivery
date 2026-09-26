@@ -2,13 +2,18 @@ import { describe, expect, it } from 'vitest';
 import { PROTOTYPE_PATTERN_REACHABILITY_CONTEXT } from '../../src/generation/FlightReachability';
 import {
   createLiveEncounterPolicyState,
+  evaluateLiveEncounterReadability,
+  scaleLiveEncounterRunMotion,
   selectLiveEncounterCandidates,
 } from '../../src/generation/LiveEncounterPolicy';
 import { PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG } from '../../src/generation/M5AuthoredMultiHazardPatterns';
 import {
   M5_AUTHORED_SINGLE_ENCOUNTER_SEGMENTS,
-  M5_LATER_SINGLE_ENCOUNTER_SEGMENTS,
   M5_OPENING_SINGLE_ENCOUNTER_SEGMENTS,
+  M5_SEGMENT_LASER_HIGH,
+  M5_SEGMENT_MISSILE_BAIT_DODGE,
+  M5_SEGMENT_ZAPPER_TIMED_CENTER,
+  M5_SEGMENT_ZAPPER_VERTICAL_UPPER,
 } from '../../src/generation/M5AuthoredSingleEncounterSegments';
 import { scheduleNextPattern } from '../../src/generation/PatternSpawnScheduler';
 import { validatePattern } from '../../src/generation/PatternValidator';
@@ -81,8 +86,8 @@ describe('M5 authored single-decision encounter segments', () => {
     }
   });
 
-  it('withholds later vocabulary at tier zero and admits it at tier one Medium pacing', () => {
-    for (const pattern of M5_LATER_SINGLE_ENCOUNTER_SEGMENTS) {
+  it('admits non-telegraphed later vocabulary at tier-one Medium pacing', () => {
+    for (const pattern of [M5_SEGMENT_ZAPPER_VERTICAL_UPPER, M5_SEGMENT_ZAPPER_TIMED_CENTER]) {
       const openingState = createLiveEncounterPolicyState(
         1_600,
         PROTOTYPE_PATTERN_REACHABILITY_CONTEXT,
@@ -102,6 +107,71 @@ describe('M5 authored single-decision encounter segments', () => {
         primaryCatalog: [pattern],
       });
     }
+  });
+
+  it('keeps Laser and Missile out of short phases and exposes their real High readability result', () => {
+    for (const pattern of [M5_SEGMENT_LASER_HIGH, M5_SEGMENT_MISSILE_BAIT_DODGE]) {
+      expect(pattern.profile.pacingIntensities).toEqual(['high', 'peak']);
+      const mediumState = createLiveEncounterPolicyState(
+        3_900,
+        PROTOTYPE_PATTERN_REACHABILITY_CONTEXT,
+      );
+      const medium = selectLiveEncounterCandidates([pattern], 3_900, mediumState);
+      expect(medium.primaryCatalog).toEqual([]);
+      expect(medium.deferredCatalog).toEqual([]);
+    }
+
+    const highDistance = 6_400;
+    const highState = createLiveEncounterPolicyState(
+      highDistance,
+      PROTOTYPE_PATTERN_REACHABILITY_CONTEXT,
+    );
+    const scrollSpeed = scaleLiveEncounterRunMotion(
+      { baseScrollSpeed: 350 },
+      highDistance,
+    ).baseScrollSpeed;
+
+    const laserSelection = selectLiveEncounterCandidates(
+      [M5_SEGMENT_LASER_HIGH],
+      highDistance,
+      highState,
+    );
+    expect(laserSelection.primaryCatalog).toEqual([M5_SEGMENT_LASER_HIGH]);
+    const laserEvaluation = evaluateLiveEncounterReadability(
+      laserSelection.primaryCatalog,
+      highState,
+      laserSelection.pacing,
+      0,
+      highDistance,
+      highDistance,
+      scrollSpeed,
+      PROTOTYPE_PATTERN_REACHABILITY_CONTEXT.playerExtents,
+    )[0];
+    expect(laserEvaluation).toMatchObject({
+      intrinsicallyEligible: true,
+      decision: { status: 'reserved' },
+    });
+
+    const missileSelection = selectLiveEncounterCandidates(
+      [M5_SEGMENT_MISSILE_BAIT_DODGE],
+      highDistance,
+      highState,
+    );
+    expect(missileSelection.primaryCatalog).toEqual([M5_SEGMENT_MISSILE_BAIT_DODGE]);
+    const missileEvaluation = evaluateLiveEncounterReadability(
+      missileSelection.primaryCatalog,
+      highState,
+      missileSelection.pacing,
+      0,
+      highDistance,
+      highDistance,
+      scrollSpeed,
+      PROTOTYPE_PATTERN_REACHABILITY_CONTEXT.playerExtents,
+    )[0];
+    expect(missileEvaluation).toMatchObject({
+      intrinsicallyEligible: true,
+      decision: { status: 'deferred' },
+    });
   });
 
   it('keeps collectible-bearing segments sparse and leaves the Missile uncluttered', () => {

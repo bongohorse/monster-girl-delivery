@@ -5,6 +5,7 @@ import {
   PROTOTYPE_ZAPPER_ROTATION_SPEEDS,
 } from '../hazards/PrototypeZapperHazard';
 import { PROTOTYPE_TIMED_ZAPPER_CONFIG } from '../hazards/TimedZapperLifecycle';
+import type { PacingIntensity } from '../pacing/PacingSystem';
 import {
   createSineCollectiblePath,
   createUniformPolylineCollectiblePath,
@@ -17,6 +18,12 @@ import {
 } from './PrototypeHazardPatternFixtures';
 
 const SINGLE_SEGMENT_ROUTE_SPACING = 48;
+const DEFAULT_SINGLE_SEGMENT_PACING: ReadonlyArray<PacingIntensity> = Object.freeze([
+  'low',
+  'medium',
+  'high',
+  'peak',
+]);
 
 const createSingleSegmentProfile = (
   behaviorTag: EncounterBehaviorTag,
@@ -24,10 +31,11 @@ const createSingleSegmentProfile = (
   varietyFamilyId: string,
   pressureCost = 1,
   readabilityCost = 2,
+  pacingIntensities: ReadonlyArray<PacingIntensity> = DEFAULT_SINGLE_SEGMENT_PACING,
 ) => ({
   behaviorTags: [behaviorTag],
   difficultyTierRange: { minimumTierIndex, maximumTierIndex: null },
-  pacingIntensities: ['low', 'medium', 'high', 'peak'] as const,
+  pacingIntensities,
   pressureCost,
   readabilityCost,
   varietyFamilyId,
@@ -186,7 +194,7 @@ export const M5_SEGMENT_ZAPPER_TIMED_CENTER: Readonly<HazardPattern> = createHaz
 export const M5_SEGMENT_LASER_HIGH: Readonly<HazardPattern> = createHazardPattern({
   id: 'm5-segment-laser-high',
   runLength: 640,
-  profile: createSingleSegmentProfile('timed-pulse', 1, 'm5-laser-lane', 1, 3),
+  profile: createSingleSegmentProfile('timed-pulse', 1, 'm5-laser-lane', 1, 3, ['high', 'peak']),
   entries: [
     {
       behavior: LASER_TEMPLATE_ENTRY.behavior,
@@ -214,7 +222,10 @@ export const M5_SEGMENT_LASER_HIGH: Readonly<HazardPattern> = createHazardPatter
 export const M5_SEGMENT_MISSILE_BAIT_DODGE: Readonly<HazardPattern> = createHazardPattern({
   id: 'm5-segment-missile-bait-dodge',
   runLength: 700,
-  profile: createSingleSegmentProfile('target-lock-strike', 1, 'm5-missile', 2, 3),
+  profile: createSingleSegmentProfile('target-lock-strike', 1, 'm5-missile', 2, 3, [
+    'high',
+    'peak',
+  ]),
   entries: [
     {
       behavior: MISSILE_TEMPLATE_ENTRY.behavior,
