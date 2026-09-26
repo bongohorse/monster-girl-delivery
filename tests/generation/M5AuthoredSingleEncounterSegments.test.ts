@@ -20,12 +20,12 @@ const countCollectibles = (pattern: (typeof M5_AUTHORED_SINGLE_ENCOUNTER_SEGMENT
 describe('M5 authored single-decision encounter segments', () => {
   it('defines seven unique one-entry segments without changing the current live catalog', () => {
     expect(M5_AUTHORED_SINGLE_ENCOUNTER_SEGMENTS).toHaveLength(7);
-    expect(new Set(M5_AUTHORED_SINGLE_ENCOUNTER_SEGMENTS.map((pattern) => pattern.id)).size).toBe(7);
+    expect(new Set(M5_AUTHORED_SINGLE_ENCOUNTER_SEGMENTS.map((pattern) => pattern.id)).size).toBe(
+      7,
+    );
     expect(
       new Set(
-        M5_AUTHORED_SINGLE_ENCOUNTER_SEGMENTS.map(
-          (pattern) => pattern.profile.varietyFamilyId,
-        ),
+        M5_AUTHORED_SINGLE_ENCOUNTER_SEGMENTS.map((pattern) => pattern.profile.varietyFamilyId),
       ).size,
     ).toBe(7);
 
