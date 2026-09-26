@@ -6,9 +6,9 @@ import {
   scaleLiveEncounterRunMotion,
   selectLiveEncounterCandidates,
 } from '../../src/generation/LiveEncounterPolicy';
-import { PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG } from '../../src/generation/M5LiveEncounterCatalog';
 import { M5_AUTHORED_PRESSURE_ENCOUNTER_SEGMENTS } from '../../src/generation/M5AuthoredPressureEncounterSegments';
 import { M5_AUTHORED_SINGLE_ENCOUNTER_SEGMENTS } from '../../src/generation/M5AuthoredSingleEncounterSegments';
+import { PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG } from '../../src/generation/M5LiveEncounterCatalog';
 import { scheduleNextPattern } from '../../src/generation/PatternSpawnScheduler';
 import { validatePattern } from '../../src/generation/PatternValidator';
 import { createRunGenerationState } from '../../src/generation/RunGenerationState';
