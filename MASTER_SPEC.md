@@ -154,6 +154,16 @@ baseScrollSpeed  = 350 px/s
 
 These values are prototype tuning and must remain configurable where the current Director tooling supports them.
 
+### PROTOTYPE — M5 speed-coupled flight authority
+
+The M5 gameplay-feel pass keeps the existing one-button analytical flight model, but live effective
+flight authority now follows the same capped difficulty-speed progression as world movement. Rise/fall
+velocity caps scale linearly with the current speed multiplier; gravity and thrust scale with its
+square so large vertical corrections remain achievable in the shorter approach time of a faster run.
+Speed and derived flight-authority changes use the existing deterministic safe transition boundary,
+and reachability/transition validation consumes the same active tuning as gameplay. Exact ramp values
+remain **PROTOTYPE** and require real-device playtesting.
+
 ### DECIDED principles
 
 - Physics is frame-rate independent.

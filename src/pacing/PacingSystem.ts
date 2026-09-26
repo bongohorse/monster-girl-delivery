@@ -42,10 +42,9 @@ const createPhase = (phase: PacingPhaseDefinition): Readonly<PacingPhaseDefiniti
 
 /**
  * Mobile-first M5 rhythm. Every pressure beat is followed by an explicit hazard-free breather.
- * Low/medium admit only one logical hazard entry. High/peak are long enough for one complete
- * telegraphed two-entry challenge at capped speed, while the readability reservation consumes
- * essentially the whole challenge beat and prevents another full combo from chaining before rest.
- * More than half of every cycle is deliberate breathing room.
+ * Low/medium admit one logical hazard entry. High may use a readable two-entry family pattern,
+ * while authored cross-family combinations are reserved by their profiles for Peak. The longest
+ * recovery still follows High, and more than half of every cycle is deliberate breathing room.
  */
 export const PROTOTYPE_PACING_CONFIG: Readonly<PacingConfig> = Object.freeze({
   phases: Object.freeze([

@@ -238,16 +238,16 @@ describe('live encounter policy integration', () => {
         ],
       },
     };
-    const state = createLiveEncounterPolicyState(2_499, REACHABILITY, config);
+    const state = createLiveEncounterPolicyState(2_999, REACHABILITY, config);
     const beforeBoundary = selectLiveEncounterCandidates(
       [PROTOTYPE_OFFSET_PAIR_PATTERN],
-      2_499,
+      2_999,
       state,
       config,
     );
     const atBoundary = selectLiveEncounterCandidates(
       [PROTOTYPE_OFFSET_PAIR_PATTERN],
-      2_500,
+      3_000,
       state,
       config,
     );
@@ -263,38 +263,39 @@ describe('live encounter policy integration', () => {
       pacing: { intensity: 'low' },
       primaryCatalog: [PROTOTYPE_OFFSET_PAIR_PATTERN],
     });
-    expect(atBoundary.constraints.minimumReactionSpacing).toBe(88);
+    expect(atBoundary.constraints.minimumReactionSpacing).toBe(96);
+    expect(atBoundary.difficulty.minimumReactionTimeSeconds).toBe(1.95);
   });
 
   it('keeps capped difficulty compatible with a deterministic zero-pressure breather', () => {
-    const state = createLiveEncounterPolicyState(14_200, REACHABILITY);
+    const state = createLiveEncounterPolicyState(28_000, REACHABILITY);
     const first = selectLiveEncounterCandidates(
       PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES,
-      14_200,
+      28_000,
       state,
     );
     const replay = selectLiveEncounterCandidates(
       PROTOTYPE_M4_HAZARD_PATTERN_FIXTURES,
-      14_200,
+      28_000,
       state,
     );
-    const highPressure = selectLiveEncounterCandidates(
+    const peakPressure = selectLiveEncounterCandidates(
       [PROTOTYPE_OFFSET_PAIR_PATTERN],
-      20_200,
+      39_100,
       state,
     );
 
     expect(first).toEqual(replay);
     expect(first).toMatchObject({
-      difficulty: { capped: true, tierIndex: 3 },
+      difficulty: { capped: true, tierIndex: 5 },
       pacing: { intensity: 'breather' },
       primaryCatalog: [],
       deferredCatalog: [],
-      nextPolicyBoundaryDistance: 15_400,
+      nextPolicyBoundaryDistance: 29_200,
     });
-    expect(highPressure).toMatchObject({
-      difficulty: { capped: true, tierIndex: 3 },
-      pacing: { intensity: 'high' },
+    expect(peakPressure).toMatchObject({
+      difficulty: { capped: true, tierIndex: 5 },
+      pacing: { intensity: 'peak' },
       primaryCatalog: [PROTOTYPE_OFFSET_PAIR_PATTERN],
     });
   });

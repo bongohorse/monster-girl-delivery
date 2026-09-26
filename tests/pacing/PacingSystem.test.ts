@@ -57,7 +57,7 @@ describe('pacing system', () => {
     expect(breatherDistance / CYCLE_LENGTH).toBeGreaterThan(0.5);
   });
 
-  it('keeps low and medium to one hazard entry and bounds challenge beats to two entries', () => {
+  it('keeps low and medium to one entry and bounds challenge beats to two entries', () => {
     const pressure = Object.fromEntries(
       PROTOTYPE_PACING_CONFIG.phases
         .filter((phase) => phase.intensity !== 'breather')

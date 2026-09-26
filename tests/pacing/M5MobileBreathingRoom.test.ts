@@ -65,21 +65,16 @@ describe('M5 mobile breathing-room pacing', () => {
     expect(medium.length).toBeGreaterThan(0);
     expect(low.every((pattern) => pattern.entries.length === 1)).toBe(true);
     expect(medium.every((pattern) => pattern.entries.length === 1)).toBe(true);
-    expect(low.some((pattern) => pattern.profile.varietyFamilyId === 'm5-multi-hazard')).toBe(
-      false,
-    );
-    expect(medium.some((pattern) => pattern.profile.varietyFamilyId === 'm5-multi-hazard')).toBe(
-      false,
-    );
   });
 
-  it('admits authored two-family challenge vocabulary only in high and peak beats', () => {
+  it('keeps high readable while reserving authored cross-family challenges for peak', () => {
     const high = candidatesAt(6_400);
     const peak = candidatesAt(11_500);
     expect(calculatePacing(6_400).intensity).toBe('high');
     expect(calculatePacing(11_500).intensity).toBe('peak');
+    expect(high.length).toBeGreaterThan(0);
     for (const pattern of M5_AUTHORED_MULTI_HAZARD_PATTERNS) {
-      expect(high).toContain(pattern);
+      expect(high).not.toContain(pattern);
       expect(peak).toContain(pattern);
     }
     expect(high.every((pattern) => pattern.entries.length <= 2)).toBe(true);

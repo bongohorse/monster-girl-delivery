@@ -73,6 +73,7 @@ interface LiveTrace {
 const collectLiveTrace = (seed: SeedInput, tall: boolean): LiveTrace => {
   const bounds = createPrototypeFlightBounds(tall ? TALL_VIEWPORT : BASELINE_VIEWPORT);
   const decisions: Array<LiveTrace['decisions'][number]> = [];
+  const acceptedSpawns: Array<LiveTrace['spawns'][number]> = [];
   const services = createAppServices();
   const context = createLiveContext(bounds, (observation) => {
     decisions.push({
@@ -81,6 +82,16 @@ const collectLiveTrace = (seed: SeedInput, tall: boolean): LiveTrace => {
       selectedPatternId:
         observation.schedule?.status === 'accepted' ? observation.schedule.patternId : null,
     });
+    if (observation.schedule?.status === 'accepted') {
+      acceptedSpawns.push(
+        ...observation.schedule.spawns.map((spawn) => ({
+          entryId: spawn.entryId,
+          patternId: spawn.patternId,
+          top: spawn.hitbox.top,
+          bottom: spawn.hitbox.bottom,
+        })),
+      );
+    }
   });
   const runMotion = services.runMotion.getSnapshot();
   let stream = createGeneratedHazardStream(seed, context, runMotion);
@@ -97,14 +108,9 @@ const collectLiveTrace = (seed: SeedInput, tall: boolean): LiveTrace => {
   return Object.freeze({
     bounds: Object.freeze(bounds),
     decisions: Object.freeze(decisions),
-    spawns: Object.freeze(
-      stream.spawns.map((spawn) => ({
-        entryId: spawn.entryId,
-        patternId: spawn.patternId,
-        top: spawn.hitbox.top,
-        bottom: spawn.hitbox.bottom,
-      })),
-    ),
+    // Use accepted schedule evidence rather than the final retention window: accepted hazards
+    // may legitimately drain before this bounded trace finishes.
+    spawns: Object.freeze(acceptedSpawns),
   });
 };
 
