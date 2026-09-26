@@ -751,10 +751,7 @@ export const advanceGeneratedHazardStream = (
         context.reachability ?? PROTOTYPE_PATTERN_REACHABILITY_CONTEXT,
         context.constraints ?? PROTOTYPE_PATTERN_VALIDATION_CONSTRAINTS,
       ),
-      flightTuning: scaleFlightTuningForDifficulty(
-        getBaseFlightTuning(context),
-        policy.difficulty,
-      ),
+      flightTuning: scaleFlightTuningForDifficulty(getBaseFlightTuning(context), policy.difficulty),
     });
   }
   const schedulingWindow = createHazardReactionWindow(
