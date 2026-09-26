@@ -9,10 +9,8 @@ import {
   M5_DENSE_COIN_SPACING,
 } from './CollectibleFormationGenerator';
 import { createHazardPattern, type HazardPattern } from './HazardPattern';
-import { applyM5CollectibleMovementPatterns } from './M5CollectibleMovementPatterns';
 import {
   PROTOTYPE_LASER_PATTERN,
-  PROTOTYPE_M5_HAZARD_PATTERN_FIXTURES,
   PROTOTYPE_MISSILE_PATTERN,
 } from './PrototypeHazardPatternFixtures';
 
@@ -168,13 +166,3 @@ export const M5_LASER_ZAPPER_PATTERN: Readonly<HazardPattern> = createHazardPatt
 export const M5_AUTHORED_MULTI_HAZARD_PATTERNS: ReadonlyArray<Readonly<HazardPattern>> =
   Object.freeze([M5_MISSILE_ZAPPER_PATTERN, M5_MISSILE_LASER_PATTERN, M5_LASER_ZAPPER_PATTERN]);
 
-const M5_ROUTE_ENHANCED_BASELINE_CATALOG = applyM5CollectibleMovementPatterns(
-  PROTOTYPE_M5_HAZARD_PATTERN_FIXTURES,
-);
-
-/**
- * Live M5 catalog keeps the Phase-2 slot count/order stable. Collectible teaching/recovery data are
- * layered onto matching baseline slots, then the already accepted Phase-2 combinations follow.
- */
-export const PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG: ReadonlyArray<Readonly<HazardPattern>> =
-  Object.freeze([...M5_ROUTE_ENHANCED_BASELINE_CATALOG, ...M5_AUTHORED_MULTI_HAZARD_PATTERNS]);
