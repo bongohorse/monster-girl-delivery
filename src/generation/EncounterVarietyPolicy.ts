@@ -34,7 +34,7 @@ export interface EncounterVarietySelection {
 }
 
 export const PROTOTYPE_ENCOUNTER_VARIETY_POLICY: Readonly<EncounterVarietyPolicy> = Object.freeze({
-  recentFamilyWindowSize: 2,
+  recentFamilyWindowSize: 4,
   repeatableFamilyIds: Object.freeze([]),
 });
 
