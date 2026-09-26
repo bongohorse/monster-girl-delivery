@@ -2,14 +2,12 @@ import {
   createPrototypeZapperBehavior,
   createPrototypeZapperHitbox,
   PROTOTYPE_ZAPPER_LENGTHS,
+  PROTOTYPE_ZAPPER_ROTATION_SPEEDS,
 } from '../hazards/PrototypeZapperHazard';
 import { createUniformPolylineCollectiblePath } from './CollectibleFormationGenerator';
 import type { EncounterBehaviorTag } from './EncounterProfile';
 import { createHazardPattern, type HazardPattern } from './HazardPattern';
-import {
-  PROTOTYPE_LASER_PATTERN,
-  PROTOTYPE_MISSILE_PATTERN,
-} from './PrototypeHazardPatternFixtures';
+import { PROTOTYPE_LASER_PATTERN } from './PrototypeHazardPatternFixtures';
 
 const PRESSURE_ROUTE_SPACING = 48;
 
@@ -52,8 +50,6 @@ const getOnlyEntry = (pattern: Readonly<HazardPattern>, name: string) => {
 };
 
 const LASER_TEMPLATE_ENTRY = getOnlyEntry(PROTOTYPE_LASER_PATTERN, 'Laser');
-const MISSILE_TEMPLATE_ENTRY = getOnlyEntry(PROTOTYPE_MISSILE_PATTERN, 'Missile');
-
 const createLaserEntry = (id: string, top: number, bottom: number) => ({
   behavior: LASER_TEMPLATE_ENTRY.behavior,
   id,
@@ -162,32 +158,51 @@ export const M5_PRESSURE_LASER_LOW_ZAPPER_HIGH: Readonly<HazardPattern> = create
   ],
 });
 
-export const M5_PRESSURE_MISSILE_ZAPPER_BAIT: Readonly<HazardPattern> = createHazardPattern({
-  id: 'm5-pressure-missile-zapper-bait',
-  runLength: 820,
+const ROTATING_UPPER_BEHAVIOR = createPrototypeZapperBehavior(
+  0,
+  PROTOTYPE_ZAPPER_LENGTHS.short,
+  {
+    direction: 'clockwise',
+    speedDegreesPerSecond: PROTOTYPE_ZAPPER_ROTATION_SPEEDS.slow,
+  },
+);
+
+export const M5_PRESSURE_ZAPPER_ROTATING_SWITCH: Readonly<HazardPattern> = createHazardPattern({
+  id: 'm5-pressure-zapper-rotating-switch',
+  runLength: 780,
   profile: createPressureProfile(
-    ['static-barrier', 'target-lock-strike'],
-    'm5-pressure-missile-zapper-bait',
+    ['moving-barrier', 'static-barrier'],
+    'm5-pressure-zapper-rotating-switch',
+    3,
     4,
-    5,
   ),
   entries: [
-    createStaticZapperEntry(
-      'upper-diagonal-zapper',
-      180,
-      105,
-      -45,
-      PROTOTYPE_ZAPPER_LENGTHS.medium,
-    ),
     {
-      behavior: MISSILE_TEMPLATE_ENTRY.behavior,
-      id: 'bait-missile',
-      type: MISSILE_TEMPLATE_ENTRY.type,
-      hitbox: { left: 420, right: 484, top: 171, bottom: 219 },
-      ...(MISSILE_TEMPLATE_ENTRY.reactionPolicy === undefined
-        ? {}
-        : { reactionPolicy: MISSILE_TEMPLATE_ENTRY.reactionPolicy }),
+      behavior: ROTATING_UPPER_BEHAVIOR,
+      id: 'upper-rotating-zapper',
+      type: 'placeholder-barrier',
+      hitbox: createPrototypeZapperHitbox(180, 100, ROTATING_UPPER_BEHAVIOR),
     },
+    createStaticZapperEntry(
+      'lower-horizontal-zapper',
+      500,
+      280,
+      0,
+      PROTOTYPE_ZAPPER_LENGTHS.short,
+    ),
+  ],
+  collectiblePaths: [
+    createUniformPolylineCollectiblePath({
+      id: 'rotating-switch-route',
+      intent: 'safe-guide',
+      spacing: PRESSURE_ROUTE_SPACING,
+      controlPoints: [
+        { runDistance: 64, y: 235 },
+        { runDistance: 300, y: 235 },
+        { runDistance: 400, y: 120 },
+        { runDistance: 720, y: 120 },
+      ],
+    }),
   ],
 });
 
@@ -197,5 +212,5 @@ export const M5_AUTHORED_PRESSURE_ENCOUNTER_SEGMENTS: ReadonlyArray<Readonly<Haz
     M5_PRESSURE_ZAPPER_SWITCH_HIGH_TO_LOW,
     M5_PRESSURE_LASER_HIGH_ZAPPER_LOW,
     M5_PRESSURE_LASER_LOW_ZAPPER_HIGH,
-    M5_PRESSURE_MISSILE_ZAPPER_BAIT,
+    M5_PRESSURE_ZAPPER_ROTATING_SWITCH,
   ]);
