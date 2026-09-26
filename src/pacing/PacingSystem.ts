@@ -42,9 +42,9 @@ const createPhase = (phase: PacingPhaseDefinition): Readonly<PacingPhaseDefiniti
 
 /**
  * Mobile-first M5 rhythm. Every pressure beat is followed by an explicit hazard-free breather.
- * Low/medium/high admit one logical hazard entry so rising speed can carry intensity without visual
- * clutter. Peak alone admits one authored two-entry challenge, followed by the longest recovery.
- * More than half of every cycle is deliberate breathing room.
+ * Low/medium admit one logical hazard entry. High may use a readable two-entry family pattern,
+ * while authored cross-family combinations are reserved by their profiles for Peak. The longest
+ * recovery still follows High, and more than half of every cycle is deliberate breathing room.
  */
 export const PROTOTYPE_PACING_CONFIG: Readonly<PacingConfig> = Object.freeze({
   phases: Object.freeze([
@@ -81,8 +81,8 @@ export const PROTOTYPE_PACING_CONFIG: Readonly<PacingConfig> = Object.freeze({
     createPhase({
       intensity: 'high',
       distanceLength: 2_300,
-      maximumPatternEntries: 1,
-      maximumHazardsPer1000Distance: 2,
+      maximumPatternEntries: 2,
+      maximumHazardsPer1000Distance: 4,
     }),
     createPhase({
       intensity: 'breather',
