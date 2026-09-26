@@ -148,6 +148,7 @@ const createLiveHazardStreamContext = (
   observeEncounter?: (observation: Readonly<EncounterStreamObservation>) => void,
 ) =>
   Object.freeze({
+    baseFlightTuning: flightTuning,
     catalog: verticalDomain.catalog,
     constraints: verticalDomain.constraints,
     observeEncounter,
@@ -490,7 +491,6 @@ export class Foundation extends Scene {
         false,
       );
       this.reconcileRetainedGeneratedTelegraphedHazards(generatedBeforeMotionAdvance);
-      const activeFlightTuning = this.hazardStream.policy?.flightTuning ?? flightTuning;
       const thrustHeld = this.services.input.isThrustHeld();
       const playerScreenX = getPrototypePlayerX(viewport);
       const motionPlan = planGeneratedHazardMotion(
@@ -501,10 +501,11 @@ export class Foundation extends Scene {
       );
       let enteredDead = false;
 
-      // Run each constant-speed slice through the existing authoritative simulation. This preserves
-      // continuous collision/Graze/collectible math while making difficulty/safety speed boundaries
-      // independent of how the renderer partitions the same simulation time.
+      // Run each constant-parameter slice through the existing authoritative simulation. This
+      // preserves continuous collision/Graze/collectible math while making difficulty/safety speed
+      // and flight-authority boundaries independent of renderer frame partitioning.
       for (const motionSegment of motionPlan.segments) {
+        const activeFlightTuning = motionSegment.flightTuning;
         const initialFlight = this.runState.flight;
         const initialMotion = this.runState.motion;
         const runMotionTuning = this.getCachedRunMotionTuning(motionSegment.scrollSpeed);

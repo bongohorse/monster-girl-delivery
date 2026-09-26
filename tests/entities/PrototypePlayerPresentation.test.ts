@@ -1,6 +1,9 @@
 import type { Scene } from 'phaser';
 import { describe, expect, it, vi } from 'vitest';
-import { PrototypePlayerPresentation } from '../../src/entities/PrototypePlayerPresentation';
+import {
+  PROTOTYPE_PLAYER_PRESENTATION_SCALE,
+  PrototypePlayerPresentation,
+} from '../../src/entities/PrototypePlayerPresentation';
 
 const createSceneFake = () => {
   const graphics = {
@@ -12,6 +15,7 @@ const createSceneFake = () => {
     lineStyle: vi.fn(),
     setPosition: vi.fn(),
     setRotation: vi.fn(),
+    setScale: vi.fn(),
     strokeCircle: vi.fn(),
     strokeRoundedRect: vi.fn(),
   };
@@ -60,6 +64,17 @@ describe('PrototypePlayerPresentation', () => {
     expect(graphics.setPosition).toHaveBeenNthCalledWith(1, 320, 180);
     expect(graphics.setPosition).toHaveBeenNthCalledWith(2, 330, 170);
     expect(graphics.setRotation).toHaveBeenCalledWith(Math.PI / 2);
+  });
+
+  it('uses a smaller visual placeholder without changing caller-owned gameplay projection', () => {
+    const { graphics, scene } = createSceneFake();
+    const presentation = new PrototypePlayerPresentation(scene);
+
+    presentation.setScale(1, 0.5);
+
+    expect(PROTOTYPE_PLAYER_PRESENTATION_SCALE).toBe(6 / 7);
+    expect(PROTOTYPE_PLAYER_PRESENTATION_SCALE * 28).toBe(24);
+    expect(graphics.setScale).toHaveBeenLastCalledWith(6 / 7, 3 / 7);
   });
 
   it('rejects non-finite presentation rotation', () => {

@@ -1,5 +1,11 @@
 import type { GameObjects, Scene } from 'phaser';
 
+/**
+ * Visual-only placeholder scale. The primitive artwork extends 28 logical units below its origin;
+ * 6 / 7 keeps that drawn edge at 24, exactly covering the authoritative collision bottom extent.
+ */
+export const PROTOTYPE_PLAYER_PRESENTATION_SCALE = 6 / 7;
+
 const drawPrototypePlayer = (graphics: GameObjects.Graphics): void => {
   const outline = 0x18233d;
 
@@ -55,7 +61,10 @@ export class PrototypePlayerPresentation {
   }
 
   setScale(x: number, y: number): void {
-    this.graphics?.setScale(x, y);
+    this.graphics?.setScale(
+      x * PROTOTYPE_PLAYER_PRESENTATION_SCALE,
+      y * PROTOTYPE_PLAYER_PRESENTATION_SCALE,
+    );
   }
 
   destroy(): void {

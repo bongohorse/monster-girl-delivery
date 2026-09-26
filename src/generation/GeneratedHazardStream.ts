@@ -1,7 +1,9 @@
+import type { FlightTuningValues } from '../config/FlightTuningConfig';
 import type { RunMotionValues } from '../config/RunMotionConfig';
 import {
   calculateDifficulty,
   createDifficultyReactionTimeConstraint,
+  scaleFlightTuningForDifficulty,
 } from '../difficulty/DifficultySystem';
 import {
   PROTOTYPE_PLAYER_COLLISION_EXTENTS,
@@ -106,6 +108,11 @@ export interface GeneratedHazardStreamContext {
   readonly catalog: ReadonlyArray<Readonly<HazardPattern>>;
   readonly config?: Readonly<GeneratedHazardStreamConfig>;
   readonly constraints?: Readonly<PatternValidationConstraints>;
+  /**
+   * Director/base tuning before difficulty scaling. Policy mode derives effective flight authority
+   * from this value; reachability may temporarily carry retained active tuning during motion planning.
+   */
+  readonly baseFlightTuning?: Readonly<FlightTuningValues>;
   /** Presence enables the integrated difficulty, pacing, variety, transition, and budget policy. */
   readonly policy?: Readonly<LiveEncounterPolicyConfig>;
   /** Representative logical flight state/tuning; reaction time comes from the scheduling window. */
@@ -135,13 +142,24 @@ const hasPendingPolicyContent = (
   (state.policy.readability.reservations.length > 0 ||
     runDistance < state.policy.exitEnvelope.runDistance);
 
+const getBaseFlightTuning = (
+  context: Readonly<GeneratedHazardStreamContext>,
+): Readonly<FlightTuningValues> =>
+  context.baseFlightTuning ??
+  (context.reachability ?? PROTOTYPE_PATTERN_REACHABILITY_CONTEXT).flightTuning;
+
 const flightTuningChanged = (
   state: Readonly<LiveEncounterPolicyState>,
   context: Readonly<GeneratedHazardStreamContext>,
 ): boolean => {
-  const requested = (context.reachability ?? PROTOTYPE_PATTERN_REACHABILITY_CONTEXT).flightTuning;
-  return (Object.keys(state.flightTuning) as Array<keyof typeof requested>).some(
-    (key) => state.flightTuning[key] !== requested[key],
+  const base = getBaseFlightTuning(context);
+  const velocityMultiplier = state.difficulty.scrollSpeedMultiplier;
+  const accelerationMultiplier = velocityMultiplier * velocityMultiplier;
+  return (
+    state.flightTuning.gravity !== base.gravity * accelerationMultiplier ||
+    state.flightTuning.thrust !== base.thrust * accelerationMultiplier ||
+    state.flightTuning.maxFallVelocity !== base.maxFallVelocity * velocityMultiplier ||
+    state.flightTuning.maxRiseVelocity !== base.maxRiseVelocity * velocityMultiplier
   );
 };
 
@@ -411,6 +429,10 @@ const fillPolicySpawnWindow = (
   let generationState = state.generationState;
   let nextPatternStartDistance = state.nextPatternStartDistance;
   let policyState = initialPolicyState;
+  const activeReachabilitySource = Object.freeze({
+    ...reachabilitySource,
+    flightTuning: initialPolicyState.flightTuning,
+  });
   let scheduledPatternCount = state.scheduledPatternCount;
   const status = state.status;
   let policyIterations = 0;
@@ -489,13 +511,13 @@ const fillPolicySpawnWindow = (
 
     const reachability = Object.freeze({
       availableReactionTimeSeconds: selection.difficulty.minimumReactionTimeSeconds,
-      flightState: reachabilitySource.flightState,
-      flightTuning: reachabilitySource.flightTuning,
-      playerExtents: reachabilitySource.playerExtents,
+      flightState: activeReachabilitySource.flightState,
+      flightTuning: activeReachabilitySource.flightTuning,
+      playerExtents: activeReachabilitySource.playerExtents,
     });
     const transition = createLiveEncounterTransitionContext(
       policyState,
-      reachabilitySource,
+      activeReachabilitySource,
       schedulingWindow.scrollSpeed,
     );
     let acceptedSchedule: ReturnType<typeof scheduleNextPattern> | null = null;
@@ -547,7 +569,7 @@ const fillPolicySpawnWindow = (
         acceptedEvaluation.pattern,
         nextPatternStartDistance,
         schedulingWindow.scrollSpeed,
-        reachabilitySource,
+        activeReachabilitySource,
         selection.constraints,
       ) === null
     ) {
@@ -600,7 +622,7 @@ const fillPolicySpawnWindow = (
       acceptedEvaluation.decision,
       nextPatternStartDistance,
       schedulingWindow.scrollSpeed,
-      reachabilitySource,
+      activeReachabilitySource,
       selection.constraints,
       policyConfig,
     );
@@ -645,7 +667,17 @@ export const createGeneratedHazardStream = (
   const policy =
     context.policy === undefined
       ? null
-      : createLiveEncounterPolicyState(0, reachabilitySource, context.policy);
+      : createLiveEncounterPolicyState(
+          0,
+          Object.freeze({
+            ...reachabilitySource,
+            flightTuning: scaleFlightTuningForDifficulty(
+              getBaseFlightTuning(context),
+              calculateDifficulty(0, context.policy.difficulty),
+            ),
+          }),
+          context.policy,
+        );
 
   return fillSpawnWindow(
     freezeState({
@@ -701,9 +733,10 @@ export const advanceGeneratedHazardStream = (
   const steppedState = policy === state.policy ? state : freezeState({ ...state, policy });
   const speedChange = resolveHazardSafeSpeedChange(steppedState, runDistance, context, runMotion);
   const tuningChanged = policy !== null && flightTuningChanged(policy, context);
+  const pendingPolicyContent = hasPendingPolicyContent(steppedState, runDistance);
   const parametersDeferred =
-    hasPendingPolicyContent(steppedState, runDistance) &&
-    (speedChange.status === 'deferred' || tuningChanged);
+    policy !== null &&
+    (speedChange.status === 'deferred' || (pendingPolicyContent && tuningChanged));
   if (
     policy !== null &&
     !parametersDeferred &&
@@ -718,9 +751,7 @@ export const advanceGeneratedHazardStream = (
         context.reachability ?? PROTOTYPE_PATTERN_REACHABILITY_CONTEXT,
         context.constraints ?? PROTOTYPE_PATTERN_VALIDATION_CONSTRAINTS,
       ),
-      flightTuning: Object.freeze({
-        ...(context.reachability ?? PROTOTYPE_PATTERN_REACHABILITY_CONTEXT).flightTuning,
-      }),
+      flightTuning: scaleFlightTuningForDifficulty(getBaseFlightTuning(context), policy.difficulty),
     });
   }
   const schedulingWindow = createHazardReactionWindow(
@@ -784,6 +815,8 @@ export const advanceGeneratedHazardStream = (
 export interface GeneratedHazardMotionSegment {
   readonly durationSeconds: number;
   readonly endRunDistance: number;
+  /** Effective flight authority for this exact constant-parameter slice. */
+  readonly flightTuning: Readonly<FlightTuningValues>;
   readonly scrollSpeed: number;
   readonly startRunDistance: number;
 }
@@ -817,10 +850,10 @@ const createMotionPlanningContext = (
   const reachability = context.reachability ?? PROTOTYPE_PATTERN_REACHABILITY_CONTEXT;
   return Object.freeze({
     ...planningContext,
+    // Preserve the unscaled Director/base value while reachability carries retained active tuning.
+    baseFlightTuning: getBaseFlightTuning(context),
     reachability: Object.freeze({
       ...reachability,
-      // Run-speed planning must not switch Director flight tuning part-way through one frame.
-      // The normal zero-time commit applies a newly-safe flight tuning at the frame boundary.
       flightTuning: state.policy.flightTuning,
     }),
   });
@@ -918,6 +951,9 @@ export const planGeneratedHazardMotion = (
     }
 
     const scrollSpeed = preview.schedulingWindow.scrollSpeed;
+    const flightTuning =
+      preview.policy?.flightTuning ??
+      (context.reachability ?? PROTOTYPE_PATTERN_REACHABILITY_CONTEXT).flightTuning;
     if (!Number.isFinite(scrollSpeed) || scrollSpeed <= 0) {
       throw new RangeError('Generated hazard motion scroll speed must remain positive and finite.');
     }
@@ -953,6 +989,7 @@ export const planGeneratedHazardMotion = (
       Object.freeze({
         durationSeconds: segmentSeconds,
         endRunDistance,
+        flightTuning,
         scrollSpeed,
         startRunDistance: startDistance,
       }),

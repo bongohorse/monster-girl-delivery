@@ -674,7 +674,7 @@ describe('system frame partition evidence', () => {
         constraints: PROTOTYPE_PATTERN_VALIDATION_CONSTRAINTS,
       });
 
-      const totalDuration = 7.5; // reaches distance 2625 logical distance units, crossing into difficulty tier 1 at 2500 logical distance units
+      const totalDuration = 9; // crosses the new tier-1 boundary at 3000 logical distance units
       const runMotion = PROTOTYPE_RUN_MOTION_DEFAULTS;
 
       const runToFinish = (schedule: FrameSchedule) => {

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { PROTOTYPE_FLIGHT_TUNING_DEFAULTS } from '../../src/config/FlightTuningConfig';
 import {
   calculateDifficulty,
   createDifficultyPatternValidationConstraints,
@@ -6,6 +7,7 @@ import {
   evaluatePatternDifficultyEligibility,
   filterPatternsForDifficulty,
   PROTOTYPE_DIFFICULTY_CONFIG,
+  scaleFlightTuningForDifficulty,
   scaleRunMotionForDifficulty,
 } from '../../src/difficulty/DifficultySystem';
 import { PROTOTYPE_PATTERN_REACHABILITY_CONTEXT } from '../../src/generation/FlightReachability';
@@ -89,12 +91,17 @@ const copyPrototypeTiers = () => PROTOTYPE_DIFFICULTY_CONFIG.tiers.map((tier) =>
 
 describe('difficulty system', () => {
   it.each([
-    { runDistance: 0, tierIndex: 0, nextTierStartDistance: 2_500 },
-    { runDistance: 2_499.999, tierIndex: 0, nextTierStartDistance: 2_500 },
-    { runDistance: 2_500, tierIndex: 1, nextTierStartDistance: 6_000 },
-    { runDistance: 5_999.999, tierIndex: 1, nextTierStartDistance: 6_000 },
-    { runDistance: 6_000, tierIndex: 2, nextTierStartDistance: 10_000 },
-    { runDistance: 10_000, tierIndex: 3, nextTierStartDistance: null },
+    { runDistance: 0, tierIndex: 0, nextTierStartDistance: 3_000 },
+    { runDistance: 2_999.999, tierIndex: 0, nextTierStartDistance: 3_000 },
+    { runDistance: 3_000, tierIndex: 1, nextTierStartDistance: 7_000 },
+    { runDistance: 6_999.999, tierIndex: 1, nextTierStartDistance: 7_000 },
+    { runDistance: 7_000, tierIndex: 2, nextTierStartDistance: 12_000 },
+    { runDistance: 11_999.999, tierIndex: 2, nextTierStartDistance: 12_000 },
+    { runDistance: 12_000, tierIndex: 3, nextTierStartDistance: 18_000 },
+    { runDistance: 17_999.999, tierIndex: 3, nextTierStartDistance: 18_000 },
+    { runDistance: 18_000, tierIndex: 4, nextTierStartDistance: 26_000 },
+    { runDistance: 25_999.999, tierIndex: 4, nextTierStartDistance: 26_000 },
+    { runDistance: 26_000, tierIndex: 5, nextTierStartDistance: null },
   ])(
     'selects tier $tierIndex at representative distance $runDistance',
     ({ runDistance, tierIndex, nextTierStartDistance }) => {
@@ -135,7 +142,8 @@ describe('difficulty system', () => {
       expect(current.minimumReactionSpacing).toBeLessThanOrEqual(previous.minimumReactionSpacing);
       expect(current.minimumVerticalCorridor).toBeLessThanOrEqual(previous.minimumVerticalCorridor);
       expect(
-        current.maximumPatternEntries > previous.maximumPatternEntries ||
+        current.scrollSpeedMultiplier > previous.scrollSpeedMultiplier ||
+          current.maximumPatternEntries > previous.maximumPatternEntries ||
           current.maximumHazardsPer1000Distance > previous.maximumHazardsPer1000Distance ||
           current.minimumReactionTimeSeconds < previous.minimumReactionTimeSeconds ||
           current.minimumReactionSpacing < previous.minimumReactionSpacing ||
@@ -145,22 +153,28 @@ describe('difficulty system', () => {
   });
 
   it('caps progression explicitly at the final prototype tier', () => {
-    const atCap = calculateDifficulty(10_000);
+    const atCap = calculateDifficulty(26_000);
     const farBeyondCap = calculateDifficulty(Number.MAX_SAFE_INTEGER);
 
-    expect(atCap).toMatchObject({ capped: true, nextTierStartDistance: null, tierIndex: 3 });
-    expect(farBeyondCap).toMatchObject({ capped: true, nextTierStartDistance: null, tierIndex: 3 });
+    expect(atCap).toMatchObject({ capped: true, nextTierStartDistance: null, tierIndex: 5 });
+    expect(farBeyondCap).toMatchObject({ capped: true, nextTierStartDistance: null, tierIndex: 5 });
     expect({ ...farBeyondCap, runDistance: atCap.runDistance }).toEqual(atCap);
   });
 
-  it('adapts one snapshot for speed, reaction timing, and validator constraints', () => {
-    const difficulty = calculateDifficulty(6_000);
+  it('adapts one snapshot for speed, flight authority, reaction timing, and validator constraints', () => {
+    const difficulty = calculateDifficulty(7_000);
 
     expect(scaleRunMotionForDifficulty({ baseScrollSpeed: 350 }, difficulty)).toEqual({
-      baseScrollSpeed: 406,
+      baseScrollSpeed: 437.5,
+    });
+    expect(scaleFlightTuningForDifficulty(PROTOTYPE_FLIGHT_TUNING_DEFAULTS, difficulty)).toEqual({
+      gravity: 2_500,
+      thrust: 4_062.5,
+      maxFallVelocity: 875,
+      maxRiseVelocity: 687.5,
     });
     expect(createDifficultyReactionTimeConstraint(difficulty)).toEqual({
-      minimumReactionTimeSeconds: 1.8,
+      minimumReactionTimeSeconds: 1.9,
     });
     expect(
       createDifficultyPatternValidationConstraints(difficulty, {
@@ -169,8 +183,8 @@ describe('difficulty system', () => {
         playableBottom: 350,
       }),
     ).toEqual({
-      minimumReactionSpacing: 80,
-      minimumVerticalCorridor: 84,
+      minimumReactionSpacing: 94,
+      minimumVerticalCorridor: 94,
       playableTop: 40,
       playableBottom: 350,
     });
@@ -178,7 +192,7 @@ describe('difficulty system', () => {
 
   it('returns structured pattern eligibility from entry and density limits', () => {
     const introductory = calculateDifficulty(0);
-    const capped = calculateDifficulty(10_000);
+    const capped = calculateDifficulty(26_000);
 
     expect(evaluatePatternDifficultyEligibility(COMPLEX_PATTERN, introductory)).toEqual({
       eligible: false,
@@ -187,10 +201,10 @@ describe('difficulty system', () => {
       reasons: ['pattern-entry-limit', 'pattern-density-limit'],
     });
     expect(evaluatePatternDifficultyEligibility(COMPLEX_PATTERN, capped)).toEqual({
-      eligible: true,
+      eligible: false,
       hazardDensityPer1000Distance: 6,
       patternEntryCount: 6,
-      reasons: [],
+      reasons: ['pattern-entry-limit'],
     });
     expect(evaluatePatternDifficultyEligibility(DENSE_PATTERN, capped)).toMatchObject({
       eligible: false,
@@ -202,12 +216,11 @@ describe('difficulty system', () => {
     ).toEqual([PROTOTYPE_LINE_PATTERN]);
     expect(filterPatternsForDifficulty([PROTOTYPE_LINE_PATTERN, COMPLEX_PATTERN], capped)).toEqual([
       PROTOTYPE_LINE_PATTERN,
-      COMPLEX_PATTERN,
     ]);
   });
 
   it('preserves seeded generation for the same explicit difficulty inputs', () => {
-    const difficulty = calculateDifficulty(6_000);
+    const difficulty = calculateDifficulty(7_000);
     const catalog = filterPatternsForDifficulty(PROTOTYPE_HAZARD_PATTERN_FIXTURES, difficulty);
     const constraints = createDifficultyPatternValidationConstraints(difficulty);
     const reachability = {

@@ -1,3 +1,7 @@
+import {
+  assertValidFlightTuningValues,
+  type FlightTuningValues,
+} from '../config/FlightTuningConfig';
 import { assertValidBaseScrollSpeed, type RunMotionValues } from '../config/RunMotionConfig';
 import type { HazardReactionTimeConstraint } from '../generation/HazardApproachTiming';
 import type { HazardPattern } from '../generation/HazardPattern';
@@ -47,7 +51,10 @@ export interface PatternDifficultyEligibility {
 const createTier = (definition: DifficultyTierDefinition): Readonly<DifficultyTierDefinition> =>
   Object.freeze({ ...definition });
 
-/** PROTOTYPE progression values for M4 testing; they are not final balance decisions. */
+/**
+ * PROTOTYPE M5 feel-pass progression. Speed now carries more of the late-run intensity while
+ * density, spacing and corridor pressure rise deliberately instead of all tightening at once.
+ */
 export const PROTOTYPE_DIFFICULTY_CONFIG: Readonly<DifficultyConfig> = Object.freeze({
   tiers: Object.freeze([
     createTier({
@@ -62,33 +69,53 @@ export const PROTOTYPE_DIFFICULTY_CONFIG: Readonly<DifficultyConfig> = Object.fr
     }),
     createTier({
       id: 'tier-1',
-      startDistance: 2_500,
-      scrollSpeedMultiplier: 1.08,
-      minimumReactionTimeSeconds: 1.9,
-      minimumReactionSpacing: 88,
-      minimumVerticalCorridor: 90,
-      maximumPatternEntries: 4,
-      maximumHazardsPer1000Distance: 6,
+      startDistance: 3_000,
+      scrollSpeedMultiplier: 1.12,
+      minimumReactionTimeSeconds: 1.95,
+      minimumReactionSpacing: 96,
+      minimumVerticalCorridor: 96,
+      maximumPatternEntries: 3,
+      maximumHazardsPer1000Distance: 5,
     }),
     createTier({
       id: 'tier-2',
-      startDistance: 6_000,
-      scrollSpeedMultiplier: 1.16,
-      minimumReactionTimeSeconds: 1.8,
-      minimumReactionSpacing: 80,
-      minimumVerticalCorridor: 84,
-      maximumPatternEntries: 5,
-      maximumHazardsPer1000Distance: 7,
+      startDistance: 7_000,
+      scrollSpeedMultiplier: 1.25,
+      minimumReactionTimeSeconds: 1.9,
+      minimumReactionSpacing: 94,
+      minimumVerticalCorridor: 94,
+      maximumPatternEntries: 3,
+      maximumHazardsPer1000Distance: 5,
     }),
     createTier({
       id: 'tier-3',
-      startDistance: 10_000,
-      scrollSpeedMultiplier: 1.24,
-      minimumReactionTimeSeconds: 1.7,
-      minimumReactionSpacing: 72,
-      minimumVerticalCorridor: 78,
-      maximumPatternEntries: 6,
-      maximumHazardsPer1000Distance: 8,
+      startDistance: 12_000,
+      scrollSpeedMultiplier: 1.38,
+      minimumReactionTimeSeconds: 1.85,
+      minimumReactionSpacing: 92,
+      minimumVerticalCorridor: 92,
+      maximumPatternEntries: 4,
+      maximumHazardsPer1000Distance: 5.5,
+    }),
+    createTier({
+      id: 'tier-4',
+      startDistance: 18_000,
+      scrollSpeedMultiplier: 1.5,
+      minimumReactionTimeSeconds: 1.8,
+      minimumReactionSpacing: 90,
+      minimumVerticalCorridor: 90,
+      maximumPatternEntries: 4,
+      maximumHazardsPer1000Distance: 5.5,
+    }),
+    createTier({
+      id: 'tier-5',
+      startDistance: 26_000,
+      scrollSpeedMultiplier: 1.6,
+      minimumReactionTimeSeconds: 1.75,
+      minimumReactionSpacing: 88,
+      minimumVerticalCorridor: 88,
+      maximumPatternEntries: 5,
+      maximumHazardsPer1000Distance: 6,
     }),
   ]),
 });
@@ -221,6 +248,31 @@ export const scaleRunMotionForDifficulty = (
   assertValidBaseScrollSpeed(baseScrollSpeed);
 
   return Object.freeze({ baseScrollSpeed });
+};
+
+/**
+ * Keeps useful vertical authority as horizontal reaction time shrinks.
+ *
+ * Velocity caps follow the level-speed multiplier linearly. Acceleration follows its square, so a
+ * similarly shaped vertical correction completes in proportionally less time as the world speeds up.
+ * The caller still owns the base Director tuning; this derives only the effective difficulty snapshot.
+ */
+export const scaleFlightTuningForDifficulty = (
+  baseFlightTuning: Readonly<FlightTuningValues>,
+  difficulty: Readonly<DifficultySnapshot>,
+): Readonly<FlightTuningValues> => {
+  assertValidFlightTuningValues(baseFlightTuning);
+  assertValidParameters(difficulty);
+  const velocityMultiplier = difficulty.scrollSpeedMultiplier;
+  const accelerationMultiplier = velocityMultiplier * velocityMultiplier;
+  const flightTuning = {
+    gravity: baseFlightTuning.gravity * accelerationMultiplier,
+    thrust: baseFlightTuning.thrust * accelerationMultiplier,
+    maxFallVelocity: baseFlightTuning.maxFallVelocity * velocityMultiplier,
+    maxRiseVelocity: baseFlightTuning.maxRiseVelocity * velocityMultiplier,
+  };
+  assertValidFlightTuningValues(flightTuning);
+  return Object.freeze(flightTuning);
 };
 
 export const createDifficultyReactionTimeConstraint = (
