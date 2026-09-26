@@ -375,6 +375,12 @@ The recent-history variety policy retains the last four accepted variety-family 
 
 M4 active readability policy reserves each pending/active encounter's profile pressure and readability costs across explicit relative simulation-time windows, with separate warning-channel and lethal-window concurrency. The default **PROTOTYPE** hard budget allows six combined pressure units, six combined readability units, two simultaneous warnings, two simultaneous lethal windows, and at most 32 tracked encounters. Higher requested pressure cannot raise those caps; a breather may request zero. Over-budget candidates are deferred with structured metric/time evidence and do not change occupancy. Half-open windows permit exact handoffs, expiry releases budget only through TimeService-normalized delta, and zero delta leaves state unchanged. The bounded serializable state has no Phaser, physical viewport, wall-clock, GPU, or audio-mixing input; live interval construction and combined encounter scheduling landed in #120.
 
+### PROTOTYPE — M5 authored AUTO vocabulary
+
+The M5 gameplay-feel pass replaces the mixed demo/proxy AUTO catalog with eleven explicit authored encounter segments: six single-decision patterns and five tier-2+ High/Peak pressure patterns. Each live pattern has its own variety-family identity and remains subject to the existing difficulty, pacing, readability, transition, reachability, and seeded scheduling authorities. Older line/corridor/offset demos and the earlier Phase-2 combination trio remain focused reference/test content rather than normal AUTO selection.
+
+A twelfth authored Missile bait/dodge segment remains intentionally outside AUTO. Its current 2.2 s scan + 0.8 s lock + 3.2 s active lifecycle crosses the mandatory breather boundary of the present pressure windows, so the readability authority correctly defers it. M5 does not weaken recovery guarantees merely to force that content live; Missile lifecycle/pacing integration remains a separate prototype tuning decision.
+
 ### FUTURE
 
 Difficulty and pacing values must be tuned through playtesting. Live encounter integration should realize readable pressure/recovery rather than permanent maximum intensity, keeping pacing separate from the difficulty tier.
