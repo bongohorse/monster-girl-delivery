@@ -7,10 +7,7 @@ import {
   evaluateLiveEncounterReadability,
   selectLiveEncounterCandidates,
 } from '../../src/generation/LiveEncounterPolicy';
-import {
-  M5_LASER_ZAPPER_PATTERN,
-  PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG,
-} from '../../src/generation/M5AuthoredMultiHazardPatterns';
+import { M5_LASER_ZAPPER_PATTERN } from '../../src/generation/M5AuthoredMultiHazardPatterns';
 import {
   M5_COLLECTIBLE_MOVEMENT_PATTERNS,
   M5_CORRIDOR_REWARD_PATTERN,
@@ -18,6 +15,7 @@ import {
   M5_RECOVERY_ROUTE_PATTERN,
   M5_TEACHING_FLIGHT_ARC_PATTERN,
 } from '../../src/generation/M5CollectibleMovementPatterns';
+import { PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG } from '../../src/generation/M5LiveEncounterCatalog';
 import { scheduleNextPattern } from '../../src/generation/PatternSpawnScheduler';
 import { validatePattern } from '../../src/generation/PatternValidator';
 import {
@@ -81,11 +79,11 @@ const countCollectibles = (pattern: Readonly<HazardPattern>): number =>
 
 describe('M5 collectible movement language', () => {
   it.each(REPRESENTATIVE_ROUTES)(
-    '$role route is explicit, correctly classified, and accepted by the existing pattern validator',
+    '$role reference route stays valid after retirement from normal AUTO',
     ({ pattern, pathId, intent }) => {
       expect(getPath(pattern, pathId).intent).toBe(intent);
       expect(validatePattern(pattern)).toEqual({ valid: true, issues: [] });
-      expect(PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG).toContain(pattern);
+      expect(PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG).not.toContain(pattern);
     },
   );
 
@@ -104,7 +102,7 @@ describe('M5 collectible movement language', () => {
         profile: baseline.profile,
         entries: baseline.entries,
       });
-      expect(PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG).toContain(enriched);
+      expect(PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG).not.toContain(enriched);
     }
   });
 
