@@ -23,13 +23,12 @@ const evaluateAt = (
   pattern: (typeof M5_AUTHORED_PRESSURE_ENCOUNTER_SEGMENTS)[number],
   runDistance: number,
 ) => {
-  const state = createLiveEncounterPolicyState(
-    runDistance,
-    PROTOTYPE_PATTERN_REACHABILITY_CONTEXT,
-  );
+  const state = createLiveEncounterPolicyState(runDistance, PROTOTYPE_PATTERN_REACHABILITY_CONTEXT);
   const selection = selectLiveEncounterCandidates([pattern], runDistance, state);
-  const scrollSpeed = scaleLiveEncounterRunMotion({ baseScrollSpeed: 350 }, runDistance)
-    .baseScrollSpeed;
+  const scrollSpeed = scaleLiveEncounterRunMotion(
+    { baseScrollSpeed: 350 },
+    runDistance,
+  ).baseScrollSpeed;
   const evaluations = evaluateLiveEncounterReadability(
     [...selection.primaryCatalog, ...selection.deferredCatalog],
     state,
@@ -46,14 +45,12 @@ const evaluateAt = (
 describe('M5 authored pressure encounter segments', () => {
   it('adds five unique isolated pressure segments for twelve authored segments total', () => {
     expect(M5_AUTHORED_PRESSURE_ENCOUNTER_SEGMENTS).toHaveLength(5);
-    expect(
-      new Set(M5_AUTHORED_PRESSURE_ENCOUNTER_SEGMENTS.map((pattern) => pattern.id)).size,
-    ).toBe(5);
+    expect(new Set(M5_AUTHORED_PRESSURE_ENCOUNTER_SEGMENTS.map((pattern) => pattern.id)).size).toBe(
+      5,
+    );
     expect(
       new Set(
-        M5_AUTHORED_PRESSURE_ENCOUNTER_SEGMENTS.map(
-          (pattern) => pattern.profile.varietyFamilyId,
-        ),
+        M5_AUTHORED_PRESSURE_ENCOUNTER_SEGMENTS.map((pattern) => pattern.profile.varietyFamilyId),
       ).size,
     ).toBe(5);
     expect(
