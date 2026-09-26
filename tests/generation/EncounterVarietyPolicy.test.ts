@@ -156,12 +156,7 @@ describe('encounter variety policy', () => {
     for (let index = 0; index < 100; index += 1) {
       repeated = recordAcceptedEncounterForVariety(repeated, FAMILY_A_PATTERN);
     }
-    expect(repeated.recentFamilyIds).toEqual([
-      'family-a',
-      'family-a',
-      'family-a',
-      'family-a',
-    ]);
+    expect(repeated.recentFamilyIds).toEqual(['family-a', 'family-a', 'family-a', 'family-a']);
   });
 
   it('prefers a fresh fifth family over the four most recent accepted families', () => {
@@ -172,13 +167,7 @@ describe('encounter variety policy', () => {
       'family-d',
     ]);
     const selection = selectPatternsForVariety(
-      [
-        FAMILY_A_PATTERN,
-        FAMILY_B_PATTERN,
-        FAMILY_C_PATTERN,
-        FAMILY_D_PATTERN,
-        FAMILY_E_PATTERN,
-      ],
+      [FAMILY_A_PATTERN, FAMILY_B_PATTERN, FAMILY_C_PATTERN, FAMILY_D_PATTERN, FAMILY_E_PATTERN],
       state,
     );
 
