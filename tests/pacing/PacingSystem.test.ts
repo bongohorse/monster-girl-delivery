@@ -57,7 +57,7 @@ describe('pacing system', () => {
     expect(breatherDistance / CYCLE_LENGTH).toBeGreaterThan(0.5);
   });
 
-  it('keeps ordinary pressure to one entry and reserves two-entry challenges for peak', () => {
+  it('keeps low and medium to one entry and bounds challenge beats to two entries', () => {
     const pressure = Object.fromEntries(
       PROTOTYPE_PACING_CONFIG.phases
         .filter((phase) => phase.intensity !== 'breather')
@@ -74,8 +74,8 @@ describe('pacing system', () => {
       distanceLength: 900,
     });
     expect(pressure.high).toMatchObject({
-      maximumPatternEntries: 1,
-      maximumHazardsPer1000Distance: 2,
+      maximumPatternEntries: 2,
+      maximumHazardsPer1000Distance: 4,
       distanceLength: 2_300,
     });
     expect(pressure.peak).toMatchObject({
