@@ -157,11 +157,12 @@ These values are prototype tuning and must remain configurable where the current
 ### PROTOTYPE — M5 speed-coupled flight authority
 
 The M5 gameplay-feel pass keeps the existing one-button analytical flight model, but live effective
-flight authority now follows the same capped difficulty-speed progression as world movement. Rise/fall
-velocity caps scale linearly with the current speed multiplier; gravity and thrust scale with its
-square so large vertical corrections remain achievable in the shorter approach time of a faster run.
-Speed and derived flight-authority changes use the existing deterministic safe transition boundary,
-and reachability/transition validation consumes the same active tuning as gameplay. Exact ramp values
+flight authority follows the same capped difficulty-speed progression as world movement only
+partially. Director playtesting showed that full linear velocity scaling plus squared acceleration
+made late-run flight too twitchy. The current prototype therefore applies 50% of the world-speed
+increase to rise/fall velocity caps and 40% to gravity/thrust acceleration. Speed and derived
+flight-authority changes still use the existing deterministic safe transition boundary, and
+reachability/transition validation consumes the same active tuning as gameplay. Exact response gains
 remain **PROTOTYPE** and require real-device playtesting.
 
 ### DECIDED principles

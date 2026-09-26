@@ -167,12 +167,14 @@ describe('difficulty system', () => {
     expect(scaleRunMotionForDifficulty({ baseScrollSpeed: 350 }, difficulty)).toEqual({
       baseScrollSpeed: 437.5,
     });
-    expect(scaleFlightTuningForDifficulty(PROTOTYPE_FLIGHT_TUNING_DEFAULTS, difficulty)).toEqual({
-      gravity: 2_500,
-      thrust: 4_062.5,
-      maxFallVelocity: 875,
-      maxRiseVelocity: 687.5,
-    });
+    const effectiveFlight = scaleFlightTuningForDifficulty(
+      PROTOTYPE_FLIGHT_TUNING_DEFAULTS,
+      difficulty,
+    );
+    expect(effectiveFlight.gravity).toBeCloseTo(1_760, 10);
+    expect(effectiveFlight.thrust).toBeCloseTo(2_860, 10);
+    expect(effectiveFlight.maxFallVelocity).toBeCloseTo(787.5, 10);
+    expect(effectiveFlight.maxRiseVelocity).toBeCloseTo(618.75, 10);
     expect(createDifficultyReactionTimeConstraint(difficulty)).toEqual({
       minimumReactionTimeSeconds: 1.9,
     });
@@ -187,6 +189,27 @@ describe('difficulty system', () => {
       minimumVerticalCorridor: 94,
       playableTop: 40,
       playableBottom: 350,
+    });
+  });
+
+  it('keeps late-run flight response deliberately below world-speed growth', () => {
+    const tierFour = calculateDifficulty(18_000);
+    const capped = calculateDifficulty(26_000);
+
+    expect(tierFour.scrollSpeedMultiplier).toBe(1.5);
+    expect(scaleFlightTuningForDifficulty(PROTOTYPE_FLIGHT_TUNING_DEFAULTS, tierFour)).toEqual({
+      gravity: 1_920,
+      thrust: 3_120,
+      maxFallVelocity: 875,
+      maxRiseVelocity: 687.5,
+    });
+
+    expect(capped.scrollSpeedMultiplier).toBe(1.6);
+    expect(scaleFlightTuningForDifficulty(PROTOTYPE_FLIGHT_TUNING_DEFAULTS, capped)).toEqual({
+      gravity: 1_984,
+      thrust: 3_224,
+      maxFallVelocity: 910,
+      maxRiseVelocity: 715,
     });
   });
 

@@ -105,10 +105,10 @@ describe('generated hazard motion planning', () => {
     expect(secondSegment?.startRunDistance).toBeCloseTo(3_000, 12);
     expect(secondSegment?.endRunDistance).toBeCloseTo(3_028, 12);
     expect(secondSegment?.scrollSpeed).toBeCloseTo(392, 12);
-    expect(secondSegment?.flightTuning.gravity).toBeCloseTo(2_007.04, 10);
-    expect(secondSegment?.flightTuning.thrust).toBeCloseTo(3_261.44, 10);
-    expect(secondSegment?.flightTuning.maxFallVelocity).toBeCloseTo(784, 10);
-    expect(secondSegment?.flightTuning.maxRiseVelocity).toBeCloseTo(616, 10);
+    expect(secondSegment?.flightTuning.gravity).toBeCloseTo(1_676.8, 10);
+    expect(secondSegment?.flightTuning.thrust).toBeCloseTo(2_724.8, 10);
+    expect(secondSegment?.flightTuning.maxFallVelocity).toBeCloseTo(742, 10);
+    expect(secondSegment?.flightTuning.maxRiseVelocity).toBeCloseTo(583, 10);
     expect(plan.endRunDistance).toBeCloseTo(3_028, 12);
     expect(plan.averageScrollSpeed).toBeCloseTo(380, 12);
     expect(resolveGeneratedHazardMotionRunDistance(plan, 10 / 350)).toBeCloseTo(3_000, 12);
