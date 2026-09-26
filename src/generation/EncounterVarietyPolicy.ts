@@ -143,9 +143,7 @@ export const selectPatternsForVariety = (
   const recentCatalog = catalog.filter((pattern) => !preferredPatternIds.has(pattern.id));
   const fallbackUsed = catalog.length > 0 && preferredCatalog.length === 0;
   const oldestRecentDistance = fallbackUsed
-    ? Math.max(
-        ...evaluations.map((evaluation) => evaluation.selectionsSinceLastUse ?? 0),
-      )
+    ? Math.max(...evaluations.map((evaluation) => evaluation.selectionsSinceLastUse ?? 0))
     : null;
   const fallbackPatternIds = new Set(
     fallbackUsed
