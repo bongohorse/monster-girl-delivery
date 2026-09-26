@@ -1,13 +1,3 @@
-import type { EncounterBehaviorTag } from './EncounterProfile';
-import {
-  createSineCollectiblePath,
-  createUniformPolylineCollectiblePath,
-} from './CollectibleFormationGenerator';
-import { createHazardPattern, type HazardPattern } from './HazardPattern';
-import {
-  PROTOTYPE_LASER_PATTERN,
-  PROTOTYPE_MISSILE_PATTERN,
-} from './PrototypeHazardPatternFixtures';
 import {
   createPrototypeZapperBehavior,
   createPrototypeZapperHitbox,
@@ -15,6 +5,16 @@ import {
   PROTOTYPE_ZAPPER_ROTATION_SPEEDS,
 } from '../hazards/PrototypeZapperHazard';
 import { PROTOTYPE_TIMED_ZAPPER_CONFIG } from '../hazards/TimedZapperLifecycle';
+import {
+  createSineCollectiblePath,
+  createUniformPolylineCollectiblePath,
+} from './CollectibleFormationGenerator';
+import type { EncounterBehaviorTag } from './EncounterProfile';
+import { createHazardPattern, type HazardPattern } from './HazardPattern';
+import {
+  PROTOTYPE_LASER_PATTERN,
+  PROTOTYPE_MISSILE_PATTERN,
+} from './PrototypeHazardPatternFixtures';
 
 const SINGLE_SEGMENT_ROUTE_SPACING = 48;
 
