@@ -6,7 +6,7 @@ import {
   scaleLiveEncounterRunMotion,
   selectLiveEncounterCandidates,
 } from '../../src/generation/LiveEncounterPolicy';
-import { PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG } from '../../src/generation/M5AuthoredMultiHazardPatterns';
+import { PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG } from '../../src/generation/M5LiveEncounterCatalog';
 import { M5_AUTHORED_PRESSURE_ENCOUNTER_SEGMENTS } from '../../src/generation/M5AuthoredPressureEncounterSegments';
 import { M5_AUTHORED_SINGLE_ENCOUNTER_SEGMENTS } from '../../src/generation/M5AuthoredSingleEncounterSegments';
 import { scheduleNextPattern } from '../../src/generation/PatternSpawnScheduler';
@@ -40,7 +40,7 @@ const evaluateAt = (
 };
 
 describe('M5 authored pressure encounter segments', () => {
-  it('adds five unique isolated pressure segments for twelve authored segments total', () => {
+  it('adds five unique live pressure segments for twelve authored segments total', () => {
     expect(M5_AUTHORED_PRESSURE_ENCOUNTER_SEGMENTS).toHaveLength(5);
     expect(new Set(M5_AUTHORED_PRESSURE_ENCOUNTER_SEGMENTS.map((pattern) => pattern.id)).size).toBe(
       5,
@@ -56,7 +56,7 @@ describe('M5 authored pressure encounter segments', () => {
 
     for (const pattern of M5_AUTHORED_PRESSURE_ENCOUNTER_SEGMENTS) {
       expect(pattern.entries).toHaveLength(2);
-      expect(PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG).not.toContain(pattern);
+      expect(PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG).toContain(pattern);
     }
   });
 
