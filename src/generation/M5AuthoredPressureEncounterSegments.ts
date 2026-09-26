@@ -158,14 +158,10 @@ export const M5_PRESSURE_LASER_LOW_ZAPPER_HIGH: Readonly<HazardPattern> = create
   ],
 });
 
-const ROTATING_UPPER_BEHAVIOR = createPrototypeZapperBehavior(
-  0,
-  PROTOTYPE_ZAPPER_LENGTHS.short,
-  {
-    direction: 'clockwise',
-    speedDegreesPerSecond: PROTOTYPE_ZAPPER_ROTATION_SPEEDS.slow,
-  },
-);
+const ROTATING_UPPER_BEHAVIOR = createPrototypeZapperBehavior(0, PROTOTYPE_ZAPPER_LENGTHS.short, {
+  direction: 'clockwise',
+  speedDegreesPerSecond: PROTOTYPE_ZAPPER_ROTATION_SPEEDS.slow,
+});
 
 export const M5_PRESSURE_ZAPPER_ROTATING_SWITCH: Readonly<HazardPattern> = createHazardPattern({
   id: 'm5-pressure-zapper-rotating-switch',
@@ -183,13 +179,7 @@ export const M5_PRESSURE_ZAPPER_ROTATING_SWITCH: Readonly<HazardPattern> = creat
       type: 'placeholder-barrier',
       hitbox: createPrototypeZapperHitbox(180, 100, ROTATING_UPPER_BEHAVIOR),
     },
-    createStaticZapperEntry(
-      'lower-horizontal-zapper',
-      500,
-      280,
-      0,
-      PROTOTYPE_ZAPPER_LENGTHS.short,
-    ),
+    createStaticZapperEntry('lower-horizontal-zapper', 500, 280, 0, PROTOTYPE_ZAPPER_LENGTHS.short),
   ],
   collectiblePaths: [
     createUniformPolylineCollectiblePath({
