@@ -10,9 +10,8 @@ import {
   M5_LASER_ZAPPER_PATTERN,
   M5_MISSILE_LASER_PATTERN,
   M5_MISSILE_ZAPPER_PATTERN,
-  PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG,
 } from '../../src/generation/M5AuthoredMultiHazardPatterns';
-import { M5_COLLECTIBLE_MOVEMENT_PATTERNS } from '../../src/generation/M5CollectibleMovementPatterns';
+import { PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG } from '../../src/generation/M5LiveEncounterCatalog';
 import { scheduleNextPattern } from '../../src/generation/PatternSpawnScheduler';
 import {
   PROTOTYPE_PATTERN_VALIDATION_CONSTRAINTS,
@@ -20,7 +19,6 @@ import {
 } from '../../src/generation/PatternValidator';
 import {
   PROTOTYPE_LASER_PATTERN,
-  PROTOTYPE_M5_HAZARD_PATTERN_FIXTURES,
   PROTOTYPE_MISSILE_PATTERN,
 } from '../../src/generation/PrototypeHazardPatternFixtures';
 import { createRunGenerationState } from '../../src/generation/RunGenerationState';
@@ -60,18 +58,10 @@ const evaluateUnderLivePolicy = (pattern: (typeof M5_AUTHORED_MULTI_HAZARD_PATTE
 };
 
 describe('M5 authored multi-hazard patterns', () => {
-  it('keeps the accepted Phase-2 catalog slots stable while enriching two baseline slots with routes', () => {
+  it('keeps the Phase-2 combination prototypes as isolated reference content', () => {
     expect(M5_AUTHORED_MULTI_HAZARD_PATTERNS).toHaveLength(3);
-    expect(PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG).toHaveLength(
-      PROTOTYPE_M5_HAZARD_PATTERN_FIXTURES.length + M5_AUTHORED_MULTI_HAZARD_PATTERNS.length,
-    );
-    expect(PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG.map((pattern) => pattern.id)).toEqual(
-      [...PROTOTYPE_M5_HAZARD_PATTERN_FIXTURES, ...M5_AUTHORED_MULTI_HAZARD_PATTERNS].map(
-        (pattern) => pattern.id,
-      ),
-    );
-    for (const movementPattern of M5_COLLECTIBLE_MOVEMENT_PATTERNS) {
-      expect(PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG).toContain(movementPattern);
+    for (const pattern of M5_AUTHORED_MULTI_HAZARD_PATTERNS) {
+      expect(PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG).not.toContain(pattern);
     }
 
     expect(getKinds(M5_MISSILE_ZAPPER_PATTERN)).toEqual(['zapper', 'target-lock-strike']);

@@ -1,7 +1,7 @@
 import { PROTOTYPE_LOGICAL_FLIGHT_BOUNDS } from '../game/PrototypeFlightLayout';
 import type { VerticalFlightBounds } from '../systems/VerticalFlightSimulation';
 import { createHazardPattern, type HazardPattern } from './HazardPattern';
-import { PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG } from './M5AuthoredMultiHazardPatterns';
+import { PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG } from './M5LiveEncounterCatalog';
 import {
   type PatternValidationConstraints,
   PROTOTYPE_PATTERN_VALIDATION_CONSTRAINTS,
