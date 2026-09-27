@@ -1,5 +1,9 @@
 import { Loader, Scale, Scene, Scenes } from 'phaser';
-import { ART_GATE_POSE_A_TEXTURE_KEY } from '../../entities/PrototypePlayerPresentation';
+import {
+  ART_GATE_POSE_A_TEXTURE_KEY,
+  ART_GATE_POSE_B_TEXTURE_KEY,
+  ART_GATE_POSE_C_TEXTURE_KEY,
+} from '../../entities/PrototypePlayerPresentation';
 import { createPreloaderLayout, type PreloaderLayout } from '../PreloaderLayout';
 import { getLogicalViewportFromBacking } from '../RenderResolution';
 
@@ -16,6 +20,8 @@ export class Preloader extends Scene {
 
   preload() {
     this.load.image(ART_GATE_POSE_A_TEXTURE_KEY, 'assets/art-gate/pose-a-concept-preview.png');
+    this.load.image(ART_GATE_POSE_B_TEXTURE_KEY, 'assets/art-gate/pose-b-concept-preview.png');
+    this.load.image(ART_GATE_POSE_C_TEXTURE_KEY, 'assets/art-gate/pose-c-concept-preview.png');
   }
 
   init() {

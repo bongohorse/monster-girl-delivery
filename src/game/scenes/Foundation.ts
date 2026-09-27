@@ -632,6 +632,12 @@ export class Foundation extends Scene {
       }
     }
 
+    if (this.runState.phase === 'running') {
+      this.playerPresentation?.setFlightVelocity(
+        this.runState.flight.velocityY,
+        simulationDeltaSeconds,
+      );
+    }
     this.renderRun(viewport);
 
     if (this.directorPanel && directorLifecycle) {
@@ -1656,6 +1662,7 @@ export class Foundation extends Scene {
     this.directorZapperGroupIndex = 0;
     const flightBounds = this.getCachedFlightBounds(viewport);
     this.runState = createPrototypeRunState(flightBounds);
+    this.playerPresentation?.resetFlightPose();
     this.deathRetryState = createPrototypeDeathRetryState();
     this.hazardStream = createGeneratedHazardStream(
       seed,

@@ -111,6 +111,40 @@ describe('PrototypePlayerPresentation', () => {
     expect(image.destroy).toHaveBeenCalledOnce();
   });
 
+  it('waits for sustained motion before changing pose and keeps quick taps visually steady', () => {
+    const image = { destroy: vi.fn(), setTexture: vi.fn(), setScale: vi.fn() };
+    const scene = {
+      add: { image: vi.fn(() => image) },
+      scale: { height: 800, zoom: 0.5 },
+      textures: { exists: vi.fn(() => true) },
+    } as unknown as Scene;
+    const presentation = new PrototypePlayerPresentation(scene);
+
+    presentation.setFlightVelocity(-220, 0.07);
+    presentation.setFlightVelocity(180, 0.06);
+    presentation.setFlightVelocity(-300, 0.06);
+    expect(image.setTexture).not.toHaveBeenCalled();
+
+    presentation.setFlightVelocity(-300, 0.07);
+    expect(image.setTexture).toHaveBeenCalledWith('art-gate-pose-b-ascent');
+    expect(image.setScale).toHaveBeenLastCalledWith((400 * 0.255) / 1130);
+
+    presentation.setFlightVelocity(300, 0.13);
+    expect(image.setTexture).toHaveBeenCalledTimes(1);
+    presentation.setFlightVelocity(300, 0.05);
+    expect(image.setTexture).toHaveBeenLastCalledWith('art-gate-pose-c-descent');
+    expect(image.setScale).toHaveBeenLastCalledWith((400 * 0.255) / 1166);
+
+    presentation.setFlightVelocity(0, 0.13);
+    presentation.setFlightVelocity(0, 0.13);
+    expect(image.setTexture).toHaveBeenLastCalledWith(ART_GATE_POSE_A_TEXTURE_KEY);
+
+    presentation.setFlightVelocity(-300, 0.13);
+    presentation.setFlightVelocity(-300, 0.13);
+    presentation.resetFlightPose();
+    expect(image.setTexture).toHaveBeenLastCalledWith(ART_GATE_POSE_A_TEXTURE_KEY);
+  });
+
   it('rejects non-finite presentation rotation', () => {
     const { scene } = createSceneFake();
     const presentation = new PrototypePlayerPresentation(scene);
