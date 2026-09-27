@@ -642,7 +642,7 @@ Current phase:
 - **M5 — Complete Arcade Loop & Skill Layer: complete; parent #197 closed**
 - **Product Gate A: release-core decision recorded above; Issue #486**
 - **Art Gate: representative device, rendering, and pipeline evidence pending; Issue #487**
-- **Current version: `0.5` (`package.json`: `0.5.0`); M6 remains future until its exit gate passes**
+- **Current version: `0.5` (`package.json`: `0.5.0`); M6 production work awaits Art Gate evidence**
 - Latest completed milestone report: [`docs/milestones/M5-complete-arcade-loop-skill-layer.md`](docs/milestones/M5-complete-arcade-loop-skill-layer.md)
 
 Completed milestone history and evidence live under [`docs/milestones/`](docs/milestones/).
