@@ -57,10 +57,17 @@ export const stepParcelDelivery = (
   if (!Number.isFinite(elapsedSeconds) || elapsedSeconds < 0) {
     throw new RangeError('Parcel step time must be non-negative and finite.');
   }
-  if (state.phase === 'delivered' || state.phase === 'missed' || elapsedSeconds === 0) {
+  if (elapsedSeconds === 0) {
     return state;
   }
-  if (state.phase === 'carrying' && state.routeId !== route.id) {
+  const activeState: Readonly<ParcelDeliveryRunState> =
+    state.routeId !== route.id && (state.phase === 'delivered' || state.phase === 'missed')
+      ? Object.freeze({ phase: 'available', completedCount: state.completedCount, routeId: null })
+      : state;
+  if (activeState.phase === 'delivered' || activeState.phase === 'missed') {
+    return state;
+  }
+  if (activeState.phase === 'carrying' && activeState.routeId !== route.id) {
     throw new RangeError('An active parcel cannot switch recipient routes.');
   }
   if (
@@ -78,12 +85,12 @@ export const stepParcelDelivery = (
 
   const distance = motion.distance + tuning.baseScrollSpeed * elapsedSeconds;
   let pickedAt = 0;
-  if (state.phase !== 'carrying') {
+  if (activeState.phase !== 'carrying') {
     if (
       distance + PROTOTYPE_PLAYER_COLLISION_EXTENTS.right <
       route.pickup.runDistance - PARCEL_PICKUP_HALF_SIZE
     ) {
-      return state;
+      return activeState;
     }
     const pickup = getFirstPlayerContactSeconds(
       motion.distance,
@@ -101,10 +108,10 @@ export const stepParcelDelivery = (
       return pickupPassed
         ? Object.freeze({
             phase: 'missed',
-            completedCount: state.completedCount,
+            completedCount: activeState.completedCount,
             routeId: route.id,
           })
-        : state;
+        : activeState;
     }
     pickedAt = pickup;
   }
@@ -113,11 +120,11 @@ export const stepParcelDelivery = (
     distance + PROTOTYPE_PLAYER_COLLISION_EXTENTS.right <
     route.recipient.runDistance - PARCEL_HANDOFF_HALF_WIDTH
   ) {
-    return state.phase === 'carrying'
-      ? state
+    return activeState.phase === 'carrying'
+      ? activeState
       : Object.freeze({
           phase: 'carrying',
-          completedCount: state.completedCount,
+          completedCount: activeState.completedCount,
           routeId: route.id,
         });
   }
@@ -133,7 +140,7 @@ export const stepParcelDelivery = (
   if (handoff !== null) {
     return Object.freeze({
       phase: 'delivered',
-      completedCount: state.completedCount + 1,
+      completedCount: activeState.completedCount + 1,
       routeId: route.id,
     });
   }
@@ -143,12 +150,12 @@ export const stepParcelDelivery = (
     route.recipient.runDistance +
       PARCEL_HANDOFF_HALF_WIDTH +
       PROTOTYPE_PLAYER_COLLISION_EXTENTS.left;
-  if (!recipientPassed && state.phase === 'carrying') {
-    return state;
+  if (!recipientPassed && activeState.phase === 'carrying') {
+    return activeState;
   }
   return Object.freeze({
     phase: recipientPassed ? 'missed' : 'carrying',
-    completedCount: state.completedCount,
+    completedCount: activeState.completedCount,
     routeId: route.id,
   });
 };

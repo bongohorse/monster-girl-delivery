@@ -42,6 +42,66 @@ const advance = (state: Readonly<ParcelDeliveryRunState>, from: number, seconds:
   );
 
 describe('one optional parcel in the Endless run', () => {
+  it('allows a later route after a delivery and accumulates both rewards', () => {
+    const secondRoute = {
+      id: 'second-delivery',
+      pickup: { runDistance: 800, y: 195 },
+      recipient: { runDistance: 1_100, y: 195 },
+    };
+    const first = stepPrototypeRun(createPrototypeRunState(bounds), 6, {
+      deliveryRoute: route,
+      flightBounds: bounds,
+      flightTuning,
+      hazards: [],
+      runMotionTuning: { baseScrollSpeed: 100 },
+      thrustHeld: false,
+    }).state;
+    const second = stepPrototypeRun(first, 6, {
+      deliveryRoute: secondRoute,
+      flightBounds: bounds,
+      flightTuning,
+      hazards: [],
+      runMotionTuning: { baseScrollSpeed: 100 },
+      thrustHeld: false,
+    }).state;
+
+    expect(second.delivery).toMatchObject({ phase: 'delivered', completedCount: 2 });
+    const dead = stepPrototypeRun(second, 0, {
+      flightBounds: bounds,
+      flightTuning,
+      hazards: [{ hitbox: { left: 1_200, right: 1_220, top: 175, bottom: 215 } }],
+      runMotionTuning: { baseScrollSpeed: 100 },
+      thrustHeld: false,
+    }).state;
+    expect(dead.finalResult).toMatchObject({ deliveryCount: 2, deliveryReward: 250 });
+  });
+
+  it('offers a later delivery after a missed pickup without counting the miss', () => {
+    const missed = advance(createParcelDeliveryRunState(), 0, 6, 340);
+    expect(missed).toMatchObject({ phase: 'missed', completedCount: 0 });
+
+    const laterRoute = {
+      id: 'second-delivery',
+      pickup: { runDistance: 800, y: 195 },
+      recipient: { runDistance: 1_100, y: 195 },
+    };
+    const delivered = stepParcelDelivery(
+      missed,
+      laterRoute,
+      { distance: 600 },
+      createVerticalFlightTrajectory(
+        { positionY: 195, velocityY: 0 },
+        6,
+        false,
+        flightTuning,
+        bounds,
+      ),
+      6,
+      { baseScrollSpeed: 100 },
+    );
+    expect(delivered).toMatchObject({ phase: 'delivered', completedCount: 1 });
+  });
+
   it('adds 100 bonus coins at death after a completed handoff, without changing meters', () => {
     const delivered = stepPrototypeRun(createPrototypeRunState(bounds), 6, {
       deliveryRoute: route,

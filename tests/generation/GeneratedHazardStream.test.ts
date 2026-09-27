@@ -57,6 +57,35 @@ describe('reserved delivery handoff', () => {
       expect(sawAfter).toBe(true);
     },
   );
+
+  it('keeps the second pickup and handoff free of generated hazards', () => {
+    const protectedInterval = { start: 1_050, end: 2_650, repeatDistance: 4_400 };
+    const context = {
+      catalog: PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG,
+      policy: PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG,
+      reachability: PROTOTYPE_PATTERN_REACHABILITY_CONTEXT,
+      protectedInterval,
+    };
+    for (const seed of [PROTOTYPE_LIVE_RUN_SEED, 'delivery-seed-a', 'delivery-seed-b']) {
+      let stream = createGeneratedHazardStream(seed, context, PROTOTYPE_RUN_MOTION_DEFAULTS);
+      for (let distance = 0; distance <= 7_400; distance += 100) {
+        stream = advanceGeneratedHazardStream(
+          stream,
+          distance,
+          context,
+          PROTOTYPE_RUN_MOTION_DEFAULTS,
+          distance === 0 ? 0 : 100 / PROTOTYPE_RUN_MOTION_DEFAULTS.baseScrollSpeed,
+        );
+        expect(
+          stream.spawns.some(
+            (spawn) =>
+              spawn.hitbox.left <= protectedInterval.end + protectedInterval.repeatDistance &&
+              spawn.hitbox.right >= protectedInterval.start + protectedInterval.repeatDistance,
+          ),
+        ).toBe(false);
+      }
+    }
+  });
 });
 
 const BLOCKED_PATTERN = createHazardPattern({

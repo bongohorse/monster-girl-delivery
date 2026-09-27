@@ -10,7 +10,7 @@ export class FirstDeliveryPresentation {
   private readonly graphics: GameObjects.Graphics;
 
   constructor(scene: Scene) {
-    this.graphics = scene.add.graphics().setDepth(-35);
+    this.graphics = scene.add.graphics().setDepth(20);
   }
 
   render(
@@ -53,11 +53,19 @@ export class FirstDeliveryPresentation {
       graphics.fillStyle(0x281c48, 1);
       graphics.fillCircle(x, y - 2, 5);
     }
-    // GPS cue is visible ahead of the handoff even while its marker is still off screen.
-    if (route.recipient.runDistance - runDistance < 650 && x > playerScreenX) {
-      const arrowX = Math.min(viewportWidth - 24, Math.max(playerScreenX + 54, x));
-      graphics.fillStyle(0x6fffe9, 0.95);
-      graphics.fillTriangle(arrowX - 12, y - 22, arrowX + 12, y - 22, arrowX, y - 8);
+    // Keep the destination height readable from pickup onward, including while it is off screen.
+    if (x > playerScreenX) {
+      const cueX = Math.min(viewportWidth - 40, Math.max(playerScreenX + 48, x));
+      const cueY = y - 41;
+      const pulse = 0.78 + 0.22 * Math.sin(runDistance / 35) ** 2;
+      graphics.fillStyle(0x211936, 0.94);
+      graphics.fillRoundedRect(cueX - 34, cueY - 28, 68, 56, 10);
+      graphics.lineStyle(3, 0xffd166, pulse);
+      graphics.strokeRoundedRect(cueX - 34, cueY - 28, 68, 56, 10);
+      graphics.fillStyle(0x6fffe9, 1);
+      graphics.fillRect(cueX - 13, cueY - 21, 26, 5);
+      graphics.fillStyle(0xffd166, pulse);
+      graphics.fillTriangle(cueX - 17, cueY - 10, cueX + 17, cueY - 10, cueX, cueY + 13);
     }
   }
 

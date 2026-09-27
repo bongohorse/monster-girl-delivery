@@ -218,6 +218,32 @@ describe('Foundation scene gameplay orchestration', () => {
     );
   });
 
+  it('plans the next spaced parcel after a handoff while retaining the completed count', () => {
+    const { foundation, viewportService } = createFoundationHarness();
+    const route = createFirstDeliveryRoute(
+      createPrototypeFlightBounds(viewportService.getSnapshot()),
+    );
+    Reflect.set(foundation, 'deliveryRoute', route);
+    Reflect.set(foundation, 'directorAutoHazardsEnabled', false);
+    Reflect.set(foundation, 'runState', {
+      phase: 'running',
+      motion: { distance: route.recipient.runDistance - 20, simulationSeconds: 0 },
+      flight: { positionY: route.recipient.y, velocityY: 0 },
+      delivery: { phase: 'carrying', routeId: route.id, completedCount: 0 },
+    });
+
+    foundation.update(100, 100);
+
+    expect(getRunState(foundation).delivery).toMatchObject({
+      phase: 'delivered',
+      completedCount: 1,
+    });
+    expect(Reflect.get(foundation, 'deliveryRoute')).toMatchObject({
+      id: 'delivery-2',
+      pickup: { runDistance: 6_000 },
+    });
+  });
+
   it('keeps a no-input MEM capture active across equivalent snapshots and cancels on thrust', () => {
     const { foundation, services, viewportService } = createFoundationHarness();
     const sampler = new MemoryEvidenceSampler(() => null);

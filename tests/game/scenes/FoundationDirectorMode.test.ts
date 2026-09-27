@@ -178,6 +178,7 @@ interface DirectorTestControls {
   setGodModeEnabled?: (enabled: boolean) => void;
   startNormalPerformancePreset?: () => void;
   startZapperPerformancePreset?: () => void;
+  spawnMissile?: () => void;
   spawnZapper?: () => void;
   spawnZapperGroup?: () => void;
 }
@@ -204,6 +205,19 @@ afterEach(() => {
 });
 
 describe('Foundation Director mode boundary', () => {
+  it('spawns a real Missile from the Director HUD independently of the AUTO catalog', () => {
+    const foundation = new Foundation(createAppServices(), true);
+    foundation.create();
+    const controls = directorPerformanceHudConstructed.mock.calls[0]?.[3] as
+      | DirectorTestControls
+      | undefined;
+
+    expect(() => controls?.spawnMissile?.()).not.toThrow();
+    expect(Reflect.get(foundation, 'directorManualHazards')).toMatchObject([
+      { behavior: { kind: 'target-lock-strike', missile: { launchSide: 'right' } } },
+    ]);
+  });
+
   it('does not construct Director tooling when Director mode is disabled', () => {
     const services = createAppServices();
     const getLifecycleSnapshot = vi.spyOn(services.lifecycle, 'getSnapshot');

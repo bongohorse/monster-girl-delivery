@@ -60,6 +60,7 @@ import {
   getLogicalHazardSpawnIdentity,
   type LogicalHazardSpawnInstance,
 } from '../../generation/PatternSpawnScheduler';
+import { PROTOTYPE_MISSILE_PATTERN } from '../../generation/PrototypeHazardPatternFixtures';
 import {
   createPrototypeHazardVerticalDomain,
   type PrototypeHazardVerticalDomain,
@@ -122,8 +123,7 @@ import {
 } from '../PrototypeFlightLayout';
 import { getLogicalViewportFromBacking } from '../RenderResolution';
 
-const RUNNING_INSTRUCTIONS =
-  'M5 in progress — hazards, Graze + collectibles\nHold touch, mouse, or Space to thrust.';
+const RUNNING_INSTRUCTIONS = '';
 const RETRY_READY_INSTRUCTIONS = 'Tap, click, or press Space to retry.';
 const DIRECTOR_NORMAL_PERFORMANCE_PRESET_ID = 'normal-run-v1';
 const DIRECTOR_MEMORY_EVIDENCE_PRESET_ID = 'allocation-long-run-v1';
@@ -190,12 +190,6 @@ const createLiveHazardStreamContext = (
       playerExtents: PROTOTYPE_PATTERN_REACHABILITY_CONTEXT.playerExtents,
     }),
   });
-
-type DirectorHazardKind = 'missile';
-
-const DIRECTOR_HAZARD_PATTERN_IDS: Readonly<Record<DirectorHazardKind, string>> = Object.freeze({
-  missile: 'prototype-target-lock-strike',
-});
 
 const identityCenterMapper = (centerY: number): number => centerY;
 
@@ -264,6 +258,7 @@ export class Foundation extends Scene {
   private generatedCollectiblePresentation?: GeneratedCollectiblePresentation;
   private firstDeliveryPresentation?: FirstDeliveryPresentation;
   private deliveryRoute?: Readonly<ParcelDeliveryRoute>;
+  private deliveryRouteIndex = 0;
   private generatedHazardPresentation?: GeneratedHazardPresentation;
   private hazardStream?: Readonly<GeneratedHazardStreamState>;
   private hazardVerticalDomain = createPrototypeHazardVerticalDomain(createPrototypeFlightBounds());
@@ -355,6 +350,7 @@ export class Foundation extends Scene {
     const bounds = this.getCachedFlightBounds(viewport);
     this.hazardVerticalDomain = createPrototypeHazardVerticalDomain(bounds);
     this.runState = createPrototypeRunState(bounds);
+    this.deliveryRouteIndex = 0;
     this.deliveryRoute = createFirstDeliveryRoute(bounds);
     this.hazardStream = createGeneratedHazardStream(
       PROTOTYPE_LIVE_RUN_SEED,
@@ -627,6 +623,15 @@ export class Foundation extends Scene {
         }
 
         if (this.runState.phase === 'running') {
+          if (
+            this.deliveryRoute &&
+            this.runState.delivery?.routeId === this.deliveryRoute.id &&
+            (this.runState.delivery.phase === 'delivered' ||
+              this.runState.delivery.phase === 'missed')
+          ) {
+            this.deliveryRouteIndex += 1;
+            this.deliveryRoute = createFirstDeliveryRoute(flightBounds, this.deliveryRouteIndex);
+          }
           this.runState = {
             ...this.runState,
             motion: {
@@ -902,7 +907,7 @@ export class Foundation extends Scene {
         setWireframesEnabled: this.handleDirectorWireframes,
         setGodModeEnabled: this.handleDirectorGodMode,
         setAutoHazardsEnabled: this.handleDirectorAutoHazards,
-        spawnMissile: () => this.spawnDirectorHazard('missile'),
+        spawnMissile: this.spawnDirectorMissile,
         spawnZapper: this.spawnDirectorZapperVariant,
         spawnZapperGroup: this.spawnDirectorZapperGroup,
         spawnLaser: this.spawnDirectorLaserVariant,
@@ -1456,16 +1461,18 @@ export class Foundation extends Scene {
       (this.directorZapperGroupIndex + 1) % DIRECTOR_ZAPPER_GROUPS.length;
   };
 
-  private spawnDirectorHazard(kind: DirectorHazardKind): void {
-    const patternId = DIRECTOR_HAZARD_PATTERN_IDS[kind];
-    const pattern = this.hazardVerticalDomain.catalog.find(
-      (candidate) => candidate.id === patternId,
-    );
+  private readonly spawnDirectorMissile = (): void => {
+    if (!this.viewportService || this.runState.phase !== 'running') {
+      return;
+    }
+    const bounds = this.getCachedFlightBounds(this.viewportService.getSnapshot());
+    const pattern = createPrototypeHazardVerticalDomain(bounds, [PROTOTYPE_MISSILE_PATTERN])
+      .catalog[0];
     if (!pattern) {
-      throw new TypeError(`Director hazard pattern is unavailable: ${patternId}`);
+      throw new Error('Director Missile pattern is missing.');
     }
     this.spawnDirectorPattern(pattern, false);
-  }
+  };
 
   private spawnDirectorPattern(
     pattern: Readonly<HazardPattern>,
@@ -1702,6 +1709,7 @@ export class Foundation extends Scene {
     this.directorZapperGroupIndex = 0;
     const flightBounds = this.getCachedFlightBounds(viewport);
     this.runState = createPrototypeRunState(flightBounds);
+    this.deliveryRouteIndex = 0;
     this.deliveryRoute = createFirstDeliveryRoute(flightBounds);
     this.deathRetryState = createPrototypeDeathRetryState();
     this.hazardStream = createGeneratedHazardStream(
