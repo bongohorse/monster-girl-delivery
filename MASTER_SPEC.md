@@ -2,7 +2,7 @@
 
 **Document status:** Living product/game specification  
 **Project status:** Pre-Production  
-**Current phase:** M5 complete; Product Gate A + Art Gate before M6 production work  
+**Current phase:** M5 complete; Product Gate A decided; Art Gate evidence pending before M6 production work  
 **Current version:** `0.5` (`package.json`: `0.5.0`)
 
 **Human role:** Game Director / Product Owner  
@@ -30,9 +30,9 @@ Never turn `PROTOTYPE`, `EXPERIMENT`, `TBD`, or `FUTURE` into a permanent rule w
 
 **Working title:** Monster Girl Delivery
 
-**Current core genre:** 2D endless sidescroller / one-button flight arcade game with a future character-collection/gallery meta layer.
+**Release core genre — DECIDED:** 2D endless sidescroller / one-button flight arcade game with optional in-run parcel deliveries. Character collection and Gallery remain later systems.
 
-**Current core fantasy:** Control a monster-girl courier through an increasingly dangerous cityscape. Hold to thrust upward, release to fall, dodge hazards, eventually graze danger for extra reward/score, survive as long as possible, and use later run rewards to expand collection/gallery systems.
+**Release core fantasy — DECIDED:** Control a monster-girl courier through an increasingly dangerous cityscape. Hold to thrust upward, release to fall, dodge hazards, collect coins, and choose optional parcel delivery routes while surviving as long as possible. Graze remains a run-local skill/risk layer; later collection/Gallery systems are separate decisions.
 
 ### Design pillars
 
@@ -48,7 +48,7 @@ Never turn `PROTOTYPE`, `EXPERIMENT`, `TBD`, or `FUTURE` into a permanent rule w
 10. Fast iteration for the Game Director.
 11. Maintainable, deterministic implementation where practical.
 
-Future delivery-specific modes, finishable deliveries, cargo rules, Companions, HQ systems, and other extensions remain ideas until explicitly promoted from [`docs/BACKLOG.md`](docs/BACKLOG.md).
+Optional in-run parcel deliveries are approved release-core direction under Product Gate A below. A separate finishable Delivery Mode, deeper cargo rules, Companions, HQ systems, and other extensions remain deferred until explicitly promoted from [`docs/BACKLOG.md`](docs/BACKLOG.md).
 
 ### Release/version model — DECIDED
 
@@ -107,7 +107,7 @@ The player uses one core action:
 
 The same action must flow through the platform-independent input abstraction.
 
-### Current intended core loop
+### Current implemented M5 arcade loop
 
 ```text
 Start Run
@@ -125,7 +125,19 @@ Results / Basic Run Rewards / Records
 One-action Restart
 ```
 
-M5 parent Issue #197 owns the active arcade-loop implementation and acceptance trail. Foundational focused work is tracked by #198 (score/result snapshot/basic rewards), #90 (Graze), #84/#227 (collectible paths and visible pickups), #85 (fail-state/retry), and #223 (integrated deterministic lifecycle evidence).
+M5 parent Issue #197 records the completed arcade-loop implementation and acceptance trail. Foundational focused work is tracked by #198 (score/result snapshot/basic rewards), #90 (Graze), #84/#227 (collectible paths and visible pickups), #85 (fail-state/retry), and #223 (integrated deterministic lifecycle evidence).
+
+### DECIDED release core — Product Gate A (#486, 2026-09-27)
+
+- **Endless-first for 1.0:** the M5 one-button Endless arcade loop is the primary release game. Surviving, distance in meters, collecting coins, and avoiding hazards remain meaningful without a delivery.
+- **Delivery within Endless:** optional parcels appear as touch pickups along the run. The courier carries at most one active parcel. After a tunable distance, a recipient appears; a clear advance arrow shows their height. Flying through a generous marked region delivers the parcel automatically without extra input.
+- **Fair approach:** accepted delivery placements guarantee a hazard-free approach to the handoff with enough notice to reach its height. They preserve the existing fairness and one-button input contract.
+- **Miss and death:** missing a handoff briefly throws the parcel behind the courier and ends only that attempt. The run continues without a coin penalty. Death ends the run as before; an unfinished parcel earns no bonus. Another parcel may appear after a tunable interval, not immediately.
+- **Rewards and results:** count completed deliveries regardless of missed attempts. At run end, each completed delivery grants bonus coins, even when the run ended in death. Bonuses rise with completed-delivery count up to a cap; 100 → 150 → 225 coins are illustrative **PROTOTYPE** values. A brief, accelerating result sequence shows deliveries one by one; one tap may reveal the full result instantly without changing the authoritative total. Distance remains distance in meters, not delivery "points".
+- **M6 slice boundary:** demonstrate one optional pickup → advance cue → safe handoff or miss → run end → bonus-results path in a representative Endless run. Final economy balance and a large delivery-content catalog are not required.
+- **Deferred:** a separate finishable Delivery/Story Mode with a world map and authored levels is outside the current 1.0 release-core plan and remains a later product decision. Parcel stacks, variable types/weight or carrying physics, extra milestones at three or ten deliveries, deep economy/meta, Gallery mechanics, and a production-scale delivery system are outside this decision.
+
+These are approved product rules and slice boundaries, not claims that the M5 build already implements parcels. Focused M6 Issues must own implementation and evidence.
 
 ### DECIDED M5 replay principles
 
@@ -429,7 +441,7 @@ For the initial development/release direction:
 - offline-first;
 - no real-money mechanics in the approved roadmap;
 - economy/content data should be data-driven where practical;
-- no final currency names, costs, rates, or gacha rules are locked.
+- completed in-run deliveries are intended to grant coins; final amounts, economy costs/rates, and gacha rules are not locked.
 
 ### FUTURE
 
@@ -625,14 +637,13 @@ Unless reopened by the Director:
 
 This specification intentionally does not duplicate the complete M0–M10 roadmap.
 
-Current milestone:
+Current phase:
 
-- **M5 — Complete Arcade Loop & Skill Layer (in progress; parent #197)**
-- **Pre-M5 authority gate: passed; #179 remains historical audit evidence**
-- **Current version: `0.4`; target after factual M5 closeout: `0.5`**
-- Active M5 parent Issue: [#197](https://github.com/bongohorse/monster-girl-delivery/issues/197)
-- Previous parent Issue: [#116](https://github.com/bongohorse/monster-girl-delivery/issues/116) (closed on M4 closeout merge)
-- Latest completed milestone report: [`docs/milestones/M4-run-pacing-hazard-language.md`](docs/milestones/M4-run-pacing-hazard-language.md)
+- **M5 — Complete Arcade Loop & Skill Layer: complete; parent #197 closed**
+- **Product Gate A: release-core decision recorded above; Issue #486**
+- **Art Gate: representative device, rendering, and pipeline evidence pending; Issue #487**
+- **Current version: `0.5` (`package.json`: `0.5.0`); M6 remains future until its exit gate passes**
+- Latest completed milestone report: [`docs/milestones/M5-complete-arcade-loop-skill-layer.md`](docs/milestones/M5-complete-arcade-loop-skill-layer.md)
 
 Completed milestone history and evidence live under [`docs/milestones/`](docs/milestones/).
 
@@ -683,3 +694,7 @@ Backlog / reference idea
 - Version `1.0` is the first release milestone; M9 is the release candidate.
 - The current version tracks the latest completed milestone, so M4 completion means `0.4` while Pre-M5 work targets `0.5`.
 - By M10 / `1.0`, the core game and core loop must be clean, coherent, stable, and release-ready; M10 is a final release gate rather than a new large feature milestone.
+
+### 2026-09-27
+
+- Product Gate A (#486) approved Endless-first as the 1.0 release core with optional in-run parcel handoffs and bounded M6 delivery evidence. A separate finishable Delivery/Story Mode is deferred; bonus rates, deeper economy, and Gallery mechanics remain undecided.
