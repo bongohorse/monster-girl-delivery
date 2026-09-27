@@ -96,10 +96,14 @@ import {
   createPrototypeDeathRetryState,
   enterPrototypeFailState,
   getPrototypeFailStateProgress,
+  PROTOTYPE_FAIL_STATE_DURATION_SECONDS,
   type PrototypeDeathRetryState,
   stepPrototypeDeathRetryState,
 } from '../../systems/PrototypeDeathRetryFlow';
-import type { PrototypeRunResultSnapshot } from '../../systems/PrototypeRunResult';
+import {
+  calculateDeliveryReward,
+  type PrototypeRunResultSnapshot,
+} from '../../systems/PrototypeRunResult';
 import {
   createPrototypeRunState,
   type PrototypeRunState,
@@ -126,15 +130,30 @@ const DIRECTOR_MEMORY_EVIDENCE_PRESET_ID = 'allocation-long-run-v1';
 const DIRECTOR_ZAPPER_OFFSCREEN_PADDING = 24;
 const DIRECTOR_LAST_PERFORMANCE_EVIDENCE_STORAGE_KEY = 'mgd:last-performance-evidence';
 const DIRECTOR_LAST_MEMORY_EVIDENCE_STORAGE_KEY = 'mgd:last-memory-evidence';
+const DELIVERY_RESULT_REVEAL_SECONDS = 0.5;
+const revealedDeliveryCount = (
+  result: Readonly<PrototypeRunResultSnapshot>,
+  aftermath: Readonly<PrototypeDeathRetryState>,
+): number => {
+  if (aftermath.phase === 'retry-ready') return result.deliveryCount;
+  const progress = Math.min(1, aftermath.elapsedSeconds / DELIVERY_RESULT_REVEAL_SECONDS);
+  return Math.floor(result.deliveryCount * progress * progress);
+};
 const formatDeadInstructions = (
   result: Readonly<PrototypeRunResultSnapshot>,
   retryReady: boolean,
+  revealedDeliveries: number,
 ): string =>
   [
     'Delivery interrupted',
-    `Distance ${result.finalDistance.toFixed(1)} · Score ${result.score}`,
+    `Distanz ${result.finalDistance.toFixed(1)} m`,
     `Grazes ${result.grazeCount}`,
-    `Items ${result.collectedCount} · Value ${result.collectedValue} · Reward ${result.earnedReward}`,
+    `Items ${result.collectedCount} · Value ${result.collectedValue} · Coins ${result.earnedReward - result.deliveryReward + calculateDeliveryReward(revealedDeliveries)}`,
+    ...(result.deliveryCount > 0
+      ? [
+          `Lieferungen ${revealedDeliveries}/${result.deliveryCount} · Bonus +${calculateDeliveryReward(revealedDeliveries)} Coins`,
+        ]
+      : []),
     retryReady ? RETRY_READY_INSTRUCTIONS : 'Parcel recovery...',
   ].join('\n');
 const selectNewRunSeed = (currentSeed: number | undefined): number => {
@@ -426,21 +445,14 @@ export class Foundation extends Scene {
         this.clearDirectorMemoryEvidenceBenchmark();
       }
       const previousRetryPhase = this.deathRetryState.phase;
+      const result = this.deathRetryState.result;
+      const previousRevealed = result ? revealedDeliveryCount(result, this.deathRetryState) : 0;
       this.deathRetryState = stepPrototypeDeathRetryState(
         this.deathRetryState,
         simulationDeltaSeconds,
       );
 
-      if (
-        previousRetryPhase !== 'retry-ready' &&
-        this.deathRetryState.phase === 'retry-ready' &&
-        this.deathRetryState.result
-      ) {
-        this.instructions?.setText(formatDeadInstructions(this.deathRetryState.result, true));
-      }
-
       const lifecyclePaused = this.services.lifecycle.isPaused();
-      const retryReady = previousRetryPhase === 'retry-ready' && !lifecyclePaused;
       this.diagnosticsAccess?.setEligible(!lifecyclePaused);
       const diagnosticsToggle =
         this.deathRetryState.phase === 'retry-ready'
@@ -452,6 +464,28 @@ export class Foundation extends Scene {
       this.renderDiagnosticsGesture();
 
       const retrySource = this.services.input.consumePrimaryActionPressSource();
+      if (
+        retrySource !== null &&
+        previousRetryPhase === 'fail-state' &&
+        result &&
+        result.deliveryCount > 0 &&
+        !lifecyclePaused &&
+        !this.diagnosticsAccess?.isGestureClaimed()
+      ) {
+        this.deathRetryState = stepPrototypeDeathRetryState(
+          this.deathRetryState,
+          PROTOTYPE_FAIL_STATE_DURATION_SECONDS,
+        );
+      }
+      if (result) {
+        const shown = revealedDeliveryCount(result, this.deathRetryState);
+        if (shown !== previousRevealed || previousRetryPhase !== this.deathRetryState.phase) {
+          this.instructions?.setText(
+            formatDeadInstructions(result, this.deathRetryState.phase === 'retry-ready', shown),
+          );
+        }
+      }
+      const retryReady = previousRetryPhase === 'retry-ready' && !lifecyclePaused;
       if (retryReady && retrySource !== null) {
         if (retrySource === 'touch' && this.diagnosticsAccess) {
           if (this.diagnosticsAccess.isGestureClaimed()) {
@@ -1647,7 +1681,7 @@ export class Foundation extends Scene {
     this.destroyDiagnosticsGestureOverlay();
     this.diagnosticsTouchRetryPending = false;
     this.services.input.releaseAll();
-    this.instructions?.setText(formatDeadInstructions(finalResult, false));
+    this.instructions?.setText(formatDeadInstructions(finalResult, false, 0));
   }
 
   private restartRun(

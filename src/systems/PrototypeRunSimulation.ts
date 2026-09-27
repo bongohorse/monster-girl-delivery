@@ -187,6 +187,7 @@ export const stepPrototypeRun = (
     collectedValue: collectibles?.collectedValue ?? suppliedTotals.collectedValue,
     earnedReward: collectibles?.earnedReward ?? suppliedTotals.earnedReward,
     grazeCount: graze?.count ?? suppliedTotals.grazeCount,
+    deliveryCount: delivery?.completedCount ?? suppliedTotals.deliveryCount ?? 0,
   };
 
   return {

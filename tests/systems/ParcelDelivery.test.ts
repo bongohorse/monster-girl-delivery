@@ -42,6 +42,32 @@ const advance = (state: Readonly<ParcelDeliveryRunState>, from: number, seconds:
   );
 
 describe('one optional parcel in the Endless run', () => {
+  it('adds 100 bonus coins at death after a completed handoff, without changing meters', () => {
+    const delivered = stepPrototypeRun(createPrototypeRunState(bounds), 6, {
+      deliveryRoute: route,
+      flightBounds: bounds,
+      flightTuning,
+      hazards: [],
+      runMotionTuning: { baseScrollSpeed: 100 },
+      thrustHeld: false,
+    }).state;
+    const dead = stepPrototypeRun(delivered, 0, {
+      flightBounds: bounds,
+      flightTuning,
+      hazards: [{ hitbox: { left: 600, right: 620, top: 175, bottom: 215 } }],
+      runMotionTuning: { baseScrollSpeed: 100 },
+      thrustHeld: false,
+    }).state;
+
+    expect(dead.finalResult).toMatchObject({
+      deliveryCount: 1,
+      deliveryReward: 100,
+      earnedReward: 100,
+      finalDistance: 600,
+      score: 600,
+    });
+  });
+
   it('is driven by the authoritative run simulation when a safe route is supplied', () => {
     const result = stepPrototypeRun(createPrototypeRunState(bounds), 6, {
       deliveryRoute: route,
@@ -79,6 +105,30 @@ describe('one optional parcel in the Endless run', () => {
     const missed = advance(collected, 200, 4, 80);
     expect(missed).toMatchObject({ phase: 'missed', completedCount: 0 });
     expect(advance(missed, 600, 1)).toBe(missed);
+  });
+
+  it('awards nothing for a package still being carried when the run ends', () => {
+    const pickedUp = stepPrototypeRun(createPrototypeRunState(bounds), 3, {
+      deliveryRoute: route,
+      flightBounds: bounds,
+      flightTuning,
+      hazards: [],
+      runMotionTuning: { baseScrollSpeed: 100 },
+      thrustHeld: false,
+    }).state;
+    expect(pickedUp.delivery?.phase).toBe('carrying');
+    const death = stepPrototypeRun(pickedUp, 0, {
+      flightBounds: bounds,
+      flightTuning,
+      hazards: [{ hitbox: { left: 300, right: 320, top: 175, bottom: 215 } }],
+      runMotionTuning: { baseScrollSpeed: 100 },
+      thrustHeld: false,
+    });
+    expect(death.state.finalResult).toMatchObject({
+      deliveryCount: 0,
+      deliveryReward: 0,
+      earnedReward: 0,
+    });
   });
 
   it('hands off automatically when the courier rises into the marked recipient region', () => {

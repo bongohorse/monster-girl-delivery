@@ -601,7 +601,7 @@ describe('Foundation scene gameplay orchestration', () => {
     expect(instructions.setText).toHaveBeenCalledExactlyOnceWith(
       expect.stringContaining('Delivery interrupted'),
     );
-    expect(instructions.setText).toHaveBeenLastCalledWith(expect.stringContaining('Score'));
+    expect(instructions.setText).toHaveBeenLastCalledWith(expect.stringContaining('Distanz'));
 
     for (let frame = 0; frame < 5; frame += 1) {
       foundation.update(0, 50);
