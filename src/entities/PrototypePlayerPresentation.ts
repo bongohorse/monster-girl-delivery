@@ -1,5 +1,11 @@
 import type { GameObjects, Scene } from 'phaser';
 
+export const ART_GATE_POSE_A_TEXTURE_KEY = 'art-gate-pose-a-concept';
+
+/** Visual bounds of this concept image at alpha > 64; the collision footprint stays unchanged. */
+const ART_GATE_CONCEPT_VISIBLE_HEIGHT = 1046;
+const ART_GATE_VISIBLE_VIEWPORT_FRACTION = 0.255;
+
 /**
  * Visual-only placeholder scale. The primitive artwork extends 28 logical units below its origin;
  * 6 / 7 keeps that drawn edge at 24, exactly covering the authoritative collision bottom extent.
@@ -41,8 +47,20 @@ const drawPrototypePlayer = (graphics: GameObjects.Graphics): void => {
  */
 export class PrototypePlayerPresentation {
   private graphics?: GameObjects.Graphics;
+  private image?: GameObjects.Image;
+  private imageViewportHeight = -1;
 
-  constructor(scene: Scene, x = 0, y = 0) {
+  constructor(
+    private readonly scene: Scene,
+    x = 0,
+    y = 0,
+  ) {
+    // This branch loads a concept for an in-run Art Gate check. It is not production art.
+    if (scene.textures?.exists(ART_GATE_POSE_A_TEXTURE_KEY)) {
+      this.image = scene.add.image(x, y, ART_GATE_POSE_A_TEXTURE_KEY);
+      return;
+    }
+
     const graphics = scene.add.graphics({ x, y });
     drawPrototypePlayer(graphics);
     this.graphics = graphics;
@@ -50,6 +68,7 @@ export class PrototypePlayerPresentation {
 
   setPosition(x: number, y: number): void {
     this.graphics?.setPosition(x, y);
+    this.image?.setPosition(x, y);
   }
 
   setRotation(rotationRadians: number): void {
@@ -58,9 +77,22 @@ export class PrototypePlayerPresentation {
     }
 
     this.graphics?.setRotation(rotationRadians);
+    this.image?.setRotation(rotationRadians);
   }
 
   setScale(x: number, y: number): void {
+    if (this.image) {
+      // The artwork is measured in screen space, independently of the logical flight corridor.
+      const viewportHeight = this.scene.scale.height * this.scene.scale.zoom;
+      if (viewportHeight !== this.imageViewportHeight) {
+        this.imageViewportHeight = viewportHeight;
+        this.image.setScale(
+          (viewportHeight * ART_GATE_VISIBLE_VIEWPORT_FRACTION) / ART_GATE_CONCEPT_VISIBLE_HEIGHT,
+        );
+      }
+      return;
+    }
+
     this.graphics?.setScale(
       x * PROTOTYPE_PLAYER_PRESENTATION_SCALE,
       y * PROTOTYPE_PLAYER_PRESENTATION_SCALE,
@@ -69,6 +101,9 @@ export class PrototypePlayerPresentation {
 
   destroy(): void {
     const graphics = this.graphics;
+
+    this.image?.destroy();
+    this.image = undefined;
 
     if (!graphics) {
       return;

@@ -1,6 +1,7 @@
 import type { Scene } from 'phaser';
 import { describe, expect, it, vi } from 'vitest';
 import {
+  ART_GATE_POSE_A_TEXTURE_KEY,
   PROTOTYPE_PLAYER_PRESENTATION_SCALE,
   PrototypePlayerPresentation,
 } from '../../src/entities/PrototypePlayerPresentation';
@@ -75,6 +76,39 @@ describe('PrototypePlayerPresentation', () => {
     expect(PROTOTYPE_PLAYER_PRESENTATION_SCALE).toBe(6 / 7);
     expect(PROTOTYPE_PLAYER_PRESENTATION_SCALE * 28).toBe(24);
     expect(graphics.setScale).toHaveBeenLastCalledWith(6 / 7, 3 / 7);
+  });
+
+  it('shows the loaded Art Gate concept at the same visible viewport fraction across render scales', () => {
+    const image = {
+      destroy: vi.fn(),
+      setPosition: vi.fn(),
+      setRotation: vi.fn(),
+      setScale: vi.fn(),
+    };
+    const addImage = vi.fn(() => image);
+    const scale = { height: 800, zoom: 0.5 };
+    const scene = {
+      add: { graphics: vi.fn(), image: addImage },
+      scale,
+      textures: { exists: vi.fn(() => true) },
+    } as unknown as Scene;
+    const presentation = new PrototypePlayerPresentation(scene, 120, 240);
+
+    presentation.setScale(1, 0.75);
+    expect(addImage).toHaveBeenCalledWith(120, 240, ART_GATE_POSE_A_TEXTURE_KEY);
+    expect(image.setScale).toHaveBeenLastCalledWith((400 * 0.255) / 1046);
+    expect(scene.add.graphics).not.toHaveBeenCalled();
+
+    presentation.setPosition(130, 250);
+    presentation.setRotation(0.25);
+    expect(image.setPosition).toHaveBeenCalledWith(130, 250);
+    expect(image.setRotation).toHaveBeenCalledWith(0.25);
+
+    scale.height = 600;
+    presentation.setScale(1, 0.5);
+    expect(image.setScale).toHaveBeenLastCalledWith((300 * 0.255) / 1046);
+    presentation.destroy();
+    expect(image.destroy).toHaveBeenCalledOnce();
   });
 
   it('rejects non-finite presentation rotation', () => {
