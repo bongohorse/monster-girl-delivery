@@ -9,6 +9,7 @@ import {
 } from '../../../src/game/PrototypeFlightLayout';
 import { Foundation } from '../../../src/game/scenes/Foundation';
 import { createEncounterExitStateEnvelope } from '../../../src/generation/EncounterTransitionValidator';
+import { createFirstDeliveryRoute } from '../../../src/generation/FirstDeliveryRoute';
 import { PROTOTYPE_PATTERN_REACHABILITY_CONTEXT } from '../../../src/generation/FlightReachability';
 import {
   advanceGeneratedHazardStream,
@@ -189,6 +190,34 @@ afterEach(() => {
 });
 
 describe('Foundation scene gameplay orchestration', () => {
+  it('picks up the planned parcel through the live simulation and presents the active route', () => {
+    const { foundation, viewportService } = createFoundationHarness();
+    const route = createFirstDeliveryRoute(
+      createPrototypeFlightBounds(viewportService.getSnapshot()),
+    );
+    const presentation = { render: vi.fn(), destroy: vi.fn() };
+    Reflect.set(foundation, 'deliveryRoute', route);
+    Reflect.set(foundation, 'firstDeliveryPresentation', presentation);
+    Reflect.set(foundation, 'directorAutoHazardsEnabled', false);
+    Reflect.set(foundation, 'runState', {
+      phase: 'running',
+      motion: { distance: route.pickup.runDistance - 35, simulationSeconds: 0 },
+      flight: { positionY: route.pickup.y, velocityY: 0 },
+    });
+
+    foundation.update(100, 100);
+
+    expect(getRunState(foundation).delivery?.phase).toBe('carrying');
+    expect(presentation.render).toHaveBeenCalledWith(
+      route,
+      expect.objectContaining({ phase: 'carrying' }),
+      expect.any(Number),
+      expect.any(Number),
+      expect.any(Number),
+      expect.any(Object),
+    );
+  });
+
   it('keeps a no-input MEM capture active across equivalent snapshots and cancels on thrust', () => {
     const { foundation, services, viewportService } = createFoundationHarness();
     const sampler = new MemoryEvidenceSampler(() => null);

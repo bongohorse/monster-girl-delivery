@@ -92,6 +92,13 @@ vi.mock('../../../src/entities/GeneratedCollectiblePresentation', () => ({
   },
 }));
 
+vi.mock('../../../src/entities/FirstDeliveryPresentation', () => ({
+  FirstDeliveryPresentation: class {
+    destroy() {}
+    render() {}
+  },
+}));
+
 vi.mock('../../../src/entities/GeneratedHazardPresentation', () => ({
   GeneratedHazardPresentation: class {
     destroy() {}

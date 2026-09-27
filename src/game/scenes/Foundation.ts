@@ -22,6 +22,7 @@ import {
   serializePerformanceEvidenceReport,
 } from '../../devtools/PerformanceEvidence';
 import type { PerformanceSnapshot } from '../../devtools/PerformanceSampler';
+import { FirstDeliveryPresentation } from '../../entities/FirstDeliveryPresentation';
 import { GeneratedCollectiblePresentation } from '../../entities/GeneratedCollectiblePresentation';
 import { GeneratedHazardPresentation } from '../../entities/GeneratedHazardPresentation';
 import { PrototypePlayerPresentation } from '../../entities/PrototypePlayerPresentation';
@@ -34,6 +35,10 @@ import {
   DIRECTOR_ZAPPER_VARIANTS,
 } from '../../generation/DirectorZapperCatalog';
 import type { EncounterStreamObservation } from '../../generation/EncounterStreamObservation';
+import {
+  createFirstDeliveryRoute,
+  FIRST_DELIVERY_PROTECTED_INTERVAL,
+} from '../../generation/FirstDeliveryRoute';
 import { PROTOTYPE_PATTERN_REACHABILITY_CONTEXT } from '../../generation/FlightReachability';
 import {
   getLogicalCollectibleSpawnIdentity,
@@ -81,6 +86,7 @@ import {
   PROTOTYPE_PLAYER_COLLISION_EXTENTS,
   type PrototypeZapperCollisionWorkCounters,
 } from '../../systems/HazardCollision';
+import type { ParcelDeliveryRoute } from '../../systems/ParcelDelivery';
 import {
   createPrototypeBroadphaseWorkCounters,
   type PrototypeBroadphaseWorkCounters,
@@ -152,6 +158,7 @@ const createLiveHazardStreamContext = (
     catalog: verticalDomain.catalog,
     constraints: verticalDomain.constraints,
     observeEncounter,
+    protectedInterval: FIRST_DELIVERY_PROTECTED_INTERVAL,
     policy: PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG,
     reachability: Object.freeze({
       flightState: Object.freeze({
@@ -236,6 +243,8 @@ export class Foundation extends Scene {
   private collectibleScheduledPatternCount = -1;
   private nextCollectiblePruneDistance: number | null = null;
   private generatedCollectiblePresentation?: GeneratedCollectiblePresentation;
+  private firstDeliveryPresentation?: FirstDeliveryPresentation;
+  private deliveryRoute?: Readonly<ParcelDeliveryRoute>;
   private generatedHazardPresentation?: GeneratedHazardPresentation;
   private hazardStream?: Readonly<GeneratedHazardStreamState>;
   private hazardVerticalDomain = createPrototypeHazardVerticalDomain(createPrototypeFlightBounds());
@@ -327,6 +336,7 @@ export class Foundation extends Scene {
     const bounds = this.getCachedFlightBounds(viewport);
     this.hazardVerticalDomain = createPrototypeHazardVerticalDomain(bounds);
     this.runState = createPrototypeRunState(bounds);
+    this.deliveryRoute = createFirstDeliveryRoute(bounds);
     this.hazardStream = createGeneratedHazardStream(
       PROTOTYPE_LIVE_RUN_SEED,
       this.getCachedLiveHazardStreamContext(this.services.flightTuning.getSnapshot()),
@@ -354,6 +364,7 @@ export class Foundation extends Scene {
     this.services.input.releaseAll();
     this.scrollingWorldPresentation = new PrototypeScrollingWorldPresentation(this);
     this.generatedCollectiblePresentation = new GeneratedCollectiblePresentation(this);
+    this.firstDeliveryPresentation = new FirstDeliveryPresentation(this);
     this.generatedHazardPresentation = new GeneratedHazardPresentation(this);
     const initialProjection = getPrototypeVerticalProjection(viewport);
     this.playerPresentation = new PrototypePlayerPresentation(
@@ -561,6 +572,7 @@ export class Foundation extends Scene {
         );
         const result = stepPrototypeRun(this.runState, motionSegment.durationSeconds, {
           collectibles: this.collectibleSpawns,
+          deliveryRoute: this.deliveryRoute,
           flightBounds,
           flightTuning: activeFlightTuning,
           hazards: getCollisionHazardsForTimedZapperSimulation(
@@ -1656,6 +1668,7 @@ export class Foundation extends Scene {
     this.directorZapperGroupIndex = 0;
     const flightBounds = this.getCachedFlightBounds(viewport);
     this.runState = createPrototypeRunState(flightBounds);
+    this.deliveryRoute = createFirstDeliveryRoute(flightBounds);
     this.deathRetryState = createPrototypeDeathRetryState();
     this.hazardStream = createGeneratedHazardStream(
       seed,
@@ -1816,6 +1829,16 @@ export class Foundation extends Scene {
       playerScreenX,
       projection,
     );
+    if (this.deliveryRoute) {
+      this.firstDeliveryPresentation?.render(
+        this.deliveryRoute,
+        this.runState.delivery,
+        this.runState.motion.distance,
+        playerScreenX,
+        viewport.width,
+        projection,
+      );
+    }
     this.playerPresentation?.setPosition(
       playerScreenX,
       projectLogicalYToScreen(this.runState.flight.positionY, projection),
@@ -1859,6 +1882,9 @@ export class Foundation extends Scene {
     this.scrollingWorldPresentation = undefined;
     this.generatedCollectiblePresentation?.destroy();
     this.generatedCollectiblePresentation = undefined;
+    this.firstDeliveryPresentation?.destroy();
+    this.firstDeliveryPresentation = undefined;
+    this.deliveryRoute = undefined;
     this.generatedHazardPresentation?.destroy();
     this.generatedHazardPresentation = undefined;
     this.collectibleSpawns = Object.freeze([]);

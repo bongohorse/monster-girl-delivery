@@ -106,6 +106,8 @@ export interface GeneratedHazardStreamContext {
   /** Development observers receive existing decision evidence; absent in production. */
   readonly observeEncounter?: (observation: Readonly<EncounterStreamObservation>) => void;
   readonly catalog: ReadonlyArray<Readonly<HazardPattern>>;
+  /** Inclusive run-distance interval reserved for a delivery approach. No pattern may reach it. */
+  readonly protectedInterval?: Readonly<{ start: number; end: number }>;
   readonly config?: Readonly<GeneratedHazardStreamConfig>;
   readonly constraints?: Readonly<PatternValidationConstraints>;
   /**
@@ -133,6 +135,29 @@ export interface HazardSpeedChangeResolution {
 }
 
 const MAX_PATTERNS_PER_ADVANCE = 64;
+
+const getProtectedPatternBoundary = (
+  context: Readonly<GeneratedHazardStreamContext>,
+  nextPatternStartDistance: number,
+): number | null => {
+  const interval = context.protectedInterval;
+  if (interval === undefined || nextPatternStartDistance > interval.end) return null;
+  if (
+    !Number.isFinite(interval.start) ||
+    !Number.isFinite(interval.end) ||
+    interval.start < 0 ||
+    interval.end < interval.start
+  ) {
+    throw new RangeError('Protected run interval must have finite ordered non-negative bounds.');
+  }
+  // Pattern entries stay inside runLength. Skipping a whole pattern before selecting it also
+  // keeps the live encounter policy from recording an encounter that was never presented.
+  const longestPattern = context.catalog.reduce(
+    (length, pattern) => Math.max(length, pattern.runLength),
+    0,
+  );
+  return nextPatternStartDistance + longestPattern >= interval.start ? interval.end + 1 : null;
+};
 
 const hasPendingPolicyContent = (
   state: Readonly<GeneratedHazardStreamState>,
@@ -351,6 +376,11 @@ const fillLegacySpawnWindow = (
   let patternsScheduledThisAdvance = 0;
 
   while (status === 'active' && nextPatternStartDistance <= windowEnd) {
+    const afterProtection = getProtectedPatternBoundary(context, nextPatternStartDistance);
+    if (afterProtection !== null) {
+      nextPatternStartDistance = afterProtection;
+      continue;
+    }
     if (patternsScheduledThisAdvance >= MAX_PATTERNS_PER_ADVANCE) {
       throw new RangeError('Hazard stream advance exceeded its bounded pattern scheduling limit.');
     }
@@ -442,6 +472,11 @@ const fillPolicySpawnWindow = (
     schedulingWindow.scrollSpeed > 0 &&
     nextPatternStartDistance <= windowEnd
   ) {
+    const afterProtection = getProtectedPatternBoundary(context, nextPatternStartDistance);
+    if (afterProtection !== null) {
+      nextPatternStartDistance = afterProtection;
+      continue;
+    }
     if (policyIterations >= MAX_PATTERNS_PER_ADVANCE) {
       throw new RangeError('Hazard stream advance exceeded its bounded policy scheduling limit.');
     }
