@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { PROTOTYPE_FLIGHT_TUNING_DEFAULTS } from '../../src/config/FlightTuningConfig';
 import { PROTOTYPE_RUN_MOTION_DEFAULTS } from '../../src/config/RunMotionConfig';
+import { FIRST_DELIVERY_PROTECTED_INTERVALS } from '../../src/generation/FirstDeliveryRoute';
 import { PROTOTYPE_PATTERN_REACHABILITY_CONTEXT } from '../../src/generation/FlightReachability';
 import {
   advanceGeneratedHazardStream,
@@ -58,17 +59,16 @@ describe('reserved delivery handoff', () => {
     },
   );
 
-  it('keeps the second pickup and handoff free of generated hazards', () => {
-    const protectedInterval = { start: 1_050, end: 2_650, repeatDistance: 4_400 };
+  it('reserves the pickup and later handoff separately across repeat routes', () => {
     const context = {
       catalog: PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG,
       policy: PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG,
       reachability: PROTOTYPE_PATTERN_REACHABILITY_CONTEXT,
-      protectedInterval,
+      protectedIntervals: FIRST_DELIVERY_PROTECTED_INTERVALS,
     };
     for (const seed of [PROTOTYPE_LIVE_RUN_SEED, 'delivery-seed-a', 'delivery-seed-b']) {
       let stream = createGeneratedHazardStream(seed, context, PROTOTYPE_RUN_MOTION_DEFAULTS);
-      for (let distance = 0; distance <= 7_400; distance += 100) {
+      for (let distance = 0; distance <= 8_200; distance += 100) {
         stream = advanceGeneratedHazardStream(
           stream,
           distance,
@@ -76,13 +76,17 @@ describe('reserved delivery handoff', () => {
           PROTOTYPE_RUN_MOTION_DEFAULTS,
           distance === 0 ? 0 : 100 / PROTOTYPE_RUN_MOTION_DEFAULTS.baseScrollSpeed,
         );
-        expect(
-          stream.spawns.some(
-            (spawn) =>
-              spawn.hitbox.left <= protectedInterval.end + protectedInterval.repeatDistance &&
-              spawn.hitbox.right >= protectedInterval.start + protectedInterval.repeatDistance,
-          ),
-        ).toBe(false);
+        for (const routeIndex of [0, 1]) {
+          for (const interval of FIRST_DELIVERY_PROTECTED_INTERVALS) {
+            const start = interval.start + routeIndex * interval.repeatDistance;
+            const end = interval.end + routeIndex * interval.repeatDistance;
+            expect(
+              stream.spawns.some(
+                (spawn) => spawn.hitbox.left <= end && spawn.hitbox.right >= start,
+              ),
+            ).toBe(false);
+          }
+        }
       }
     }
   });

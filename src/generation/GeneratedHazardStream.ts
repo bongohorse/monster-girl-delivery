@@ -108,6 +108,10 @@ export interface GeneratedHazardStreamContext {
   readonly catalog: ReadonlyArray<Readonly<HazardPattern>>;
   /** Inclusive run-distance interval reserved for a delivery approach. No pattern may reach it. */
   readonly protectedInterval?: Readonly<{ start: number; end: number; repeatDistance?: number }>;
+  /** Separate recurring reservations allow ordinary encounters between pickup and handoff. */
+  readonly protectedIntervals?: ReadonlyArray<
+    Readonly<{ start: number; end: number; repeatDistance?: number }>
+  >;
   readonly config?: Readonly<GeneratedHazardStreamConfig>;
   readonly constraints?: Readonly<PatternValidationConstraints>;
   /**
@@ -140,33 +144,43 @@ const getProtectedPatternBoundary = (
   context: Readonly<GeneratedHazardStreamContext>,
   nextPatternStartDistance: number,
 ): number | null => {
-  const interval = context.protectedInterval;
-  if (interval === undefined) return null;
-  if (
-    !Number.isFinite(interval.start) ||
-    !Number.isFinite(interval.end) ||
-    interval.start < 0 ||
-    interval.end < interval.start ||
-    (interval.repeatDistance !== undefined &&
-      (!Number.isFinite(interval.repeatDistance) ||
-        interval.repeatDistance <= interval.end - interval.start))
-  ) {
-    throw new RangeError('Protected run interval must have finite ordered non-negative bounds.');
-  }
-  const repeatIndex =
-    interval.repeatDistance === undefined
-      ? 0
-      : Math.max(0, Math.ceil((nextPatternStartDistance - interval.end) / interval.repeatDistance));
-  const start = interval.start + repeatIndex * (interval.repeatDistance ?? 0);
-  const end = interval.end + repeatIndex * (interval.repeatDistance ?? 0);
-  if (nextPatternStartDistance > end) return null;
+  const intervals =
+    context.protectedIntervals ??
+    (context.protectedInterval === undefined ? [] : [context.protectedInterval]);
+  if (intervals.length === 0) return null;
   // Pattern entries stay inside runLength. Skipping a whole pattern before selecting it also
   // keeps the live encounter policy from recording an encounter that was never presented.
   const longestPattern = context.catalog.reduce(
     (length, pattern) => Math.max(length, pattern.runLength),
     0,
   );
-  return nextPatternStartDistance + longestPattern >= start ? end + 1 : null;
+  let boundary: number | null = null;
+  for (const interval of intervals) {
+    if (
+      !Number.isFinite(interval.start) ||
+      !Number.isFinite(interval.end) ||
+      interval.start < 0 ||
+      interval.end < interval.start ||
+      (interval.repeatDistance !== undefined &&
+        (!Number.isFinite(interval.repeatDistance) ||
+          interval.repeatDistance <= interval.end - interval.start))
+    ) {
+      throw new RangeError('Protected run interval must have finite ordered non-negative bounds.');
+    }
+    const repeatIndex =
+      interval.repeatDistance === undefined
+        ? 0
+        : Math.max(
+            0,
+            Math.ceil((nextPatternStartDistance - interval.end) / interval.repeatDistance),
+          );
+    const start = interval.start + repeatIndex * (interval.repeatDistance ?? 0);
+    const end = interval.end + repeatIndex * (interval.repeatDistance ?? 0);
+    if (nextPatternStartDistance <= end && nextPatternStartDistance + longestPattern >= start) {
+      boundary = Math.min(boundary ?? Number.POSITIVE_INFINITY, end + 1);
+    }
+  }
+  return boundary;
 };
 
 const hasPendingPolicyContent = (

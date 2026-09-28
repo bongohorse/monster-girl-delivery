@@ -37,7 +37,7 @@ import {
 import type { EncounterStreamObservation } from '../../generation/EncounterStreamObservation';
 import {
   createFirstDeliveryRoute,
-  FIRST_DELIVERY_PROTECTED_INTERVAL,
+  FIRST_DELIVERY_PROTECTED_INTERVALS,
 } from '../../generation/FirstDeliveryRoute';
 import { PROTOTYPE_PATTERN_REACHABILITY_CONTEXT } from '../../generation/FlightReachability';
 import {
@@ -177,7 +177,7 @@ const createLiveHazardStreamContext = (
     catalog: verticalDomain.catalog,
     constraints: verticalDomain.constraints,
     observeEncounter,
-    protectedInterval: FIRST_DELIVERY_PROTECTED_INTERVAL,
+    protectedIntervals: FIRST_DELIVERY_PROTECTED_INTERVALS,
     policy: PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG,
     reachability: Object.freeze({
       flightState: Object.freeze({

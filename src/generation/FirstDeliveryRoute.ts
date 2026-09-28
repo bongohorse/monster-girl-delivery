@@ -3,10 +3,14 @@ import type { VerticalFlightBounds } from '../systems/VerticalFlightSimulation';
 
 /** Provisional repeatable route spacing: the pickup arrives well after the previous handoff. */
 export const FIRST_DELIVERY_PROTECTED_INTERVAL = Object.freeze({
-  start: 1_050,
-  end: 2_650,
+  start: 1_250,
+  end: 1_750,
   repeatDistance: 4_400,
 });
+export const FIRST_DELIVERY_PROTECTED_INTERVALS = Object.freeze([
+  FIRST_DELIVERY_PROTECTED_INTERVAL,
+  Object.freeze({ start: 2_600, end: 3_450, repeatDistance: 4_400 }),
+]);
 
 export const createFirstDeliveryRoute = (
   bounds: Readonly<VerticalFlightBounds>,
@@ -21,7 +25,7 @@ export const createFirstDeliveryRoute = (
     id: routeIndex === 0 ? 'first-delivery' : `delivery-${routeIndex + 1}`,
     pickup: Object.freeze({ runDistance: 1_600 + offset, y: centerY }),
     recipient: Object.freeze({
-      runDistance: 2_400 + offset,
+      runDistance: 3_200 + offset,
       y: Math.max(bounds.ceilingY + 72, centerY - 80),
     }),
   });
