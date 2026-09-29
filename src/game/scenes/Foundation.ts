@@ -56,6 +56,7 @@ import {
 } from '../../generation/GeneratedHazardStream';
 import type { HazardPattern } from '../../generation/HazardPattern';
 import { PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG } from '../../generation/LiveEncounterPolicy';
+import { M6_MOLTEN_SPIKE_TRIAL } from '../../generation/M6MoltenSpikeTrial';
 import {
   getLogicalHazardSpawnIdentity,
   type LogicalHazardSpawnInstance,
@@ -908,6 +909,7 @@ export class Foundation extends Scene {
         setGodModeEnabled: this.handleDirectorGodMode,
         setAutoHazardsEnabled: this.handleDirectorAutoHazards,
         spawnMissile: this.spawnDirectorMissile,
+        spawnSpike: this.spawnDirectorSpike,
         spawnZapper: this.spawnDirectorZapperVariant,
         spawnZapperGroup: this.spawnDirectorZapperGroup,
         spawnLaser: this.spawnDirectorLaserVariant,
@@ -1474,6 +1476,17 @@ export class Foundation extends Scene {
     this.spawnDirectorPattern(pattern, false);
   };
 
+  private readonly spawnDirectorSpike = (): void => {
+    if (!this.viewportService || this.runState.phase !== 'running') {
+      return;
+    }
+    this.spawnDirectorPattern(
+      M6_MOLTEN_SPIKE_TRIAL,
+      true,
+      this.hazardVerticalDomain.mapAuthoredCenterY,
+    );
+  };
+
   private spawnDirectorPattern(
     pattern: Readonly<HazardPattern>,
     fullyOffscreen: boolean,
@@ -1892,6 +1905,8 @@ export class Foundation extends Scene {
     this.directorDebugOverlay?.render({
       collectibles: this.collectibleSpawns,
       consumedCollectibleIds: this.runState.collectibles?.consumedCollectibleIds ?? [],
+      delivery: this.runState.delivery,
+      deliveryRoute: this.deliveryRoute,
       flight: this.runState.flight,
       hazards: activeHazards,
       motion: this.runState.motion,

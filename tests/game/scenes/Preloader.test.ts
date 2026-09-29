@@ -39,6 +39,7 @@ const createPreloaderHarness = (
   const addRectangle = vi.fn().mockReturnValueOnce(frame).mockReturnValueOnce(fill);
   const loadOn = vi.fn();
   const loadOff = vi.fn();
+  const loadImage = vi.fn();
   const scaleOn = vi.fn();
   const scaleOff = vi.fn();
   const sceneOnce = vi.fn();
@@ -55,7 +56,7 @@ const createPreloaderHarness = (
   };
 
   Reflect.set(preloader, 'add', { image: addImage, rectangle: addRectangle });
-  Reflect.set(preloader, 'load', { on: loadOn, off: loadOff });
+  Reflect.set(preloader, 'load', { on: loadOn, off: loadOff, image: loadImage });
   Reflect.set(preloader, 'scale', scale);
   Reflect.set(preloader, 'events', { once: sceneOnce });
   Reflect.set(preloader, 'cameras', {
@@ -76,6 +77,7 @@ const createPreloaderHarness = (
     fill,
     frame,
     loadOff,
+    loadImage,
     loadOn,
     preloader,
     scale,
@@ -95,6 +97,14 @@ const getHandler = (preloader: Preloader, name: string): ((...args: unknown[]) =
 };
 
 describe('Preloader scene responsive layout', () => {
+  it('preloads the same spike texture used by the live hazard presentation', () => {
+    const { loadImage, preloader } = createPreloaderHarness();
+    preloader.preload();
+    expect(loadImage).toHaveBeenCalledExactlyOnceWith(
+      'molten-spike-trial',
+      'assets/m6/molten-spike-trial.png',
+    );
+  });
   it('creates the loading presentation and registers one listener per event', () => {
     const { addImage, addRectangle, cameraSetZoom, loadOn, preloader, scaleOn, sceneOnce } =
       createPreloaderHarness();
