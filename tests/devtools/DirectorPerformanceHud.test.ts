@@ -97,6 +97,7 @@ const createHarness = () => {
   const setGodModeEnabled = vi.fn();
   const setAutoHazardsEnabled = vi.fn();
   const spawnMissile = vi.fn();
+  const spawnSpike = vi.fn();
   const spawnZapper = vi.fn();
   const spawnZapperGroup = vi.fn();
   const spawnLaser = vi.fn();
@@ -139,6 +140,7 @@ const createHarness = () => {
       setGodModeEnabled,
       setAutoHazardsEnabled,
       spawnMissile,
+      spawnSpike,
       spawnZapper,
       spawnZapperGroup,
       spawnLaser,
@@ -175,12 +177,13 @@ const createHarness = () => {
   const zapperButton = playgroundControls?.children[3];
   const zapperGroupButton = playgroundControls?.children[4];
   const laserButton = playgroundControls?.children[5];
-  const clearButton = playgroundControls?.children[6];
-  const freezeButton = playgroundControls?.children[7];
-  const deathButton = playgroundControls?.children[8];
-  const normalPerformanceButton = playgroundControls?.children[9];
-  const zapperPerformanceButton = playgroundControls?.children[10];
-  const memoryEvidenceButton = playgroundControls?.children[11];
+  const spikeButton = playgroundControls?.children[6];
+  const clearButton = playgroundControls?.children[7];
+  const freezeButton = playgroundControls?.children[8];
+  const deathButton = playgroundControls?.children[9];
+  const normalPerformanceButton = playgroundControls?.children[10];
+  const zapperPerformanceButton = playgroundControls?.children[11];
+  const memoryEvidenceButton = playgroundControls?.children[12];
 
   if (
     !root ||
@@ -202,6 +205,7 @@ const createHarness = () => {
     !zapperButton ||
     !zapperGroupButton ||
     !laserButton ||
+    !spikeButton ||
     !clearButton ||
     !freezeButton ||
     !deathButton ||
@@ -247,6 +251,7 @@ const createHarness = () => {
     setWireframesEnabled,
     spawnLaser,
     spawnMissile,
+    spawnSpike,
     spawnZapper,
     spawnZapperGroup,
     startNormalPerformancePreset,
@@ -258,6 +263,7 @@ const createHarness = () => {
     wireframeLabel,
     zapperButton,
     zapperGroupButton,
+    spikeButton,
     zapperPerformanceButton,
     memoryEvidenceButton,
     zapperWorkCounters,
@@ -302,7 +308,7 @@ describe('DirectorPerformanceHud', () => {
     expect(fixedControls.children).toHaveLength(5);
     expect(values.children).toHaveLength(5);
     expect(wireframeLabel.children).toHaveLength(2);
-    expect(playgroundControls.children).toHaveLength(12);
+    expect(playgroundControls.children).toHaveLength(13);
   });
 
   it('samples every frame but refreshes formatted values at most every 250 ms', () => {
@@ -489,11 +495,13 @@ describe('DirectorPerformanceHud', () => {
       setSimulationFrozen,
       spawnLaser,
       spawnMissile,
+      spawnSpike,
       spawnZapper,
       spawnZapperGroup,
       triggerDeath,
       zapperButton,
       zapperGroupButton,
+      spikeButton,
     } = createHarness();
 
     expect(autoHazardsButton.getAttribute('aria-pressed')).toBe('true');
@@ -511,11 +519,13 @@ describe('DirectorPerformanceHud', () => {
     zapperButton.dispatch('click');
     zapperGroupButton.dispatch('click');
     laserButton.dispatch('click');
+    spikeButton.dispatch('click');
     clearButton.dispatch('click');
     expect(spawnMissile).toHaveBeenCalledOnce();
     expect(spawnZapper).toHaveBeenCalledOnce();
     expect(spawnZapperGroup).toHaveBeenCalledOnce();
     expect(spawnLaser).toHaveBeenCalledOnce();
+    expect(spawnSpike).toHaveBeenCalledOnce();
     expect(clearHazards).toHaveBeenCalledOnce();
 
     freezeButton.dispatch('click');

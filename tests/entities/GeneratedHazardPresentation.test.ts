@@ -129,10 +129,12 @@ const createSceneFake = () => {
     destroy: vi.fn(),
     setDepth: vi.fn(),
     setDisplaySize: vi.fn(),
+    setFlipX: vi.fn(),
     setPosition: vi.fn(),
   };
   spikeImage.setDepth.mockReturnValue(spikeImage);
   spikeImage.setDisplaySize.mockReturnValue(spikeImage);
+  spikeImage.setFlipX.mockReturnValue(spikeImage);
   spikeImage.setPosition.mockReturnValue(spikeImage);
   const addImage = vi.fn(() => spikeImage);
   const scene = { add: { graphics: addGraphics, image: addImage } } as unknown as Scene;
@@ -151,6 +153,7 @@ describe('GeneratedHazardPresentation', () => {
       scaleY: 0.8,
     });
     expect(addImage).toHaveBeenCalledExactlyOnceWith(0, 0, 'molten-spike-trial');
+    expect(spikeImage.setFlipX).toHaveBeenCalledExactlyOnceWith(true);
     expect(addGraphics).not.toHaveBeenCalled();
     expect(spikeImage.setPosition).toHaveBeenLastCalledWith(384, 98);
     const [width, height] = spikeImage.setDisplaySize.mock.lastCall ?? [];

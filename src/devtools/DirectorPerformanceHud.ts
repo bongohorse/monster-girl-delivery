@@ -29,6 +29,7 @@ export interface DirectorPerformanceHudControls {
   readonly setGodModeEnabled?: (enabled: boolean) => void;
   readonly setAutoHazardsEnabled?: (enabled: boolean) => void;
   readonly spawnMissile?: () => void;
+  readonly spawnSpike?: () => void;
   readonly spawnZapper?: () => void;
   readonly spawnZapperGroup?: () => void;
   readonly spawnLaser?: () => void;
@@ -124,6 +125,7 @@ export class DirectorPerformanceHud {
   private readonly zapperButton: HTMLButtonElement;
   private readonly zapperGroupButton: HTMLButtonElement;
   private readonly laserButton: HTMLButtonElement;
+  private readonly spikeButton: HTMLButtonElement;
   private readonly clearButton: HTMLButtonElement;
   private readonly freezeButton: HTMLButtonElement;
   private readonly deathButton: HTMLButtonElement;
@@ -229,6 +231,7 @@ export class DirectorPerformanceHud {
       'Spawn next deterministic Zapper test group',
     );
     this.laserButton = this.createButton(ownerDocument, 'L', 'Spawn Timed Laser');
+    this.spikeButton = this.createButton(ownerDocument, 'SP', 'Spawn Spike hazard');
     this.clearButton = this.createButton(ownerDocument, 'CLR', 'Clear active test hazards');
     this.freezeButton = this.createButton(ownerDocument, '⏸', 'Freeze gameplay simulation');
     this.deathButton = this.createButton(
@@ -258,6 +261,7 @@ export class DirectorPerformanceHud {
       this.zapperButton,
       this.zapperGroupButton,
       this.laserButton,
+      this.spikeButton,
       this.clearButton,
       this.freezeButton,
       this.deathButton,
@@ -303,6 +307,7 @@ export class DirectorPerformanceHud {
     this.addControlListeners(this.zapperButton, this.handleZapperClick);
     this.addControlListeners(this.zapperGroupButton, this.handleZapperGroupClick);
     this.addControlListeners(this.laserButton, this.handleLaserClick);
+    this.addControlListeners(this.spikeButton, this.handleSpikeClick);
     this.addControlListeners(this.clearButton, this.handleClearClick);
     this.addControlListeners(this.freezeButton, this.handleFreezeClick);
     this.addControlListeners(this.deathButton, this.handleDeathClick);
@@ -393,6 +398,7 @@ export class DirectorPerformanceHud {
     this.removeControlListeners(this.zapperButton, this.handleZapperClick);
     this.removeControlListeners(this.zapperGroupButton, this.handleZapperGroupClick);
     this.removeControlListeners(this.laserButton, this.handleLaserClick);
+    this.removeControlListeners(this.spikeButton, this.handleSpikeClick);
     this.removeControlListeners(this.clearButton, this.handleClearClick);
     this.removeControlListeners(this.freezeButton, this.handleFreezeClick);
     this.removeControlListeners(this.deathButton, this.handleDeathClick);
@@ -515,6 +521,12 @@ export class DirectorPerformanceHud {
     this.stopControlEvent(event);
     this.clearAutomatedBenchmark();
     this.controls?.spawnLaser?.();
+  };
+
+  private readonly handleSpikeClick = (event: Event): void => {
+    this.stopControlEvent(event);
+    this.clearAutomatedBenchmark();
+    this.controls?.spawnSpike?.();
   };
 
   private readonly handleClearClick = (event: Event): void => {

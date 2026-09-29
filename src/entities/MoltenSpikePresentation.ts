@@ -14,7 +14,7 @@ export class MoltenSpikePresentation {
     scene: Scene,
     private readonly hazard: Readonly<LogicalHazardSpawnInstance>,
   ) {
-    this.image = scene.add.image(0, 0, 'molten-spike-trial').setDepth(-50);
+    this.image = scene.add.image(0, 0, 'molten-spike-trial').setDepth(-50).setFlipX(true);
   }
 
   render(
