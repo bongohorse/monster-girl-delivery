@@ -35,6 +35,7 @@ GitHub Milestones and focused Issues/PRs are the live execution trail. Completed
 | Understand technical boundaries | [`../ARCHITECTURE.md`](../ARCHITECTURE.md) |
 | See commands, CI, testing, Codespaces, or closeout workflow | [`../DEVELOPMENT.md`](../DEVELOPMENT.md) |
 | Choose test-quality evidence for a gameplay-authority change | [`TEST_QUALITY.md`](TEST_QUALITY.md) |
+| Investigate stutters/memory growth or compare optimizations | [`PERFORMANCE_MOBILE_EVIDENCE.md`](PERFORMANCE_MOBILE_EVIDENCE.md#inventory-and-reuse-decision-503) |
 | See human ↔ AI orchestration | [`AI_WORKFLOW.md`](AI_WORKFLOW.md) |
 | Use Jules as a GitHub-native assistant safely | [`JULES_WORKFLOW.md`](JULES_WORKFLOW.md) |
 | Review AI GitHub authentication/permissions | [`GITHUB_AI_ACCESS.md`](GITHUB_AI_ACCESS.md) |
@@ -75,6 +76,8 @@ ARCHITECTURE.md / DEVELOPMENT.md as required
 existing code + tests
 ```
 
+For performance symptoms or assigned optimization comparisons, reuse [diagnosing-bugs](../.agents/skills/diagnosing-bugs/SKILL.md) and the [existing performance investigation workflow](PERFORMANCE_MOBILE_EVIDENCE.md#investigation-and-comparison-procedure). Its [inventory/reuse decision](PERFORMANCE_MOBILE_EVIDENCE.md#inventory-and-reuse-decision-503) routes specialized frame, heap and profiling evidence without an additional performance skill.
+
 Jules-specific dispatch/review/environment rules live in [`JULES_WORKFLOW.md`](JULES_WORKFLOW.md). They supplement rather than replace `AGENTS.md`.
 
 Do not load the entire backlog/reference library as implementation requirements.
@@ -95,6 +98,7 @@ A **current explicit Game Director decision** controls product intent. Living do
 | [`../ARCHITECTURE.md`](../ARCHITECTURE.md) | technical ownership, service/system boundaries, current vs. planned architecture | product scope, milestone scheduling |
 | [`../DEVELOPMENT.md`](../DEVELOPMENT.md) | commands, verification, Codespaces, CI, PR mechanics, milestone closeout process | product/game design |
 | [`TEST_QUALITY.md`](TEST_QUALITY.md) | detailed test-evidence selection, independent-oracle/mutation/coverage/browser/stability policy, and test-review criteria | product/game rules, ordinary command ownership, milestone scope |
+| [`PERFORMANCE_MOBILE_EVIDENCE.md`](PERFORMANCE_MOBILE_EVIDENCE.md) | reusable performance investigation/comparison entry and existing frame-evidence procedures; routes specialized allocation/Android evidence | product budgets, gameplay authority, unmeasured device results |
 | [`../AGENTS.md`](../AGENTS.md) | mandatory coding-agent behavior and scope discipline | product design |
 | [`AI_WORKFLOW.md`](AI_WORKFLOW.md) | human/AI coordination and role orchestration | authentication setup, product scope |
 | [`JULES_WORKFLOW.md`](JULES_WORKFLOW.md) | Jules-specific dispatch, planning/review, evidence/trust, concurrency, scheduled-task, and environment rules | product scope, general agent rules |
