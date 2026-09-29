@@ -75,6 +75,8 @@ ARCHITECTURE.md / DEVELOPMENT.md as required
 existing code + tests
 ```
 
+For hazard creation/changes or hazard-art changes affecting visual fairness, use [mgd-hazards](../.agents/skills/mgd-hazards/SKILL.md). Shared rules remain in MASTER_SPEC (hazards/fairness) and ARCHITECTURE (simulation, lifecycle and geometry ownership); the skill applies them through the real runtime path.
+
 Jules-specific dispatch/review/environment rules live in [`JULES_WORKFLOW.md`](JULES_WORKFLOW.md). They supplement rather than replace `AGENTS.md`.
 
 Do not load the entire backlog/reference library as implementation requirements.
