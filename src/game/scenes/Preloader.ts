@@ -13,6 +13,10 @@ export class Preloader extends Scene {
     super('Preloader');
   }
 
+  preload() {
+    this.load.image('molten-spike-trial', 'assets/m6/molten-spike-trial.png');
+  }
+
   init() {
     this.loadProgress = 0;
     this.shutdownHandled = false;

@@ -36,6 +36,16 @@ const createMovingSpawn = (): Readonly<LogicalHazardSpawnInstance> => ({
   type: 'placeholder-barrier',
 });
 
+const createMoltenSpikeSpawn = (): Readonly<LogicalHazardSpawnInstance> => ({
+  behavior: { archetype: 'geometric', kind: 'static' },
+  entryId: 'molten-spike-upper',
+  hitbox: { left: 1_000, right: 1_048, top: 86, bottom: 134 },
+  patternEntryIndex: 0,
+  patternId: 'm6-trial-molten-spike-upper',
+  runDistance: 1_000,
+  type: 'molten-spike',
+});
+
 const createTimedSpawn = (): Readonly<LogicalHazardSpawnInstance> => ({
   behavior: {
     archetype: 'timed',
@@ -115,12 +125,43 @@ const createSceneFake = () => {
     graphicsObjects.push(graphics);
     return graphics;
   });
-  const scene = { add: { graphics: addGraphics } } as unknown as Scene;
+  const spikeImage = {
+    destroy: vi.fn(),
+    setDepth: vi.fn(),
+    setDisplaySize: vi.fn(),
+    setPosition: vi.fn(),
+  };
+  spikeImage.setDepth.mockReturnValue(spikeImage);
+  spikeImage.setDisplaySize.mockReturnValue(spikeImage);
+  spikeImage.setPosition.mockReturnValue(spikeImage);
+  const addImage = vi.fn(() => spikeImage);
+  const scene = { add: { graphics: addGraphics, image: addImage } } as unknown as Scene;
 
-  return { addGraphics, graphicsObjects, scene };
+  return { addGraphics, addImage, graphicsObjects, scene, spikeImage };
 };
 
 describe('GeneratedHazardPresentation', () => {
+  it('renders the live spike trial from its logical spawn with a visible margin', () => {
+    const { addGraphics, addImage, scene, spikeImage } = createSceneFake();
+    const presentation = new GeneratedHazardPresentation(scene);
+    const spike = createMoltenSpikeSpawn();
+
+    presentation.sync([spike], { distance: 800 }, 160, EMPTY_TIMED_HAZARDS, {
+      offsetY: 10,
+      scaleY: 0.8,
+    });
+    expect(addImage).toHaveBeenCalledExactlyOnceWith(0, 0, 'molten-spike-trial');
+    expect(addGraphics).not.toHaveBeenCalled();
+    expect(spikeImage.setPosition).toHaveBeenLastCalledWith(384, 98);
+    const [width, height] = spikeImage.setDisplaySize.mock.lastCall ?? [];
+    expect(width).toBe(72);
+    expect(height).toBeCloseTo(57.6);
+    expect(presentation.getPresentedHazardCount()).toBe(1);
+
+    presentation.sync([], { distance: 900 }, 160, EMPTY_TIMED_HAZARDS);
+    expect(spikeImage.destroy).toHaveBeenCalledOnce();
+    expect(presentation.getPresentedHazardCount()).toBe(0);
+  });
   it('creates and positions one primitive presentation per logical spawn', () => {
     const { addGraphics, graphicsObjects, scene } = createSceneFake();
     const presentation = new GeneratedHazardPresentation(scene);
