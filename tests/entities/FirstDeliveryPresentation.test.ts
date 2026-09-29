@@ -1,13 +1,13 @@
 import type { Scene } from 'phaser';
 import { describe, expect, it, vi } from 'vitest';
 import { FirstDeliveryPresentation } from '../../src/entities/FirstDeliveryPresentation';
+import { createFirstDeliveryRoute } from '../../src/generation/FirstDeliveryRoute';
 import type { ParcelDeliveryRoute, ParcelDeliveryRunState } from '../../src/systems/ParcelDelivery';
 
-const route: Readonly<ParcelDeliveryRoute> = {
-  id: 'first-delivery',
-  pickup: { runDistance: 1_600, y: 195 },
-  recipient: { runDistance: 3_200, y: 115 },
-};
+const route: Readonly<ParcelDeliveryRoute> = createFirstDeliveryRoute({
+  ceilingY: 28,
+  floorY: 362,
+});
 
 const carrying: Readonly<ParcelDeliveryRunState> = {
   phase: 'carrying',
@@ -48,16 +48,16 @@ describe('first delivery target cue', () => {
 
   it('waits until 800 m before the handoff, then flashes a right-pointing offscreen cue', () => {
     const { graphics, presentation } = createPresentation();
-    presentation.render(route, carrying, 2_399, 160, 640, { offsetY: 0, scaleY: 1 });
+    presentation.render(route, carrying, 5_599, 160, 640, { offsetY: 0, scaleY: 1 });
     expect(graphics.fillTriangle).not.toHaveBeenCalled();
 
-    presentation.render(route, carrying, 2_400, 160, 640, { offsetY: 0, scaleY: 1 });
+    presentation.render(route, carrying, 5_600, 160, 640, { offsetY: 0, scaleY: 1 });
     const [upperX, upperY, , , tipX] = graphics.fillTriangle.mock.calls[0] ?? [];
     expect(tipX).toBeGreaterThan(upperX);
     expect(upperY).toBeLessThan(115);
     const firstAlpha = graphics.fillStyle.mock.calls[graphics.fillStyle.mock.calls.length - 1]?.[1];
     graphics.fillStyle.mockClear();
-    presentation.render(route, carrying, 2_510, 160, 640, { offsetY: 0, scaleY: 1 });
+    presentation.render(route, carrying, 5_710, 160, 640, { offsetY: 0, scaleY: 1 });
     expect(graphics.fillStyle.mock.calls[graphics.fillStyle.mock.calls.length - 1]?.[1]).not.toBe(
       firstAlpha,
     );
@@ -65,7 +65,7 @@ describe('first delivery target cue', () => {
 
   it('places the downward cue above the recipient once the drop is on screen', () => {
     const { graphics, presentation } = createPresentation();
-    presentation.render(route, carrying, 2_850, 160, 640, { offsetY: 0, scaleY: 1 });
+    presentation.render(route, carrying, 6_050, 160, 640, { offsetY: 0, scaleY: 1 });
     const [leftX, topY, rightX, , tipX, tipY] = graphics.fillTriangle.mock.calls[0] ?? [];
     expect(tipX).toBeCloseTo(510);
     expect(leftX).toBeLessThan(tipX);
@@ -79,7 +79,7 @@ describe('first delivery target cue', () => {
     presentation.render(
       route,
       { ...carrying, phase: 'delivered', completedCount: 1 },
-      3_200,
+      6_400,
       160,
       640,
       {

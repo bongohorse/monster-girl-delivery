@@ -1,15 +1,31 @@
+import { PROTOTYPE_DELIVERY_TUNING } from '../config/DeliveryTuning';
 import type { ParcelDeliveryRoute } from '../systems/ParcelDelivery';
 import type { VerticalFlightBounds } from '../systems/VerticalFlightSimulation';
 
-/** Provisional repeatable route spacing: the pickup arrives well after the previous handoff. */
+const {
+  firstPickupDistance,
+  pickupToDropDistance,
+  routeRepeatDistance,
+  pickupSafeBefore,
+  pickupSafeAfter,
+  dropSafeBefore,
+  dropSafeAfter,
+} = PROTOTYPE_DELIVERY_TUNING;
+const firstDropDistance = firstPickupDistance + pickupToDropDistance;
+
+/** Pickup and handoff are protected separately so the long carry still has encounters. */
 export const FIRST_DELIVERY_PROTECTED_INTERVAL = Object.freeze({
-  start: 1_250,
-  end: 1_750,
-  repeatDistance: 4_400,
+  start: firstPickupDistance - pickupSafeBefore,
+  end: firstPickupDistance + pickupSafeAfter,
+  repeatDistance: routeRepeatDistance,
 });
 export const FIRST_DELIVERY_PROTECTED_INTERVALS = Object.freeze([
   FIRST_DELIVERY_PROTECTED_INTERVAL,
-  Object.freeze({ start: 2_600, end: 3_450, repeatDistance: 4_400 }),
+  Object.freeze({
+    start: firstDropDistance - dropSafeBefore,
+    end: firstDropDistance + dropSafeAfter,
+    repeatDistance: routeRepeatDistance,
+  }),
 ]);
 
 export const createFirstDeliveryRoute = (
@@ -20,12 +36,12 @@ export const createFirstDeliveryRoute = (
     throw new RangeError('Delivery route index must be a non-negative safe integer.');
   }
   const centerY = (bounds.ceilingY + bounds.floorY) / 2;
-  const offset = routeIndex * FIRST_DELIVERY_PROTECTED_INTERVAL.repeatDistance;
+  const offset = routeIndex * routeRepeatDistance;
   return Object.freeze({
     id: routeIndex === 0 ? 'first-delivery' : `delivery-${routeIndex + 1}`,
-    pickup: Object.freeze({ runDistance: 1_600 + offset, y: centerY }),
+    pickup: Object.freeze({ runDistance: firstPickupDistance + offset, y: centerY }),
     recipient: Object.freeze({
-      runDistance: 3_200 + offset,
+      runDistance: firstDropDistance + offset,
       y: Math.max(bounds.ceilingY + 72, centerY - 80),
     }),
   });

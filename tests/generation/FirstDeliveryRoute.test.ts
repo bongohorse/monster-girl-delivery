@@ -13,17 +13,18 @@ describe('spaced parcel routes', () => {
     expect(first).toMatchObject({
       id: 'first-delivery',
       pickup: { runDistance: 1_600 },
-      recipient: { runDistance: 3_200 },
+      recipient: { runDistance: 6_400 },
     });
     expect(second.id).not.toBe(first.id);
-    expect(second.pickup.runDistance - first.pickup.runDistance).toBeGreaterThan(3_000);
-    expect(second.recipient.runDistance - second.pickup.runDistance).toBe(1_600);
+    expect(second.pickup.runDistance).toBe(14_800);
+    expect(second.recipient.runDistance).toBe(19_600);
+    expect(second.recipient.runDistance - second.pickup.runDistance).toBe(4_800);
     expect(FIRST_DELIVERY_PROTECTED_INTERVAL.repeatDistance).toBe(
       second.pickup.runDistance - first.pickup.runDistance,
     );
     expect(FIRST_DELIVERY_PROTECTED_INTERVALS).toMatchObject([
       { start: 1_250, end: 1_750 },
-      { start: 2_600, end: 3_450 },
+      { start: 5_800, end: 6_650 },
     ]);
   });
 });

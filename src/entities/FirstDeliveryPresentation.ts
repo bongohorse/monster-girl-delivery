@@ -1,12 +1,10 @@
 import type { GameObjects, Scene } from 'phaser';
+import { PROTOTYPE_DELIVERY_TUNING } from '../config/DeliveryTuning';
 import {
   type PrototypeVerticalProjection,
   projectLogicalYToScreen,
 } from '../game/PrototypeFlightLayout';
 import type { ParcelDeliveryRoute, ParcelDeliveryRunState } from '../systems/ParcelDelivery';
-
-/** Provisional GPS distance; the cue starts late enough to leave the pickup uncluttered. */
-const DROP_CUE_LEAD_DISTANCE = 800;
 
 const drawCue = (
   graphics: GameObjects.Graphics,
@@ -96,7 +94,10 @@ export class FirstDeliveryPresentation {
       graphics.fillCircle(x, y - 2, 5);
     }
     const distanceToDrop = route.recipient.runDistance - runDistance;
-    if (distanceToDrop <= DROP_CUE_LEAD_DISTANCE && x >= playerScreenX - 52) {
+    if (
+      distanceToDrop <= PROTOTYPE_DELIVERY_TUNING.dropCueLeadDistance &&
+      x >= playerScreenX - 52
+    ) {
       if (x > viewportWidth - 52) {
         const blink = Math.floor(runDistance / 110) % 2 === 0 ? 1 : 0.3;
         drawCue(graphics, viewportWidth - 40, y, 0.82, 'right', blink);

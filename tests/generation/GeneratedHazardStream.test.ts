@@ -68,7 +68,7 @@ describe('reserved delivery handoff', () => {
     };
     for (const seed of [PROTOTYPE_LIVE_RUN_SEED, 'delivery-seed-a', 'delivery-seed-b']) {
       let stream = createGeneratedHazardStream(seed, context, PROTOTYPE_RUN_MOTION_DEFAULTS);
-      for (let distance = 0; distance <= 8_200; distance += 100) {
+      for (let distance = 0; distance <= 20_200; distance += 100) {
         stream = advanceGeneratedHazardStream(
           stream,
           distance,

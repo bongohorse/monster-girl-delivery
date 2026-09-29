@@ -240,7 +240,7 @@ describe('Foundation scene gameplay orchestration', () => {
     });
     expect(Reflect.get(foundation, 'deliveryRoute')).toMatchObject({
       id: 'delivery-2',
-      pickup: { runDistance: 6_000 },
+      pickup: { runDistance: 14_800 },
     });
   });
 
