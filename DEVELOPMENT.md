@@ -207,17 +207,18 @@ Do not invent or document asset tooling as implemented until an approved task ad
 
 ## 12. Deployment and packaging targets
 
-Current web deployment target:
+Current deployment and packaging targets:
 
-- GitHub Pages.
+- GitHub Pages; see [`docs/PWA_ANDROID.md`](docs/PWA_ANDROID.md#hosted-test-build) for the existing deployment path.
+- Capacitor Android test APKs and signed GitHub tester Releases; see [`docs/ANDROID_CAPACITOR.md`](docs/ANDROID_CAPACITOR.md#local-workflow) for local packaging and [`docs/ANDROID_DISTRIBUTION.md`](docs/ANDROID_DISTRIBUTION.md) for CI, signing and distribution.
 
 Possible later distribution/packaging work, only when promoted by the roadmap/product plan:
 
 - itch.io;
-- Android/iOS packaging (for example Capacitor evaluation);
+- iOS packaging and Android Play/AAB distribution;
 - Desktop/Steam wrapper evaluation;
 - gamepad/desktop UX;
-- PWA evaluation.
+- additional PWA capabilities such as offline support.
 
 Do not add Cloudflare/backend infrastructure without a concrete approved requirement.
 

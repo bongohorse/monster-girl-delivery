@@ -30,9 +30,7 @@ Do not edit copied web assets under `android/app/src/main/assets/public/`; `cap 
 
 ## CI boundary
 
-`Android CI` performs a locked Bun install, syncs the production Vite build into the committed Android project, verifies the MGD package/orientation/runtime markers, and runs Gradle unit-test compilation plus `assembleDebug`.
-
-#408 owns publishing the resulting APK as a downloadable/distributed artifact. #407 only proves that the shared web game can be packaged successfully.
+[Android distribution](ANDROID_DISTRIBUTION.md#canonical-build) owns the current Android CI build, downloadable test APK evidence, signing and GitHub tester Release paths. Inspect the linked workflows for exact build/runtime modes and triggers; local packaging does not imply public publication.
 
 ## Performance evidence
 

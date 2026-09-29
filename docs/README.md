@@ -75,6 +75,8 @@ ARCHITECTURE.md / DEVELOPMENT.md as required
 existing code + tests
 ```
 
+For APK/web test artifacts or explicitly assigned publications, use [mgd-build-release](../.agents/skills/mgd-build-release/SKILL.md) with the existing [Android distribution](ANDROID_DISTRIBUTION.md) and [Pages hosting](PWA_ANDROID.md#hosted-test-build) instructions.
+
 Jules-specific dispatch/review/environment rules live in [`JULES_WORKFLOW.md`](JULES_WORKFLOW.md). They supplement rather than replace `AGENTS.md`.
 
 Do not load the entire backlog/reference library as implementation requirements.
