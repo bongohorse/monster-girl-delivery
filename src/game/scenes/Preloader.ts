@@ -15,6 +15,7 @@ export class Preloader extends Scene {
 
   preload() {
     this.load.image('molten-spike-trial', 'assets/m6/molten-spike-trial.png');
+    this.load.image('red-monster-missile', 'assets/m6/red-monster-missile.png');
   }
 
   init() {
