@@ -49,6 +49,7 @@ Skills are **procedural guidance, not authorization or a new source of truth**. 
 | [`code-review`](.agents/skills/code-review/SKILL.md) | Reviewing a PR/branch, or before declaring a non-trivial code/config implementation complete. Review engineering standards separately from spec/runtime/evidence correctness; use independent/parallel reviewers when supported and useful. |
 | [`resolving-merge-conflicts`](.agents/skills/resolving-merge-conflicts/SKILL.md) | Any in-progress merge/rebase conflict. Resolve by tracing both sides to their intent and authoritative sources, then validate and finish the operation. |
 | [`research`](.agents/skills/research/SKILL.md) | The task depends on external/current technical facts, Phaser/platform/API behavior, source investigation, or reference-game evidence. Prefer primary sources and distinguish facts from inference. |
+| [`mgd-art`](.agents/skills/mgd-art/SKILL.md) | Creating or visually revising MGD characters, hazards, parcels, backgrounds, UI graphics or animation/gallery variants. Uses `docs/ART_DIRECTION.md`; unchanged image integration and gameplay/hitboxes belong to their own workflows. |
 | [`writing-for-agents`](.agents/skills/writing-for-agents/SKILL.md) | Creating/editing `AGENTS.md`, skills, worker prompts, automation prompts, reviewer instructions, or other documents primarily consumed by agents. Keep triggers sharp and canonical rules singular. |
 
 Common compositions:
