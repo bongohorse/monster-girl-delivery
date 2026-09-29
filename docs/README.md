@@ -75,6 +75,8 @@ ARCHITECTURE.md / DEVELOPMENT.md as required
 existing code + tests
 ```
 
+For criterion-level acceptance evidence on a concrete game change, use [mgd-acceptance](../.agents/skills/mgd-acceptance/SKILL.md). [TEST_QUALITY.md](TEST_QUALITY.md) owns evidence selection; DEVELOPMENT owns commands and the focused Issue/Director owns acceptance criteria and decisions.
+
 Jules-specific dispatch/review/environment rules live in [`JULES_WORKFLOW.md`](JULES_WORKFLOW.md). They supplement rather than replace `AGENTS.md`.
 
 Do not load the entire backlog/reference library as implementation requirements.
