@@ -3,6 +3,8 @@ import { PROTOTYPE_FLIGHT_TUNING_DEFAULTS } from '../../src/config/FlightTuningC
 import { PROTOTYPE_RUN_MOTION_DEFAULTS } from '../../src/config/RunMotionConfig';
 import { PROTOTYPE_PLACEHOLDER_HAZARD } from '../../src/hazards/PrototypeHazard';
 import {
+  calculateDeliveryBonus,
+  calculateDeliveryReward,
   calculatePrototypeRunScore,
   createPrototypeRunResultSnapshot,
 } from '../../src/systems/PrototypeRunResult';
@@ -37,6 +39,8 @@ describe('prototype run results', () => {
       score: 1_197,
       collectedCount: 0,
       collectedValue: 0,
+      deliveryCount: 0,
+      deliveryReward: 0,
       earnedReward: 0,
       grazeCount: 0,
     });
@@ -74,6 +78,8 @@ describe('prototype run results', () => {
       score: 1_197,
       collectedCount: 3,
       collectedValue: 42,
+      deliveryCount: 0,
+      deliveryReward: 0,
       earnedReward: 7,
       grazeCount: 4,
     });
@@ -86,6 +92,29 @@ describe('prototype run results', () => {
 
     expect(first.state.finalResult).toEqual(repeated.state.finalResult);
     expect(first.state.finalResult).not.toBe(repeated.state.finalResult);
+  });
+
+  it('pays escalating capped coin bonuses only for completed deliveries', () => {
+    expect([0, 1, 2, 3, 4, 5].map(calculateDeliveryBonus)).toEqual([100, 150, 225, 338, 400, 400]);
+    expect([0, 1, 2, 3, 5, 10].map(calculateDeliveryReward)).toEqual([
+      0, 100, 250, 475, 1_213, 3_213,
+    ]);
+    expect(
+      createPrototypeRunResultSnapshot(1_000, {
+        collectedCount: 42,
+        collectedValue: 42,
+        earnedReward: 42,
+        grazeCount: 0,
+        deliveryCount: 3,
+      }),
+    ).toMatchObject({
+      collectedValue: 42,
+      deliveryCount: 3,
+      deliveryReward: 475,
+      earnedReward: 517,
+      score: 1_000,
+    });
+    expect(() => calculateDeliveryReward(-1)).toThrow(RangeError);
   });
 
   it('does not create a result before run end and a restart has no previous-run result', () => {

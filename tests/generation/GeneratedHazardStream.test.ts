@@ -1,11 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 import { PROTOTYPE_FLIGHT_TUNING_DEFAULTS } from '../../src/config/FlightTuningConfig';
 import { PROTOTYPE_RUN_MOTION_DEFAULTS } from '../../src/config/RunMotionConfig';
+import { FIRST_DELIVERY_PROTECTED_INTERVALS } from '../../src/generation/FirstDeliveryRoute';
 import { PROTOTYPE_PATTERN_REACHABILITY_CONTEXT } from '../../src/generation/FlightReachability';
 import {
   advanceGeneratedHazardStream,
   createGeneratedHazardStream,
   PROTOTYPE_GENERATED_HAZARD_STREAM_CONFIG,
+  PROTOTYPE_LIVE_RUN_SEED,
   planGeneratedHazardMotion,
   resolveGeneratedHazardMotionRunDistance,
   resolveHazardSafeSpeedChange,
@@ -13,6 +15,7 @@ import {
 import { evaluateHazardApproachTiming } from '../../src/generation/HazardApproachTiming';
 import { createHazardPattern } from '../../src/generation/HazardPattern';
 import { PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG } from '../../src/generation/LiveEncounterPolicy';
+import { PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG } from '../../src/generation/M5LiveEncounterCatalog';
 import {
   PROTOTYPE_HAZARD_PATTERN_FIXTURES,
   PROTOTYPE_ZAPPER_PATTERN,
@@ -21,6 +24,73 @@ import { PROTOTYPE_PLAYER_COLLISION_EXTENTS } from '../../src/systems/HazardColl
 import { TEST_ENCOUNTER_PROFILE } from '../support/TestEncounterProfile';
 
 const LIVE_CONTEXT = Object.freeze({ catalog: PROTOTYPE_HAZARD_PATTERN_FIXTURES });
+
+describe('reserved delivery handoff', () => {
+  it.each([PROTOTYPE_LIVE_RUN_SEED, 'delivery-seed-a', 'delivery-seed-b'])(
+    'keeps the entire approach free of generated hazards for %s',
+    (seed) => {
+      const protectedInterval = { start: 1_050, end: 2_650 };
+      const context = {
+        catalog: PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG,
+        policy: PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG,
+        reachability: PROTOTYPE_PATTERN_REACHABILITY_CONTEXT,
+        protectedInterval,
+      };
+      let stream = createGeneratedHazardStream(seed, context, PROTOTYPE_RUN_MOTION_DEFAULTS);
+      let sawAfter = false;
+      for (let distance = 0; distance <= 3_600; distance += 100) {
+        stream = advanceGeneratedHazardStream(
+          stream,
+          distance,
+          context,
+          PROTOTYPE_RUN_MOTION_DEFAULTS,
+          distance === 0 ? 0 : 100 / PROTOTYPE_RUN_MOTION_DEFAULTS.baseScrollSpeed,
+        );
+        expect(
+          stream.spawns.some(
+            (spawn) =>
+              spawn.hitbox.left <= protectedInterval.end &&
+              spawn.hitbox.right >= protectedInterval.start,
+          ),
+        ).toBe(false);
+        sawAfter ||= stream.spawns.some((spawn) => spawn.hitbox.left > protectedInterval.end);
+      }
+      expect(sawAfter).toBe(true);
+    },
+  );
+
+  it('reserves the pickup and later handoff separately across repeat routes', () => {
+    const context = {
+      catalog: PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG,
+      policy: PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG,
+      reachability: PROTOTYPE_PATTERN_REACHABILITY_CONTEXT,
+      protectedIntervals: FIRST_DELIVERY_PROTECTED_INTERVALS,
+    };
+    for (const seed of [PROTOTYPE_LIVE_RUN_SEED, 'delivery-seed-a', 'delivery-seed-b']) {
+      let stream = createGeneratedHazardStream(seed, context, PROTOTYPE_RUN_MOTION_DEFAULTS);
+      for (let distance = 0; distance <= 20_200; distance += 100) {
+        stream = advanceGeneratedHazardStream(
+          stream,
+          distance,
+          context,
+          PROTOTYPE_RUN_MOTION_DEFAULTS,
+          distance === 0 ? 0 : 100 / PROTOTYPE_RUN_MOTION_DEFAULTS.baseScrollSpeed,
+        );
+        for (const routeIndex of [0, 1]) {
+          for (const interval of FIRST_DELIVERY_PROTECTED_INTERVALS) {
+            const start = interval.start + routeIndex * interval.repeatDistance;
+            const end = interval.end + routeIndex * interval.repeatDistance;
+            expect(
+              stream.spawns.some(
+                (spawn) => spawn.hitbox.left <= end && spawn.hitbox.right >= start,
+              ),
+            ).toBe(false);
+          }
+        }
+      }
+    }
+  });
+});
 
 const BLOCKED_PATTERN = createHazardPattern({
   id: 'blocked-stream-pattern',

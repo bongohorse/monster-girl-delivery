@@ -7,6 +7,7 @@ import {
   isPlayerCollidingWithHazardDuringStep,
   type LogicalHazard,
   type LogicalHazardCollisionInterval,
+  type LogicalHitbox,
   PROTOTYPE_PLAYER_COLLISION_EXTENTS,
   type PrototypeZapperCollisionWorkCounters,
 } from './HazardCollision';
@@ -197,18 +198,18 @@ const getFirstVerticalOverlapSeconds = (
   return null;
 };
 
-/** Returns the first contact boundary inside this step for immediate pickup and death ordering. */
-const getFirstCollectibleContactSeconds = (
+/** Shared continuous contact boundary for collectibles and parcel pickup/handoff. */
+export const getFirstPlayerContactSeconds = (
   initialDistance: number,
   scrollSpeed: number,
   trajectory: Readonly<VerticalFlightTrajectory>,
-  collectible: Readonly<LogicalCollectibleSpawnInstance>,
+  hitbox: Readonly<LogicalHitbox>,
   elapsedSeconds: number,
+  earliestSeconds = 0,
 ): number | null => {
-  const hitbox = createCollectibleHitbox(collectible).hitbox;
   const minimumDistance = hitbox.left - PROTOTYPE_PLAYER_COLLISION_EXTENTS.right;
   const maximumDistance = hitbox.right + PROTOTYPE_PLAYER_COLLISION_EXTENTS.left;
-  let horizontalStart = 0;
+  let horizontalStart = earliestSeconds;
   let horizontalEnd = elapsedSeconds;
 
   if (scrollSpeed === 0) {
@@ -218,7 +219,7 @@ const getFirstCollectibleContactSeconds = (
   } else {
     const firstSeconds = (minimumDistance - initialDistance) / scrollSpeed;
     const secondSeconds = (maximumDistance - initialDistance) / scrollSpeed;
-    horizontalStart = Math.max(0, Math.min(firstSeconds, secondSeconds));
+    horizontalStart = Math.max(earliestSeconds, Math.min(firstSeconds, secondSeconds));
     horizontalEnd = Math.min(elapsedSeconds, Math.max(firstSeconds, secondSeconds));
     if (horizontalEnd <= horizontalStart) {
       return null;
@@ -233,6 +234,22 @@ const getFirstCollectibleContactSeconds = (
     hitbox.bottom + PROTOTYPE_PLAYER_COLLISION_EXTENTS.top,
   );
 };
+
+/** Returns the first coin contact boundary inside this step for pickup/death ordering. */
+const getFirstCollectibleContactSeconds = (
+  initialDistance: number,
+  scrollSpeed: number,
+  trajectory: Readonly<VerticalFlightTrajectory>,
+  collectible: Readonly<LogicalCollectibleSpawnInstance>,
+  elapsedSeconds: number,
+): number | null =>
+  getFirstPlayerContactSeconds(
+    initialDistance,
+    scrollSpeed,
+    trajectory,
+    createCollectibleHitbox(collectible).hitbox,
+    elapsedSeconds,
+  );
 
 const hasLethalCollisionBy = (
   initialRunState: Readonly<RunMotionState>,

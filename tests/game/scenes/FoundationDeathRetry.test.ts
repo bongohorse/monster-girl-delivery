@@ -163,6 +163,46 @@ afterEach(() => {
 });
 
 describe('Foundation M5 death-to-retry flow', () => {
+  it('reveals the same earned delivery coins automatically or immediately on tap, then retries on a fresh tap', () => {
+    const { foundation, instructions, services } = createHarness();
+    const result = createPrototypeRunResultSnapshot(800, {
+      collectedCount: 2,
+      collectedValue: 2,
+      earnedReward: 2,
+      grazeCount: 0,
+      deliveryCount: 1,
+    });
+    Reflect.set(foundation, 'runState', {
+      phase: 'dead',
+      motion: { distance: 800 },
+      flight: { positionY: 195, velocityY: 0 },
+      finalResult: result,
+    } satisfies PrototypeRunState);
+    Reflect.set(foundation, 'deathRetryState', enterPrototypeFailState(result));
+
+    for (let frame = 0; frame < 11; frame++) foundation.update(0, 50);
+    expect(getDeathRetryState(foundation).phase).toBe('fail-state');
+    expect(instructions.setText).toHaveBeenLastCalledWith(
+      expect.stringContaining('Lieferungen 1/1 · Bonus +100 Coins'),
+    );
+    expect(instructions.setText).toHaveBeenLastCalledWith(expect.stringContaining('Coins 102'));
+    expect(getRunState(foundation).finalResult).toBe(result);
+
+    Reflect.set(foundation, 'deathRetryState', enterPrototypeFailState(result));
+    services.input.pressPointer(1, 'touch');
+    foundation.update(0, 0);
+    expect(getDeathRetryState(foundation).phase).toBe('retry-ready');
+    expect(instructions.setText).toHaveBeenLastCalledWith(
+      expect.stringContaining('Lieferungen 1/1 · Bonus +100 Coins'),
+    );
+    expect(getRunState(foundation).finalResult).toBe(result);
+
+    services.input.releasePointer(1);
+    services.input.pressPointer(2, 'touch');
+    foundation.update(0, 0);
+    expect(getRunState(foundation).phase).toBe('running');
+  });
+
   it('recognizes four fingers placed during the death aftermath and keeps them through retry readiness', () => {
     const { foundation, services } = createHarness();
     const access = new DiagnosticsAccess(null);
@@ -338,10 +378,10 @@ describe('Foundation M5 death-to-retry flow', () => {
     expect(instructions.setText).toHaveBeenLastCalledWith(
       expect.stringContaining('Delivery interrupted'),
     );
-    expect(instructions.setText).toHaveBeenLastCalledWith(expect.stringContaining('Score'));
+    expect(instructions.setText).toHaveBeenLastCalledWith(expect.stringContaining('Distanz'));
     expect(instructions.setText).toHaveBeenLastCalledWith(expect.stringContaining('Grazes'));
     expect(instructions.setText).toHaveBeenLastCalledWith(expect.stringContaining('Items'));
-    expect(instructions.setText).toHaveBeenLastCalledWith(expect.stringContaining('Reward'));
+    expect(instructions.setText).toHaveBeenLastCalledWith(expect.stringContaining('Coins'));
     expect(services.input.isThrustHeld()).toBe(false);
 
     services.input.pressPointer(4, 'touch');
