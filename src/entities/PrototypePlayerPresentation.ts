@@ -53,7 +53,7 @@ const drawPrototypePlayer = (graphics: GameObjects.Graphics): void => {
 };
 
 /**
- * Temporary M1 player presentation built only from Phaser primitives.
+ * Provisional player artwork with a Phaser-primitives fallback.
  * Scene orchestration owns gameplay state and drives this object's position.
  */
 export class PrototypePlayerPresentation {
@@ -70,7 +70,7 @@ export class PrototypePlayerPresentation {
     x = 0,
     y = 0,
   ) {
-    // This branch loads a concept for an in-run Art Gate check. It is not production art.
+    // Use the accepted provisional poses until final player artwork replaces them.
     if (scene.textures?.exists(ART_GATE_POSE_A_TEXTURE_KEY)) {
       this.image = scene.add.image(x, y, ART_GATE_POSE_A_TEXTURE_KEY);
       return;

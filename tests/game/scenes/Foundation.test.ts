@@ -9,6 +9,7 @@ import {
 } from '../../../src/game/PrototypeFlightLayout';
 import { Foundation } from '../../../src/game/scenes/Foundation';
 import { createEncounterExitStateEnvelope } from '../../../src/generation/EncounterTransitionValidator';
+import { createFirstDeliveryRoute } from '../../../src/generation/FirstDeliveryRoute';
 import { PROTOTYPE_PATTERN_REACHABILITY_CONTEXT } from '../../../src/generation/FlightReachability';
 import {
   advanceGeneratedHazardStream,
@@ -191,6 +192,60 @@ afterEach(() => {
 });
 
 describe('Foundation scene gameplay orchestration', () => {
+  it('picks up the planned parcel through the live simulation and presents the active route', () => {
+    const { foundation, viewportService } = createFoundationHarness();
+    const route = createFirstDeliveryRoute(
+      createPrototypeFlightBounds(viewportService.getSnapshot()),
+    );
+    const presentation = { render: vi.fn(), destroy: vi.fn() };
+    Reflect.set(foundation, 'deliveryRoute', route);
+    Reflect.set(foundation, 'firstDeliveryPresentation', presentation);
+    Reflect.set(foundation, 'directorAutoHazardsEnabled', false);
+    Reflect.set(foundation, 'runState', {
+      phase: 'running',
+      motion: { distance: route.pickup.runDistance - 35, simulationSeconds: 0 },
+      flight: { positionY: route.pickup.y, velocityY: 0 },
+    });
+
+    foundation.update(100, 100);
+
+    expect(getRunState(foundation).delivery?.phase).toBe('carrying');
+    expect(presentation.render).toHaveBeenCalledWith(
+      route,
+      expect.objectContaining({ phase: 'carrying' }),
+      expect.any(Number),
+      expect.any(Number),
+      expect.any(Number),
+      expect.any(Object),
+    );
+  });
+
+  it('plans the next spaced parcel after a handoff while retaining the completed count', () => {
+    const { foundation, viewportService } = createFoundationHarness();
+    const route = createFirstDeliveryRoute(
+      createPrototypeFlightBounds(viewportService.getSnapshot()),
+    );
+    Reflect.set(foundation, 'deliveryRoute', route);
+    Reflect.set(foundation, 'directorAutoHazardsEnabled', false);
+    Reflect.set(foundation, 'runState', {
+      phase: 'running',
+      motion: { distance: route.recipient.runDistance - 20, simulationSeconds: 0 },
+      flight: { positionY: route.recipient.y, velocityY: 0 },
+      delivery: { phase: 'carrying', routeId: route.id, completedCount: 0 },
+    });
+
+    foundation.update(100, 100);
+
+    expect(getRunState(foundation).delivery).toMatchObject({
+      phase: 'delivered',
+      completedCount: 1,
+    });
+    expect(Reflect.get(foundation, 'deliveryRoute')).toMatchObject({
+      id: 'delivery-2',
+      pickup: { runDistance: 14_800 },
+    });
+  });
+
   it('keeps a no-input MEM capture active across equivalent snapshots and cancels on thrust', () => {
     const { foundation, services, viewportService } = createFoundationHarness();
     const sampler = new MemoryEvidenceSampler(() => null);
@@ -574,7 +629,7 @@ describe('Foundation scene gameplay orchestration', () => {
     expect(instructions.setText).toHaveBeenCalledExactlyOnceWith(
       expect.stringContaining('Delivery interrupted'),
     );
-    expect(instructions.setText).toHaveBeenLastCalledWith(expect.stringContaining('Score'));
+    expect(instructions.setText).toHaveBeenLastCalledWith(expect.stringContaining('Distanz'));
 
     for (let frame = 0; frame < 5; frame += 1) {
       foundation.update(0, 50);

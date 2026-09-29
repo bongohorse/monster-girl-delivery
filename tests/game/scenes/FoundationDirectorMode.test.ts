@@ -94,6 +94,13 @@ vi.mock('../../../src/entities/GeneratedCollectiblePresentation', () => ({
   },
 }));
 
+vi.mock('../../../src/entities/FirstDeliveryPresentation', () => ({
+  FirstDeliveryPresentation: class {
+    destroy() {}
+    render() {}
+  },
+}));
+
 vi.mock('../../../src/entities/GeneratedHazardPresentation', () => ({
   GeneratedHazardPresentation: class {
     destroy() {}
@@ -173,6 +180,8 @@ interface DirectorTestControls {
   setGodModeEnabled?: (enabled: boolean) => void;
   startNormalPerformancePreset?: () => void;
   startZapperPerformancePreset?: () => void;
+  spawnMissile?: () => void;
+  spawnSpike?: () => void;
   spawnZapper?: () => void;
   spawnZapperGroup?: () => void;
 }
@@ -199,6 +208,52 @@ afterEach(() => {
 });
 
 describe('Foundation Director mode boundary', () => {
+  it('spawns a real Missile from the Director HUD independently of the AUTO catalog', () => {
+    const foundation = new Foundation(createAppServices(), true);
+    foundation.create();
+    const controls = directorPerformanceHudConstructed.mock.calls[0]?.[3] as
+      | DirectorTestControls
+      | undefined;
+
+    expect(() => controls?.spawnMissile?.()).not.toThrow();
+    expect(Reflect.get(foundation, 'directorManualHazards')).toMatchObject([
+      { behavior: { kind: 'target-lock-strike', missile: { launchSide: 'right' } } },
+    ]);
+  });
+
+  it('spawns the selected static Spike through the Director HUD independently of AUTO', () => {
+    const foundation = new Foundation(createAppServices(), true);
+    foundation.create();
+    const controls = directorPerformanceHudConstructed.mock.calls[0]?.[3] as
+      | DirectorTestControls
+      | undefined;
+
+    expect(controls?.spawnSpike).toBeTypeOf('function');
+    controls?.spawnSpike?.();
+    const hazards = Reflect.get(foundation, 'directorManualHazards') as ReadonlyArray<{
+      behavior: { kind: string };
+      hitbox: { left: number };
+      type: string;
+    }>;
+    expect(hazards).toHaveLength(1);
+    expect(hazards[0]).toMatchObject({
+      behavior: { kind: 'static' },
+      type: 'molten-spike',
+    });
+    const viewport = (
+      Reflect.get(foundation, 'viewportService') as {
+        getSnapshot: () => ReturnType<
+          typeof import('../../../src/core/ViewportService').ViewportService.prototype.getSnapshot
+        >;
+      }
+    ).getSnapshot();
+    const distance = (Reflect.get(foundation, 'runState') as { motion: { distance: number } })
+      .motion.distance;
+    expect(
+      getPrototypePlayerX(viewport) + (hazards[0]?.hitbox.left ?? 0) - distance,
+    ).toBeGreaterThan(viewport.width);
+  });
+
   it('does not construct Director tooling when Director mode is disabled', () => {
     const services = createAppServices();
     const getLifecycleSnapshot = vi.spyOn(services.lifecycle, 'getSnapshot');
@@ -260,6 +315,7 @@ describe('Foundation Director mode boundary', () => {
         startZapperPerformancePreset: expect.any(Function),
         setWireframesEnabled: expect.any(Function),
         spawnZapper: expect.any(Function),
+        spawnSpike: expect.any(Function),
         spawnZapperGroup: expect.any(Function),
       }),
       expect.objectContaining({

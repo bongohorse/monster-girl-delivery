@@ -22,6 +22,7 @@ import {
   serializePerformanceEvidenceReport,
 } from '../../devtools/PerformanceEvidence';
 import type { PerformanceSnapshot } from '../../devtools/PerformanceSampler';
+import { FirstDeliveryPresentation } from '../../entities/FirstDeliveryPresentation';
 import { GeneratedCollectiblePresentation } from '../../entities/GeneratedCollectiblePresentation';
 import { GeneratedHazardPresentation } from '../../entities/GeneratedHazardPresentation';
 import { PrototypePlayerPresentation } from '../../entities/PrototypePlayerPresentation';
@@ -34,6 +35,10 @@ import {
   DIRECTOR_ZAPPER_VARIANTS,
 } from '../../generation/DirectorZapperCatalog';
 import type { EncounterStreamObservation } from '../../generation/EncounterStreamObservation';
+import {
+  createFirstDeliveryRoute,
+  FIRST_DELIVERY_PROTECTED_INTERVALS,
+} from '../../generation/FirstDeliveryRoute';
 import { PROTOTYPE_PATTERN_REACHABILITY_CONTEXT } from '../../generation/FlightReachability';
 import {
   getLogicalCollectibleSpawnIdentity,
@@ -51,10 +56,12 @@ import {
 } from '../../generation/GeneratedHazardStream';
 import type { HazardPattern } from '../../generation/HazardPattern';
 import { PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG } from '../../generation/LiveEncounterPolicy';
+import { M6_MOLTEN_SPIKE_TRIAL } from '../../generation/M6MoltenSpikeTrial';
 import {
   getLogicalHazardSpawnIdentity,
   type LogicalHazardSpawnInstance,
 } from '../../generation/PatternSpawnScheduler';
+import { PROTOTYPE_MISSILE_PATTERN } from '../../generation/PrototypeHazardPatternFixtures';
 import {
   createPrototypeHazardVerticalDomain,
   type PrototypeHazardVerticalDomain,
@@ -81,6 +88,7 @@ import {
   PROTOTYPE_PLAYER_COLLISION_EXTENTS,
   type PrototypeZapperCollisionWorkCounters,
 } from '../../systems/HazardCollision';
+import type { ParcelDeliveryRoute } from '../../systems/ParcelDelivery';
 import {
   createPrototypeBroadphaseWorkCounters,
   type PrototypeBroadphaseWorkCounters,
@@ -90,10 +98,14 @@ import {
   createPrototypeDeathRetryState,
   enterPrototypeFailState,
   getPrototypeFailStateProgress,
+  PROTOTYPE_FAIL_STATE_DURATION_SECONDS,
   type PrototypeDeathRetryState,
   stepPrototypeDeathRetryState,
 } from '../../systems/PrototypeDeathRetryFlow';
-import type { PrototypeRunResultSnapshot } from '../../systems/PrototypeRunResult';
+import {
+  calculateDeliveryReward,
+  type PrototypeRunResultSnapshot,
+} from '../../systems/PrototypeRunResult';
 import {
   createPrototypeRunState,
   type PrototypeRunState,
@@ -112,23 +124,37 @@ import {
 } from '../PrototypeFlightLayout';
 import { getLogicalViewportFromBacking } from '../RenderResolution';
 
-const RUNNING_INSTRUCTIONS =
-  'M5 in progress — hazards, Graze + collectibles\nHold touch, mouse, or Space to thrust.';
+const RUNNING_INSTRUCTIONS = '';
 const RETRY_READY_INSTRUCTIONS = 'Tap, click, or press Space to retry.';
 const DIRECTOR_NORMAL_PERFORMANCE_PRESET_ID = 'normal-run-v1';
 const DIRECTOR_MEMORY_EVIDENCE_PRESET_ID = 'allocation-long-run-v1';
 const DIRECTOR_ZAPPER_OFFSCREEN_PADDING = 24;
 const DIRECTOR_LAST_PERFORMANCE_EVIDENCE_STORAGE_KEY = 'mgd:last-performance-evidence';
 const DIRECTOR_LAST_MEMORY_EVIDENCE_STORAGE_KEY = 'mgd:last-memory-evidence';
+const DELIVERY_RESULT_REVEAL_SECONDS = 0.5;
+const revealedDeliveryCount = (
+  result: Readonly<PrototypeRunResultSnapshot>,
+  aftermath: Readonly<PrototypeDeathRetryState>,
+): number => {
+  if (aftermath.phase === 'retry-ready') return result.deliveryCount;
+  const progress = Math.min(1, aftermath.elapsedSeconds / DELIVERY_RESULT_REVEAL_SECONDS);
+  return Math.floor(result.deliveryCount * progress * progress);
+};
 const formatDeadInstructions = (
   result: Readonly<PrototypeRunResultSnapshot>,
   retryReady: boolean,
+  revealedDeliveries: number,
 ): string =>
   [
     'Delivery interrupted',
-    `Distance ${result.finalDistance.toFixed(1)} · Score ${result.score}`,
+    `Distanz ${result.finalDistance.toFixed(1)} m`,
     `Grazes ${result.grazeCount}`,
-    `Items ${result.collectedCount} · Value ${result.collectedValue} · Reward ${result.earnedReward}`,
+    `Items ${result.collectedCount} · Value ${result.collectedValue} · Coins ${result.earnedReward - result.deliveryReward + calculateDeliveryReward(revealedDeliveries)}`,
+    ...(result.deliveryCount > 0
+      ? [
+          `Lieferungen ${revealedDeliveries}/${result.deliveryCount} · Bonus +${calculateDeliveryReward(revealedDeliveries)} Coins`,
+        ]
+      : []),
     retryReady ? RETRY_READY_INSTRUCTIONS : 'Parcel recovery...',
   ].join('\n');
 const selectNewRunSeed = (currentSeed: number | undefined): number => {
@@ -152,6 +178,7 @@ const createLiveHazardStreamContext = (
     catalog: verticalDomain.catalog,
     constraints: verticalDomain.constraints,
     observeEncounter,
+    protectedIntervals: FIRST_DELIVERY_PROTECTED_INTERVALS,
     policy: PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG,
     reachability: Object.freeze({
       flightState: Object.freeze({
@@ -164,12 +191,6 @@ const createLiveHazardStreamContext = (
       playerExtents: PROTOTYPE_PATTERN_REACHABILITY_CONTEXT.playerExtents,
     }),
   });
-
-type DirectorHazardKind = 'missile';
-
-const DIRECTOR_HAZARD_PATTERN_IDS: Readonly<Record<DirectorHazardKind, string>> = Object.freeze({
-  missile: 'prototype-target-lock-strike',
-});
 
 const identityCenterMapper = (centerY: number): number => centerY;
 
@@ -236,6 +257,9 @@ export class Foundation extends Scene {
   private collectibleScheduledPatternCount = -1;
   private nextCollectiblePruneDistance: number | null = null;
   private generatedCollectiblePresentation?: GeneratedCollectiblePresentation;
+  private firstDeliveryPresentation?: FirstDeliveryPresentation;
+  private deliveryRoute?: Readonly<ParcelDeliveryRoute>;
+  private deliveryRouteIndex = 0;
   private generatedHazardPresentation?: GeneratedHazardPresentation;
   private hazardStream?: Readonly<GeneratedHazardStreamState>;
   private hazardVerticalDomain = createPrototypeHazardVerticalDomain(createPrototypeFlightBounds());
@@ -327,6 +351,8 @@ export class Foundation extends Scene {
     const bounds = this.getCachedFlightBounds(viewport);
     this.hazardVerticalDomain = createPrototypeHazardVerticalDomain(bounds);
     this.runState = createPrototypeRunState(bounds);
+    this.deliveryRouteIndex = 0;
+    this.deliveryRoute = createFirstDeliveryRoute(bounds);
     this.hazardStream = createGeneratedHazardStream(
       PROTOTYPE_LIVE_RUN_SEED,
       this.getCachedLiveHazardStreamContext(this.services.flightTuning.getSnapshot()),
@@ -354,6 +380,7 @@ export class Foundation extends Scene {
     this.services.input.releaseAll();
     this.scrollingWorldPresentation = new PrototypeScrollingWorldPresentation(this);
     this.generatedCollectiblePresentation = new GeneratedCollectiblePresentation(this);
+    this.firstDeliveryPresentation = new FirstDeliveryPresentation(this);
     this.generatedHazardPresentation = new GeneratedHazardPresentation(this);
     const initialProjection = getPrototypeVerticalProjection(viewport);
     this.playerPresentation = new PrototypePlayerPresentation(
@@ -415,21 +442,14 @@ export class Foundation extends Scene {
         this.clearDirectorMemoryEvidenceBenchmark();
       }
       const previousRetryPhase = this.deathRetryState.phase;
+      const result = this.deathRetryState.result;
+      const previousRevealed = result ? revealedDeliveryCount(result, this.deathRetryState) : 0;
       this.deathRetryState = stepPrototypeDeathRetryState(
         this.deathRetryState,
         simulationDeltaSeconds,
       );
 
-      if (
-        previousRetryPhase !== 'retry-ready' &&
-        this.deathRetryState.phase === 'retry-ready' &&
-        this.deathRetryState.result
-      ) {
-        this.instructions?.setText(formatDeadInstructions(this.deathRetryState.result, true));
-      }
-
       const lifecyclePaused = this.services.lifecycle.isPaused();
-      const retryReady = previousRetryPhase === 'retry-ready' && !lifecyclePaused;
       this.diagnosticsAccess?.setEligible(!lifecyclePaused);
       const diagnosticsToggle =
         this.deathRetryState.phase === 'retry-ready'
@@ -441,6 +461,28 @@ export class Foundation extends Scene {
       this.renderDiagnosticsGesture();
 
       const retrySource = this.services.input.consumePrimaryActionPressSource();
+      if (
+        retrySource !== null &&
+        previousRetryPhase === 'fail-state' &&
+        result &&
+        result.deliveryCount > 0 &&
+        !lifecyclePaused &&
+        !this.diagnosticsAccess?.isGestureClaimed()
+      ) {
+        this.deathRetryState = stepPrototypeDeathRetryState(
+          this.deathRetryState,
+          PROTOTYPE_FAIL_STATE_DURATION_SECONDS,
+        );
+      }
+      if (result) {
+        const shown = revealedDeliveryCount(result, this.deathRetryState);
+        if (shown !== previousRevealed || previousRetryPhase !== this.deathRetryState.phase) {
+          this.instructions?.setText(
+            formatDeadInstructions(result, this.deathRetryState.phase === 'retry-ready', shown),
+          );
+        }
+      }
+      const retryReady = previousRetryPhase === 'retry-ready' && !lifecyclePaused;
       if (retryReady && retrySource !== null) {
         if (retrySource === 'touch' && this.diagnosticsAccess) {
           if (this.diagnosticsAccess.isGestureClaimed()) {
@@ -561,6 +603,7 @@ export class Foundation extends Scene {
         );
         const result = stepPrototypeRun(this.runState, motionSegment.durationSeconds, {
           collectibles: this.collectibleSpawns,
+          deliveryRoute: this.deliveryRoute,
           flightBounds,
           flightTuning: activeFlightTuning,
           hazards: getCollisionHazardsForTimedZapperSimulation(
@@ -581,6 +624,15 @@ export class Foundation extends Scene {
         }
 
         if (this.runState.phase === 'running') {
+          if (
+            this.deliveryRoute &&
+            this.runState.delivery?.routeId === this.deliveryRoute.id &&
+            (this.runState.delivery.phase === 'delivered' ||
+              this.runState.delivery.phase === 'missed')
+          ) {
+            this.deliveryRouteIndex += 1;
+            this.deliveryRoute = createFirstDeliveryRoute(flightBounds, this.deliveryRouteIndex);
+          }
           this.runState = {
             ...this.runState,
             motion: {
@@ -862,7 +914,8 @@ export class Foundation extends Scene {
         setWireframesEnabled: this.handleDirectorWireframes,
         setGodModeEnabled: this.handleDirectorGodMode,
         setAutoHazardsEnabled: this.handleDirectorAutoHazards,
-        spawnMissile: () => this.spawnDirectorHazard('missile'),
+        spawnMissile: this.spawnDirectorMissile,
+        spawnSpike: this.spawnDirectorSpike,
         spawnZapper: this.spawnDirectorZapperVariant,
         spawnZapperGroup: this.spawnDirectorZapperGroup,
         spawnLaser: this.spawnDirectorLaserVariant,
@@ -1416,16 +1469,29 @@ export class Foundation extends Scene {
       (this.directorZapperGroupIndex + 1) % DIRECTOR_ZAPPER_GROUPS.length;
   };
 
-  private spawnDirectorHazard(kind: DirectorHazardKind): void {
-    const patternId = DIRECTOR_HAZARD_PATTERN_IDS[kind];
-    const pattern = this.hazardVerticalDomain.catalog.find(
-      (candidate) => candidate.id === patternId,
-    );
+  private readonly spawnDirectorMissile = (): void => {
+    if (!this.viewportService || this.runState.phase !== 'running') {
+      return;
+    }
+    const bounds = this.getCachedFlightBounds(this.viewportService.getSnapshot());
+    const pattern = createPrototypeHazardVerticalDomain(bounds, [PROTOTYPE_MISSILE_PATTERN])
+      .catalog[0];
     if (!pattern) {
-      throw new TypeError(`Director hazard pattern is unavailable: ${patternId}`);
+      throw new Error('Director Missile pattern is missing.');
     }
     this.spawnDirectorPattern(pattern, false);
-  }
+  };
+
+  private readonly spawnDirectorSpike = (): void => {
+    if (!this.viewportService || this.runState.phase !== 'running') {
+      return;
+    }
+    this.spawnDirectorPattern(
+      M6_MOLTEN_SPIKE_TRIAL,
+      true,
+      this.hazardVerticalDomain.mapAuthoredCenterY,
+    );
+  };
 
   private spawnDirectorPattern(
     pattern: Readonly<HazardPattern>,
@@ -1641,7 +1707,7 @@ export class Foundation extends Scene {
     this.destroyDiagnosticsGestureOverlay();
     this.diagnosticsTouchRetryPending = false;
     this.services.input.releaseAll();
-    this.instructions?.setText(formatDeadInstructions(finalResult, false));
+    this.instructions?.setText(formatDeadInstructions(finalResult, false, 0));
   }
 
   private restartRun(
@@ -1663,6 +1729,8 @@ export class Foundation extends Scene {
     const flightBounds = this.getCachedFlightBounds(viewport);
     this.runState = createPrototypeRunState(flightBounds);
     this.playerPresentation?.resetFlightPose();
+    this.deliveryRouteIndex = 0;
+    this.deliveryRoute = createFirstDeliveryRoute(flightBounds);
     this.deathRetryState = createPrototypeDeathRetryState();
     this.hazardStream = createGeneratedHazardStream(
       seed,
@@ -1823,6 +1891,16 @@ export class Foundation extends Scene {
       playerScreenX,
       projection,
     );
+    if (this.deliveryRoute) {
+      this.firstDeliveryPresentation?.render(
+        this.deliveryRoute,
+        this.runState.delivery,
+        this.runState.motion.distance,
+        playerScreenX,
+        viewport.width,
+        projection,
+      );
+    }
     this.playerPresentation?.setPosition(
       playerScreenX,
       projectLogicalYToScreen(this.runState.flight.positionY, projection),
@@ -1834,6 +1912,8 @@ export class Foundation extends Scene {
     this.directorDebugOverlay?.render({
       collectibles: this.collectibleSpawns,
       consumedCollectibleIds: this.runState.collectibles?.consumedCollectibleIds ?? [],
+      delivery: this.runState.delivery,
+      deliveryRoute: this.deliveryRoute,
       flight: this.runState.flight,
       hazards: activeHazards,
       motion: this.runState.motion,
@@ -1866,6 +1946,9 @@ export class Foundation extends Scene {
     this.scrollingWorldPresentation = undefined;
     this.generatedCollectiblePresentation?.destroy();
     this.generatedCollectiblePresentation = undefined;
+    this.firstDeliveryPresentation?.destroy();
+    this.firstDeliveryPresentation = undefined;
+    this.deliveryRoute = undefined;
     this.generatedHazardPresentation?.destroy();
     this.generatedHazardPresentation = undefined;
     this.collectibleSpawns = Object.freeze([]);

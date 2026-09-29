@@ -74,6 +74,49 @@ const createZapperSpawn = () =>
   createPatternSpawn([PROTOTYPE_ZAPPER_PATTERN], 'zapper-debug-overlay');
 
 describe('DirectorDebugOverlay geometry', () => {
+  it('shows the real parcel pickup and handoff footprints only while they are interactive', () => {
+    const route = {
+      id: 'debug-delivery',
+      pickup: { runDistance: 300, y: 100 },
+      recipient: { runDistance: 550, y: 130 },
+    };
+    const available = createDirectorDebugGeometry({ ...createFrame(), deliveryRoute: route });
+    expect(
+      available.rectangles.find((rectangle) => rectangle.kind === 'parcel-pickup'),
+    ).toMatchObject({
+      color: DIRECTOR_DEBUG_COLORS.parcelPickup,
+      hitbox: { left: 286, right: 314, top: 496, bottom: 524 },
+    });
+    expect(available.rectangles.some((rectangle) => rectangle.kind === 'parcel-handoff')).toBe(
+      false,
+    );
+
+    const carrying = createDirectorDebugGeometry({
+      ...createFrame(),
+      deliveryRoute: route,
+      delivery: { phase: 'carrying', completedCount: 0, routeId: route.id },
+      motion: { distance: 400 },
+    });
+    expect(
+      carrying.rectangles.find((rectangle) => rectangle.kind === 'parcel-handoff'),
+    ).toMatchObject({
+      color: DIRECTOR_DEBUG_COLORS.parcelHandoff,
+      hitbox: { left: 198, right: 302, top: 468, bottom: 612 },
+    });
+    expect(carrying.rectangles.some((rectangle) => rectangle.kind === 'parcel-pickup')).toBe(false);
+
+    const delivered = createDirectorDebugGeometry({
+      ...createFrame(),
+      deliveryRoute: route,
+      delivery: { phase: 'delivered', completedCount: 1, routeId: route.id },
+    });
+    expect(
+      delivered.rectangles.some(
+        (rectangle) => rectangle.kind === 'parcel-pickup' || rectangle.kind === 'parcel-handoff',
+      ),
+    ).toBe(false);
+  });
+
   it('projects authoritative player, Graze, hazard, collectible, and gameplay boundaries', () => {
     const geometry = createDirectorDebugGeometry(createFrame());
     const byKind = new Map(geometry.rectangles.map((rectangle) => [rectangle.kind, rectangle]));

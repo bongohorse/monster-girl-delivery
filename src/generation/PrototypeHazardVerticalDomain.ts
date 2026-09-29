@@ -1,7 +1,7 @@
 import { PROTOTYPE_LOGICAL_FLIGHT_BOUNDS } from '../game/PrototypeFlightLayout';
 import type { VerticalFlightBounds } from '../systems/VerticalFlightSimulation';
 import { createHazardPattern, type HazardPattern } from './HazardPattern';
-import { PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG } from './M5LiveEncounterCatalog';
+import { PROTOTYPE_M6_TRIAL_HAZARD_PATTERN_CATALOG } from './M6MoltenSpikeTrial';
 import {
   type PatternValidationConstraints,
   PROTOTYPE_PATTERN_VALIDATION_CONSTRAINTS,
@@ -117,7 +117,7 @@ const adaptPattern = (
  */
 export const createPrototypeHazardVerticalDomain = (
   bounds: Readonly<VerticalFlightBounds>,
-  catalog: ReadonlyArray<Readonly<HazardPattern>> = PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG,
+  catalog: ReadonlyArray<Readonly<HazardPattern>> = PROTOTYPE_M6_TRIAL_HAZARD_PATTERN_CATALOG,
 ): Readonly<PrototypeHazardVerticalDomain> => {
   assertValidFlightBounds(bounds);
   const constraints = createDomainConstraints(bounds);

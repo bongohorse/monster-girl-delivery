@@ -2,6 +2,12 @@ import type { FlightTuningValues } from '../config/FlightTuningConfig';
 import type { RunMotionValues } from '../config/RunMotionConfig';
 import type { LogicalCollectibleSpawnInstance } from '../generation/GeneratedCollectibles';
 import type { LogicalHazard, PrototypeZapperCollisionWorkCounters } from './HazardCollision';
+import {
+  createParcelDeliveryRunState,
+  type ParcelDeliveryRoute,
+  type ParcelDeliveryRunState,
+  stepParcelDelivery,
+} from './ParcelDelivery';
 import type { PrototypeBroadphaseWorkCounters } from './PrototypeBroadphaseWork';
 import {
   EMPTY_PROTOTYPE_COLLECTIBLE_RUN_STATE,
@@ -32,6 +38,7 @@ export type PrototypeRunPhase = 'running' | 'dead';
 
 export interface PrototypeRunState {
   collectibles?: Readonly<PrototypeCollectibleRunState>;
+  delivery?: Readonly<ParcelDeliveryRunState>;
   flight: VerticalFlightState;
   motion: RunMotionState;
   phase: PrototypeRunPhase;
@@ -42,6 +49,8 @@ export interface PrototypeRunState {
 export interface PrototypeRunStepContext {
   /** Generated collectible stream ordered by nondecreasing runDistance. */
   collectibles?: ReadonlyArray<Readonly<LogicalCollectibleSpawnInstance>>;
+  /** Planned route only: the live scheduler must guarantee a reachable, clear approach. */
+  deliveryRoute?: Readonly<ParcelDeliveryRoute>;
   flightBounds: Readonly<VerticalFlightBounds>;
   flightTuning: Readonly<FlightTuningValues>;
   hazards: ReadonlyArray<Readonly<LogicalHazard>>;
@@ -146,6 +155,17 @@ export const stepPrototypeRun = (
     collectibleResult.pendingCollectibleIds.length > 0
       ? collectibleResult
       : undefined;
+  const delivery =
+    context.deliveryRoute && !grazeResult.lethalCollision
+      ? stepParcelDelivery(
+          state.delivery ?? createParcelDeliveryRunState(),
+          context.deliveryRoute,
+          state.motion,
+          flightTrajectory,
+          elapsedSeconds,
+          context.runMotionTuning,
+        )
+      : state.delivery;
 
   if (!grazeResult.lethalCollision) {
     return {
@@ -156,6 +176,7 @@ export const stepPrototypeRun = (
         flight,
         ...(graze ? { graze } : {}),
         ...(collectibles ? { collectibles } : {}),
+        ...(delivery ? { delivery } : {}),
       },
     };
   }
@@ -166,6 +187,7 @@ export const stepPrototypeRun = (
     collectedValue: collectibles?.collectedValue ?? suppliedTotals.collectedValue,
     earnedReward: collectibles?.earnedReward ?? suppliedTotals.earnedReward,
     grazeCount: graze?.count ?? suppliedTotals.grazeCount,
+    deliveryCount: delivery?.completedCount ?? suppliedTotals.deliveryCount ?? 0,
   };
 
   return {
@@ -176,6 +198,7 @@ export const stepPrototypeRun = (
       flight,
       ...(graze ? { graze } : {}),
       ...(collectibles ? { collectibles } : {}),
+      ...(delivery ? { delivery } : {}),
       finalResult: createPrototypeRunResultSnapshot(motion.distance, finalTotals),
     },
   };

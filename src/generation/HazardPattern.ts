@@ -10,7 +10,7 @@ import {
 import type { LogicalHitbox } from '../systems/HazardCollision';
 import { createEncounterProfile, type EncounterProfile } from './EncounterProfile';
 
-export type HazardPatternEntryType = 'placeholder-barrier';
+export type HazardPatternEntryType = 'placeholder-barrier' | 'molten-spike';
 
 export interface HazardPatternEntry {
   readonly behavior: Readonly<HazardBehavior>;
@@ -178,8 +178,11 @@ export const createHazardPattern = (
     }
     entryIds.add(entry.id);
 
-    if (entry.type !== 'placeholder-barrier') {
+    if (entry.type !== 'placeholder-barrier' && entry.type !== 'molten-spike') {
       throw new TypeError(`Unsupported pattern entry type: ${entry.type}`);
+    }
+    if (entry.type === 'molten-spike' && entry.behavior?.kind !== 'static') {
+      throw new TypeError('Molten spike trial requires static geometric hazard behavior.');
     }
 
     assertValidPatternHitbox(entry.hitbox, definition.runLength);
