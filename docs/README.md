@@ -75,6 +75,8 @@ ARCHITECTURE.md / DEVELOPMENT.md as required
 existing code + tests
 ```
 
+For image import, export inspection or runtime image integration, use [mgd-asset-integration](../.agents/skills/mgd-asset-integration/SKILL.md). The shared technical workflow is owned by [Issue #494](https://github.com/bongohorse/monster-girl-delivery/issues/494); check its actual implementation before treating proposed commands as available. Current asset commands and architecture remain in DEVELOPMENT and ARCHITECTURE.
+
 Jules-specific dispatch/review/environment rules live in [`JULES_WORKFLOW.md`](JULES_WORKFLOW.md). They supplement rather than replace `AGENTS.md`.
 
 Do not load the entire backlog/reference library as implementation requirements.
