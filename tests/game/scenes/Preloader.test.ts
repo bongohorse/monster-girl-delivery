@@ -97,12 +97,19 @@ const getHandler = (preloader: Preloader, name: string): ((...args: unknown[]) =
 };
 
 describe('Preloader scene responsive layout', () => {
-  it('preloads the same spike texture used by the live hazard presentation', () => {
+  it('preloads the live spike and Missile textures', () => {
     const { loadImage, preloader } = createPreloaderHarness();
     preloader.preload();
-    expect(loadImage).toHaveBeenCalledExactlyOnceWith(
+    expect(loadImage).toHaveBeenCalledTimes(2);
+    expect(loadImage).toHaveBeenNthCalledWith(
+      1,
       'molten-spike-trial',
       'assets/m6/molten-spike-trial.png',
+    );
+    expect(loadImage).toHaveBeenNthCalledWith(
+      2,
+      'red-monster-missile',
+      'assets/m6/red-monster-missile.png',
     );
   });
   it('creates the loading presentation and registers one listener per event', () => {
