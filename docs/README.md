@@ -75,6 +75,8 @@ ARCHITECTURE.md / DEVELOPMENT.md as required
 existing code + tests
 ```
 
+For HUD, controls, results or Director interface changes, use [mgd-ui](../.agents/skills/mgd-ui/SKILL.md). It applies existing input/layout/state boundaries and delegates game rules and artwork to their owning workflows; [TEST_QUALITY.md](TEST_QUALITY.md) governs evidence selection.
+
 Jules-specific dispatch/review/environment rules live in [`JULES_WORKFLOW.md`](JULES_WORKFLOW.md). They supplement rather than replace `AGENTS.md`.
 
 Do not load the entire backlog/reference library as implementation requirements.
