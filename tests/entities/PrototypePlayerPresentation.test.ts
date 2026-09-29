@@ -1,6 +1,7 @@
 import type { Scene } from 'phaser';
 import { describe, expect, it, vi } from 'vitest';
 import {
+  ART_GATE_POSE_A_TEXTURE_KEY,
   PROTOTYPE_PLAYER_PRESENTATION_SCALE,
   PrototypePlayerPresentation,
 } from '../../src/entities/PrototypePlayerPresentation';
@@ -75,6 +76,73 @@ describe('PrototypePlayerPresentation', () => {
     expect(PROTOTYPE_PLAYER_PRESENTATION_SCALE).toBe(6 / 7);
     expect(PROTOTYPE_PLAYER_PRESENTATION_SCALE * 28).toBe(24);
     expect(graphics.setScale).toHaveBeenLastCalledWith(6 / 7, 3 / 7);
+  });
+
+  it('shows the loaded Art Gate concept at the same visible viewport fraction across render scales', () => {
+    const image = {
+      destroy: vi.fn(),
+      setPosition: vi.fn(),
+      setRotation: vi.fn(),
+      setScale: vi.fn(),
+    };
+    const addImage = vi.fn(() => image);
+    const scale = { height: 800, zoom: 0.5 };
+    const scene = {
+      add: { graphics: vi.fn(), image: addImage },
+      scale,
+      textures: { exists: vi.fn(() => true) },
+    } as unknown as Scene;
+    const presentation = new PrototypePlayerPresentation(scene, 120, 240);
+
+    presentation.setScale(1, 0.75);
+    expect(addImage).toHaveBeenCalledWith(120, 240, ART_GATE_POSE_A_TEXTURE_KEY);
+    expect(image.setScale).toHaveBeenLastCalledWith((400 * 0.255) / 1046);
+    expect(scene.add.graphics).not.toHaveBeenCalled();
+
+    presentation.setPosition(130, 250);
+    presentation.setRotation(0.25);
+    expect(image.setPosition).toHaveBeenCalledWith(130, 250);
+    expect(image.setRotation).toHaveBeenCalledWith(0.25);
+
+    scale.height = 600;
+    presentation.setScale(1, 0.5);
+    expect(image.setScale).toHaveBeenLastCalledWith((300 * 0.255) / 1046);
+    presentation.destroy();
+    expect(image.destroy).toHaveBeenCalledOnce();
+  });
+
+  it('waits for sustained motion before changing pose and keeps quick taps visually steady', () => {
+    const image = { destroy: vi.fn(), setTexture: vi.fn(), setScale: vi.fn() };
+    const scene = {
+      add: { image: vi.fn(() => image) },
+      scale: { height: 800, zoom: 0.5 },
+      textures: { exists: vi.fn(() => true) },
+    } as unknown as Scene;
+    const presentation = new PrototypePlayerPresentation(scene);
+
+    presentation.setFlightVelocity(-220, 0.07);
+    presentation.setFlightVelocity(180, 0.06);
+    presentation.setFlightVelocity(-300, 0.06);
+    expect(image.setTexture).not.toHaveBeenCalled();
+
+    presentation.setFlightVelocity(-300, 0.07);
+    expect(image.setTexture).toHaveBeenCalledWith('art-gate-pose-b-ascent');
+    expect(image.setScale).toHaveBeenLastCalledWith((400 * 0.255) / 1130);
+
+    presentation.setFlightVelocity(300, 0.13);
+    expect(image.setTexture).toHaveBeenCalledTimes(1);
+    presentation.setFlightVelocity(300, 0.05);
+    expect(image.setTexture).toHaveBeenLastCalledWith('art-gate-pose-c-descent');
+    expect(image.setScale).toHaveBeenLastCalledWith((400 * 0.255) / 1166);
+
+    presentation.setFlightVelocity(0, 0.13);
+    presentation.setFlightVelocity(0, 0.13);
+    expect(image.setTexture).toHaveBeenLastCalledWith(ART_GATE_POSE_A_TEXTURE_KEY);
+
+    presentation.setFlightVelocity(-300, 0.13);
+    presentation.setFlightVelocity(-300, 0.13);
+    presentation.resetFlightPose();
+    expect(image.setTexture).toHaveBeenLastCalledWith(ART_GATE_POSE_A_TEXTURE_KEY);
   });
 
   it('rejects non-finite presentation rotation', () => {

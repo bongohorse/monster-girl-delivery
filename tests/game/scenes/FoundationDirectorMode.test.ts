@@ -82,6 +82,8 @@ vi.mock('../../../src/entities/PrototypePlayerPresentation', () => ({
   PrototypePlayerPresentation: class {
     destroy() {}
     setPosition() {}
+    setFlightVelocity() {}
+    resetFlightPose() {}
   },
 }));
 
