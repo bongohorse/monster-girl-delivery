@@ -28,6 +28,7 @@ GitHub Milestones and focused Issues/PRs are the live execution trail. Completed
 | See what is being built now | [GitHub Milestones](https://github.com/bongohorse/monster-girl-delivery/milestones) |
 | See milestone order and future milestone scope | [`ROADMAP.md`](ROADMAP.md) |
 | Check an approved game/product rule | [`../MASTER_SPEC.md`](../MASTER_SPEC.md) |
+| Review the M6 Art Gate asset trial | [`M6_ASSET_SCENE_BRIEF.md`](M6_ASSET_SCENE_BRIEF.md) |
 | Browse unapproved future ideas | [`BACKLOG.md`](BACKLOG.md) |
 | Review Endless Runner / Jetpack Joyride lessons | [`ENDLESS_RUNNER_BLUEPRINT.md`](ENDLESS_RUNNER_BLUEPRINT.md) |
 | Review the detailed Jetpack Joyride wiki research pass | [`JETPACK_JOYRIDE_WIKI_RESEARCH.md`](JETPACK_JOYRIDE_WIKI_RESEARCH.md) |
