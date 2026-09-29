@@ -75,6 +75,8 @@ ARCHITECTURE.md / DEVELOPMENT.md as required
 existing code + tests
 ```
 
+For game-rule or cross-system encounter changes, use [mgd-gameplay](../.agents/skills/mgd-gameplay/SKILL.md). Product rules remain in MASTER_SPEC, technical ownership in ARCHITECTURE and evidence selection in [TEST_QUALITY.md](TEST_QUALITY.md).
+
 Jules-specific dispatch/review/environment rules live in [`JULES_WORKFLOW.md`](JULES_WORKFLOW.md). They supplement rather than replace `AGENTS.md`.
 
 Do not load the entire backlog/reference library as implementation requirements.
