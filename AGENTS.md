@@ -53,6 +53,7 @@ Use one task-leading skill; load supporting skills only for the parts that need 
 | [`research`](.agents/skills/research/SKILL.md) | The task depends on external/current technical facts, Phaser/platform/API behavior, source investigation, or reference-game evidence. Prefer primary sources and distinguish facts from inference. |
 | [`mgd-art`](.agents/skills/mgd-art/SKILL.md) | Creating or visually revising MGD characters, hazards, parcels, backgrounds, UI graphics or animation/gallery variants. Uses `docs/ART_DIRECTION.md`; unchanged image integration and gameplay/hitboxes belong to their own workflows. |
 | [`mgd-asset-integration`](.agents/skills/mgd-asset-integration/SKILL.md) | Importing/updating image sources, inspecting exports or connecting images to real presentation. Use current tooling; future pipeline tooling is not a prerequisite. |
+| [`mgd-hazards`](.agents/skills/mgd-hazards/SKILL.md) | Creating/changing individual hazards, spawn, motion, collision or artwork affecting visual fairness. Verify real admission, geometry and consequences; scale regression checks to affected paths. |
 | [`writing-for-agents`](.agents/skills/writing-for-agents/SKILL.md) | Creating/editing `AGENTS.md`, skills, worker prompts, automation prompts, reviewer instructions, or other documents primarily consumed by agents. Keep triggers sharp and canonical rules singular. |
 
 Common compositions:
