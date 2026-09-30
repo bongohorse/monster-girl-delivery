@@ -52,19 +52,37 @@ const createSceneFake = () => {
     method.mockReturnValue(graphics);
   }
 
+  const image = {
+    destroy: vi.fn(),
+    setDepth: vi.fn(),
+    setDisplaySize: vi.fn(),
+    setFlipX: vi.fn(),
+    setPosition: vi.fn(),
+    setVisible: vi.fn(),
+  };
+  for (const method of [
+    image.setDepth,
+    image.setDisplaySize,
+    image.setFlipX,
+    image.setPosition,
+    image.setVisible,
+  ]) {
+    method.mockReturnValue(image);
+  }
+
   const camera = { width: 400, zoom: 1 };
   const scene = {
-    add: { graphics: vi.fn(() => graphics) },
+    add: { graphics: vi.fn(() => graphics), image: vi.fn(() => image) },
     cameras: { main: camera },
   } as unknown as Scene;
 
-  return { camera, graphics, scene };
+  return { camera, graphics, image, scene };
 };
 
 describe('M5 Missile presentation', () => {
   it('pins warning to the edge, shows lock, launches offscreen, then crosses the player lane', () => {
     const spawn = createMissileSpawn();
-    const { graphics, scene } = createSceneFake();
+    const { graphics, image, scene } = createSceneFake();
     const presentation = new PrototypeHazardPresentation(scene, spawn);
     let state = stepTelegraphedHazardSimulation(
       createTelegraphedHazardSimulationState(),
@@ -95,6 +113,10 @@ describe('M5 Missile presentation', () => {
     });
     presentation.render({ distance: 630 }, 100, getTelegraphedHazardLifecycle(state, spawn));
     expect(graphics.setPosition).toHaveBeenLastCalledWith(448, 146);
+    expect(graphics.setVisible).toHaveBeenLastCalledWith(false);
+    expect(image.setVisible).toHaveBeenLastCalledWith(true);
+    expect(image.setPosition).toHaveBeenLastCalledWith(480, 170);
+    expect(image.setDisplaySize).toHaveBeenLastCalledWith(112, 60);
 
     state = stepTelegraphedHazardSimulation(state, [spawn], 0.5, {
       positionY: 60,

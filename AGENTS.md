@@ -40,6 +40,8 @@ Reusable procedures live in [`.agents/skills/`](.agents/skills/). Agents that na
 
 Skills are **procedural guidance, not authorization or a new source of truth**. This `AGENTS.md`, the current Game Director instruction, assigned Issue/PR, and owning MGD docs always win. Load only the skills relevant to the current work and compose them when their concerns overlap.
 
+Use one task-leading skill; load supporting skills only for the parts that need them. Go from scoped inspection to implementation and proportionate validation without a separate approval or handoff between skills. Scale optional steps and reporting to the actual change; retain checks required by the owning contract. Missing optional tools, references or device access limit the evidence available, not independent authorized work.
+
 | Skill | Read/use when |
 |---|---|
 | [`diagnosing-bugs`](.agents/skills/diagnosing-bugs/SKILL.md) | A bug/regression is non-obvious, flaky, timing/physics/collision related, performance-sensitive, or otherwise needs evidence before a fix. Build a realistic red-capable reproduction loop before committing to a theory. |
@@ -49,7 +51,10 @@ Skills are **procedural guidance, not authorization or a new source of truth**. 
 | [`code-review`](.agents/skills/code-review/SKILL.md) | Reviewing a PR/branch, or before declaring a non-trivial code/config implementation complete. Review engineering standards separately from spec/runtime/evidence correctness; use independent/parallel reviewers when supported and useful. |
 | [`resolving-merge-conflicts`](.agents/skills/resolving-merge-conflicts/SKILL.md) | Any in-progress merge/rebase conflict. Resolve by tracing both sides to their intent and authoritative sources, then validate and finish the operation. |
 | [`research`](.agents/skills/research/SKILL.md) | The task depends on external/current technical facts, Phaser/platform/API behavior, source investigation, or reference-game evidence. Prefer primary sources and distinguish facts from inference. |
-| [`mgd-ui`](.agents/skills/mgd-ui/SKILL.md) | Creating/changing HUD, menus, buttons, results or Director UI. Uses existing state/input/layout ownership; game-rule changes, artwork and asset exports follow their own workflows. |
+| [`mgd-art`](.agents/skills/mgd-art/SKILL.md) | Creating or visually revising MGD characters, hazards, parcels, backgrounds, UI graphics or animation/gallery variants. Uses `docs/ART_DIRECTION.md`; unchanged image integration and gameplay/hitboxes belong to their own workflows. |
+| [`mgd-asset-integration`](.agents/skills/mgd-asset-integration/SKILL.md) | Importing/updating image sources, inspecting exports or connecting images to real presentation. Use current tooling; future pipeline tooling is not a prerequisite. |
+| [`mgd-hazards`](.agents/skills/mgd-hazards/SKILL.md) | Creating/changing individual hazards, spawn, motion, collision or artwork affecting visual fairness. Verify real admission, geometry and consequences; scale regression checks to affected paths. |
+| [`mgd-ui`](.agents/skills/mgd-ui/SKILL.md) | Changing HUD, controls, results or Director interfaces. Reuse authoritative state, existing layout and supported input paths; verify the affected flow. |
 | [`writing-for-agents`](.agents/skills/writing-for-agents/SKILL.md) | Creating/editing `AGENTS.md`, skills, worker prompts, automation prompts, reviewer instructions, or other documents primarily consumed by agents. Keep triggers sharp and canonical rules singular. |
 
 Common compositions:

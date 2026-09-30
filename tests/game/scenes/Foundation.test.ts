@@ -113,6 +113,8 @@ const createFoundationHarness = () => {
   instructions.setText.mockReturnValue(instructions);
   instructions.setWordWrapWidth.mockReturnValue(instructions);
   const playerPresentation = {
+    setFlightVelocity: vi.fn(),
+    resetFlightPose: vi.fn(),
     destroy: vi.fn(),
     setPosition: vi.fn(),
     setRotation: vi.fn(),
