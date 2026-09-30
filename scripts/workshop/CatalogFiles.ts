@@ -12,19 +12,25 @@ export function validateCatalogFiles(root: string, data: Catalog): string[] {
       ...(a.sourcePath && a.revision ? [{ path: a.sourcePath, revision: a.revision }] : []),
     ]),
   ];
-  const errors: string[] = [];
   const commits = [
     data.codeReviewRevision,
     ...(data.deployedGameRevision ? [data.deployedGameRevision] : []),
     ...data.elements.map((e) => e.documentation.revision),
     ...data.assets.map((a) => a.usage.revision),
   ];
-  for (const target of new Set([...commits, ...sources.map((s) => `${s.revision}:${s.path}`)])) {
-    const result = spawnSync('git', ['cat-file', '-t', target], { cwd: root, encoding: 'utf8' });
-    if (result.status !== 0 || result.stdout.trim() !== (target.includes(':') ? 'blob' : 'commit'))
-      errors.push(`Fehlende Repository-Quelle: ${target}`);
-  }
-  return errors;
+  const targets = [...new Set([...commits, ...sources.map((s) => `${s.revision}:${s.path}`)])];
+  // One Git process keeps this inexpensive even during the concurrent full test suite.
+  const result = spawnSync('git', ['cat-file', '--batch-check=%(objecttype)'], {
+    cwd: root,
+    encoding: 'utf8',
+    input: `${targets.join('\n')}\n`,
+  });
+  if (result.status !== 0)
+    return [`Git-Quellenprüfung fehlgeschlagen: ${result.error?.message ?? result.stderr.trim()}`];
+  const types = result.stdout.trimEnd().split('\n');
+  return targets
+    .filter((target, i) => types[i] !== (target.includes(':') ? 'blob' : 'commit'))
+    .map((target) => `Fehlende Repository-Quelle: ${target}`);
 }
 export async function assertCatalogFiles(root: string, data: Catalog): Promise<void> {
   const errors = validateCatalogFiles(root, data);
