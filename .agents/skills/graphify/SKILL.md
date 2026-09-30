@@ -96,8 +96,14 @@ architecture/refactor question
 
 ## Installation and version
 
-Codespaces install the latest available Graphify CLI through `uv` from the official PyPI package `graphifyy` whenever a new Codespace is created. The runtime CLI is intentionally not version-pinned.
+Graphify is optional and is not installed by devcontainer setup. For an investigation that benefits from it, install it on demand with an available `uv`:
 
-The committed MGD-specific guidance was originally adapted against Graphify upstream version `0.9.56`, commit `67f99bd0059dd1bac9e44382907ef9f10098b39f` (2026-09-07). That provenance describes the origin of this skill, not the version of the Graphify CLI installed in Codespaces. Provenance is recorded in `.agents/skills/THIRD_PARTY_NOTICES.md`.
+```bash
+uv tool install --upgrade 'graphifyy@latest'
+```
+
+If `uv` is unavailable, follow its [official installation instructions](https://docs.astral.sh/uv/getting-started/installation/) or use the search fallback below. The runtime CLI is intentionally not version-pinned.
+
+The committed MGD-specific guidance was originally adapted against Graphify upstream version `0.9.56`, commit `67f99bd0059dd1bac9e44382907ef9f10098b39f` (2026-09-07). That provenance describes the origin of this skill, not the version of the Graphify CLI installed on demand. Provenance is recorded in `.agents/skills/THIRD_PARTY_NOTICES.md`.
 
 If Graphify is unavailable, do not block the task. Fall back to normal repository search and direct source inspection, and report the tooling limitation only when it materially affected the investigation.

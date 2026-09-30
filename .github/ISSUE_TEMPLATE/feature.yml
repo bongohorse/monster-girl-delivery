@@ -2,7 +2,7 @@ name: Feature / Task
 description: Define a focused game or engineering task.
 title: "[Task] "
 labels:
-  - task
+  - type:feature
 body:
   - type: markdown
     attributes:

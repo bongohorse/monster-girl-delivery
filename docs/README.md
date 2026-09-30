@@ -38,6 +38,7 @@ GitHub Milestones and focused Issues/PRs are the live execution trail. Completed
 | See human ↔ AI orchestration | [`AI_WORKFLOW.md`](AI_WORKFLOW.md) |
 | Use Jules as a GitHub-native assistant safely | [`JULES_WORKFLOW.md`](JULES_WORKFLOW.md) |
 | Review AI GitHub authentication/permissions | [`GITHUB_AI_ACCESS.md`](GITHUB_AI_ACCESS.md) |
+| Find visual references, scoped acceptance and art profiles | [`ART_DIRECTION.md`](ART_DIRECTION.md) |
 | Review completed milestones | [`milestones/README.md`](milestones/README.md) |
 | Review M1 real-device evidence | [`milestones/M1-device-report.md`](milestones/M1-device-report.md) |
 
@@ -75,7 +76,7 @@ ARCHITECTURE.md / DEVELOPMENT.md as required
 existing code + tests
 ```
 
-For game-rule or cross-system encounter changes, use [mgd-gameplay](../.agents/skills/mgd-gameplay/SKILL.md). Product rules remain in MASTER_SPEC, technical ownership in ARCHITECTURE and evidence selection in [TEST_QUALITY.md](TEST_QUALITY.md).
+Choose task-specific procedures from the [skill routing in AGENTS.md](../AGENTS.md#reusable-agent-skills). Use one leading skill and only the supporting guidance needed for the requested outcome.
 
 Jules-specific dispatch/review/environment rules live in [`JULES_WORKFLOW.md`](JULES_WORKFLOW.md). They supplement rather than replace `AGENTS.md`.
 
@@ -90,6 +91,7 @@ A **current explicit Game Director decision** controls product intent. Living do
 | Source | Owns | Does not own |
 |---|---|---|
 | [`../MASTER_SPEC.md`](../MASTER_SPEC.md) | durable product/game decisions, decision states, platform/game constraints | milestone sequence, development commands, AI workflow |
+| [`ART_DIRECTION.md`](ART_DIRECTION.md) | visual reference register, scoped acceptance and asset-type art profiles | product decision states, technical asset tooling, automatic Art Gate approval |
 | [`ROADMAP.md`](ROADMAP.md) | M0–M10 order, milestone versions, and milestone-level future scope | focused implementation details, product decisions outside sequencing |
 | Native GitHub Milestone | numbered roadmap-phase membership/progress and explicitly approved non-numbered cross-cutting/tooling initiative membership/progress | roadmap sequencing, detailed dependency planning, historical closeout evidence |
 | Milestone umbrella Issue | detailed live planning, ordering, dependencies, Director decisions, and acceptance trail for one milestone | replacing the native milestone progress view or the roadmap |
@@ -133,6 +135,10 @@ Use for:
 - product-level fairness/performance/production principles.
 
 It intentionally does **not** duplicate the full milestone roadmap anymore.
+
+### `ART_DIRECTION.md` — visual references and profiles
+
+Use for scoped accepted/trial/draft references, current working visual constraints, asset-type profiles and unresolved style decisions. Art creation/revision uses [mgd-art](../.agents/skills/mgd-art/SKILL.md); product states and Art Gate approval remain with their owning sources.
 
 ### `ROADMAP.md` — sequencing
 
