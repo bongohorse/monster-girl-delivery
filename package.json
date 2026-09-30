@@ -34,7 +34,8 @@
     "assets:build": "bun scripts/assets/cli.ts build",
     "workshop:dev": "vite --config vite/config.workshop.mjs",
     "workshop:build": "vite build --config vite/config.workshop.mjs",
-    "workshop:typecheck": "tsc --project tsconfig.workshop.json --noEmit"
+    "workshop:typecheck": "tsc --project tsconfig.workshop.json --noEmit",
+    "workshop:check": "bun scripts/workshop/check.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.14",
