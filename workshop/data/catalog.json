@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "codeReviewRevision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+  "deployedGameRevision": null,
+  "categories": [
+    { "id": "heros", "name": "Heros / Monster Girls" },
+    { "id": "hazards", "name": "Hazards" },
+    { "id": "collectibles", "name": "Collectibles" },
+    { "id": "deliveries", "name": "Lieferungen" },
+    { "id": "mechanics", "name": "Gameplay / Mechaniken" },
+    { "id": "encounters", "name": "Level / Encounter" },
+    { "id": "backgrounds", "name": "Hintergründe / Biomes" },
+    { "id": "ui", "name": "UI / Menüs" },
+    { "id": "vfx", "name": "VFX" },
+    { "id": "animation", "name": "Animation" },
+    { "id": "audio", "name": "Audio" },
+    { "id": "gallery", "name": "Galerie / Meta" }
+  ],
+  "elements": [
+    {
+      "id": "courier-art-gate",
+      "name": "Kurierin · Art Gate",
+      "type": "Hero",
+      "categoryId": "heros",
+      "tags": ["Kurierin", "Art Gate", "Pose"],
+      "description": "Provisorische Kurierin aus dem Art-Gate-Trial. Der aktuelle Code lädt drei Konzeptposen und wechselt abhängig vom Flugzustand. Endgültige Produktionsart ist noch nicht belegt.",
+      "documentation": {
+        "state": "source-conflict",
+        "date": "2026-09-30",
+        "notes": "Art-Brief beschreibt A als stabile Baseline und B/C als Experimente; der Runtime-Code wechselt automatisch zwischen den drei Posen."
+      },
+      "implementation": "partial",
+      "archived": false,
+      "previewPath": "public/assets/art-gate/pose-a-concept-preview.png",
+      "sources": [
+        { "path": "src/entities/PrototypePlayerPresentation.ts", "kind": "code" },
+        { "path": "src/game/scenes/Preloader.ts", "kind": "code" },
+        { "path": "docs/M6_ASSET_SCENE_BRIEF.md", "kind": "doc" }
+      ]
+    },
+    {
+      "id": "red-missile",
+      "name": "Red Missile",
+      "type": "Hazard",
+      "categoryId": "hazards",
+      "tags": ["Missile", "Director", "Art Gate"],
+      "description": "Rote Monster-Missile mit verwalteter Bildquelle und aktivem Exportrezept. Die Textur ist ladbar; der Hazard wird bedingt über den Director verwendet und ist aus dem normalen AUTO-Katalog ausgeschlossen.",
+      "documentation": {
+        "state": "checked",
+        "date": "2026-09-30",
+        "notes": "Bestandsaufnahme von Quelle, Rezept, Loader und Director-Pfad. Vollständige Galerie und Nutzungsnachweise folgen in Aufgabe 4."
+      },
+      "implementation": "partial",
+      "archived": false,
+      "previewPath": "assets/source/district-01/hazards/red-monster-missile-gpt-image.png",
+      "sources": [
+        { "path": "assets/metadata/red-monster-missile.json", "kind": "manifest" },
+        { "path": "src/generation/M5LiveEncounterCatalog.ts", "kind": "code" },
+        { "path": "src/game/scenes/Foundation.ts", "kind": "code" }
+      ]
+    },
+    {
+      "id": "delivery-arrow",
+      "name": "Lieferpfeil / GPS",
+      "type": "UI-Element",
+      "categoryId": "deliveries",
+      "tags": ["Lieferung", "Vorwarnung", "Pfeil"],
+      "description": "Die bestehende Lieferdarstellung zeichnet Pfeile mit Phaser-Primitiven: über dem Paket und als Vorwarnung auf Empfängerhöhe. Eine eigenständige GPS-Bilddatei ist nicht belegt.",
+      "documentation": {
+        "state": "checked",
+        "date": "2026-09-30",
+        "notes": "Kleine belegte Stichprobe; Mechanikdetails folgen in Aufgabe 3. Der freie Pfeilprototyp ist noch nicht umgesetzt."
+      },
+      "implementation": "partial",
+      "archived": false,
+      "previewPath": null,
+      "sources": [
+        { "path": "src/entities/FirstDeliveryPresentation.ts", "kind": "code" },
+        { "path": "src/config/DeliveryTuning.ts", "kind": "code" }
+      ]
+    }
+  ]
+}

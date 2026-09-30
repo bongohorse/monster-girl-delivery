@@ -9,7 +9,9 @@
       "!reports/assets",
       "!reports/browser-runtime-smoke",
       "!assets/processed",
-      "!src/generated/assets.ts"
+      "!src/generated/assets.ts",
+      "!dist-workshop",
+      "!dist-pages"
     ]
   },
   "formatter": {
