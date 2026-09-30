@@ -53,3 +53,11 @@ describe('authored Workshop catalog boundary', () => {
     expect(validateCatalog(data).join('\n')).toContain('Repository-Pfad');
   });
 });
+
+it('rejects an idea ID colliding with an element or another idea before index construction', () => {
+  const data = structuredClone(catalog);
+  data.ideas.push({ ...data.ideas[0], prototypeId: null, id: 'parcel' });
+  expect(validateCatalog(data).join('\n')).toContain('Doppelte ID');
+  data.ideas[1] = { ...data.ideas[0], prototypeId: null };
+  expect(validateCatalog(data).join('\n')).toContain('Doppelte ID');
+});

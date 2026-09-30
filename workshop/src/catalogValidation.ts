@@ -245,6 +245,7 @@ export function validateCatalog(input: unknown): string[] {
     data.assets,
     data.artifacts,
     data.references,
+    data.ideas,
   ])
     for (const record of records) {
       if (ids.has(record.id)) fail(record.id, 'Doppelte ID');
