@@ -56,7 +56,10 @@ import {
 } from '../../generation/GeneratedHazardStream';
 import type { HazardPattern } from '../../generation/HazardPattern';
 import { PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG } from '../../generation/LiveEncounterPolicy';
-import { M6_MOLTEN_SPIKE_TRIAL } from '../../generation/M6MoltenSpikeTrial';
+import {
+  M6_MOLTEN_SPIKE_TRIAL,
+  selectMoltenSpikeHeightCatalog,
+} from '../../generation/M6MoltenSpikeTrial';
 import {
   getLogicalHazardSpawnIdentity,
   type LogicalHazardSpawnInstance,
@@ -66,6 +69,7 @@ import {
   createPrototypeHazardVerticalDomain,
   type PrototypeHazardVerticalDomain,
 } from '../../generation/PrototypeHazardVerticalDomain';
+import { createRunGenerationState, stepRunGeneration } from '../../generation/RunGenerationState';
 import { isTelegraphedHazardBehavior } from '../../hazards/HazardArchetype';
 import type { TelegraphedHazardTarget } from '../../hazards/TelegraphedHazardLifecycle';
 import {
@@ -302,6 +306,7 @@ export class Foundation extends Scene {
   private memoryEvidenceStartRunMotion?: ReturnType<AppServices['runMotion']['getSnapshot']>;
   private memoryEvidenceCompleted = false;
   private directorHazardSerial = 0;
+  private directorSpikeGeneration = createRunGenerationState(PROTOTYPE_LIVE_RUN_SEED);
   private directorLaserVariantIndex = 0;
   private directorZapperVariantIndex = 0;
   private directorZapperGroupIndex = 0;
@@ -1486,11 +1491,16 @@ export class Foundation extends Scene {
     if (!this.viewportService || this.runState.phase !== 'running') {
       return;
     }
-    this.spawnDirectorPattern(
-      M6_MOLTEN_SPIKE_TRIAL,
-      true,
-      this.hazardVerticalDomain.mapAuthoredCenterY,
-    );
+    const bounds = this.getCachedFlightBounds(this.viewportService.getSnapshot());
+    const domain = createPrototypeHazardVerticalDomain(bounds, [M6_MOLTEN_SPIKE_TRIAL]);
+    const pattern = selectMoltenSpikeHeightCatalog(
+      domain.catalog,
+      domain.constraints,
+      this.directorSpikeGeneration.prngState,
+    )[0];
+    if (!pattern) throw new Error('Director Spike pattern is missing.');
+    this.directorSpikeGeneration = stepRunGeneration(this.directorSpikeGeneration).state;
+    this.spawnDirectorPattern(pattern, true);
   };
 
   private spawnDirectorPattern(
@@ -1723,6 +1733,7 @@ export class Foundation extends Scene {
     this.retainedGeneratedTelegraphedHazards = Object.freeze([]);
     this.directorManualHazards = Object.freeze([]);
     this.directorHazardSerial = 0;
+    this.directorSpikeGeneration = createRunGenerationState(seed);
     this.directorLaserVariantIndex = 0;
     this.directorZapperVariantIndex = 0;
     this.directorZapperGroupIndex = 0;

@@ -1,17 +1,25 @@
 import type { GameObjects, Scene } from 'phaser';
+import { PROTOTYPE_PLAYER_LOGICAL_VERTICAL_EXTENTS } from '../game/PrototypeFlightLayout';
+import { PROTOTYPE_PLAYER_COLLISION_EXTENTS } from '../systems/HazardCollision';
 
 export const ART_GATE_POSE_A_TEXTURE_KEY = 'art-gate-pose-a-concept';
 export const ART_GATE_POSE_B_TEXTURE_KEY = 'art-gate-pose-b-ascent';
 export const ART_GATE_POSE_C_TEXTURE_KEY = 'art-gate-pose-c-descent';
 
-/** Visual bounds of the three concept images at alpha > 64; collisions stay unchanged. */
-const ART_GATE_VISIBLE_HEIGHT = [1046, 1130, 1166] as const;
+/** Measured alpha > 64 contours in the existing 1254 × 1254 previews.
+ * Center the visible courier, rather than the unequal transparent texture margins.
+ */
+const ART_GATE_VISIBLE_BOUNDS = [
+  { left: 181, right: 1037, top: 110, bottom: 1156 },
+  { left: 128, right: 1100, top: 51, bottom: 1181 },
+  { left: 59, right: 1180, top: 37, bottom: 1203 },
+] as const;
+const ART_GATE_TEXTURE_HEIGHT = 1254;
 const ART_GATE_TEXTURE_KEYS = [
   ART_GATE_POSE_A_TEXTURE_KEY,
   ART_GATE_POSE_B_TEXTURE_KEY,
   ART_GATE_POSE_C_TEXTURE_KEY,
 ] as const;
-const ART_GATE_VISIBLE_VIEWPORT_FRACTION = 0.255;
 const POSE_VELOCITY_THRESHOLD = 90;
 const POSE_SETTLE_SECONDS = 0.12;
 const POSE_MIN_HOLD_SECONDS = 0.18;
@@ -59,7 +67,8 @@ const drawPrototypePlayer = (graphics: GameObjects.Graphics): void => {
 export class PrototypePlayerPresentation {
   private graphics?: GameObjects.Graphics;
   private image?: GameObjects.Image;
-  private imageViewportHeight = -1;
+  private imageProjectionScale = 1;
+  private appliedImageScale = -1;
   private pose: FlightPose = 0;
   private pendingPose: FlightPose = 0;
   private pendingSeconds = 0;
@@ -73,6 +82,7 @@ export class PrototypePlayerPresentation {
     // Use the accepted provisional poses until final player artwork replaces them.
     if (scene.textures?.exists(ART_GATE_POSE_A_TEXTURE_KEY)) {
       this.image = scene.add.image(x, y, ART_GATE_POSE_A_TEXTURE_KEY);
+      this.applyImagePoseGeometry();
       return;
     }
 
@@ -127,8 +137,7 @@ export class PrototypePlayerPresentation {
     this.pendingSeconds = 0;
     this.poseSeconds = 0;
     this.image.setTexture(ART_GATE_TEXTURE_KEYS[this.pose]);
-    this.imageViewportHeight = -1;
-    this.setScale(1, 1);
+    this.applyImagePoseGeometry();
   }
 
   resetFlightPose(): void {
@@ -138,21 +147,17 @@ export class PrototypePlayerPresentation {
     if (this.image && this.pose !== 0) {
       this.pose = 0;
       this.image.setTexture(ART_GATE_POSE_A_TEXTURE_KEY);
-      this.imageViewportHeight = -1;
-      this.setScale(1, 1);
+      this.applyImagePoseGeometry();
     }
   }
 
   setScale(x: number, y: number): void {
     if (this.image) {
-      // The artwork is measured in screen space, independently of the logical flight corridor.
-      const viewportHeight = this.scene.scale.height * this.scene.scale.zoom;
-      if (viewportHeight !== this.imageViewportHeight) {
-        this.imageViewportHeight = viewportHeight;
-        this.image.setScale(
-          (viewportHeight * ART_GATE_VISIBLE_VIEWPORT_FRACTION) /
-            ART_GATE_VISIBLE_HEIGHT[this.pose],
-        );
+      // Uniform fit preserves the asset aspect ratio while following logical world projection.
+      const projectionScale = Math.min(x, y);
+      if (projectionScale !== this.imageProjectionScale) {
+        this.imageProjectionScale = projectionScale;
+        this.applyImageScale();
       }
       return;
     }
@@ -161,6 +166,34 @@ export class PrototypePlayerPresentation {
       x * PROTOTYPE_PLAYER_PRESENTATION_SCALE,
       y * PROTOTYPE_PLAYER_PRESENTATION_SCALE,
     );
+  }
+
+  private applyImagePoseGeometry(): void {
+    const bounds = ART_GATE_VISIBLE_BOUNDS[this.pose];
+    this.image?.setDisplayOrigin(
+      (bounds.left + bounds.right) / 2,
+      (bounds.top + bounds.bottom) / 2,
+    );
+    this.applyImageScale();
+  }
+
+  private applyImageScale(): void {
+    const bounds = ART_GATE_VISIBLE_BOUNDS[this.pose];
+    const centerY = (bounds.top + bounds.bottom) / 2;
+    const visibleHeight = bounds.bottom - bounds.top;
+    const collisionHeight =
+      PROTOTYPE_PLAYER_COLLISION_EXTENTS.top + PROTOTYPE_PLAYER_COLLISION_EXTENTS.bottom;
+    // Include the faint outer pixels in floor/ceiling clearance; never change flight or collision.
+    const logicalScale = Math.min(
+      collisionHeight / visibleHeight,
+      PROTOTYPE_PLAYER_LOGICAL_VERTICAL_EXTENTS.top / centerY,
+      PROTOTYPE_PLAYER_LOGICAL_VERTICAL_EXTENTS.bottom / (ART_GATE_TEXTURE_HEIGHT - centerY),
+    );
+    const scale = logicalScale * this.imageProjectionScale;
+    if (scale !== this.appliedImageScale) {
+      this.appliedImageScale = scale;
+      this.image?.setScale(scale);
+    }
   }
 
   destroy(): void {
