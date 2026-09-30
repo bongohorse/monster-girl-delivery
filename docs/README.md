@@ -34,13 +34,13 @@ GitHub Milestones and focused Issues/PRs are the live execution trail. Completed
 | Review the deeper Jetpack Joyride systems/content-grammar analysis | [`JETPACK_JOYRIDE_WIKI_DEEP_DIVE.md`](JETPACK_JOYRIDE_WIKI_DEEP_DIVE.md) |
 | Understand technical boundaries | [`../ARCHITECTURE.md`](../ARCHITECTURE.md) |
 | See commands, CI, testing, Codespaces, or closeout workflow | [`../DEVELOPMENT.md`](../DEVELOPMENT.md) |
-| Choose test-quality evidence for a gameplay-authority change | [`PERFORMANCE_MOBILE_EVIDENCE.md`](PERFORMANCE_MOBILE_EVIDENCE.md) | reusable performance investigation/comparison entry and existing frame-evidence procedures; routes specialized allocation/Android evidence | product budgets, gameplay authority, unmeasured device results |
-| [`TEST_QUALITY.md`](TEST_QUALITY.md) |
+| Choose test-quality evidence for a gameplay-authority change | [`TEST_QUALITY.md`](TEST_QUALITY.md) |
+| Investigate performance or compare optimization evidence | [`PERFORMANCE_MOBILE_EVIDENCE.md`](PERFORMANCE_MOBILE_EVIDENCE.md) |
 | See human ↔ AI orchestration | [`AI_WORKFLOW.md`](AI_WORKFLOW.md) |
 | Use Jules as a GitHub-native assistant safely | [`JULES_WORKFLOW.md`](JULES_WORKFLOW.md) |
 | Review AI GitHub authentication/permissions | [`GITHUB_AI_ACCESS.md`](GITHUB_AI_ACCESS.md) |
-| Find visual references, scoped acceptance and art profiles | [`M6_ASSET_SCENE_BRIEF.md`](M6_ASSET_SCENE_BRIEF.md) | current Art Gate trial composition, source handoff and factual trial status | final production art approval, asset pipeline implementation |
-| [`ART_DIRECTION.md`](ART_DIRECTION.md) |
+| Find visual references, scoped acceptance and art profiles | [`ART_DIRECTION.md`](ART_DIRECTION.md) |
+| Review current Art Gate scene and asset trials | [`M6_ASSET_SCENE_BRIEF.md`](M6_ASSET_SCENE_BRIEF.md) |
 | Review completed milestones | [`milestones/README.md`](milestones/README.md) |
 | Review M1 real-device evidence | [`milestones/M1-device-report.md`](milestones/M1-device-report.md) |
 
@@ -93,6 +93,7 @@ A **current explicit Game Director decision** controls product intent. Living do
 | Source | Owns | Does not own |
 |---|---|---|
 | [`../MASTER_SPEC.md`](../MASTER_SPEC.md) | durable product/game decisions, decision states, platform/game constraints | milestone sequence, development commands, AI workflow |
+| [`M6_ASSET_SCENE_BRIEF.md`](M6_ASSET_SCENE_BRIEF.md) | current Art Gate trial composition, source handoff and factual trial status | final production art approval, asset pipeline implementation |
 | [`ART_DIRECTION.md`](ART_DIRECTION.md) | visual reference register, scoped acceptance and asset-type art profiles | product decision states, technical asset tooling, automatic Art Gate approval |
 | [`ROADMAP.md`](ROADMAP.md) | M0–M10 order, milestone versions, and milestone-level future scope | focused implementation details, product decisions outside sequencing |
 | Native GitHub Milestone | numbered roadmap-phase membership/progress and explicitly approved non-numbered cross-cutting/tooling initiative membership/progress | roadmap sequencing, detailed dependency planning, historical closeout evidence |
@@ -100,6 +101,7 @@ A **current explicit Game Director decision** controls product intent. Living do
 | Focused GitHub Issue / PR | concrete live scope, acceptance criteria, implementation/review trail | silent overrides of `DECIDED` product rules or architecture boundaries |
 | [`../ARCHITECTURE.md`](../ARCHITECTURE.md) | technical ownership, service/system boundaries, current vs. planned architecture | product scope, milestone scheduling |
 | [`../DEVELOPMENT.md`](../DEVELOPMENT.md) | commands, verification, Codespaces, CI, PR mechanics, milestone closeout process | product/game design |
+| [`PERFORMANCE_MOBILE_EVIDENCE.md`](PERFORMANCE_MOBILE_EVIDENCE.md) | performance investigation/comparison and existing frame-evidence procedures | product budgets, gameplay authority, unmeasured device results |
 | [`TEST_QUALITY.md`](TEST_QUALITY.md) | detailed test-evidence selection, independent-oracle/mutation/coverage/browser/stability policy, and test-review criteria | product/game rules, ordinary command ownership, milestone scope |
 | [`../AGENTS.md`](../AGENTS.md) | mandatory coding-agent behavior and scope discipline | product design |
 | [`AI_WORKFLOW.md`](AI_WORKFLOW.md) | human/AI coordination and role orchestration | authentication setup, product scope |
