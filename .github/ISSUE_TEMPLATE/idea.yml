@@ -1,5 +1,5 @@
 name: Backlog idea
-about: Preserve a useful idea without scheduling it yet
+description: Preserve a useful idea without scheduling it yet
 title: "[Idea] "
 labels: ["type:idea", "status:backlog"]
 body:
