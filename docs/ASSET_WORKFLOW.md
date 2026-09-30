@@ -4,16 +4,16 @@ This document owns MGD's image preparation, candidate identity and managed runti
 
 ## Current scope
 
-Static-image preparation and comparison previews remain isolated. Task 3 adds the complete active-set runtime build, generated registry and automatic entrypoint preparation; the Spike now exercises the real game loader.
+Static-image preparation and comparison previews remain isolated. Task 3 adds the complete active-set runtime build, generated registry and automatic entrypoint preparation; Spike and Missile exercise the real game loader.
 
 | Stage | Status |
 |---|---|
 | Prepare / validate / preview | Implemented; commands below |
 | Full runtime builder, generated registry, build entrypoints and Spike migration | Implemented; Spike uses the generated registry |
-| Existing non-pixel Missile migration | Task 4; not implemented |
+| Existing non-pixel Missile migration | Implemented; Lanczos3 recipe and generated loader URL |
 | CI triggers, preview artifacts, packaged loader and Android/device evidence | Task 5; not implemented |
 
-Gate B/C remain partial. A valid candidate is neither runtime integration nor visual acceptance. The Spike uses managed output; the Missile still loads its legacy `public/assets` image until task 4. No audio, animation, atlas, gallery or new artwork is introduced.
+Gate B/C remain partial. A valid candidate is neither runtime integration nor visual acceptance. Both Spike and Missile use managed output; their sources are retained and duplicate legacy Public images are removed. No audio, animation, atlas, gallery or new artwork is introduced.
 
 ## Prepare and inspect
 
@@ -124,6 +124,6 @@ The Spike preserves its existing 256 × 256 canvas, visible bounds, 72 × 72 log
 
 ## Remaining pilot work
 
-Task 4 migrates the existing non-pixel Missile through the same loader path without changing gameplay or direction semantics. Task 5 covers CI path filters, bounded preview artifacts, production-subpath packaged loader evidence and Android/update/device evidence. Windows/native installation and physical device checks remain outstanding; missing hardware does not block independent implementation. `assets/raw` remains an optional local inbox.
+The non-pixel Missile uses a transparent 512 × 330 Lanczos3 export with the existing 112 × 60 game display and launch-side flip; its authored game factors are unchanged despite the reported target/canvas aspect mismatch. Its final motion/danger-readability art/device acceptance remains open. Task 5 covers CI path filters, bounded preview artifacts, production-subpath packaged loader evidence and Android/update/device evidence. Windows/native installation and physical device checks remain outstanding; missing hardware does not block independent implementation. `assets/raw` remains an optional local inbox.
 
 The native Vite import target refines technical delivery for managed images; it does not change product art decisions or migrate legacy `public` files early. Future audio, animation, atlas, UI/background profiles or storage changes require actual consumers and their own scoped task. For live remaining criteria, use #494's acceptance matrix and task-status comments rather than treating this document as a passed pilot report.

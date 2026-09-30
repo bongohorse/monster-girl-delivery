@@ -1,4 +1,6 @@
-# Molten spike — M6 hazard art trial
+# Hazard image sources — M6 trials
+
+## Molten spike
 
 The Game Director selected **variant A** for an in-run test. This is approval of
 the trial direction, not approval of the final sprite or the full M6 art style.
@@ -28,3 +30,30 @@ actual appearance rather than treating encoder byte equality as art acceptance.
 The authored `m6-trial-molten-spike-upper` pattern retains a lower safe coin
 route. Compare the spike with the courier, coins and hazards during an actual
 landscape phone run before accepting its final size, colors or detail density.
+
+
+## Red monster Missile
+
+`red-monster-missile-gpt-image.png` retains the exact Director-approved upload
+from #493: transparent 1526 × 1031 PNG, facing left. The active recipe is
+`assets/metadata/red-monster-missile.json`; use `assets:prepare --id red-monster-missile`
+for an isolated comparison, or `assets:build` for the complete runtime set.
+
+The shared processor trims only fully transparent margins (alpha > 0), crops
+`(14,56,1512,975)` and fits without stretching into a transparent 512 × 330 canvas
+using Lanczos3. It does not mirror the image. `Preloader` imports the generated
+URL under the existing `red-monster-missile` key. The former manually maintained
+`public/assets/m6/red-monster-missile.png` is removed.
+
+The owning presentation retains its existing 112 × 60 display over a 64 × 48
+logical collision box: 1.75× width and 1.25× height. These authored game display
+factors intentionally differ from the texture ratio; the candidate warning
+reports that existing relationship rather than changing the trial's geometry.
+Canvas origin remains centered. The recipe's transformed source pivot is a
+processing diagnostic, not a new game anchor. Warning/Lock graphics remain
+unchanged; only Active shows the image, flipped for launches from the left.
+
+The managed export and previous export have small Lanczos/alpha differences,
+with the same direction, target footprint and transparent composition. Browser
+comparison and in-run loading do not substitute for final art/device acceptance;
+phone/Pad-6 motion and danger-readability remain part of the pilot evidence.

@@ -1,9 +1,12 @@
 import type { Scene } from 'phaser';
 import { describe, expect, it, vi } from 'vitest';
 import { PrototypeHazardPresentation } from '../../src/entities/PrototypeHazardPresentation';
+import { createHazardPattern } from '../../src/generation/HazardPattern';
 import { scheduleNextPattern } from '../../src/generation/PatternSpawnScheduler';
 import { PROTOTYPE_MISSILE_PATTERN } from '../../src/generation/PrototypeHazardPatternFixtures';
 import { createRunGenerationState } from '../../src/generation/RunGenerationState';
+import { isTargetLockStrikeHazardBehavior } from '../../src/hazards/HazardArchetype';
+import { isPrototypeMissileBehavior } from '../../src/hazards/PrototypeMissileHazard';
 import {
   createTelegraphedHazardSimulationState,
   getPrototypeMissileLaunchRelativeLeft,
@@ -11,9 +14,23 @@ import {
   stepTelegraphedHazardSimulation,
 } from '../../src/hazards/TelegraphedHazardSimulation';
 
-const createMissileSpawn = () => {
+const createMissileSpawn = (launchSide: 'left' | 'right' = 'right') => {
+  const pattern = createHazardPattern({
+    ...PROTOTYPE_MISSILE_PATTERN,
+    entries: PROTOTYPE_MISSILE_PATTERN.entries.map((entry) => {
+      if (
+        !isTargetLockStrikeHazardBehavior(entry.behavior) ||
+        !isPrototypeMissileBehavior(entry.behavior)
+      )
+        throw new Error('Expected Missile fixture.');
+      return {
+        ...entry,
+        behavior: { ...entry.behavior, missile: { ...entry.behavior.missile, launchSide } },
+      };
+    }),
+  });
   const schedule = scheduleNextPattern({
-    catalog: [PROTOTYPE_MISSILE_PATTERN],
+    catalog: [pattern],
     patternStartDistance: 0,
     state: createRunGenerationState('missile-presentation'),
   });
@@ -80,6 +97,18 @@ const createSceneFake = () => {
 };
 
 describe('M5 Missile presentation', () => {
+  it.each(['left', 'right'] as const)(
+    'points the left-facing artwork into travel from %s without altering logical geometry',
+    (launchSide) => {
+      const spawn = createMissileSpawn(launchSide);
+      const { image, scene } = createSceneFake();
+      const hitbox = spawn.hitbox;
+      new PrototypeHazardPresentation(scene, spawn);
+      expect(scene.add.image).toHaveBeenCalledWith(0, 0, 'red-monster-missile');
+      expect(image.setFlipX).toHaveBeenCalledExactlyOnceWith(launchSide === 'left');
+      expect(spawn.hitbox).toBe(hitbox);
+    },
+  );
   it('pins warning to the edge, shows lock, launches offscreen, then crosses the player lane', () => {
     const spawn = createMissileSpawn();
     const { graphics, image, scene } = createSceneFake();

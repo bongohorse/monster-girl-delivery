@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { Preloader } from '../../../src/game/scenes/Preloader';
-import { ASSET_MOLTEN_SPIKE_TRIAL } from '../../../src/generated/assets';
+import { ASSET_MOLTEN_SPIKE_TRIAL, ASSET_RED_MONSTER_MISSILE } from '../../../src/generated/assets';
 
 vi.mock('phaser', () => ({
   Loader: { Events: { PROGRESS: 'progress' } },
@@ -110,7 +110,7 @@ describe('Preloader scene responsive layout', () => {
     expect(loadImage).toHaveBeenNthCalledWith(
       2,
       'red-monster-missile',
-      'assets/m6/red-monster-missile.png',
+      ASSET_RED_MONSTER_MISSILE.url,
     );
     expect(loadImage).toHaveBeenCalledWith(
       'art-gate-pose-a-concept',

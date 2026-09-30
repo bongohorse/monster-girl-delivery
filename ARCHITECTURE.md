@@ -326,11 +326,11 @@ Rules when implemented:
 
 ## 13. Assets
 
-[Asset workflow](docs/ASSET_WORKFLOW.md) owns source/recipe identity, processing, candidate/runtime isolation, serialization and scoped evidence. Static-image prepare/validate/preview are implemented; the managed runtime builder and game migrations remain tasks in [#494](https://github.com/bongohorse/monster-girl-delivery/issues/494).
+[Asset workflow](docs/ASSET_WORKFLOW.md) owns source/recipe identity, processing, candidate/runtime isolation, serialization and scoped evidence. Static-image prepare/validate/preview and the managed runtime builder are implemented; remaining pilot evidence belongs to [#494](https://github.com/bongohorse/monster-girl-delivery/issues/494).
 
 Originals and recipes are versioned in `assets/source` and `assets/metadata`. Candidates write only ignored `reports/assets/previews`; they do not activate assets or replace current `public/assets` files. Gameplay systems retain collision, movement, input and interaction authority.
 
-The managed-runtime path is source + active recipe → ignored immutable generations in `assets/processed/mgd` and an atomically switched `src/generated/assets.ts` static-import registry → Vite's packaged URLs. Repository entrypoints prepare and verify this set under a shared consumer guard; live dev sessions require an explicit stop before changed runtime output is replaced. The Spike uses this path; remaining legacy `public` files migrate with their real loaders/presentations. Atlas/audio profiles, production budgets and device/art acceptance are not inferred from the static-image pilot.
+The managed-runtime path is source + active recipe → ignored immutable generations in `assets/processed/mgd` and an atomically switched `src/generated/assets.ts` static-import registry → Vite's packaged URLs. Repository entrypoints prepare and verify this set under a shared consumer guard; live dev sessions require an explicit stop before changed runtime output is replaced. Spike and Missile use this path; remaining legacy `public` files migrate with their real loaders/presentations. Atlas/audio profiles, production budgets and device/art acceptance are not inferred from the static-image pilot.
 
 ## 14. Platform abstraction
 
