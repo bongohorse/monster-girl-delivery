@@ -39,6 +39,7 @@ const createPreloaderHarness = (
   const addRectangle = vi.fn().mockReturnValueOnce(frame).mockReturnValueOnce(fill);
   const loadOn = vi.fn();
   const loadOff = vi.fn();
+  const loadImage = vi.fn();
   const scaleOn = vi.fn();
   const scaleOff = vi.fn();
   const sceneOnce = vi.fn();
@@ -55,7 +56,7 @@ const createPreloaderHarness = (
   };
 
   Reflect.set(preloader, 'add', { image: addImage, rectangle: addRectangle });
-  Reflect.set(preloader, 'load', { on: loadOn, off: loadOff });
+  Reflect.set(preloader, 'load', { on: loadOn, off: loadOff, image: loadImage });
   Reflect.set(preloader, 'scale', scale);
   Reflect.set(preloader, 'events', { once: sceneOnce });
   Reflect.set(preloader, 'cameras', {
@@ -76,6 +77,7 @@ const createPreloaderHarness = (
     fill,
     frame,
     loadOff,
+    loadImage,
     loadOn,
     preloader,
     scale,
@@ -95,6 +97,33 @@ const getHandler = (preloader: Preloader, name: string): ((...args: unknown[]) =
 };
 
 describe('Preloader scene responsive layout', () => {
+  it('preloads the live hazard textures and all three provisional player poses', () => {
+    const { loadImage, preloader } = createPreloaderHarness();
+    preloader.preload();
+    expect(loadImage).toHaveBeenCalledTimes(5);
+    expect(loadImage).toHaveBeenNthCalledWith(
+      1,
+      'molten-spike-trial',
+      'assets/m6/molten-spike-trial.png',
+    );
+    expect(loadImage).toHaveBeenNthCalledWith(
+      2,
+      'red-monster-missile',
+      'assets/m6/red-monster-missile.png',
+    );
+    expect(loadImage).toHaveBeenCalledWith(
+      'art-gate-pose-a-concept',
+      'assets/art-gate/pose-a-concept-preview.png',
+    );
+    expect(loadImage).toHaveBeenCalledWith(
+      'art-gate-pose-b-ascent',
+      'assets/art-gate/pose-b-concept-preview.png',
+    );
+    expect(loadImage).toHaveBeenCalledWith(
+      'art-gate-pose-c-descent',
+      'assets/art-gate/pose-c-concept-preview.png',
+    );
+  });
   it('creates the loading presentation and registers one listener per event', () => {
     const { addImage, addRectangle, cameraSetZoom, loadOn, preloader, scaleOn, sceneOnce } =
       createPreloaderHarness();

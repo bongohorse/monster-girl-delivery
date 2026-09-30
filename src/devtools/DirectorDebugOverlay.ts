@@ -42,6 +42,12 @@ import {
   type LogicalHitbox,
   PROTOTYPE_PLAYER_COLLISION_EXTENTS,
 } from '../systems/HazardCollision';
+import {
+  getParcelHandoffHitbox,
+  getParcelPickupHitbox,
+  type ParcelDeliveryRoute,
+  type ParcelDeliveryRunState,
+} from '../systems/ParcelDelivery';
 import { PROTOTYPE_COLLECTIBLE_HALF_SIZE } from '../systems/PrototypeCollectibles';
 import { PROTOTYPE_PLAYER_GRAZE_EXTENTS } from '../systems/PrototypeGraze';
 import type { RunMotionState } from '../systems/RunMotionSimulation';
@@ -53,6 +59,8 @@ export const DIRECTOR_DEBUG_COLORS = Object.freeze({
   flightBounds: 0x9be7ff,
   hazardLethal: 0xff375f,
   hazardPreview: 0xffd166,
+  parcelPickup: 0xffd166,
+  parcelHandoff: 0x6fffe9,
   playerCore: 0x00f0ff,
   playerGraze: 0x3a86ff,
   safeArea: 0xffffff,
@@ -64,6 +72,8 @@ export type DirectorDebugRectangleKind =
   | 'collectible'
   | 'hazard-lethal'
   | 'hazard-preview'
+  | 'parcel-pickup'
+  | 'parcel-handoff'
   | 'player-core'
   | 'player-graze'
   | 'safe-area'
@@ -121,6 +131,8 @@ export interface DirectorDebugGeometry {
 export interface DirectorDebugOverlayFrame {
   readonly collectibles: ReadonlyArray<Readonly<LogicalCollectibleSpawnInstance>>;
   readonly consumedCollectibleIds: ReadonlyArray<string>;
+  readonly delivery?: Readonly<ParcelDeliveryRunState>;
+  readonly deliveryRoute?: Readonly<ParcelDeliveryRoute>;
   readonly flight: Readonly<VerticalFlightState>;
   readonly hazards: ReadonlyArray<Readonly<LogicalHazardSpawnInstance>>;
   readonly motion: Readonly<RunMotionState>;
@@ -469,6 +481,33 @@ export const createDirectorDebugGeometry = (
         projection,
       ),
     });
+  }
+
+  if (frame.deliveryRoute) {
+    const phase = frame.delivery?.phase ?? 'available';
+    if (phase === 'available') {
+      rectangles.push({
+        kind: 'parcel-pickup',
+        color: DIRECTOR_DEBUG_COLORS.parcelPickup,
+        hitbox: projectLogicalHitbox(
+          getParcelPickupHitbox(frame.deliveryRoute),
+          frame.motion,
+          playerScreenX,
+          projection,
+        ),
+      });
+    } else if (phase === 'carrying') {
+      rectangles.push({
+        kind: 'parcel-handoff',
+        color: DIRECTOR_DEBUG_COLORS.parcelHandoff,
+        hitbox: projectLogicalHitbox(
+          getParcelHandoffHitbox(frame.deliveryRoute),
+          frame.motion,
+          playerScreenX,
+          projection,
+        ),
+      });
+    }
   }
 
   const flightBounds = createPrototypeFlightBounds(frame.viewport);

@@ -13,6 +13,7 @@ import {
   type TelegraphedHazardSimulationState,
 } from '../hazards/TelegraphedHazardSimulation';
 import type { RunMotionState } from '../systems/RunMotionSimulation';
+import { MoltenSpikePresentation } from './MoltenSpikePresentation';
 import { PrototypeHazardPresentation } from './PrototypeHazardPresentation';
 import { PrototypeLaserPresentation } from './PrototypeLaserPresentation';
 import {
@@ -27,6 +28,7 @@ interface ActiveHazardPresentation {
 /** Synchronizes temporary Phaser graphics to the authoritative logical generated-spawn window. */
 export class GeneratedHazardPresentation {
   private readonly active = new Map<string, ActiveHazardPresentation>();
+  private readonly spikeActive = new Map<string, MoltenSpikePresentation>();
   private readonly laserActive = new Map<string, PrototypeLaserPresentation>();
   private readonly zapperPresentation: PrototypeZapperPresentation;
   private readonly zapperSpawns: LogicalHazardSpawnInstance[] = [];
@@ -49,6 +51,7 @@ export class GeneratedHazardPresentation {
     }
 
     const retainedIdentities = new Set<string>();
+    const retainedSpikeIdentities = new Set<string>();
     const retainedLaserIdentities = new Set<string>();
     this.zapperSpawns.length = 0;
 
@@ -59,6 +62,16 @@ export class GeneratedHazardPresentation {
       }
 
       const identity = getLogicalHazardSpawnIdentity(spawn);
+      if (spawn.type === 'molten-spike') {
+        retainedSpikeIdentities.add(identity);
+        let presentation = this.spikeActive.get(identity);
+        if (!presentation) {
+          presentation = new MoltenSpikePresentation(this.scene, spawn);
+          this.spikeActive.set(identity, presentation);
+        }
+        presentation.render(runState, playerScreenX, verticalProjection);
+        continue;
+      }
       if (isPrototypeLaserHazard(spawn)) {
         retainedLaserIdentities.add(identity);
         let presentation = this.laserActive.get(identity);
@@ -108,6 +121,11 @@ export class GeneratedHazardPresentation {
       active.presentation.destroy();
       this.active.delete(identity);
     }
+    for (const [identity, presentation] of this.spikeActive) {
+      if (retainedSpikeIdentities.has(identity)) continue;
+      presentation.destroy();
+      this.spikeActive.delete(identity);
+    }
 
     for (const [identity, presentation] of this.laserActive) {
       if (retainedLaserIdentities.has(identity)) {
@@ -131,7 +149,9 @@ export class GeneratedHazardPresentation {
   }
 
   getPresentedHazardCount(): number {
-    return this.active.size + this.laserActive.size + this.zapperSpawns.length;
+    return (
+      this.active.size + this.spikeActive.size + this.laserActive.size + this.zapperSpawns.length
+    );
   }
 
   destroy(): void {
@@ -144,11 +164,15 @@ export class GeneratedHazardPresentation {
     for (const active of this.active.values()) {
       active.presentation.destroy();
     }
+    for (const presentation of this.spikeActive.values()) {
+      presentation.destroy();
+    }
     for (const presentation of this.laserActive.values()) {
       presentation.destroy();
     }
 
     this.active.clear();
+    this.spikeActive.clear();
     this.laserActive.clear();
     this.zapperSpawns.length = 0;
     this.zapperPresentation.destroy();

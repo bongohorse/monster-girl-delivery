@@ -41,6 +41,16 @@ const makeHitbox = (
   bottom: center.y + halfHeight,
 });
 
+export const getParcelPickupHitbox = (
+  route: Readonly<ParcelDeliveryRoute>,
+): Readonly<LogicalHitbox> =>
+  makeHitbox(route.pickup, PARCEL_PICKUP_HALF_SIZE, PARCEL_PICKUP_HALF_SIZE);
+
+export const getParcelHandoffHitbox = (
+  route: Readonly<ParcelDeliveryRoute>,
+): Readonly<LogicalHitbox> =>
+  makeHitbox(route.recipient, PARCEL_HANDOFF_HALF_WIDTH, PARCEL_HANDOFF_HALF_HEIGHT);
+
 /**
  * Pure authority for one planned parcel route. The route must be supplied by a separate planner
  * which has reserved a reachable, hazard-free handoff approach. This module does not place
@@ -96,7 +106,7 @@ export const stepParcelDelivery = (
       motion.distance,
       tuning.baseScrollSpeed,
       flight,
-      makeHitbox(route.pickup, PARCEL_PICKUP_HALF_SIZE, PARCEL_PICKUP_HALF_SIZE),
+      getParcelPickupHitbox(route),
       elapsedSeconds,
     );
     if (pickup === null) {
@@ -133,7 +143,7 @@ export const stepParcelDelivery = (
     motion.distance,
     tuning.baseScrollSpeed,
     flight,
-    makeHitbox(route.recipient, PARCEL_HANDOFF_HALF_WIDTH, PARCEL_HANDOFF_HALF_HEIGHT),
+    getParcelHandoffHitbox(route),
     elapsedSeconds,
     pickedAt,
   );
