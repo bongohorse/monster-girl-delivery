@@ -71,7 +71,7 @@ Gameplay proof takes priority over adding breadth. A larger feature set does not
 
 ## B. Device, rendering, and performance
 
-Validate important technical assumptions on representative real devices throughout development rather than postponing all mobile risk until release.
+Validate important technical assumptions on representative real Android devices and the packaged app throughout current development. Follow [the platform strategy](../MASTER_SPEC.md#2-platform-strategy): iOS evidence belongs to later focused work; browser checks support iteration/integration and do not replace Android acceptance.
 
 This includes, when promoted into focused work:
 
@@ -353,7 +353,7 @@ M6 proves a **quality bar and production approach**, not the final quantity of r
 
 > Where will release 1 ship, and can the representative game operate through that distribution path?
 
-Compare only plausible targets: mobile web, PWA if justified, Android and/or iOS packaging, or a suitable web portal. Preserve the mobile-first priority in `MASTER_SPEC.md`; evaluation does not approve all platforms or a new dependency.
+The Director has selected Android first and iOS later in [the platform strategy](../MASTER_SPEC.md#2-platform-strategy). Prove the Android shipping path and resolve its distribution-channel and target-device details; a browser preview is not the initial product-release proof. Evaluate a different product platform or wrapper only if the Director explicitly reopens that decision. This gate does not require concurrent iOS work or authorize a new dependency.
 
 ### Gate output
 

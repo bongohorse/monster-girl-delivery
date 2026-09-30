@@ -64,14 +64,16 @@ By M10 / `1.0`, the core game and core arcade loop must be clean, coherent, stab
 
 ### DECIDED
 
+MGD is a **mobile game**. Its product audience and release targets are Android and, later, iOS. A browser/desktop version is not an independently supported product target under the current direction.
+
 Priority order:
 
-1. **Mobile-first gameplay design and testing**
-2. **Web browser as primary development/test distribution**
-3. **Android/iOS later**
-4. **Steam/Desktop later**
+1. **Android first:** gameplay, touch UI, visual readability, lifecycle behavior and performance acceptance are driven by representative real Android phones/tablets and the packaged app.
+2. **Browser for development and preview:** retain fast iteration, debugging, automated browser integration checks and convenient preview/test distribution. Browser success is supporting evidence, not Android device acceptance.
+3. **iOS later:** preserve practical shared-code/platform boundaries, but defer dedicated iOS packaging, infrastructure and device acceptance until focused work is assigned. Missing iOS hardware/evidence does not block unrelated Android progress and does not count as iOS validation.
+4. **Desktop/Steam and an independent web release are deferred:** add platform-specific UX, browser-support matrices or separate product/distribution requirements only through an explicit Director decision.
 
-One gameplay codebase should remain the source for all platforms where practical.
+One gameplay codebase remains the source for target platforms where practical. This platform priority does not authorize an engine rewrite or speculative iOS abstractions. Technical stack and native boundaries remain owned by `ARCHITECTURE.md`.
 
 ### Orientation
 
@@ -82,9 +84,9 @@ One gameplay codebase should remain the source for all platforms where practical
 ### FUTURE
 
 - Portrait may return as a separate mode/variant; it is not current core gameplay.
-- Android/iOS packaging.
-- Desktop/Steam packaging.
-- PWA evaluation if it later solves a real distribution/product need.
+- iOS packaging and release, after the Android focus.
+- Desktop/Steam packaging or an independently supported browser product, only if explicitly promoted.
+- Additional PWA capabilities if they later solve an approved distribution/product need; the existing web preview does not establish a separate product target.
 
 ### OUT OF SCOPE for current development
 
@@ -192,13 +194,9 @@ remain **PROTOTYPE** and require real-device playtesting.
 
 ### DECIDED
 
-The game must adapt to:
+The current product must adapt to representative Android phone/tablet viewports, safe areas and supported window changes. Foldable/windowed layouts matter where included in the agreed target-device envelope; exact minimum devices remain TBD under §19.
 
-- phones;
-- tablets;
-- foldables;
-- desktop browsers;
-- later native mobile/desktop builds.
+Browser development/preview must retain working resize and integration behavior, but desktop-browser layouts do not establish a separate product-support matrix. Apply iOS device/layout acceptance when that later target enters focused scope, according to [the platform strategy](#2-platform-strategy).
 
 Physical screen size must not directly determine gameplay fairness.
 
@@ -606,9 +604,9 @@ Exact minimum supported devices remain **TBD** and should be set from real-devic
 
 ### DECIDED current direction
 
-- GitHub Pages is the initial web deployment target.
+- GitHub Pages remains the web development/preview deployment target, not an independently supported browser product release.
 - The project does not currently require Cloudflare or a backend.
-- Mobile packaging/release work belongs to the approved later roadmap.
+- Android is the initial product platform; release-channel/store preparation follows the assigned roadmap gate and focused work. iOS remains a later target under [§2](#2-platform-strategy).
 - Desktop/Steam should not block the initial mobile-first release unless explicitly promoted.
 
 ### Explicitly not building yet
@@ -698,3 +696,9 @@ Backlog / reference idea
 ### 2026-09-27
 
 - Product Gate A (#486) approved Endless-first as the 1.0 release core with optional in-run parcel handoffs and bounded M6 delivery evidence. A separate finishable Delivery/Story Mode is deferred; bonus rates, deeper economy, and Gallery mechanics remain undecided.
+
+### 2026-09-30
+
+- Director clarified the product audience: MGD targets mobile devices, with Android first and iOS later. The browser remains a development/debug/preview and supporting test path, not a separate product target.
+- Android hardware/app evidence drives current mobile acceptance. Missing iOS hardware does not block Android development; iOS validation remains pending until its own focused work and evidence.
+- Keep the shared gameplay codebase and existing stack; this decision does not authorize a rewrite, new iOS infrastructure, or additional desktop/web product scope. Distribution-channel and minimum-device decisions remain separately scoped.
