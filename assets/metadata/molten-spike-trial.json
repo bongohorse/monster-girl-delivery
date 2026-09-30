@@ -4,7 +4,7 @@
   "source": "assets/source/district-01/hazards/molten-spike-A-gpt-image.png",
   "sourceHash": "5b63a53fad06da12088863e6b44cc78809ef2c8ac4478561115c1c18340c6975",
   "provenance": "GPT Image variant A; gameplay trial selected in #492",
-  "state": "prepared",
+  "state": "active",
   "profile": "static-png",
   "canvas": {
     "width": 256,

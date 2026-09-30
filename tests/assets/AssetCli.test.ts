@@ -56,3 +56,42 @@ test('real Bun CLI prepares, validates and shows a candidate; invalid commands f
     await rm(root, { recursive: true, force: true });
   }
 });
+
+test('real CLI builds and validates the complete active runtime set', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'mgd-runtime-cli-'));
+  const run = (args: string[]) => execute('bun', [cli, ...args], { cwd: root });
+  try {
+    await writeFile(
+      join(root, 'input.png'),
+      await sharp({ create: { width: 32, height: 16, channels: 4, background: '#00ff00' } })
+        .png()
+        .toBuffer(),
+    );
+    await run([
+      'prepare',
+      '--id',
+      'cli-image',
+      '--file',
+      'input.png',
+      '--profile',
+      'pass-through',
+      '--display-width',
+      '16',
+      '--display-height',
+      '8',
+      '--provenance',
+      'fixture',
+    ]);
+    const recipePath = join(root, 'assets/metadata/cli-image.json');
+    const recipe = JSON.parse(await readFile(recipePath, 'utf8'));
+    await writeFile(recipePath, JSON.stringify({ ...recipe, state: 'active' }));
+    const built = JSON.parse((await run(['build'])).stdout);
+    expect(built.assets.map((asset: { id: string }) => asset.id)).toEqual(['cli-image']);
+    expect(JSON.parse((await run(['validate', '--runtime'])).stdout).fingerprint).toBe(
+      built.fingerprint,
+    );
+    await expect(run(['build', '--id', 'cli-image'])).rejects.toMatchObject({ code: 1 });
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});

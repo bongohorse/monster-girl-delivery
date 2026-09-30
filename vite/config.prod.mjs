@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite';
+import { assetPipelinePlugin } from '../scripts/assets/AssetEntrypoints.ts';
 import { createBuildDefines } from './buildMetadata.mjs';
 
 const phasermsg = () => {
@@ -64,5 +65,5 @@ export default defineConfig({
     port: 8080,
   },
 
-  plugins: [phasermsg()],
+  plugins: [assetPipelinePlugin(), phasermsg()],
 });
