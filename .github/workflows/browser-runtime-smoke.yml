@@ -7,6 +7,8 @@ on:
       - '.github/workflows/browser-runtime-smoke.yml'
       - 'index.html'
       - 'public/**'
+      - 'assets/**'
+      - 'scripts/assets/**'
       - 'src/main.ts'
       - 'src/core/**'
       - 'src/game/**'
@@ -17,6 +19,9 @@ on:
       - 'vite/**'
       - 'package.json'
       - 'bun.lock'
+      - '.bun-version'
+      - 'tsconfig.json'
+      - 'scripts/verify-web-package.mjs'
   push:
     branches:
       - main
@@ -24,6 +29,8 @@ on:
       - '.github/workflows/browser-runtime-smoke.yml'
       - 'index.html'
       - 'public/**'
+      - 'assets/**'
+      - 'scripts/assets/**'
       - 'src/main.ts'
       - 'src/core/**'
       - 'src/game/**'
@@ -34,6 +41,9 @@ on:
       - 'vite/**'
       - 'package.json'
       - 'bun.lock'
+      - '.bun-version'
+      - 'tsconfig.json'
+      - 'scripts/verify-web-package.mjs'
 
 permissions:
   contents: read
@@ -229,6 +239,14 @@ jobs:
           if [ -f reports/browser-runtime-smoke/vite.pid ]; then
             kill "$(cat reports/browser-runtime-smoke/vite.pid)" 2>/dev/null || true
           fi
+
+      - name: Build production package
+        run: bun run build
+
+      - name: Verify production package in root and Pages subpath
+        run: |
+          export MGD_CHROME_PATH="$(cat reports/browser-runtime-smoke/chrome-path.txt)"
+          bun scripts/assets/package-smoke.ts dist
 
       - name: Record smoke metadata
         if: always()

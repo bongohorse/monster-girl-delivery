@@ -37,3 +37,6 @@ reports/assets/
 # Rebuilt runtime asset generations and registry
 assets/processed/
 src/generated/assets.ts
+
+# Local production/browser CI evidence
+reports/browser-runtime-smoke/
