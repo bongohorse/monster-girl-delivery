@@ -2524,22 +2524,9 @@ Example families:
 
 Exact values should be chosen through visual testing. Palette swaps can generate cheap variation.
 
-## Future Art Bible
+## Art direction ownership
 
-When the direction is stable, create a formal `docs/ART_DIRECTION.md` that locks:
-
-- canonical style;
-- silhouettes;
-- palette rules;
-- perspective;
-- outline thickness/behavior;
-- light direction;
-- shadow rules;
-- character proportions;
-- environment detail density;
-- eye/skin/hair/horn/fur/slime/metal/fire treatment;
-- UI icon style;
-- VFX shape language.
+Current visual references, scoped acceptance and working profiles live in [ART_DIRECTION.md](ART_DIRECTION.md). This backlog retains future experiments, not approved style requirements. Unresolved production choices are tracked by the Art Gate.
 
 Possible starting principles to test:
 

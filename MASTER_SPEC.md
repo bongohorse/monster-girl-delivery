@@ -525,7 +525,7 @@ Principles:
 
 Exact processing/atlas tooling remains **TBD** until the relevant production work is approved.
 
-Detailed future art/pipeline exploration belongs in [`docs/BACKLOG.md`](docs/BACKLOG.md). Technical pipeline boundaries belong in [`ARCHITECTURE.md`](ARCHITECTURE.md).
+Visual references, scoped acceptance and working profiles live in [`docs/ART_DIRECTION.md`](docs/ART_DIRECTION.md); this does not complete the Art Gate. Detailed future art/pipeline exploration belongs in [`docs/BACKLOG.md`](docs/BACKLOG.md). Technical pipeline boundaries belong in [`ARCHITECTURE.md`](ARCHITECTURE.md).
 
 ---
 
