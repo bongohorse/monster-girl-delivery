@@ -13,7 +13,7 @@ Local development requires:
 - Git;
 - Bun.
 
-The repository's `.devcontainer/` is the reproducible Codespaces definition.
+The repository's `.devcontainer/` defines the shared environment for Codespaces and local VS Code Dev Containers, including Windows 11 with WSL Containers (WSLC). Both use the same configuration; the container runtime path is a local VS Code user setting.
 
 ## 2. Standard commands
 
@@ -78,36 +78,74 @@ bun run preview
 
 Director/dev tools are development-only and should not be treated as production gameplay.
 
-## 5. Codespaces
+## 5. Shared devcontainer: Codespaces and local Windows
 
-The repository contains `.devcontainer/devcontainer.json` and a post-create setup script.
+The repository contains `.devcontainer/devcontainer.json`, `post-create.sh`, and `post-start.sh`.
 
-A new Codespace should:
+Creating the environment:
 
-1. start from the Ubuntu 24.04 devcontainer base;
-2. provide Git and GitHub CLI;
-3. provide the Ubuntu-supported Python runtime through the official devcontainer Python feature without installing its Python/Pylance/autopep8 VS Code extensions;
-4. install the Bun version defined by the repository setup;
-5. install project dependencies;
-6. install the latest Codex CLI, Google Antigravity CLI, and Graphify CLI as optional coding-agent tools;
-7. run a production build before reporting the Codespace ready;
-8. forward port `8080` for Vite preview/testing.
+1. starts from the Ubuntu 24.04 devcontainer base;
+2. provides Git and GitHub CLI;
+3. provides the Ubuntu-supported Python runtime through the official devcontainer Python feature without installing its Python/Pylance/autopep8 VS Code extensions;
+4. trusts only the actual mounted workspace via Git `safe.directory`;
+5. installs the Bun version from `.bun-version` and project dependencies with `bun install --frozen-lockfile`;
+6. installs the latest Codex CLI and Google Antigravity CLI as optional coding-agent tools;
+7. runs a production build before reporting the development environment ready;
+8. forwards port `8080` for Vite preview/testing.
 
-The only project-requested VS Code extension is Biome. GitHub Codespaces and VS Code may still provide platform/built-in extensions or the selected display-language pack.
+The post-create script reports six numbered setup steps with elapsed time. In an interactive terminal it also displays a spinner. Required failures print the last captured output and stop setup; optional coding-agent tool failures warn and continue. Per-step logs are retained under `${TMPDIR:-/tmp}/mgd-devcontainer-setup` (normally `/tmp/mgd-devcontainer-setup`). The start hook configures the workspace trust and shell profiles on creation and subsequent starts; repeated execution does not add duplicate trust entries or profile lines.
 
-For reproducible project isolation, keep GitHub Codespaces **Settings Sync** and automatic **dotfiles** disabled for this workflow. Settings Sync can otherwise inject extensions and UI state from unrelated projects into a fresh Codespace.
+The only project-requested VS Code extension is Biome. Codespaces and VS Code may still provide platform/built-in extensions or the selected display-language pack. Antigravity can be launched with `agy` after successful installation. Tool authentication remains user-specific and is not stored in the repository.
 
-The post-create script reports numbered setup steps with elapsed time. In an interactive terminal it also displays a spinner while a step is running. Required setup failures print the last captured command output and stop setup; optional coding-agent tool failures print a warning and continue. Full per-step logs are retained under `/tmp/mgd-codespace-setup` for diagnosis.
+Graphify is installed only on demand; see the [Graphify skill](.agents/skills/graphify/SKILL.md) for installation and the normal repository-search fallback. It is not a prerequisite for container setup or repository work.
 
-The Antigravity installer places `agy` in the user environment, so a newly created Codespace can launch it directly with `agy` after setup completes. Authentication remains user-specific and is not stored in the repository.
+### Codespaces
+
+Create a Codespace from the desired repository branch and allow post-create setup to finish. Use the forwarded port `8080` after starting `bun run dev`.
+
+For reproducible project isolation, keep Codespaces **Settings Sync** and automatic **dotfiles** disabled for this workflow. Settings Sync can otherwise inject extensions and UI state from unrelated projects into a fresh Codespace.
+
+### Local Windows 11 with WSLC and VS Code Dev Containers
+
+Microsoft documents `wslc.exe` as the WSL container CLI and requires WSL 2.9.3 or newer; check with `wsl --version` and `wslc version` in PowerShell. Follow the current [Microsoft WSL container instructions](https://learn.microsoft.com/en-us/windows/wsl/tutorials/wsl-containers) for installation/update requirements.
+
+Microsoft's [WSLC announcement](https://devblogs.microsoft.com/commandline/wsl-container-is-now-available-for-public-preview/#vs-code-dev-containers) documents Dev Containers support introduced in `0.462.0-pre-release` and selecting WSLC through **Docker Path**. Use a Dev Containers extension version with that support. This documents the integration entry point, not a claim that every Docker workflow is supported.
+
+For the established local MGD setup:
+
+1. Keep the working VS Code **user** setting unchanged:
+
+   ```json
+   "dev.containers.dockerPath": "C:\\Program Files\\WSL\\wslc.exe"
+   ```
+
+   Do not put this Windows host path into the shared `devcontainer.json`.
+2. Open the local repository folder in Windows VS Code. For a new clone, `git clone --config core.autocrlf=false https://github.com/bongohorse/monster-girl-delivery.git` keeps the Linux tooling checkout in LF form. Existing Windows checkouts may contain CRLF in file types without explicit `eol=lf` attributes; Biome can report those as formatting errors even when Git reports a clean tree.
+3. Run **Dev Containers: Reopen in Container**, then wait for setup to finish. The container workspace path is chosen by Dev Containers; setup derives it from the script location rather than assuming `/workspaces/monster-girl-delivery`.
+4. Authenticate inside the container as described below, then start `bun run dev` and open the forwarded port `8080`.
 
 ### GitHub CLI authentication
 
-The repository supports a Codespaces secret named `MGD_GH_TOKEN`. The devcontainer exposes it to GitHub CLI as `GH_TOKEN`.
+The optional Codespaces secret `MGD_GH_TOKEN` is mapped to `GH_TOKEN` in Bash startup profiles **only when non-empty**. When absent or empty, setup preserves any existing `GH_TOKEN` and otherwise leaves it unset. The hook also removes the old unconditional MGD export from those profiles when upgrading an existing container.
 
-Do not store tokens in repository files or `devcontainer.json` values.
+Locally, without an environment token, run `gh auth login` and then `gh auth status` in a new container terminal; no preceding `unset GH_TOKEN` is required by this configuration. An intentionally supplied `GH_TOKEN` or `GITHUB_TOKEN` still takes precedence over stored credentials, as documented by [GitHub CLI](https://cli.github.com/manual/gh_help_environment). [Interactive login](https://cli.github.com/manual/gh_auth_login) stores authentication for subsequent commands.
 
-See [`docs/GITHUB_AI_ACCESS.md`](docs/GITHUB_AI_ACCESS.md) for the permission/authentication model.
+Do not store tokens in repository files or `devcontainer.json` values. See [`docs/GITHUB_AI_ACCESS.md`](docs/GITHUB_AI_ACCESS.md) for the Codespaces permission/authentication model.
+
+### Feature lockfile
+
+The committed `.devcontainer/devcontainer-lock.json` pins the configured GitHub CLI feature (`1.1.3`) and Python feature (`1.8.0`) to their OCI SHA-256 digests. Its entries were checked against registry manifests and feature metadata and contain no credentials or host paths. This follows the [Dev Containers feature-lockfile specification](https://github.com/devcontainers/spec/blob/main/docs/specs/devcontainer-lockfile.md). It locks feature packages, not the base-image tag, installed CLI binaries, or OS packages.
+
+### Rebuild acceptance checklist
+
+A real Windows/WSLC rebuild must be performed on the Windows host; shell/configuration checks inside an existing container cannot prove it. On the PR branch:
+
+1. Confirm the working Docker Path above, then run **Dev Containers: Rebuild Container** and inspect **Dev Containers: Show Container Log**. This restarts the development environment; run it when ready.
+2. Confirm all six setup steps finish, Codex/Antigravity either install or report their optional failure clearly, and no Graphify installation is attempted. Inspect `/tmp/mgd-devcontainer-setup` if needed.
+3. In a new terminal, run `git status` and `git config --global --get-all safe.directory`; confirm the actual workspace is trusted and setup did not add `*`. Run `bun --version`, `codex --version`, and `agy --version` (if their optional installation succeeded).
+4. Without `MGD_GH_TOKEN` and without an intentionally supplied environment token, verify that `GH_TOKEN` is unset without printing credentials: `test "${GH_TOKEN+x}" != x`. Run `gh auth login` without `unset`, then `gh auth status`.
+5. Run the four [required verification commands](#3-required-verification), start `bun run dev`, and open forwarded port `8080` from Windows.
+6. Restart/reopen the container and confirm `git status` and `gh auth status` still work, with no duplicate workspace trust or profile entries. For Codespaces acceptance, also create/rebuild a Codespace from the branch with non-empty `MGD_GH_TOKEN` and verify `gh auth status` uses the environment token without exposing it.
 
 ## 6. Manual and real-device testing
 
