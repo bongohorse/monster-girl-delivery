@@ -3,7 +3,7 @@
   "id": "red-monster-missile",
   "source": "assets/source/district-01/hazards/red-monster-missile-gpt-image.png",
   "sourceHash": "a656027aa3eb4be15f2884bf56e215201f6ff1f02597364e10280447733f8687",
-  "provenance": "Director-approved uploaded GPT Image artwork; existing Missile trial #493",
+  "provenance": "Director-approved uploaded GPT Image artwork; existing Missile trial https://github.com/bongohorse/monster-girl-delivery/pull/493",
   "state": "active",
   "profile": "static-png",
   "canvas": {
