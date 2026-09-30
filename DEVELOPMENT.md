@@ -207,17 +207,14 @@ Do not invent or document asset tooling as implemented until an approved task ad
 
 ## 12. Deployment and packaging targets
 
-Current web deployment target:
+Product platform priority is owned by [MASTER_SPEC §2](MASTER_SPEC.md#2-platform-strategy). Browser tooling remains available for development/preview; its checks do not replace app/device acceptance.
 
-- GitHub Pages.
+Current build/distribution instructions:
 
-Possible later distribution/packaging work, only when promoted by the roadmap/product plan:
+- [Web preview/Pages](docs/PWA_ANDROID.md#hosted-test-build).
+- [Android local packaging](docs/ANDROID_CAPACITOR.md#local-workflow) and [CI/tester distribution](docs/ANDROID_DISTRIBUTION.md).
 
-- itch.io;
-- Android/iOS packaging (for example Capacitor evaluation);
-- Desktop/Steam wrapper evaluation;
-- gamepad/desktop UX;
-- PWA evaluation.
+Later platform/channel work (including iOS and Play/AAB preparation) requires its assigned roadmap gate and focused scope. This document lists available tools, not authorization for an additional product platform or publication.
 
 Do not add Cloudflare/backend infrastructure without a concrete approved requirement.
 
