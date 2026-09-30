@@ -97,12 +97,31 @@ const getHandler = (preloader: Preloader, name: string): ((...args: unknown[]) =
 };
 
 describe('Preloader scene responsive layout', () => {
-  it('preloads the same spike texture used by the live hazard presentation', () => {
+  it('preloads the live hazard textures and all three provisional player poses', () => {
     const { loadImage, preloader } = createPreloaderHarness();
     preloader.preload();
-    expect(loadImage).toHaveBeenCalledExactlyOnceWith(
+    expect(loadImage).toHaveBeenCalledTimes(5);
+    expect(loadImage).toHaveBeenNthCalledWith(
+      1,
       'molten-spike-trial',
       'assets/m6/molten-spike-trial.png',
+    );
+    expect(loadImage).toHaveBeenNthCalledWith(
+      2,
+      'red-monster-missile',
+      'assets/m6/red-monster-missile.png',
+    );
+    expect(loadImage).toHaveBeenCalledWith(
+      'art-gate-pose-a-concept',
+      'assets/art-gate/pose-a-concept-preview.png',
+    );
+    expect(loadImage).toHaveBeenCalledWith(
+      'art-gate-pose-b-ascent',
+      'assets/art-gate/pose-b-concept-preview.png',
+    );
+    expect(loadImage).toHaveBeenCalledWith(
+      'art-gate-pose-c-descent',
+      'assets/art-gate/pose-c-concept-preview.png',
     );
   });
   it('creates the loading presentation and registers one listener per event', () => {

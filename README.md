@@ -1,6 +1,6 @@
 # Monster Girl Delivery
 
-2D mobile-first sidescroller built with Phaser 4 and TypeScript.
+2D mobile game built with Phaser 4 and TypeScript. **Android first; iOS later.** The browser is the development/debug/preview path.
 
 **Project status:** [GitHub Milestones](https://github.com/bongohorse/monster-girl-delivery/milestones)
 
@@ -119,6 +119,8 @@ Exact installed versions are defined by `package.json` and `bun.lock`.
 | Completed milestone history | [`docs/milestones/README.md`](docs/milestones/README.md) |
 
 ## Current product direction
+
+[The platform strategy](MASTER_SPEC.md#2-platform-strategy) targets mobile players. Current product acceptance is driven by the Android app on representative devices; browser previews and automated checks support development. iOS is deferred, and an independent browser/desktop product is outside the current target scope.
 
 The current core game is **Landscape**, left-to-right, with one-button flight. The Director accepted the M1 smartphone/tablet evidence recorded in [`docs/milestones/M1-device-report.md`](docs/milestones/M1-device-report.md).
 
