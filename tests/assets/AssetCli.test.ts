@@ -9,7 +9,10 @@ import { expect, test } from 'vitest';
 const execute = promisify(execFile);
 const cli = resolve('scripts/assets/cli.ts');
 
-test('real Bun CLI prepares, validates and shows a candidate; invalid commands fail clearly', async () => {
+// Multiple real subprocesses need a bounded integration-test budget under suite load.
+test('real Bun CLI prepares, validates and shows a candidate; invalid commands fail clearly', {
+  timeout: 15_000,
+}, async () => {
   const root = await mkdtemp(join(tmpdir(), 'mgd-asset-cli-'));
   const run = (args: string[]) => execute('bun', [cli, ...args], { cwd: root });
   try {
@@ -57,7 +60,9 @@ test('real Bun CLI prepares, validates and shows a candidate; invalid commands f
   }
 });
 
-test('real CLI builds and validates the complete active runtime set', async () => {
+test('real CLI builds and validates the complete active runtime set', {
+  timeout: 15_000,
+}, async () => {
   const root = await mkdtemp(join(tmpdir(), 'mgd-runtime-cli-'));
   const run = (args: string[]) => execute('bun', [cli, ...args], { cwd: root });
   try {

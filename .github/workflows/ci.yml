@@ -37,3 +37,52 @@ jobs:
 
       - name: Build
         run: bun run build
+
+      - name: Prepare asset preview evidence
+        run: bun scripts/assets/ci-previews.ts
+
+      - name: Upload asset previews
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: asset-previews-linux-${{ github.sha }}
+          path: reports/assets/ci-previews/
+          if-no-files-found: error
+          retention-days: 14
+
+  assets-windows:
+    runs-on: windows-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .bun-version
+
+      - name: Install locked dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build complete runtime assets
+        run: bun run assets:build
+
+      - name: Prepare and validate asset previews
+        run: bun scripts/assets/ci-previews.ts
+
+      - name: Build production web app
+        run: bun run build
+
+      - name: Verify production package
+        run: |
+          bun scripts/verify-web-package.mjs dist
+          bun scripts/assets/check-package.ts dist
+
+      - name: Upload Windows asset evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: asset-previews-windows-${{ github.sha }}
+          path: reports/assets/ci-previews/
+          if-no-files-found: error
+          retention-days: 14

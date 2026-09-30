@@ -9,6 +9,8 @@ on:
       - '.github/workflows/pages-deploy.yml'
       - 'index.html'
       - 'public/**'
+      - 'assets/**'
+      - 'scripts/assets/**'
       - 'src/**'
       - 'vite/**'
       - 'scripts/verify-web-package.mjs'
@@ -21,6 +23,8 @@ on:
       - '.github/workflows/pages-deploy.yml'
       - 'index.html'
       - 'public/**'
+      - 'assets/**'
+      - 'scripts/assets/**'
       - 'src/**'
       - 'vite/**'
       - 'scripts/verify-web-package.mjs'
@@ -56,7 +60,9 @@ jobs:
         run: bun run build
 
       - name: Verify production PWA package
-        run: node scripts/verify-web-package.mjs dist
+        run: |
+          node scripts/verify-web-package.mjs dist
+          bun scripts/assets/check-package.ts dist
 
       - name: Upload GitHub Pages artifact
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'

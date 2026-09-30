@@ -11,7 +11,8 @@ Static-image preparation and comparison previews remain isolated. Task 3 adds th
 | Prepare / validate / preview | Implemented; commands below |
 | Full runtime builder, generated registry, build entrypoints and Spike migration | Implemented; Spike uses the generated registry |
 | Existing non-pixel Missile migration | Implemented; Lanczos3 recipe and generated loader URL |
-| CI triggers, preview artifacts, packaged loader and Android/device evidence | Task 5; not implemented |
+| CI triggers, bounded previews, Linux/Windows processing and packaged loader | Implemented; per-head CI provides platform evidence |
+| Physical Android update/restart and final art/device acceptance | Pending Director/device evidence |
 
 Gate B/C remain partial. A valid candidate is neither runtime integration nor visual acceptance. Both Spike and Missile use managed output; their sources are retained and duplicate legacy Public images are removed. No audio, animation, atlas, gallery or new artwork is introduced.
 
@@ -101,7 +102,7 @@ A confirmed dead owner PID on the same host can be recovered automatically only 
 
 ## Toolchain and evidence
 
-Sharp 0.35.5 is a pinned development dependency. Candidate preparation has been exercised on Linux with Bun 1.4.2; Windows/native installation and device presentation remain pending pilot evidence. Matching input produces reproducible outputs within the recorded toolchain context; no cross-encoder, cross-platform or APK byte-identity promise follows.
+Sharp 0.35.5 is a pinned development dependency. Candidate preparation has been exercised on Linux with Bun 1.4.2. CI also runs one Windows native-installation/processing job; its report records the actual platform and Sharp context. Physical device presentation remains separate pilot evidence. Matching input produces reproducible outputs within the recorded toolchain context; no cross-encoder, cross-platform or APK byte-identity promise follows.
 
 A preview proves processing/identity, not subjective style, fair danger, touch behavior or device quality. Keep normal interim reports ignored. When an actual visual acceptance needs durable evidence, preserve a compact accepted comparison and, for integrated assets, representative in-game evidence under `docs/asset-evidence/<id>/<fingerprint>/`, with tested integration/build identity, device/render context, scoped decision and review link. Do not manufacture acceptance records for every candidate. Relevant changes require updated evidence; editorial changes alone do not.
 
@@ -122,8 +123,26 @@ A running dev server records its PID/host/token and permits candidate work and u
 
 The Spike preserves its existing 256 × 256 canvas, visible bounds, 72 × 72 logical display, horizontal flip and 48 × 48 collision box. The Sharp/Pillow comparison permits small sampling differences; matching encoded bytes are not the goal. Its existing approved trial direction is preserved; final art/device acceptance remains separate.
 
+## CI and packaged-loader evidence
+
+The required Linux `CI / validate` job remains unfiltered. Browser, Pages and Android filters include `assets/**` and `scripts/assets/**`, so source/recipe changes also reach their existing build checks. No publication trigger or permission is added.
+
+Linux and one Windows job run `bun scripts/assets/ci-previews.ts`. The self-contained comparison index, candidate reports and native/toolchain context are uploaded for 14 days. Artifact export is limited to eight sorted recipes and 32 MiB total, with any omissions listed in the index/report and job summary. These are CI artifact bounds, not production-art budgets or another approval gate. Candidate generation/validation uses the existing commands' implementation and does not activate images.
+
+Pages, Windows and the Android copied web directory additionally run `bun scripts/assets/check-package.ts <directory>`. The checker binds shipped image bytes to the verified active runtime hashes, independent of Vite's emitted filenames. It rejects missing/damaged exports, original sources and build-only folders/tools; explicit pass-through runtime exports remain valid. The existing PWA/package check still owns launcher and manifest identity.
+
+After building, Browser CI runs:
+
+```bash
+MGD_CHROME_PATH=/path/to/chrome bun scripts/assets/package-smoke.ts dist
+```
+
+This serves the actual Production package at `/` and `/mgd-package-pilot/`, with no root fallback for the subpath run. A test-server-only passive image observer records successful decoding of the managed images by the application's actual Phaser loader, matches source bytes/dimensions to the verified exports, and requires the real app to finish booting. The runner waits through Chrome's local debugging protocol using bounded real elapsed time; virtual timers cannot outrun Phaser's graphics/animation-frame boot. Shipped files and application code are not modified. DOM, request outcomes, hashes, commit and Chrome context are included in the existing browser artifact. This proves packaged loading, not visual quality or device gameplay.
+
+Android CI checks the directory Capacitor actually copies before its existing APK build. APK install/update compatibility, restart/resume and physical Phone/Pad-6 presentation require a real device test; a green build is not that acceptance. Accepted visual evidence is archived only after an actual scoped Director decision.
+
 ## Remaining pilot work
 
-The non-pixel Missile uses a transparent 512 × 330 Lanczos3 export with the existing 112 × 60 game display and launch-side flip; its authored game factors are unchanged despite the reported target/canvas aspect mismatch. Its final motion/danger-readability art/device acceptance remains open. Task 5 covers CI path filters, bounded preview artifacts, production-subpath packaged loader evidence and Android/update/device evidence. Windows/native installation and physical device checks remain outstanding; missing hardware does not block independent implementation. `assets/raw` remains an optional local inbox.
+The non-pixel Missile uses a transparent 512 × 330 Lanczos3 export with the existing 112 × 60 game display and launch-side flip; its authored game factors are unchanged despite the reported target/canvas aspect mismatch. Its final motion/danger-readability art/device acceptance remains open. CI/package tooling is implemented below; physical Android update/restart and motion/danger-readability acceptance remain outstanding. Missing hardware does not block independent implementation. `assets/raw` remains an optional local inbox.
 
 The native Vite import target refines technical delivery for managed images; it does not change product art decisions or migrate legacy `public` files early. Future audio, animation, atlas, UI/background profiles or storage changes require actual consumers and their own scoped task. For live remaining criteria, use #494's acceptance matrix and task-status comments rather than treating this document as a passed pilot report.

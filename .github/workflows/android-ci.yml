@@ -9,6 +9,8 @@ on:
       - 'capacitor.config.ts'
       - 'index.html'
       - 'public/**'
+      - 'assets/**'
+      - 'scripts/assets/**'
       - 'src/**'
       - 'vite/**'
       - 'scripts/android-release-version.mjs'
@@ -28,6 +30,8 @@ on:
       - 'capacitor.config.ts'
       - 'index.html'
       - 'public/**'
+      - 'assets/**'
+      - 'scripts/assets/**'
       - 'src/**'
       - 'vite/**'
       - 'scripts/android-release-version.mjs'
@@ -93,7 +97,9 @@ jobs:
         run: bun run android:sync
 
       - name: Verify bundled production PWA
-        run: node scripts/verify-web-package.mjs android/app/src/main/assets/public
+        run: |
+          node scripts/verify-web-package.mjs android/app/src/main/assets/public
+          bun scripts/assets/check-package.ts android/app/src/main/assets/public
 
       - name: Verify MGD Android identity
         run: |
