@@ -3,18 +3,54 @@
   "codeReviewRevision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
   "deployedGameRevision": null,
   "categories": [
-    { "id": "heros", "name": "Heros / Monster Girls" },
-    { "id": "hazards", "name": "Hazards" },
-    { "id": "collectibles", "name": "Collectibles" },
-    { "id": "deliveries", "name": "Lieferungen" },
-    { "id": "mechanics", "name": "Gameplay / Mechaniken" },
-    { "id": "encounters", "name": "Level / Encounter" },
-    { "id": "backgrounds", "name": "Hintergründe / Biomes" },
-    { "id": "ui", "name": "UI / Menüs" },
-    { "id": "vfx", "name": "VFX" },
-    { "id": "animation", "name": "Animation" },
-    { "id": "audio", "name": "Audio" },
-    { "id": "gallery", "name": "Galerie / Meta" }
+    {
+      "id": "heros",
+      "name": "Heros / Monster Girls"
+    },
+    {
+      "id": "hazards",
+      "name": "Hazards"
+    },
+    {
+      "id": "collectibles",
+      "name": "Collectibles"
+    },
+    {
+      "id": "deliveries",
+      "name": "Lieferungen"
+    },
+    {
+      "id": "mechanics",
+      "name": "Gameplay / Mechaniken"
+    },
+    {
+      "id": "encounters",
+      "name": "Level / Encounter"
+    },
+    {
+      "id": "backgrounds",
+      "name": "Hintergründe / Biomes"
+    },
+    {
+      "id": "ui",
+      "name": "UI / Menüs"
+    },
+    {
+      "id": "vfx",
+      "name": "VFX"
+    },
+    {
+      "id": "animation",
+      "name": "Animation"
+    },
+    {
+      "id": "audio",
+      "name": "Audio"
+    },
+    {
+      "id": "gallery",
+      "name": "Galerie / Meta"
+    }
   ],
   "elements": [
     {
@@ -27,15 +63,59 @@
       "documentation": {
         "state": "source-conflict",
         "date": "2026-09-30",
-        "notes": "Art-Brief beschreibt A als stabile Baseline und B/C als Experimente; der Runtime-Code wechselt automatisch zwischen den drei Posen."
+        "notes": "Art-Brief beschreibt A als stabile Baseline und B/C als Experimente; der Runtime-Code wechselt automatisch zwischen den drei Posen.",
+        "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+        "coverage": "Posenauswahl und provisorischer Art-Gate-Stand; keine vollständige Hero-/Animationsdokumentation."
       },
       "implementation": "partial",
       "archived": false,
       "previewPath": "public/assets/art-gate/pose-a-concept-preview.png",
       "sources": [
-        { "path": "src/entities/PrototypePlayerPresentation.ts", "kind": "code" },
-        { "path": "src/game/scenes/Preloader.ts", "kind": "code" },
-        { "path": "docs/M6_ASSET_SCENE_BRIEF.md", "kind": "doc" }
+        {
+          "id": "1",
+          "path": "src/entities/PrototypePlayerPresentation.ts",
+          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "kind": "code"
+        },
+        {
+          "id": "2",
+          "path": "src/game/scenes/Preloader.ts",
+          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "kind": "code"
+        },
+        {
+          "id": "3",
+          "path": "docs/M6_ASSET_SCENE_BRIEF.md",
+          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "kind": "doc"
+        }
+      ],
+      "relatedElementIds": [],
+      "openQuestions": [
+        "Originaldateien und vollständiger Prompt sind im derzeitigen Bestand nicht belegt.",
+        "Galerie und Assetreview werden in Aufgabe 4 separat dokumentiert."
+      ],
+      "sourceConflicts": [
+        "Art-Brief beschreibt A als stabile Baseline und B/C als Experimente; der Runtime-Code wechselt automatisch zwischen den drei Posen."
+      ],
+      "detailSections": [
+        {
+          "title": "Posen & Gestaltung",
+          "facts": [
+            {
+              "label": "Vorhandene Konzeptposen",
+              "value": "A: Ausgangspose, B: Aufstieg, C: Abstieg. Auswahl folgt Flugzustand mit Halte-/Beruhigungszeiten.",
+              "certainty": "confirmed",
+              "sourceIds": ["1", "2"]
+            },
+            {
+              "label": "Produktionsfreigabe",
+              "value": "Endgültige Produktionsfigur und reale Geräteabnahme sind nicht belegt.",
+              "certainty": "unknown",
+              "sourceIds": ["3"]
+            }
+          ]
+        }
       ]
     },
     {
@@ -48,15 +128,57 @@
       "documentation": {
         "state": "checked",
         "date": "2026-09-30",
-        "notes": "Bestandsaufnahme von Quelle, Rezept, Loader und Director-Pfad. Vollständige Galerie und Nutzungsnachweise folgen in Aufgabe 4."
+        "notes": "Bestandsaufnahme von Quelle, Rezept, Loader und Director-Pfad. Vollständige Galerie und Nutzungsnachweise folgen in Aufgabe 4.",
+        "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+        "coverage": "Quelle/Rezept und Director-Abgrenzung; keine vollständige Hazard-Lifecycle-Dokumentation."
       },
       "implementation": "partial",
       "archived": false,
       "previewPath": "assets/source/district-01/hazards/red-monster-missile-gpt-image.png",
       "sources": [
-        { "path": "assets/metadata/red-monster-missile.json", "kind": "manifest" },
-        { "path": "src/generation/M5LiveEncounterCatalog.ts", "kind": "code" },
-        { "path": "src/game/scenes/Foundation.ts", "kind": "code" }
+        {
+          "id": "1",
+          "path": "assets/metadata/red-monster-missile.json",
+          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "kind": "manifest"
+        },
+        {
+          "id": "2",
+          "path": "src/generation/M5LiveEncounterCatalog.ts",
+          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "kind": "code"
+        },
+        {
+          "id": "3",
+          "path": "src/game/scenes/Foundation.ts",
+          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "kind": "code"
+        }
+      ],
+      "relatedElementIds": [],
+      "openQuestions": [
+        "Bewegung, Warnphasen und Kollision sind hier noch nicht vollständig dokumentiert.",
+        "Vollständige Asset-/Verwendungsnachweise folgen in Aufgabe 4."
+      ],
+      "sourceConflicts": [],
+      "detailSections": [
+        {
+          "title": "Hazard-Verhalten & Admission",
+          "facts": [
+            {
+              "label": "Spielzuordnung",
+              "value": "Director-Pfad; nicht Bestandteil des normalen AUTO-Katalogs.",
+              "certainty": "confirmed",
+              "sourceIds": ["2", "3"]
+            },
+            {
+              "label": "Bildverarbeitung",
+              "value": "Aktives Rezept red-monster-missile verbindet Original und generierten Runtime-Export. Aktivierung ist keine pauschale Produktionsfreigabe.",
+              "certainty": "confirmed",
+              "sourceIds": ["1"]
+            }
+          ]
+        }
       ]
     },
     {
@@ -69,14 +191,599 @@
       "documentation": {
         "state": "checked",
         "date": "2026-09-30",
-        "notes": "Kleine belegte Stichprobe; Mechanikdetails folgen in Aufgabe 3. Der freie Pfeilprototyp ist noch nicht umgesetzt."
+        "notes": "Bestätigte aktuelle Darstellung; Pilotparameter sind keine Spielwerte.",
+        "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+        "coverage": "Pickup-/Empfänger-Cue und distanzbasierte Vorwarnung; kein separater GPS-Dienst oder fertiger Workshop-Pilot."
       },
       "implementation": "partial",
       "archived": false,
       "previewPath": null,
       "sources": [
-        { "path": "src/entities/FirstDeliveryPresentation.ts", "kind": "code" },
-        { "path": "src/config/DeliveryTuning.ts", "kind": "code" }
+        {
+          "id": "spec",
+          "path": "MASTER_SPEC.md",
+          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "kind": "spec",
+          "symbol": "DECIDED release core — Product Gate A"
+        },
+        {
+          "id": "authority",
+          "path": "src/systems/ParcelDelivery.ts",
+          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "kind": "code",
+          "symbol": "stepParcelDelivery"
+        },
+        {
+          "id": "route",
+          "path": "src/generation/FirstDeliveryRoute.ts",
+          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "kind": "code",
+          "symbol": "createFirstDeliveryRoute"
+        },
+        {
+          "id": "tuning",
+          "path": "src/config/DeliveryTuning.ts",
+          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "kind": "code",
+          "symbol": "PROTOTYPE_DELIVERY_TUNING"
+        },
+        {
+          "id": "presentation",
+          "path": "src/entities/FirstDeliveryPresentation.ts",
+          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "kind": "code",
+          "symbol": "FirstDeliveryPresentation.render"
+        },
+        {
+          "id": "integration",
+          "path": "src/game/scenes/Foundation.ts",
+          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "kind": "code",
+          "symbol": "create / update / render / restart"
+        },
+        {
+          "id": "regression",
+          "path": "tests/systems/ParcelDelivery.test.ts",
+          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "kind": "test"
+        },
+        {
+          "id": "cue-tests",
+          "path": "tests/entities/FirstDeliveryPresentation.test.ts",
+          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "kind": "test"
+        }
+      ],
+      "relatedElementIds": ["parcel", "delivery-recipient", "parcel-delivery"],
+      "openQuestions": [
+        "Eine separate Pfeil-/GPS-Bilddatei, SFX oder Animationsdatei ist nicht belegt.",
+        "Drei freie Pfeilkonzepte entstehen erst im späteren Pilot; keine Auswahlentscheidung vorhanden."
+      ],
+      "sourceConflicts": [],
+      "detailSections": [
+        {
+          "title": "Vorwarnung & Darstellung",
+          "facts": [
+            {
+              "label": "Pickup-Pfeil",
+              "value": "Kleiner Abwärtspfeil über dem sichtbaren Paket vor Aufnahme.",
+              "certainty": "confirmed",
+              "sourceIds": ["presentation", "cue-tests"]
+            },
+            {
+              "label": "Empfänger-Vorwarnung",
+              "value": 800,
+              "certainty": "confirmed",
+              "sourceIds": ["tuning", "presentation", "cue-tests"],
+              "unit": "m Run-Distanz",
+              "maturity": "prototype"
+            },
+            {
+              "label": "Offscreen-Empfänger",
+              "value": "Rechtspfeil am rechten Bildschirmrand auf projizierter Empfängerhöhe; nur während carrying.",
+              "certainty": "confirmed",
+              "sourceIds": ["presentation", "cue-tests"]
+            },
+            {
+              "label": "Blinkintervall",
+              "value": 110,
+              "certainty": "confirmed",
+              "sourceIds": ["presentation"],
+              "unit": "m Run-Distanz pro Alphawechsel",
+              "maturity": "prototype"
+            },
+            {
+              "label": "Blinkdarstellung",
+              "value": "Alpha wechselt zwischen 1 und 0,3 aus floor(runDistance / 110). Die zeitliche Blinkrate hängt von Scrollgeschwindigkeit ab.",
+              "certainty": "confirmed",
+              "sourceIds": ["presentation"]
+            },
+            {
+              "label": "Onscreen-Empfänger",
+              "value": "Abwärtspfeil über dem Empfänger; delivered/missed beendet die Darstellung.",
+              "certainty": "confirmed",
+              "sourceIds": ["presentation", "cue-tests"]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "parcel",
+      "name": "Paket",
+      "type": "Collectible",
+      "categoryId": "collectibles",
+      "tags": ["Lieferung", "Endless", "PROTOTYPE"],
+      "description": "Optionaler Touch-Pickup im Endless-Run. Automatischer Kontakt nimmt das Paket auf; es gibt höchstens ein aktives Paket. Die sichtbare Grafik besteht aus Phaser-Primitiven.",
+      "documentation": {
+        "state": "checked",
+        "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+        "date": "2026-09-30",
+        "notes": "Produktentscheidung und aktuelle prototypische Implementierung sind getrennt dokumentiert.",
+        "coverage": "Liefergruppe im aktuellen Endless-Prototyp; finale Art, Economy und Geräteabnahme sind nicht belegt."
+      },
+      "implementation": "partial",
+      "archived": false,
+      "previewPath": null,
+      "sources": [
+        {
+          "id": "spec",
+          "path": "MASTER_SPEC.md",
+          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "kind": "spec",
+          "symbol": "DECIDED release core — Product Gate A"
+        },
+        {
+          "id": "authority",
+          "path": "src/systems/ParcelDelivery.ts",
+          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "kind": "code",
+          "symbol": "stepParcelDelivery"
+        },
+        {
+          "id": "route",
+          "path": "src/generation/FirstDeliveryRoute.ts",
+          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "kind": "code",
+          "symbol": "createFirstDeliveryRoute"
+        },
+        {
+          "id": "tuning",
+          "path": "src/config/DeliveryTuning.ts",
+          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "kind": "code",
+          "symbol": "PROTOTYPE_DELIVERY_TUNING"
+        },
+        {
+          "id": "presentation",
+          "path": "src/entities/FirstDeliveryPresentation.ts",
+          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "kind": "code",
+          "symbol": "FirstDeliveryPresentation.render"
+        },
+        {
+          "id": "integration",
+          "path": "src/game/scenes/Foundation.ts",
+          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "kind": "code",
+          "symbol": "create / update / render / restart"
+        },
+        {
+          "id": "regression",
+          "path": "tests/systems/ParcelDelivery.test.ts",
+          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "kind": "test"
+        }
+      ],
+      "detailSections": [
+        {
+          "title": "Aufnahme & Interaktionsfläche",
+          "facts": [
+            {
+              "label": "Trigger",
+              "value": "Swept-Kontakt mit der Spielerhitbox nimmt das Paket ohne zusätzlichen Button auf.",
+              "certainty": "confirmed",
+              "sourceIds": ["authority", "regression"]
+            },
+            {
+              "label": "Pickup-Breite",
+              "value": 28,
+              "certainty": "confirmed",
+              "sourceIds": ["authority"],
+              "unit": "logische Einheiten",
+              "maturity": "prototype"
+            },
+            {
+              "label": "Pickup-Höhe",
+              "value": 28,
+              "certainty": "confirmed",
+              "sourceIds": ["authority"],
+              "unit": "logische Einheiten",
+              "maturity": "prototype"
+            },
+            {
+              "label": "Sichtbare Pickup-Grafik",
+              "value": "26 × 22 Bildschirm-Pixel im aktuellen Zeichenpfad; nicht identisch mit der autoritativen Kontaktfläche.",
+              "certainty": "confirmed",
+              "sourceIds": ["presentation"]
+            }
+          ]
+        },
+        {
+          "title": "Platzierung & Tragezustand",
+          "facts": [
+            {
+              "label": "Erster Pickup",
+              "value": 1600,
+              "certainty": "confirmed",
+              "sourceIds": ["tuning", "route"],
+              "unit": "m Run-Distanz",
+              "maturity": "prototype"
+            },
+            {
+              "label": "Höhenposition",
+              "value": "Mitte zwischen ceilingY und floorY; abhängig von logischen Fluggrenzen.",
+              "certainty": "confirmed",
+              "sourceIds": ["route"]
+            },
+            {
+              "label": "Kapazität",
+              "value": 1,
+              "certainty": "confirmed",
+              "sourceIds": ["spec", "authority"],
+              "unit": "aktives Paket"
+            },
+            {
+              "label": "Pickup verpasst",
+              "value": "Nach Passieren ohne Kontakt wird der Versuch missed; abgeschlossene Lieferungen bleiben erhalten.",
+              "certainty": "confirmed",
+              "sourceIds": ["authority", "regression"]
+            }
+          ]
+        }
+      ],
+      "relatedElementIds": ["delivery-recipient", "delivery-arrow", "parcel-delivery"],
+      "openQuestions": [
+        "Keine separate Paket-Bilddatei oder finale Paketart belegt.",
+        "Tragephysik, Gewicht und Paketstapel sind außerhalb der bestätigten Slice-Entscheidung.",
+        "Der Zustand carrying ist umgesetzt, aber FirstDeliveryPresentation zeigt derzeit kein getragenes Paket. Der dekorative Hero-Paketanteil belegt diesen Zustand nicht."
+      ],
+      "sourceConflicts": []
+    },
+    {
+      "id": "delivery-recipient",
+      "name": "Empfänger / Übergabebereich",
+      "type": "Interaktionsobjekt",
+      "categoryId": "deliveries",
+      "tags": ["Lieferung", "Endless", "PROTOTYPE"],
+      "description": "Provisorischer Empfängermarker mit großzügiger Übergabefläche. Während carrying liefert Kontakt automatisch; eine verpasste Übergabe beendet nur den Versuch.",
+      "documentation": {
+        "state": "source-conflict",
+        "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+        "date": "2026-09-30",
+        "notes": "Produktentscheidung und aktuelle prototypische Implementierung sind getrennt dokumentiert.",
+        "coverage": "Liefergruppe im aktuellen Endless-Prototyp; finale Art, Economy und Geräteabnahme sind nicht belegt."
+      },
+      "implementation": "partial",
+      "archived": false,
+      "previewPath": null,
+      "sources": [
+        {
+          "id": "spec",
+          "path": "MASTER_SPEC.md",
+          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "kind": "spec",
+          "symbol": "DECIDED release core — Product Gate A"
+        },
+        {
+          "id": "authority",
+          "path": "src/systems/ParcelDelivery.ts",
+          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "kind": "code",
+          "symbol": "stepParcelDelivery"
+        },
+        {
+          "id": "route",
+          "path": "src/generation/FirstDeliveryRoute.ts",
+          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "kind": "code",
+          "symbol": "createFirstDeliveryRoute"
+        },
+        {
+          "id": "tuning",
+          "path": "src/config/DeliveryTuning.ts",
+          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "kind": "code",
+          "symbol": "PROTOTYPE_DELIVERY_TUNING"
+        },
+        {
+          "id": "presentation",
+          "path": "src/entities/FirstDeliveryPresentation.ts",
+          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "kind": "code",
+          "symbol": "FirstDeliveryPresentation.render"
+        },
+        {
+          "id": "integration",
+          "path": "src/game/scenes/Foundation.ts",
+          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "kind": "code",
+          "symbol": "create / update / render / restart"
+        },
+        {
+          "id": "regression",
+          "path": "tests/systems/ParcelDelivery.test.ts",
+          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "kind": "test"
+        }
+      ],
+      "detailSections": [
+        {
+          "title": "Übergabefläche & Trigger",
+          "facts": [
+            {
+              "label": "Übergabebreite",
+              "value": 104,
+              "certainty": "confirmed",
+              "sourceIds": ["authority"],
+              "unit": "logische Einheiten",
+              "maturity": "prototype"
+            },
+            {
+              "label": "Übergabehöhe",
+              "value": 144,
+              "certainty": "confirmed",
+              "sourceIds": ["authority"],
+              "unit": "logische Einheiten",
+              "maturity": "prototype"
+            },
+            {
+              "label": "Trigger",
+              "value": "Swept-Kontakt nach Pickup setzt delivered und erhöht completedCount um 1. Kein zusätzlicher Input.",
+              "certainty": "confirmed",
+              "sourceIds": ["authority", "regression"]
+            },
+            {
+              "label": "Darstellung",
+              "value": "Rechteck und Kreise als Platzhalter; logisches Y wird für die Anzeige projiziert.",
+              "certainty": "confirmed",
+              "sourceIds": ["presentation"]
+            }
+          ]
+        },
+        {
+          "title": "Routenposition",
+          "facts": [
+            {
+              "label": "Erste Übergabe",
+              "value": 6400,
+              "certainty": "confirmed",
+              "sourceIds": ["route", "tuning"],
+              "unit": "m Run-Distanz",
+              "maturity": "prototype"
+            },
+            {
+              "label": "Abstand nach Pickup",
+              "value": 4800,
+              "certainty": "confirmed",
+              "sourceIds": ["tuning", "route"],
+              "unit": "m Run-Distanz",
+              "maturity": "prototype"
+            },
+            {
+              "label": "Höhenposition",
+              "value": "max(ceilingY + 72, centerY − 80); keine feste Pixelhöhe für alle Geräte.",
+              "certainty": "confirmed",
+              "sourceIds": ["route"]
+            },
+            {
+              "label": "Miss",
+              "value": "Nach Passieren ohne Kontakt wird der Versuch missed. Kein Lieferbonus für diesen Versuch.",
+              "certainty": "confirmed",
+              "sourceIds": ["authority", "regression"]
+            }
+          ]
+        }
+      ],
+      "relatedElementIds": ["parcel", "delivery-arrow", "parcel-delivery"],
+      "openQuestions": [
+        "Empfängeridentität, finale Bilddatei und Übergabe-VFX/SFX sind nicht belegt."
+      ],
+      "sourceConflicts": [
+        "MASTER_SPEC fordert einen kurzen Paketwurf hinter die Kurierin nach verpasster Übergabe. FirstDeliveryPresentation entfernt die Grafik bei missed; ein solcher Paketwurf ist an der Prüfrevision nicht belegt."
+      ]
+    },
+    {
+      "id": "parcel-delivery",
+      "name": "Liefermechanik im Endless-Run",
+      "type": "Mechanik",
+      "categoryId": "mechanics",
+      "tags": ["Lieferung", "Endless", "PROTOTYPE"],
+      "description": "Optionaler Ablauf: Pickup → Tragen → Vorwarnung → Übergabe oder Miss → nächste Route. Erfolgreiche Lieferungen ergeben erst am Run-Ende einen prototypischen Coin-Bonus.",
+      "documentation": {
+        "state": "source-conflict",
+        "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+        "date": "2026-09-30",
+        "notes": "Produktentscheidung und aktuelle prototypische Implementierung sind getrennt dokumentiert.",
+        "coverage": "Liefergruppe im aktuellen Endless-Prototyp; finale Art, Economy und Geräteabnahme sind nicht belegt."
+      },
+      "implementation": "partial",
+      "archived": false,
+      "previewPath": null,
+      "sources": [
+        {
+          "id": "spec",
+          "path": "MASTER_SPEC.md",
+          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "kind": "spec",
+          "symbol": "DECIDED release core — Product Gate A"
+        },
+        {
+          "id": "authority",
+          "path": "src/systems/ParcelDelivery.ts",
+          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "kind": "code",
+          "symbol": "stepParcelDelivery"
+        },
+        {
+          "id": "route",
+          "path": "src/generation/FirstDeliveryRoute.ts",
+          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "kind": "code",
+          "symbol": "createFirstDeliveryRoute"
+        },
+        {
+          "id": "tuning",
+          "path": "src/config/DeliveryTuning.ts",
+          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "kind": "code",
+          "symbol": "PROTOTYPE_DELIVERY_TUNING"
+        },
+        {
+          "id": "presentation",
+          "path": "src/entities/FirstDeliveryPresentation.ts",
+          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "kind": "code",
+          "symbol": "FirstDeliveryPresentation.render"
+        },
+        {
+          "id": "integration",
+          "path": "src/game/scenes/Foundation.ts",
+          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "kind": "code",
+          "symbol": "create / update / render / restart"
+        },
+        {
+          "id": "regression",
+          "path": "tests/systems/ParcelDelivery.test.ts",
+          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "kind": "test"
+        },
+        {
+          "id": "simulation",
+          "path": "src/systems/PrototypeRunSimulation.ts",
+          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "kind": "code",
+          "symbol": "stepPrototypeRun"
+        },
+        {
+          "id": "result",
+          "path": "src/systems/PrototypeRunResult.ts",
+          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "kind": "code",
+          "symbol": "calculateDeliveryReward / createPrototypeRunResultSnapshot"
+        },
+        {
+          "id": "generation",
+          "path": "src/generation/GeneratedHazardStream.ts",
+          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "kind": "code",
+          "symbol": "getProtectedPatternBoundary"
+        },
+        {
+          "id": "retry",
+          "path": "src/systems/PrototypeDeathRetryFlow.ts",
+          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "kind": "code",
+          "symbol": "stepPrototypeDeathRetryState / Foundation result reveal"
+        }
+      ],
+      "detailSections": [
+        {
+          "title": "Ablauf & Zuständigkeit",
+          "facts": [
+            {
+              "label": "Phasen",
+              "value": "available → carrying → delivered oder missed; nächste Route startet available und erhält completedCount.",
+              "certainty": "confirmed",
+              "sourceIds": ["authority", "integration", "regression"]
+            },
+            {
+              "label": "Runtime-Anschluss",
+              "value": "Foundation plant die Route; PrototypeRunSimulation prüft Kontakt; FirstDeliveryPresentation zeigt den Zustand; PrototypeRunResult berechnet den Endbonus.",
+              "certainty": "confirmed",
+              "sourceIds": ["integration", "simulation", "result"]
+            },
+            {
+              "label": "Tod",
+              "value": "Run-Ende; unvollständiges Paket bringt keinen Lieferbonus. Bereits abgeschlossene Lieferungen bleiben im Ergebnis.",
+              "certainty": "confirmed",
+              "sourceIds": ["spec", "simulation", "result", "regression"]
+            },
+            {
+              "label": "Ergebnis",
+              "value": "Distanz bleibt floor(finalDistance) als Score; Lieferungen sind keine Distanzpunkte.",
+              "certainty": "confirmed",
+              "sourceIds": ["result"]
+            }
+          ]
+        },
+        {
+          "title": "Routen-Tuning & Schutz",
+          "facts": [
+            {
+              "label": "Routenwiederholung",
+              "value": 13200,
+              "certainty": "confirmed",
+              "sourceIds": ["tuning", "route"],
+              "unit": "m Run-Distanz",
+              "maturity": "prototype"
+            },
+            {
+              "label": "Pickup-Schutzfenster",
+              "value": "350 m davor / 150 m danach (erste Route: 1250–1750 m).",
+              "certainty": "confirmed",
+              "sourceIds": ["tuning", "route", "generation"],
+              "maturity": "prototype"
+            },
+            {
+              "label": "Übergabe-Schutzfenster",
+              "value": "600 m davor / 250 m danach (erste Route: 5800–6650 m).",
+              "certainty": "confirmed",
+              "sourceIds": ["tuning", "route", "generation"],
+              "maturity": "prototype"
+            },
+            {
+              "label": "Schutzgrenze",
+              "value": "Pickup und Übergabe sind getrennte Schutzintervalle; der lange Trageabschnitt bleibt nicht durchgehend hazardfrei. AUTO-Generierung nutzt die Intervalle.",
+              "certainty": "confirmed",
+              "sourceIds": ["route", "generation"]
+            }
+          ]
+        },
+        {
+          "title": "Bonus am Run-Ende",
+          "facts": [
+            {
+              "label": "Bonusfolge",
+              "value": "100 → 150 → 225 → 338, danach 400 pro weiterer abgeschlossener Lieferung. Keine finale Economy-Balance.",
+              "certainty": "confirmed",
+              "sourceIds": ["result"],
+              "unit": "Coins",
+              "maturity": "prototype"
+            },
+            {
+              "label": "Keine Sofortbelohnung",
+              "value": "ParcelDelivery zählt Abschlüsse; PrototypeRunResult addiert den Gesamtbonus am Run-Ende. Ein Miss verändert den Abschlusszähler nicht.",
+              "certainty": "confirmed",
+              "sourceIds": ["authority", "result"]
+            },
+            {
+              "label": "Ergebnisanzeige",
+              "value": "Beschleunigte Anzeige der Lieferungen; ein Tap kann die vollständige Ergebnisanzeige aufdecken.",
+              "certainty": "confirmed",
+              "sourceIds": ["integration", "retry"]
+            }
+          ]
+        }
+      ],
+      "relatedElementIds": ["parcel", "delivery-recipient", "delivery-arrow"],
+      "openQuestions": [
+        "Finale Economy, Produktionsart und mobile Slice-Abnahme sind nicht bestätigt.",
+        "Kein separater Delivery-/Story-Modus. Gewichts-/Stapelphysik bleibt außerhalb dieser Entscheidung."
+      ],
+      "sourceConflicts": [
+        "MASTER_SPEC fordert einen kurzen Paketwurf hinter die Kurierin nach verpasster Übergabe. FirstDeliveryPresentation entfernt die Grafik bei missed; ein solcher Paketwurf ist an der Prüfrevision nicht belegt."
       ]
     }
   ]

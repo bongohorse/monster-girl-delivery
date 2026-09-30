@@ -5,6 +5,23 @@ export interface Category {
   name: string;
 }
 
+export interface Source {
+  id: string;
+  path: string;
+  revision: string;
+  kind: string;
+  symbol?: string;
+}
+
+export interface Fact {
+  label: string;
+  value: string | number | boolean | null;
+  unit?: string;
+  certainty: string;
+  maturity?: string;
+  sourceIds: string[];
+}
+
 export interface Element {
   id: string;
   name: string;
@@ -12,11 +29,21 @@ export interface Element {
   categoryId: string;
   tags: string[];
   description: string;
-  documentation: { state: string; date: string; notes: string };
+  documentation: {
+    state: string;
+    date: string;
+    revision: string;
+    notes: string;
+    coverage: string;
+  };
   implementation: string;
   archived: boolean;
   previewPath: string | null;
-  sources: { path: string; kind: string }[];
+  sources: Source[];
+  detailSections: { title: string; facts: Fact[] }[];
+  relatedElementIds: string[];
+  openQuestions: string[];
+  sourceConflicts: string[];
 }
 
 export interface Catalog {
