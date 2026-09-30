@@ -66,7 +66,7 @@ export function controlsPreview(
   image.setAttribute('role', 'img');
   image.setAttribute(
     'aria-label',
-    'Schematische Pfeilvorschau bei 1,25 Sekunden und Blinkproben von 0 bis 1,7 Sekunden',
+    'Schematische Pfeilvorschau bei 1,25 Sekunden und Blinkproben von 0 bis 6 Sekunden',
   );
   image.classList.add('arrow-preview');
   const draw = () => {
@@ -103,12 +103,12 @@ export function controlsPreview(
       { x: '12', y: '24', fill: '#eaf0fa', 'font-size': '13' },
       'Feste Szene bei 1,25 s · Ziel bewegt sich von rechts',
     );
-    for (let i = 0; i <= 10; i++) {
-      const frame = arrowSample(values, i * 0.17);
+    for (let i = 0; i <= 12; i++) {
+      const frame = arrowSample(values, i * 0.5);
       shape('rect', {
-        x: String(12 + i * 42),
+        x: String(12 + i * 35),
         y: '118',
-        width: '26',
+        width: '24',
         height: '14',
         fill: '#9fe7d9',
         opacity: frame.visible ? String(frame.opacity) : '0.08',
@@ -117,7 +117,7 @@ export function controlsPreview(
     shape(
       'text',
       { x: '12', y: '155', fill: '#aebacf', 'font-size': '13' },
-      'Statische Blinkproben 0–1,7 s · ab Ende der Vorwarnung ausgeblendet',
+      'Statische Blinkproben 0–6 s · ab Ende der Vorwarnung ausgeblendet',
     );
     image.dataset.values = JSON.stringify(values);
   };
