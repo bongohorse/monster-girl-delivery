@@ -185,6 +185,8 @@ describe('Foundation M5 retry state isolation', () => {
     expect(retryReadyState.phase).toBe('retry-ready');
 
     const playerPresentation = {
+      setFlightVelocity: vi.fn(),
+      resetFlightPose: vi.fn(),
       setPosition: vi.fn(),
       setRotation: vi.fn(),
       setScale: vi.fn(),

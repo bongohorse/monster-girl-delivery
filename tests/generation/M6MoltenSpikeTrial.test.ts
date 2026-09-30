@@ -64,6 +64,62 @@ describe('M6 molten spike visual trial', () => {
     expect(sawSpike).toBe(true);
   });
 
+  it.each([390, 800])(
+    'varies fair AUTO spike heights reproducibly at viewport height %s',
+    (height) => {
+      const domain = createPrototypeHazardVerticalDomain({
+        ceilingY: 28 - (height - 390),
+        floorY: 362,
+      });
+      const collect = () => {
+        const context = {
+          catalog: domain.catalog,
+          constraints: domain.constraints,
+          policy: PROTOTYPE_LIVE_ENCOUNTER_POLICY_CONFIG,
+          reachability: PROTOTYPE_PATTERN_REACHABILITY_CONTEXT,
+          protectedIntervals: FIRST_DELIVERY_PROTECTED_INTERVALS,
+        };
+        const spikes = new Map<string, { top: number; bottom: number }>();
+        for (let seed = 0; seed < 128; seed += 1) {
+          let stream = createGeneratedHazardStream(seed, context, PROTOTYPE_RUN_MOTION_DEFAULTS);
+          for (let distance = 0; distance <= 3_000; distance += 100) {
+            stream = advanceGeneratedHazardStream(
+              stream,
+              distance,
+              context,
+              PROTOTYPE_RUN_MOTION_DEFAULTS,
+              distance === 0 ? 0 : 100 / PROTOTYPE_RUN_MOTION_DEFAULTS.baseScrollSpeed,
+            );
+            for (const spawn of stream.spawns) {
+              if (spawn.type !== 'molten-spike') continue;
+              expect(spawn.behavior.kind).toBe('static');
+              expect(spawn.hitbox.top).toBeGreaterThanOrEqual(domain.constraints.playableTop);
+              expect(spawn.hitbox.bottom).toBeLessThanOrEqual(domain.constraints.playableBottom);
+              for (const interval of FIRST_DELIVERY_PROTECTED_INTERVALS) {
+                expect(
+                  spawn.hitbox.right <= interval.start || spawn.hitbox.left >= interval.end,
+                ).toBe(true);
+              }
+              spikes.set(`${seed}:${spawn.runDistance}`, {
+                top: spawn.hitbox.top,
+                bottom: spawn.hitbox.bottom,
+              });
+            }
+          }
+        }
+        return [...spikes];
+      };
+      const spikes = collect();
+      expect(spikes).toEqual(collect());
+      expect(spikes.length).toBeGreaterThan(3);
+      expect(new Set(spikes.map(([, box]) => box.top)).size).toBeGreaterThan(3);
+      const centers = spikes.map(([, box]) => (box.top + box.bottom) / 2);
+      const span = domain.constraints.playableBottom - domain.constraints.playableTop;
+      expect(Math.min(...centers)).toBeLessThan(domain.constraints.playableTop + span * 0.3);
+      expect(Math.max(...centers)).toBeGreaterThan(domain.constraints.playableTop + span * 0.8);
+    },
+  );
+
   it('cannot give this static picture a moving or timed collision behavior', () => {
     const entry = M6_MOLTEN_SPIKE_TRIAL.entries[0];
     if (!entry) throw new Error('Missing spike trial entry');
