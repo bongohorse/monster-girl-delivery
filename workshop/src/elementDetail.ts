@@ -120,7 +120,7 @@ function relationships(element: Element, data: Catalog): HTMLElement {
     node('h2', 'Ideen & Integration'),
     node(
       'p',
-      'Noch keine Workshop-Idee, Prototypversion, Auswahlentscheidung oder Integrationsaufgabe mit diesem Element verknüpft. Ideenanlage folgt ab Aufgabe 6.',
+      'Verknüpfte Repository-Ideen und lokale Entwürfe stehen unter „Verknüpfte Ideen“ unterhalb der Dokumentation. Prototypauswahl und Spielintegration sind noch nicht umgesetzt.',
     ),
   );
   return panel;

@@ -1200,5 +1200,19 @@
         }
       ]
     }
+  ],
+  "ideas": [
+    {
+      "id": "delivery-arrow-study",
+      "name": "Lieferpfeil · Lesbarkeit untersuchen",
+      "question": "Wie verändern Größe, Blinkrate, Vorwarnzeit und Scrollgeschwindigkeit die Lesbarkeit einer schematischen Vorwarnung?",
+      "categoryId": "deliveries",
+      "tags": ["Lieferpfeil", "Lesbarkeit", "Controls", "Preset", "Studie"],
+      "elementIds": ["delivery-arrow", "delivery-recipient"],
+      "referenceIds": [],
+      "reviewState": "draft",
+      "archived": false,
+      "prototypeId": "delivery-arrow-controls-v0"
+    }
   ]
 }

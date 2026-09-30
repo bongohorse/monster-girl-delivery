@@ -1,10 +1,13 @@
 import type { Catalog } from './catalog.ts';
+import type { Draft } from './localData.ts';
 
 export interface SearchEntry {
   id: string;
   name: string;
   description: string;
-  kind: 'element' | 'asset' | 'reference';
+  kind: 'element' | 'asset' | 'reference' | 'idea' | 'draft';
+  section: 'documentation' | 'ideas';
+  ideaReview?: string;
   categoryIds: string[];
   type: string;
   tags: string[];
@@ -26,6 +29,7 @@ export interface SearchFilters {
   review?: string;
   usage?: string;
   archive?: string;
+  ideaReview?: string;
 }
 export interface CatalogIndex {
   entries: SearchEntry[];
@@ -41,6 +45,7 @@ export function createCatalogIndex(data: Catalog): CatalogIndex {
         name: e.name,
         description: e.description,
         kind: 'element',
+        section: 'documentation',
         categoryIds: [e.categoryId],
         type: e.type,
         tags: e.tags,
@@ -57,6 +62,7 @@ export function createCatalogIndex(data: Catalog): CatalogIndex {
         name: a.name,
         description: a.description,
         kind: 'asset',
+        section: 'documentation',
         categoryIds: [...new Set(owners.map((e) => e.categoryId))],
         type: 'Asset',
         tags: [a.variant, ...owners.flatMap((e) => e.tags)],
@@ -72,11 +78,27 @@ export function createCatalogIndex(data: Catalog): CatalogIndex {
         name: r.name,
         description: r.purpose,
         kind: 'reference',
+        section: 'documentation',
         categoryIds: [r.categoryId],
         type: 'Referenz',
         tags: r.tags,
         href: `#/reference/${r.id}`,
         archived: false,
+      }),
+    ),
+    ...data.ideas.map(
+      (idea): SearchEntry => ({
+        id: idea.id,
+        name: idea.name,
+        description: idea.question,
+        kind: 'idea',
+        section: 'ideas',
+        categoryIds: [idea.categoryId],
+        type: 'Idee',
+        tags: idea.tags,
+        href: `#/idea/${idea.id}`,
+        ideaReview: idea.reviewState,
+        archived: idea.archived,
       }),
     ),
   ];
@@ -94,6 +116,7 @@ export function createCatalogIndex(data: Catalog): CatalogIndex {
   for (const e of data.elements) add(e.id, [...e.relatedElementIds, ...e.assetIds]);
   for (const a of data.assets) add(a.id, a.elementIds);
   for (const r of data.references) add(r.id, [...r.elementIds, ...r.assetIds]);
+  for (const idea of data.ideas) add(idea.id, [...idea.elementIds, ...idea.referenceIds]);
   return { entries, backlinks };
 }
 
@@ -104,7 +127,7 @@ export function searchCatalog(
 ): SearchEntry[] {
   const terms = filters.query?.trim().toLocaleLowerCase('de').split(/\s+/).filter(Boolean) ?? [];
   return index.entries.filter((entry) => {
-    if (filters.section && filters.section !== 'documentation') return false;
+    if (filters.section && filters.section !== entry.section) return false;
     if (filters.categoryId && !entry.categoryIds.includes(filters.categoryId)) return false;
     for (const key of [
       'kind',
@@ -113,6 +136,7 @@ export function searchCatalog(
       'implementation',
       'review',
       'usage',
+      'ideaReview',
     ] as const) {
       if (filters[key] && entry[key] !== filters[key]) return false;
     }
@@ -121,4 +145,35 @@ export function searchCatalog(
     const text = [entry.name, entry.description, ...entry.tags].join(' ').toLocaleLowerCase('de');
     return terms.every((term) => text.includes(term));
   });
+}
+
+/** Only local records are added at runtime; the repository index remains build-generated. */
+export function withLocalDrafts(index: CatalogIndex, drafts: Draft[]): CatalogIndex {
+  const localEntries: SearchEntry[] = drafts.map((draft) => ({
+    id: draft.id,
+    name: draft.name,
+    description: [draft.question, draft.desiredChange, draft.preserve].join(' '),
+    kind: 'draft',
+    section: 'ideas',
+    categoryIds: [draft.categoryId],
+    type: 'Lokaler Entwurf',
+    tags: draft.tags,
+    href: `#/draft/${draft.id}`,
+    ideaReview: 'draft',
+    archived: false,
+  }));
+  const backlinks = Object.fromEntries(
+    Object.entries(index.backlinks).map(([id, links]) => [id, [...links]]),
+  );
+  for (const [i, draft] of drafts.entries()) {
+    for (const target of [
+      ...draft.origins.map((origin) => origin.elementId),
+      ...draft.referenceIds,
+    ]) {
+      backlinks[target] ??= [];
+      const source = localEntries[i];
+      backlinks[target].push({ id: source.id, name: `${source.name} · lokal`, href: source.href });
+    }
+  }
+  return { entries: [...index.entries, ...localEntries], backlinks };
 }

@@ -1,9 +1,11 @@
 import type { Catalog, Reference } from './catalog';
+import { localDrafts } from './localSession';
 import { sections } from './navigation';
-import { type CatalogIndex, type SearchFilters, searchCatalog } from './search';
+import { type CatalogIndex, type SearchFilters, searchCatalog, withLocalDrafts } from './search';
 import { link, node, sourceLink } from './ui';
 
 export const catalogIndex: CatalogIndex = __WORKSHOP_CATALOG_INDEX__;
+const currentIndex = () => withLocalDrafts(catalogIndex, localDrafts.snapshot().drafts);
 const filterKeys = [
   'query',
   'categoryId',
@@ -15,6 +17,7 @@ const filterKeys = [
   'review',
   'usage',
   'archive',
+  'ideaReview',
 ] as const;
 export function filtersFromHash(hash: string): SearchFilters {
   const params = new URLSearchParams(hash.split('?')[1] ?? '');
@@ -53,11 +56,13 @@ export function searchForm(data?: Catalog, filters: SearchFilters = {}): HTMLFor
       ['element', 'Element'],
       ['asset', 'Asset'],
       ['reference', 'Referenz'],
+      ['idea', 'Repository-Idee'],
+      ['draft', 'Lokaler Entwurf'],
     ]);
     select(
       'type',
       'Typ',
-      [...new Set(catalogIndex.entries.map((e) => e.type))].map((type) => [type, type]),
+      [...new Set(currentIndex().entries.map((e) => e.type))].map((type) => [type, type]),
     );
     select(
       'section',
@@ -88,6 +93,12 @@ export function searchForm(data?: Catalog, filters: SearchFilters = {}): HTMLFor
       ['disabled', 'deaktiviert'],
       ['unchecked', 'ungeprüft'],
     ]);
+    select('ideaReview', 'Ideenreview (Ideen/Entwürfe)', [
+      ['draft', 'Entwurf'],
+      ['in-review', 'in Review'],
+      ['selected', 'ausgewählt'],
+      ['rejected', 'abgelehnt'],
+    ]);
     select('archive', 'Archiv', [
       ['all', 'einschließlich Archiv'],
       ['archived', 'nur Archiv'],
@@ -95,7 +106,7 @@ export function searchForm(data?: Catalog, filters: SearchFilters = {}): HTMLFor
     form.append(
       node(
         'p',
-        'Filter werden kombiniert. Review und Verwendung gelten für Assets; Dokumentationsstand und Umsetzung für Elemente. Andere Bereiche enthalten noch keine durchsuchbaren Einträge.',
+        'Filter werden kombiniert. Review und Verwendung gelten für Assets; Dokumentationsstand und Umsetzung für Elemente. Ideenreview gilt für Repository-Ideen und lokale Entwürfe; Review/Integration enthalten noch keine durchsuchbaren Einträge.',
         'search-help',
       ),
     );
@@ -114,7 +125,7 @@ export function searchForm(data?: Catalog, filters: SearchFilters = {}): HTMLFor
 }
 export function searchView(data: Catalog, hash: string): HTMLElement[] {
   const filters = filtersFromHash(hash);
-  const results = searchCatalog(data, filters, catalogIndex);
+  const results = searchCatalog(data, filters, currentIndex());
   const count = node('p', `${results.length} Treffer`);
   count.setAttribute('role', 'status');
   const list = node('ul', '', 'search-results');
@@ -134,7 +145,7 @@ export function searchView(data: Catalog, hash: string): HTMLElement[] {
 export function backlinkView(id: string): HTMLElement {
   const panel = node('section');
   panel.append(node('h2', 'Referenziert von'));
-  const links = catalogIndex.backlinks[id] ?? [];
+  const links = currentIndex().backlinks[id] ?? [];
   if (!links.length) panel.append(node('p', 'Keine Rückverweise im aktuellen Katalog.'));
   else {
     const list = node('ul');
