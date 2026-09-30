@@ -244,7 +244,7 @@ bun run assets:preview --id molten-spike-trial
 
 `prepare` builds a checked isolated candidate; `validate` and `preview` check existing current output. The JSON result prints the browser comparison and report paths. New imports and explicit updates use the flags in [ASSET_WORKFLOW.md](docs/ASSET_WORKFLOW.md#prepare-and-inspect); that document owns recipes, limits, identity, locking and evidence.
 
-Candidate commands leave live game exports unchanged. `bun run assets:build` builds the complete active set and generated registry; `bun run assets:validate --runtime` checks published output without repair. The repository dev/typecheck/test/build commands prepare automatically, as do direct Vite and Vitest entrypoints. Bare `tsc` has no preparation hook; use `bun run typecheck`. Stop a running dev server before replacing changed runtime assets, then restart it. The Spike uses this path; other legacy loaders migrate in their assigned tasks.
+Candidate commands leave live game exports unchanged. `bun run assets:build` builds the complete active set and generated registry; `bun run assets:validate --runtime` checks published output without repair. The repository dev/typecheck/test/build commands prepare automatically, as do direct Vite and Vitest entrypoints. Bare `tsc` has no preparation hook; use `bun run typecheck`. Stop a running dev server before replacing changed runtime assets, then restart it. Spike and Missile use this path; remaining legacy loaders migrate in their assigned tasks.
 
 ## 12. Deployment and packaging targets
 

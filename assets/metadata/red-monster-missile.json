@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "red-monster-missile",
+  "source": "assets/source/district-01/hazards/red-monster-missile-gpt-image.png",
+  "sourceHash": "a656027aa3eb4be15f2884bf56e215201f6ff1f02597364e10280447733f8687",
+  "provenance": "Director-approved uploaded GPT Image artwork; existing Missile trial #493",
+  "state": "active",
+  "profile": "static-png",
+  "canvas": {
+    "width": 512,
+    "height": 330,
+    "padding": 0,
+    "sampling": "lanczos3",
+    "trimAlpha": 0
+  },
+  "pivot": {
+    "x": 0.5,
+    "y": 0.5
+  },
+  "display": {
+    "width": 112,
+    "height": 60,
+    "renderScale": 2
+  }
+}
