@@ -28,7 +28,6 @@ GitHub Milestones and focused Issues/PRs are the live execution trail. Completed
 | See what is being built now | [GitHub Milestones](https://github.com/bongohorse/monster-girl-delivery/milestones) |
 | See milestone order and future milestone scope | [`ROADMAP.md`](ROADMAP.md) |
 | Check an approved game/product rule | [`../MASTER_SPEC.md`](../MASTER_SPEC.md) |
-| Review the M6 Art Gate asset trial | [`M6_ASSET_SCENE_BRIEF.md`](M6_ASSET_SCENE_BRIEF.md) |
 | Browse unapproved future ideas | [`BACKLOG.md`](BACKLOG.md) |
 | Review Endless Runner / Jetpack Joyride lessons | [`ENDLESS_RUNNER_BLUEPRINT.md`](ENDLESS_RUNNER_BLUEPRINT.md) |
 | Review the detailed Jetpack Joyride wiki research pass | [`JETPACK_JOYRIDE_WIKI_RESEARCH.md`](JETPACK_JOYRIDE_WIKI_RESEARCH.md) |
@@ -39,7 +38,8 @@ GitHub Milestones and focused Issues/PRs are the live execution trail. Completed
 | See human ↔ AI orchestration | [`AI_WORKFLOW.md`](AI_WORKFLOW.md) |
 | Use Jules as a GitHub-native assistant safely | [`JULES_WORKFLOW.md`](JULES_WORKFLOW.md) |
 | Review AI GitHub authentication/permissions | [`GITHUB_AI_ACCESS.md`](GITHUB_AI_ACCESS.md) |
-| Find visual references, scoped acceptance and art profiles | [`ART_DIRECTION.md`](ART_DIRECTION.md) |
+| Find visual references, scoped acceptance and art profiles | [`M6_ASSET_SCENE_BRIEF.md`](M6_ASSET_SCENE_BRIEF.md) | current Art Gate trial composition, source handoff and factual trial status | final production art approval, asset pipeline implementation |
+| [`ART_DIRECTION.md`](ART_DIRECTION.md) |
 | Review completed milestones | [`milestones/README.md`](milestones/README.md) |
 | Review M1 real-device evidence | [`milestones/M1-device-report.md`](milestones/M1-device-report.md) |
 

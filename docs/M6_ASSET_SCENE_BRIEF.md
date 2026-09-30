@@ -1,12 +1,12 @@
 # M6 asset and scene brief — Art Gate working plan
 
-**Status:** Working brief for [Art Gate #487](https://github.com/bongohorse/monster-girl-delivery/issues/487). This plans a small playable comparison; it does not approve production art, a pixel grid, a palette, or an asset pipeline. The Game Director reviews each trial separately.
+**Status:** Working brief for [Art Gate #487](https://github.com/bongohorse/monster-girl-delivery/issues/487). This plans a small playable comparison; it does not approve production art, a pixel grid, a palette, or an asset pipeline. Trial work can continue within the current request; final production decisions need a recorded Director decision.
 
 ## Goal and representative scene
 
 Prove that separately made assets form one readable modern-fantasy Monster City run on a landscape phone. Use the existing Endless gameplay and the delivery route from [PR #490](https://github.com/bongohorse/monster-girl-delivery/pull/490). The first comparison uses one stable courier pose, one molten spike hazard, an ordinary coin, a parcel, the existing directional cue, and a small city sample. Show both an ordinary approach and an approaching delivery handoff with the **same exported assets**, rather than painting those elements into a single wide scene.
 
-The first asset trial is **only the spike hazard**. Other elements can remain as current placeholders while its silhouette and production method are judged. Later trials replace one element at a time. The Gallery and tilt artwork belong to a later decision and do not define gameplay pixel resolution.
+The first spike trial is integrated via [PR #492](https://github.com/bongohorse/monster-girl-delivery/pull/492), and the provisional courier concept poses via [PR #489](https://github.com/bongohorse/monster-girl-delivery/pull/489). These are playable comparison assets, not production-art approval. Keep later trials small enough to judge the requested change clearly. The Gallery and tilt artwork belong to a later decision and do not define gameplay pixel resolution.
 
 ## Composition contract
 
@@ -26,31 +26,27 @@ Treat color as a functional hierarchy before choosing a final palette: player an
 
 | Unit | Smallest useful deliverable | Depends on |
 |---|---|---|
-| Spike style proof | One newly drawn dark molten sphere with bright eyes and orange spikes, transparent export and editable source | This brief and a real drawing/export method |
+| Spike trial — integrated | GPT Image variant A, retained source and reproducible transparent export; native editable pixel work remains unproven | Source/export notes and representative visual review |
 | Courier trial | One adult compact/chibi courier, stable right-facing flight, visible cap/horns/hair/tail and parcel pack; two nearby display sizes | Real editable source method; spike/coin readability context |
 | Objective trial | Coin, parcel, carried parcel indication, one recipient/marked handoff and cue treatment | Courier scale and existing delivery state |
-| City trial | One seamless distant skyline and a few modular modern-fantasy facade/ground pieces | Accepted gameplay contrast and corridor framing |
+| City trial | One seamless distant skyline and a few modular modern-fantasy facade/ground pieces | Current gameplay contrast/corridor framing and shared comparison context |
 | M6 production continuation | Remaining hazard families, hit/crash and handoff effects, HUD/results, SFX and representative music | Art Gate visual method and hierarchy accepted together |
 
 The optional rising/falling poses, detailed residents, extra districts, parcel variants, Gallery art, and a full animation set are outside these first trials. A hit/crash treatment will be chosen for the slice after the stable gameplay figure is established. This supersedes the older #487 comment that listed three flight poses as a starting requirement; the phone playtest found frequent switching distracting.
 
-## Source-to-runtime handoff for every trial
+## Source-to-runtime handoff
 
-1. Keep an editable original with real layers and native working dimensions. Record author/source, frame dimensions, intended anchor, transparency, and any animation frames. Concepts are references, not source images to enlarge or automatically trace.
-2. Export an individual transparent runtime asset with clean edges and no baked sky, soft halo, blur, or glow. Keep a preview at **native 1:1 pixels** and use the exact same export for the in-game size comparisons.
-3. Connect the asset to the existing presentation layer. Only drawing and placement change; logical hitboxes, timing, generation, and delivery rewards do not. Avoid a scene-wide filtering/pixel-art setting change until the visual trial shows it is needed.
-4. Check the same scene on a representative landscape phone and a larger landscape viewport: silhouette, look-ahead, alpha edges, sharpness, UI safe area, overlap, and ordinary running motion. Record the source/export size and measured runtime cost before considering atlas packing or pipeline automation.
+Use the existing source/export and presentation route for each real trial. Retain the original and reproducible recipe, and record dimensions, transparency and intended anchor. A native editable pixel-art deliverable needs an actual native-grid source; a concept/export alone does not satisfy it. This specific production-source requirement does not prevent other authorized art or integration work.
 
-The intended stages from `MASTER_SPEC.md` remain `assets/raw` → `assets/source` → `assets/processed` → `public/assets`. Create the needed files/folders for a **real** asset when that trial begins; do not manufacture an empty pipeline now. Names should identify district, object, state and revision clearly. Final pixel dimensions, atlas layout, format choices, and automated tooling remain open until representative assets survive device review.
+Compare the actual runtime export at the intended size beside the gameplay elements it must coexist with. Keep logical hitboxes, timing, generation and delivery rules authoritative. A presentation trial does not justify a scene-wide filtering change. Select phone/large-viewport, alpha, sharpness, movement or runtime-cost checks according to the change and the claim being made; unavailable checks stay pending. Final pixel dimensions, atlas and automated workflow remain undecided until their relevant evidence exists.
 
-Chunky pixel art is the current direction to test, not a license to enlarge a soft illustration into fake pixels. If a genuine editable pixel source cannot be produced cleanly, compare one deliberately drawn alternative 2D treatment in the same run composition and let the Game Director choose the production method before scaling content.
+The intended source stages remain owned by [MASTER_SPEC.md §15](../MASTER_SPEC.md#15-asset-production-principles) and [ARCHITECTURE.md §13](../ARCHITECTURE.md#13-assets). Use actual commands from [DEVELOPMENT.md §11](../DEVELOPMENT.md#11-asset-commands); do not wait for or invent an unimplemented pipeline. If the requested native pixel source cannot be produced, identify that precise limitation and complete a permitted comparison or handoff rather than substituting fake pixels.
 
-## First execution unit: molten spike hazard
+## Current trial status — 2026-09-30
 
-**Design:** a compact dark sphere with unmistakable orange spikes and bright eyes. Its outline should remain threatening when a glow is disabled. Draw it anew as a game asset, not as a crop from a scene concept. It is one hazard family, not a replacement for the current Zapper, Laser, or Missile systems.
+- **Spike:** [PR #492](https://github.com/bongohorse/monster-girl-delivery/pull/492) integrated GPT Image variant A. [Source/export notes](../assets/source/district-01/hazards/README.md) retain the original and Python/Pillow export recipe. This is generated artwork, not the originally proposed newly drawn editable pixel source. Final source method, sprite size/colors and phone acceptance remain open.
+- **Courier:** [PR #489](https://github.com/bongohorse/monster-girl-delivery/pull/489) integrated provisional A/B/C concepts; steady A remains the visual baseline from the newer #487 brief. The concepts do not supply the requested native editable pixel source.
+- **Sizing and placement:** [PR #520](https://github.com/bongohorse/monster-girl-delivery/pull/520) removed viewport-height-relative courier growth, aligned each pose's visible contours with existing player extents, and checked browser resize/floor/ceiling visibility. It also varied automatic spike heights deterministically while retaining static hazards, coin clearance, pacing and delivery protections. Explicit editor positions remain unchanged. These are validated browser/runtime fixes; they do not establish phone art acceptance.
+- **Still pending:** genuine native production-source evidence, representative phone scale/sharpness/hierarchy review, a small environment/parallax comparison, final animation/source/export conventions and final Art Gate decision. #487 stays open.
 
-**Deliver:** editable layered source, transparent native export, a short note with dimensions/anchor/colors, and an in-run comparison using the real export beside the courier placeholder and current coin. Include a static native-pixel crop and landscape-phone evidence. If the authored hazard has no warning phase, do not invent one solely for the sprite; check it alongside existing warning graphics for separation instead.
-
-**Accept only when:** the outline and spikes read at actual gameplay size; it is distinguishable from a coin, parcel, and decorative city light; alpha is clean at 1:1; neither the image nor its placement hides/misstates the logical collision footprint; forward visibility and frame cost remain acceptable on the phone. An attractive concept image alone does not pass.
-
-After this single unit, report the file/source, in-game view, phone evidence, tradeoffs, and any unresolved production-method issue. Then choose the courier trial or revise the method before drawing more assets. Do not bulk-produce a hazard set from an unverified example.
+For the next explicitly requested trial, inspect the current export beside courier/coins and relevant warning/delivery states. The spike must read as lethal without glow, stay distinct from collectibles, and represent its existing collision footprint fairly. Retain the actual source/export and compare the same bytes on the phone when judging production acceptance. Report useful results and remaining limitations in that trial's review artifact; no extra approval checkpoint is required to complete already authorized work.
