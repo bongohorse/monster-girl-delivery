@@ -326,23 +326,11 @@ Rules when implemented:
 
 ## 13. Assets
 
-The production asset pipeline is not fully implemented yet. Do not describe planned folders/tools as if they already exist.
+[Asset workflow](docs/ASSET_WORKFLOW.md) owns source/recipe identity, processing, candidate/runtime isolation, serialization and scoped evidence. Static-image prepare/validate/preview are implemented; the managed runtime builder and game migrations remain tasks in [#494](https://github.com/bongohorse/monster-girl-delivery/issues/494).
 
-Approved target flow:
+Originals and recipes are versioned in `assets/source` and `assets/metadata`. Candidates write only ignored `reports/assets/previews`; they do not activate assets or replace current `public/assets` files. Gameplay systems retain collision, movement, input and interaction authority.
 
-```text
-assets/raw
-    ↓
-assets/source
-    ↓
-assets/processed
-    ↓
-validation / atlas or processing steps where useful
-    ↓
-public/assets
-```
-
-The exact processing tools, formats, atlas rules, and budgets remain implementation decisions for the relevant art/asset work.
+The managed-runtime target is source + recipe → generated `assets/processed` and a static-import registry → Vite's packaged URLs. This refines delivery for new managed images; legacy `public` files remain until their real loader/presentation migration. Atlas/audio profiles, production budgets and device/art acceptance are not inferred from the static-image pilot.
 
 ## 14. Platform abstraction
 
