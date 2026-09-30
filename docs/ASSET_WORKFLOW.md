@@ -137,7 +137,7 @@ After building, Browser CI runs:
 MGD_CHROME_PATH=/path/to/chrome bun scripts/assets/package-smoke.ts dist
 ```
 
-This serves the actual Production package at `/` and `/mgd-package-pilot/`, with no root fallback for the subpath run. A test-server-only passive image observer records successful decoding of the managed images by the application's actual Phaser loader, matches source bytes/dimensions to the verified exports, and requires the real app to finish booting. Shipped files and application code are not modified. DOM, request outcomes, hashes, commit and Chrome context are included in the existing browser artifact. This proves packaged loading, not visual quality or device gameplay.
+This serves the actual Production package at `/` and `/mgd-package-pilot/`, with no root fallback for the subpath run. A test-server-only passive image observer records successful decoding of the managed images by the application's actual Phaser loader, matches source bytes/dimensions to the verified exports, and requires the real app to finish booting. The runner waits through Chrome's local debugging protocol using bounded real elapsed time; virtual timers cannot outrun Phaser's graphics/animation-frame boot. Shipped files and application code are not modified. DOM, request outcomes, hashes, commit and Chrome context are included in the existing browser artifact. This proves packaged loading, not visual quality or device gameplay.
 
 Android CI checks the directory Capacitor actually copies before its existing APK build. APK install/update compatibility, restart/resume and physical Phone/Pad-6 presentation require a real device test; a green build is not that acceptance. Accepted visual evidence is archived only after an actual scoped Director decision.
 

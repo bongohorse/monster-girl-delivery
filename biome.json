@@ -7,6 +7,7 @@
       "!dist",
       "!node_modules",
       "!reports/assets",
+      "!reports/browser-runtime-smoke",
       "!assets/processed",
       "!src/generated/assets.ts"
     ]
