@@ -76,6 +76,8 @@ ARCHITECTURE.md / DEVELOPMENT.md as required
 existing code + tests
 ```
 
+Choose task-specific procedures from the [skill routing in AGENTS.md](../AGENTS.md#reusable-agent-skills). Use one leading skill and only the supporting guidance needed for the requested outcome.
+
 Jules-specific dispatch/review/environment rules live in [`JULES_WORKFLOW.md`](JULES_WORKFLOW.md). They supplement rather than replace `AGENTS.md`.
 
 Do not load the entire backlog/reference library as implementation requirements.

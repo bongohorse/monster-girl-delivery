@@ -40,6 +40,8 @@ Reusable procedures live in [`.agents/skills/`](.agents/skills/). Agents that na
 
 Skills are **procedural guidance, not authorization or a new source of truth**. This `AGENTS.md`, the current Game Director instruction, assigned Issue/PR, and owning MGD docs always win. Load only the skills relevant to the current work and compose them when their concerns overlap.
 
+Use one task-leading skill; load supporting skills only for the parts that need them. Go from scoped inspection to implementation and proportionate validation without a separate approval or handoff between skills. Scale optional steps and reporting to the actual change; retain checks required by the owning contract. Missing optional tools, references or device access limit the evidence available, not independent authorized work.
+
 | Skill | Read/use when |
 |---|---|
 | [`diagnosing-bugs`](.agents/skills/diagnosing-bugs/SKILL.md) | A bug/regression is non-obvious, flaky, timing/physics/collision related, performance-sensitive, or otherwise needs evidence before a fix. Build a realistic red-capable reproduction loop before committing to a theory. |
