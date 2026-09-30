@@ -56,6 +56,7 @@ Use one task-leading skill; load supporting skills only for the parts that need 
 | [`mgd-hazards`](.agents/skills/mgd-hazards/SKILL.md) | Creating/changing individual hazards, spawn, motion, collision or artwork affecting visual fairness. Verify real admission, geometry and consequences; scale regression checks to affected paths. |
 | [`mgd-acceptance`](.agents/skills/mgd-acceptance/SKILL.md) | Explicitly assessing a game change or reconciling acceptance evidence. Ordinary implementation does not automatically require a separate acceptance handoff. |
 | [`mgd-gameplay`](.agents/skills/mgd-gameplay/SKILL.md) | Changing flight, collectibles, deliveries, scoring or encounter-wide rules. Individual hazard behavior and presentation-only UI use their own leading skill. |
+| [`mgd-ui`](.agents/skills/mgd-ui/SKILL.md) | Changing HUD, controls, results or Director interfaces. Reuse authoritative state, existing layout and supported input paths; verify the affected flow. |
 | [`writing-for-agents`](.agents/skills/writing-for-agents/SKILL.md) | Creating/editing `AGENTS.md`, skills, worker prompts, automation prompts, reviewer instructions, or other documents primarily consumed by agents. Keep triggers sharp and canonical rules singular. |
 
 Common compositions:
