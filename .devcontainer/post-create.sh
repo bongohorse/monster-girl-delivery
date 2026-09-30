@@ -4,10 +4,10 @@ set -euo pipefail
 REPOSITORY_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 BUN_VERSION_FILE="$REPOSITORY_ROOT/.bun-version"
 BUN_BIN="$HOME/.bun/bin/bun"
-TOTAL_STEPS=7
+TOTAL_STEPS=6
 CURRENT_STEP=0
 SETUP_STARTED=$SECONDS
-LOG_DIR="${TMPDIR:-/tmp}/mgd-codespace-setup"
+LOG_DIR="${TMPDIR:-/tmp}/mgd-devcontainer-setup"
 INTERACTIVE=false
 
 if [[ -t 1 && "${TERM:-dumb}" != "dumb" ]]; then
@@ -17,24 +17,12 @@ fi
 rm -rf "$LOG_DIR"
 mkdir -p "$LOG_DIR"
 
+bash "$REPOSITORY_ROOT/.devcontainer/post-start.sh"
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$HOME/.local/bin:$PATH"
 
-BUN_INSTALL_EXPORT='export BUN_INSTALL="$HOME/.bun"'
-TOOL_PATH_EXPORT='export PATH="$BUN_INSTALL/bin:$HOME/.local/bin:$PATH"'
-
-for shell_profile in "$HOME/.bashrc" "$HOME/.profile"; do
-  if ! grep -qxF "$BUN_INSTALL_EXPORT" "$shell_profile" 2>/dev/null; then
-    printf '\n%s\n' "$BUN_INSTALL_EXPORT" >> "$shell_profile"
-  fi
-
-  if ! grep -qxF "$TOOL_PATH_EXPORT" "$shell_profile" 2>/dev/null; then
-    printf '%s\n' "$TOOL_PATH_EXPORT" >> "$shell_profile"
-  fi
-done
-
 if [[ ! -f "$BUN_VERSION_FILE" ]]; then
-  printf '✗ Codespaces setup cannot start: Bun version file not found: %s\n' "$BUN_VERSION_FILE" >&2
+  printf '✗ Development environment setup cannot start: Bun version file not found: %s\n' "$BUN_VERSION_FILE" >&2
   exit 1
 fi
 
@@ -42,7 +30,7 @@ BUN_VERSION="$(<"$BUN_VERSION_FILE")"
 BUN_VERSION="${BUN_VERSION%"${BUN_VERSION##*[![:space:]]}"}"
 
 if [[ -z "$BUN_VERSION" ]]; then
-  printf '✗ Codespaces setup cannot start: Bun version file is empty: %s\n' "$BUN_VERSION_FILE" >&2
+  printf '✗ Development environment setup cannot start: Bun version file is empty: %s\n' "$BUN_VERSION_FILE" >&2
   exit 1
 fi
 
@@ -107,7 +95,7 @@ run_step() {
 
   printf '│  ✗ %s failed (exit %d, %ss).\n' "$title" "$status" "$elapsed" >&2
   print_log_excerpt "$log_file"
-  printf '╰─ ✗ Codespace setup stopped at step %d/%d.\n' "$CURRENT_STEP" "$TOTAL_STEPS" >&2
+  printf '╰─ ✗ Development environment setup stopped at step %d/%d.\n' "$CURRENT_STEP" "$TOTAL_STEPS" >&2
   exit "$status"
 }
 
@@ -146,30 +134,18 @@ step_antigravity() {
   command -v agy >/dev/null
 }
 
-step_graphify() {
-  if ! command -v uv >/dev/null 2>&1; then
-    curl --fail --silent --show-error --location --retry 5 --connect-timeout 10 \
-      https://astral.sh/uv/install.sh | sh
-  fi
-
-  export PATH="$HOME/.local/bin:$PATH"
-  uv tool install --upgrade 'graphifyy@latest'
-  command -v graphify >/dev/null
-}
-
 step_build() {
   cd "$REPOSITORY_ROOT"
   bun run build
 }
 
-printf '\n╭─ Monster Girl Delivery · Codespace Setup\n│\n'
+printf '\n╭─ Monster Girl Delivery · Development Environment Setup\n│\n'
 run_step required "Python environment" "Python is ready" step_python
 run_step required "Bun" "Bun $BUN_VERSION is ready" step_bun
 run_step required "Project dependencies" "Project dependencies installed" step_dependencies
 run_step optional "Codex CLI" "Latest Codex CLI installed" step_codex
 run_step optional "Google Antigravity CLI" "Latest Google Antigravity CLI installed" step_antigravity
-run_step optional "Graphify CLI" "Latest Graphify CLI installed" step_graphify
 run_step required "Production build" "Production build successful" step_build
 
-printf '╰─ ✓ Codespace ready — %ss\n' "$((SECONDS - SETUP_STARTED))"
+printf '╰─ ✓ Development environment ready — %ss\n' "$((SECONDS - SETUP_STARTED))"
 printf '   Setup logs: %s\n' "$LOG_DIR"

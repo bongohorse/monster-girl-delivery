@@ -30,6 +30,7 @@ import type { RunMotionState } from '../systems/RunMotionSimulation';
 /** Temporary barrier presentation; logical collision and generated identity remain outside Phaser. */
 export class PrototypeHazardPresentation {
   private graphics?: GameObjects.Graphics;
+  private missileImage?: GameObjects.Image;
   private telegraphedPhase?: TelegraphedHazardPhase;
 
   constructor(
@@ -40,6 +41,18 @@ export class PrototypeHazardPresentation {
     const moving = isBehavioralLogicalHazard(hazard) && hazard.behavior.kind === 'vertical-patrol';
 
     this.graphics = graphics;
+
+    if (
+      isBehavioralLogicalHazard(hazard) &&
+      isTargetLockStrikeHazardBehavior(hazard.behavior) &&
+      isPrototypeMissileBehavior(hazard.behavior)
+    ) {
+      this.missileImage = scene.add
+        .image(0, 0, 'red-monster-missile')
+        .setDepth(-49)
+        .setFlipX(hazard.behavior.missile.launchSide === 'left')
+        .setVisible(false);
+    }
 
     if (
       isBehavioralLogicalHazard(hazard) &&
@@ -72,6 +85,7 @@ export class PrototypeHazardPresentation {
     missileLaunchRelativeLeft: number | null = null,
   ): void {
     const graphics = this.graphics;
+    const missileImage = this.missileImage;
 
     if (!graphics) {
       return;
@@ -95,6 +109,7 @@ export class PrototypeHazardPresentation {
       this.drawTelegraphedPhase(phase);
 
       if (phase === 'expired') {
+        missileImage?.setVisible(false);
         return;
       }
 
@@ -164,13 +179,27 @@ export class PrototypeHazardPresentation {
         }
       }
 
-      if (missile && lifecycle && phase === 'warning') {
-        const blinkIndex = Math.floor(
-          lifecycle.elapsedPhaseSeconds / PROTOTYPE_MISSILE_WARNING_BLINK_SECONDS,
-        );
-        graphics.setVisible(blinkIndex % 2 === 0);
+      if (missile && missileImage && phase === 'active') {
+        const width = screenHitbox.right - screenHitbox.left;
+        const height = screenHitbox.bottom - screenHitbox.top;
+        missileImage
+          .setVisible(true)
+          .setPosition(
+            (screenHitbox.left + screenHitbox.right) / 2,
+            (screenHitbox.top + screenHitbox.bottom) / 2,
+          )
+          .setDisplaySize(width * 1.75, height * 1.25);
+        graphics.setVisible(false);
       } else {
-        graphics.setVisible(true);
+        missileImage?.setVisible(false);
+        if (missile && lifecycle && phase === 'warning') {
+          const blinkIndex = Math.floor(
+            lifecycle.elapsedPhaseSeconds / PROTOTYPE_MISSILE_WARNING_BLINK_SECONDS,
+          );
+          graphics.setVisible(blinkIndex % 2 === 0);
+        } else {
+          graphics.setVisible(true);
+        }
       }
     }
 
@@ -253,6 +282,8 @@ export class PrototypeHazardPresentation {
     }
 
     this.graphics = undefined;
+    this.missileImage?.destroy();
+    this.missileImage = undefined;
     graphics.destroy();
   }
 }

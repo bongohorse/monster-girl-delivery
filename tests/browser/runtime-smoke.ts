@@ -1,3 +1,4 @@
+import type { GameObjects } from 'phaser';
 import type { AppServices } from '../../src/core/AppServices';
 import type { ViewportService } from '../../src/core/ViewportService';
 import StartGame from '../../src/game/main';
@@ -10,6 +11,7 @@ import { installPhaserInputTeardownGuard } from '../../src/input/PhaserInputTear
 interface FoundationRuntimeProbe {
   readonly services: AppServices;
   readonly viewportService?: ViewportService;
+  readonly playerPresentation?: { readonly image?: GameObjects.Image };
 }
 
 interface SmokeEvidence {
@@ -22,6 +24,8 @@ interface SmokeEvidence {
   readonly portraitResize: string;
   readonly landscapeResize: string;
   readonly teardown: boolean;
+  readonly playerWorldSize: boolean;
+  readonly tallResize: string;
 }
 
 const resultElement = document.getElementById('smoke-result');
@@ -102,6 +106,24 @@ const readViewport = (probe: FoundationRuntimeProbe) => {
   return viewportService.getSnapshot();
 };
 
+// Inspect the real Phaser image after Foundation has applied its world projection.
+const assertPlayerWorldSize = (probe: FoundationRuntimeProbe): void => {
+  const image = probe.playerPresentation?.image;
+  assert(image, 'Loaded player artwork was not created.');
+  const viewport = readViewport(probe);
+  const safeHeight = viewport.height - viewport.safeArea.top - viewport.safeArea.bottom;
+  const projectionScale = Math.min(1, safeHeight / 390);
+  assert(Math.abs(image.scaleX - image.scaleY) < 1e-9, 'Player artwork aspect ratio changed.');
+  assert(
+    image.displayHeight <= 56 * projectionScale + 1e-6,
+    'Player artwork grew independently of its logical flight footprint.',
+  );
+  assert(
+    image.displayHeight >= 48 * projectionScale,
+    'Player artwork became too small relative to its collision body.',
+  );
+};
+
 let controller: RenderResolutionController | undefined;
 let game: ReturnType<typeof StartGame> | undefined;
 
@@ -134,6 +156,8 @@ const run = async (): Promise<SmokeEvidence> => {
     initialViewport.orientation === 'landscape',
     'Initial Foundation viewport is not landscape.',
   );
+
+  assertPlayerWorldSize(foundation);
 
   dispatchSpace('keydown');
   await waitFor(
@@ -200,6 +224,7 @@ const run = async (): Promise<SmokeEvidence> => {
     'Browser resize/Phaser resize did not reconcile the 360x640 portrait viewport.',
   );
   const portraitResize = canvas.dataset.mgdLogicalSize ?? '';
+  assertPlayerWorldSize(foundation);
 
   container.style.width = '800px';
   container.style.height = '450px';
@@ -212,6 +237,17 @@ const run = async (): Promise<SmokeEvidence> => {
     'Browser resize/Phaser resize did not reconcile the 800x450 landscape viewport.',
   );
   const landscapeResize = canvas.dataset.mgdLogicalSize ?? '';
+  assertPlayerWorldSize(foundation);
+
+  container.style.height = '900px';
+  window.dispatchEvent(new Event('resize'));
+  await waitFor(
+    () =>
+      controller?.getSnapshot().logicalHeight === 900 && readViewport(foundation).height === 900,
+    'Live tall resize did not reach Foundation.',
+  );
+  assertPlayerWorldSize(foundation);
+  const tallResize = canvas.dataset.mgdLogicalSize ?? '';
 
   assert(game.scene.isActive('Foundation'), 'Foundation stopped after browser resize.');
   assert(runtimeErrors.length === 0, `Browser runtime errors: ${runtimeErrors.join(' | ')}`);
@@ -235,6 +271,8 @@ const run = async (): Promise<SmokeEvidence> => {
     portraitResize,
     landscapeResize,
     teardown: true,
+    playerWorldSize: true,
+    tallResize,
   };
 };
 
