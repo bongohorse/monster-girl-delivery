@@ -234,14 +234,17 @@ Coding-agent scope/merge rules, including continued execution under an existing 
 
 ## 11. Asset commands
 
-The following are **planned interfaces**, not guaranteed current scripts:
+Static-image candidates are available after `bun install --frozen-lockfile`:
 
 ```bash
-bun run assets:validate
-bun run assets:build
+bun run assets:prepare --id molten-spike-trial
+bun run assets:validate --id molten-spike-trial
+bun run assets:preview --id molten-spike-trial
 ```
 
-Do not invent or document asset tooling as implemented until an approved task adds it.
+`prepare` builds a checked isolated candidate; `validate` and `preview` check existing current output. The JSON result prints the browser comparison and report paths. New imports and explicit updates use the flags in [ASSET_WORKFLOW.md](docs/ASSET_WORKFLOW.md#prepare-and-inspect); that document owns recipes, limits, identity, locking and evidence.
+
+These commands leave live game exports unchanged. A full runtime builder (`assets:build`), generated registry and build-entrypoint integration are not implemented yet; current game assets retain their existing loader paths.
 
 ## 12. Deployment and packaging targets
 

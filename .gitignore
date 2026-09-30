@@ -30,3 +30,6 @@ graphify-out/
 # Mutation audit output
 .stryker-tmp/
 reports/mutation/
+
+# Disposable asset candidates, reports and local write locks
+reports/assets/
