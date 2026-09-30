@@ -1,5 +1,5 @@
 name: Technical task
-about: Infrastructure, refactor, tooling, testing, or maintenance
+description: Infrastructure, refactor, tooling, testing, or maintenance
 title: "[Tech] "
 labels: ["type:tech"]
 body:
