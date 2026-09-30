@@ -1,14 +1,18 @@
 import { resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { prepareAsset, previewAsset, validateAsset } from './AssetCandidate';
+import { withAssetLock } from './AssetLock';
+import { buildRuntime, readRuntimeBuild } from './AssetRuntime';
 
-const usage = `MGD asset candidates
+const usage = `MGD assets
   bun run assets:prepare --id <id> --file <image> --profile static-png
     --width <px> --height <px> --display-width <logical> --display-height <logical>
     --provenance <origin> [--padding <px>] [--sampling nearest|lanczos3]
     [--trim-alpha <0..254>] [--pivot-x <0..1>] [--pivot-y <0..1>] [--render-scale <1..2>]
   bun run assets:prepare --id <id> --update --file <image>
   bun run assets:prepare --id <id>
+  bun run assets:build
+  bun run assets:validate --runtime
   bun run assets:validate --id <id>
   bun run assets:preview --id <id>
 Pass-through uses --profile pass-through (native dimensions; no trim/padding).
@@ -27,6 +31,7 @@ async function main(): Promise<void> {
     args,
     allowPositionals: true,
     options: {
+      runtime: { type: 'boolean' },
       id: { type: 'string' },
       file: { type: 'string' },
       update: { type: 'boolean' },
@@ -49,6 +54,23 @@ async function main(): Promise<void> {
     console.log(usage);
     return;
   }
+  if (command === 'build' || (command === 'validate' && values.runtime)) {
+    const allowed = command === 'build' ? [] : ['runtime'];
+    if (positionals.length || Object.keys(values).some((key) => !allowed.includes(key)))
+      throw new Error(usage);
+    const root = process.cwd();
+    console.log(
+      JSON.stringify(
+        command === 'build'
+          ? await buildRuntime(root)
+          : await withAssetLock(root, () => readRuntimeBuild(root)),
+        null,
+        2,
+      ),
+    );
+    return;
+  }
+  if (values.runtime) throw new Error('--runtime is only supported by validate.');
   if (!['prepare', 'validate', 'preview'].includes(command) || !values.id || positionals.length)
     throw new Error(usage);
   if (command !== 'prepare' && Object.keys(values).some((key) => key !== 'id'))

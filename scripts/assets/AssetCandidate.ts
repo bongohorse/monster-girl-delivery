@@ -1,7 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { mkdir, mkdtemp, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 import {
   IMAGE_LIMITS,
@@ -10,6 +9,7 @@ import {
   previewHtml,
   processImage,
 } from './AssetImage';
+import { assetToolchain, assetSourceBytes as sourceBytes } from './AssetInputs';
 import { withAssetLock } from './AssetLock';
 import {
   type AssetRecipe,
@@ -63,40 +63,12 @@ export interface Candidate {
   directory: string;
 }
 
-const builderDirectory = dirname(fileURLToPath(import.meta.url));
 const errorCode = (error: unknown): string | undefined => (error as NodeJS.ErrnoException).code;
 const checkAbort = (signal?: AbortSignal): void => {
   signal?.throwIfAborted();
 };
 const candidateDirectory = (id: string, fingerprint: string) =>
   `reports/assets/previews/${id}/${fingerprint}`;
-
-async function toolchain(): Promise<Record<string, string>> {
-  const files = await Promise.all(
-    ['AssetRecipe.ts', 'AssetImage.ts', 'AssetCandidate.ts'].map((file) =>
-      readFile(resolve(builderDirectory, file)),
-    ),
-  );
-  return {
-    builder: sha256(Buffer.concat(files)),
-    lockfile: sha256(await readFile(resolve(builderDirectory, '../../bun.lock'))),
-    runtime: process.versions.bun ? `bun-${process.versions.bun}` : `node-${process.versions.node}`,
-    platform: `${process.platform}-${process.arch}`,
-    ...sharp.versions,
-  };
-}
-
-async function sourceBytes(root: string, recipe: AssetRecipe): Promise<Buffer> {
-  const path = await assetPath(root, recipe.source, 'assets/source');
-  const size = (await stat(path)).size;
-  if (size > IMAGE_LIMITS.bytes) throw new Error('Image exceeds 64 MiB input limit.');
-  const bytes = await readFile(path);
-  if (sha256(bytes) !== recipe.sourceHash)
-    throw new Error(
-      'Source changed: use explicit prepare --update --file to record the new original.',
-    );
-  return bytes;
-}
 
 async function currentState(
   root: string,
@@ -110,7 +82,7 @@ async function currentState(
 }> {
   const { recipe, text } = await readRecipe(root, id);
   const bytes = await sourceBytes(root, recipe);
-  const tools = await toolchain();
+  const tools = await assetToolchain(root, 'candidate');
   return {
     recipe,
     bytes,
@@ -268,7 +240,7 @@ export async function prepareAsset(root: string, options: PrepareOptions): Promi
       // Validate future owned locations before expensive processing or creating directories.
       const sourcePath = await assetPath(root, recipe.source, 'assets/source');
       const targetRecipe = await recipePath(root, options.id);
-      const tools = await toolchain();
+      const tools = await assetToolchain(root, 'candidate');
       const fingerprint = sha256(stableJson({ recipe, toolchain: tools }));
       const directory = candidateDirectory(recipe.id, fingerprint);
       if (previous && stableJson(previous.recipe) === stableJson(recipe)) {

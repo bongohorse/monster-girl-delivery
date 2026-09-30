@@ -33,3 +33,7 @@ reports/mutation/
 
 # Disposable asset candidates, reports and local write locks
 reports/assets/
+
+# Rebuilt runtime asset generations and registry
+assets/processed/
+src/generated/assets.ts

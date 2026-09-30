@@ -1,8 +1,10 @@
 import { defineConfig } from 'vite';
+import { assetPipelinePlugin } from '../scripts/assets/AssetEntrypoints.ts';
 import { createBuildDefines } from './buildMetadata.mjs';
 
 export default defineConfig({
   base: './',
+  plugins: [assetPipelinePlugin()],
   define: createBuildDefines(),
   build: {
     rolldownOptions: {

@@ -2,7 +2,14 @@
   "$schema": "https://biomejs.dev/schemas/2.5.14/schema.json",
   "files": {
     "ignoreUnknown": true,
-    "includes": ["**", "!dist", "!node_modules", "!reports/assets"]
+    "includes": [
+      "**",
+      "!dist",
+      "!node_modules",
+      "!reports/assets",
+      "!assets/processed",
+      "!src/generated/assets.ts"
+    ]
   },
   "formatter": {
     "enabled": true,

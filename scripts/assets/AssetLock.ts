@@ -4,10 +4,16 @@ import { hostname } from 'node:os';
 import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 
+interface ConsumerOwner {
+  pid: number;
+  status: 'running' | 'finished';
+}
+
 interface LockOwner {
   pid: number;
   host: string;
   token: string;
+  consumers?: ConsumerOwner[];
 }
 
 interface AssetLockOptions {
@@ -36,7 +42,28 @@ async function readOwner(path: string): Promise<LockOwner | undefined> {
       typeof owner.token === 'string' &&
       owner.token.length > 0
     ) {
-      return { pid: owner.pid, host: owner.host, token: owner.token };
+      const consumers = 'consumers' in owner ? owner.consumers : undefined;
+      if (
+        consumers !== undefined &&
+        (!Array.isArray(consumers) ||
+          consumers.some(
+            (consumer: unknown) =>
+              typeof consumer !== 'object' ||
+              consumer === null ||
+              !('pid' in consumer) ||
+              !Number.isSafeInteger(consumer.pid) ||
+              Number(consumer.pid) <= 0 ||
+              !('status' in consumer) ||
+              !['running', 'finished'].includes(String(consumer.status)),
+          ))
+      )
+        return undefined;
+      return {
+        pid: owner.pid,
+        host: owner.host,
+        token: owner.token,
+        ...(consumers ? { consumers: consumers as ConsumerOwner[] } : {}),
+      };
     }
     return undefined;
   } catch (error) {
@@ -46,7 +73,11 @@ async function readOwner(path: string): Promise<LockOwner | undefined> {
 }
 
 function isDeadLocalOwner(owner: LockOwner): boolean {
-  if (owner.host !== hostname()) return false;
+  if (
+    owner.host !== hostname() ||
+    owner.consumers?.some((consumer) => consumer.status !== 'finished')
+  )
+    return false;
   try {
     process.kill(owner.pid, 0);
     return false;
@@ -83,8 +114,38 @@ async function releaseOwnedLock(lock: string, ownerPath: string, token: string):
   if (current?.token !== token) {
     throw new Error(`Asset lock ownership changed unexpectedly at ${lock}.`);
   }
+  if (current.consumers?.some((consumer) => consumer.status !== 'finished')) {
+    throw new Error(
+      `Asset consumer did not confirm completion at ${lock}; inspect owner.json before recovering this lock.`,
+    );
+  }
   await unlink(ownerPath);
   await rmdir(lock);
+}
+
+/** Register before granting execution; an unfinished consumer is never inferred safe from PID death. */
+export async function updateAssetConsumer(
+  root: string,
+  token: string,
+  pid: number,
+  status: 'running' | 'finished',
+): Promise<void> {
+  const path = join(root, 'reports/assets/.write-lock/owner.json');
+  const owner = await readOwner(path);
+  if (!owner || owner.token !== token) throw new Error('Asset consumer lock ownership changed.');
+  const consumers = owner.consumers ?? [];
+  const index = consumers.findIndex((consumer) => consumer.pid === pid);
+  if (index < 0) consumers.push({ pid, status });
+  else consumers[index] = { pid, status };
+  const temporary = `${path}.${randomUUID()}.tmp`;
+  try {
+    await writeFile(temporary, JSON.stringify({ ...owner, consumers }));
+    await rename(temporary, path);
+  } finally {
+    await unlink(temporary).catch((error: unknown) => {
+      if (!hasCode(error, 'ENOENT')) throw error;
+    });
+  }
 }
 
 /**

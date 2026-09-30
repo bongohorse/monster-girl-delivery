@@ -4,6 +4,7 @@ import {
   ART_GATE_POSE_B_TEXTURE_KEY,
   ART_GATE_POSE_C_TEXTURE_KEY,
 } from '../../entities/PrototypePlayerPresentation';
+import { ASSET_MOLTEN_SPIKE_TRIAL } from '../../generated/assets';
 import { createPreloaderLayout, type PreloaderLayout } from '../PreloaderLayout';
 import { getLogicalViewportFromBacking } from '../RenderResolution';
 
@@ -19,7 +20,7 @@ export class Preloader extends Scene {
   }
 
   preload() {
-    this.load.image('molten-spike-trial', 'assets/m6/molten-spike-trial.png');
+    this.load.image('molten-spike-trial', ASSET_MOLTEN_SPIKE_TRIAL.url);
     this.load.image('red-monster-missile', 'assets/m6/red-monster-missile.png');
     this.load.image(ART_GATE_POSE_A_TEXTURE_KEY, 'assets/art-gate/pose-a-concept-preview.png');
     this.load.image(ART_GATE_POSE_B_TEXTURE_KEY, 'assets/art-gate/pose-b-concept-preview.png');

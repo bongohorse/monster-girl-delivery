@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { Preloader } from '../../../src/game/scenes/Preloader';
+import { ASSET_MOLTEN_SPIKE_TRIAL } from '../../../src/generated/assets';
 
 vi.mock('phaser', () => ({
   Loader: { Events: { PROGRESS: 'progress' } },
@@ -104,7 +105,7 @@ describe('Preloader scene responsive layout', () => {
     expect(loadImage).toHaveBeenNthCalledWith(
       1,
       'molten-spike-trial',
-      'assets/m6/molten-spike-trial.png',
+      ASSET_MOLTEN_SPIKE_TRIAL.url,
     );
     expect(loadImage).toHaveBeenNthCalledWith(
       2,

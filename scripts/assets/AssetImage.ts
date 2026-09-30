@@ -1,5 +1,5 @@
 import sharp from 'sharp';
-import type { AssetRecipe } from './AssetRecipe';
+import type { AssetRecipe } from './AssetRecipe.ts';
 
 export const IMAGE_LIMITS = { bytes: 64 * 1024 * 1024, pixels: 32 * 1024 * 1024, seconds: 15 };
 export interface Bounds {

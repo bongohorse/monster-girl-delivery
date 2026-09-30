@@ -1,19 +1,19 @@
 # Asset workflow
 
-This document owns MGD's image preparation, candidate identity and future managed runtime build contract. Product and Art Gate decisions remain in [MASTER_SPEC](../MASTER_SPEC.md) and [ART_DIRECTION](ART_DIRECTION.md). [#494](https://github.com/bongohorse/monster-girl-delivery/issues/494) owns live acceptance; its latest task plan and Gate B/C matrix distinguish implemented tooling from outstanding integration and visual/device evidence.
+This document owns MGD's image preparation, candidate identity and managed runtime build contract. Product and Art Gate decisions remain in [MASTER_SPEC](../MASTER_SPEC.md) and [ART_DIRECTION](ART_DIRECTION.md). [#494](https://github.com/bongohorse/monster-girl-delivery/issues/494) owns live acceptance; its latest task plan and Gate B/C matrix distinguish implemented tooling from outstanding integration and visual/device evidence.
 
 ## Current scope
 
-Task 2 provides a usable static-image import/update, isolated candidate build, validation and comparison preview. A prepared Spike recipe exercises the existing source without replacing the live image.
+Static-image preparation and comparison previews remain isolated. Task 3 adds the complete active-set runtime build, generated registry and automatic entrypoint preparation; the Spike now exercises the real game loader.
 
 | Stage | Status |
 |---|---|
 | Prepare / validate / preview | Implemented; commands below |
-| Full runtime builder, generated registry, build entrypoints and Spike migration | Task 3; not implemented |
+| Full runtime builder, generated registry, build entrypoints and Spike migration | Implemented; Spike uses the generated registry |
 | Existing non-pixel Missile migration | Task 4; not implemented |
 | CI triggers, preview artifacts, packaged loader and Android/device evidence | Task 5; not implemented |
 
-Gate B/C remain partial. A valid candidate is neither runtime integration nor visual acceptance. Current live Spike/Missile files still load from `public/assets`; their legacy paths remain until migration. No audio, animation, atlas, gallery or new artwork is introduced.
+Gate B/C remain partial. A valid candidate is neither runtime integration nor visual acceptance. The Spike uses managed output; the Missile still loads its legacy `public/assets` image until task 4. No audio, animation, atlas, gallery or new artwork is introduced.
 
 ## Prepare and inspect
 
@@ -43,7 +43,7 @@ Replacing an existing source requires explicit ID and update intent:
 bun run assets:prepare --id molten-spike-trial --update --file /path/to/replacement.png
 ```
 
-Existing recipe values carry forward unless supplied. `prepare --id` can also change processing options for the same source. For changing a nullable field such as removing trimming, edit the versioned recipe (`trimAlpha: null`) and prepare again. `--help` lists CLI options. `validate` and `preview` accept only `--id`.
+Existing recipe values carry forward unless supplied. `prepare --id` can also change processing options for the same source. For changing a nullable field such as removing trimming, edit the versioned recipe (`trimAlpha: null`) and prepare again. `--help` lists CLI options. Candidate `validate` and `preview` accept only `--id`; whole-runtime validation uses `assets:validate --runtime`.
 
 Routine processing within an authorized asset task needs no separate approval. A new creative/product decision still belongs to the Director. Provenance records known origin (or explicitly unresolved origin); it does not prove rights or art acceptance.
 
@@ -71,7 +71,7 @@ The example hash is a placeholder: `prepare` records the real source SHA-256. Ne
 
 Owned paths are relative, case-exact and cannot traverse symlinks or escape their area. A changed source hash is an error until an explicit `--update --file` records the new input. No silent source replacement or activation occurs.
 
-`prepared` and `active` are the only recipe states. New imports are prepared; updates preserve the existing state. Task 2 can inspect candidates for either state but does not implement activation, deactivation or runtime removal. Setting `active` alone currently changes no game output; an active candidate report warns that runtime freshness requires the future full build.
+`prepared` and `active` are the only recipe states. New imports are prepared; updates preserve the existing state. Candidate commands inspect either state. To integrate an authorized image, set its recipe to `active`, run the full build and import its named registry export in the owning loader. Deactivation removes that export at the next full build; remaining imports then fail typecheck/build and must be resolved in the same change. Candidate reports alone do not establish runtime freshness.
 
 ## Image processing and measurements
 
@@ -95,9 +95,9 @@ Candidate output is staged and published under `reports/assets/previews/<id>/<fi
 
 A static preview records its built identity and cannot detect later edits by itself. Validate/reprepare against current inputs before relying on it. Recipe, source or toolchain changes invalidate that candidate; relevant loader/presentation changes also invalidate prior in-game evidence even when image bytes match.
 
-All three commands acquire one checkout-local writer lock around the complete operation, then re-read current state. The second caller waits up to 30 seconds and fails with an actionable lock path if it cannot proceed. Abort cancels waiting; an executing operation releases ownership after its work settles, never while Sharp is still running.
+Candidate commands, full builds and runtime validation acquire one checkout-local writer lock around the complete operation, then re-read current state. The second caller waits up to 30 seconds and fails with an actionable lock path if it cannot proceed. Abort cancels waiting; an executing operation releases ownership after its work settles, never while Sharp is still running.
 
-A confirmed dead PID on the same host can be recovered automatically. A live PID, permission error, foreign host, incomplete owner or recovery guard is treated conservatively; age alone never proves abandonment. For an unknown lock, inspect `reports/assets/.write-lock/owner.json` and any recovery guard and confirm no writer is active before manual cleanup. This is failure recovery, not a routine permission gate. Legacy exporters do not use this lock and must not race writes to their live files.
+A confirmed dead owner PID on the same host can be recovered automatically only after any registered finite consumers have confirmed completion. Tool processes start only after their supervisor PID is registered, so killing the wrapper cannot expose their files to a new writer. If a consumer supervisor is itself killed before confirming completion, recovery stays conservative because a tool child may still be alive. A live PID, permission error, foreign host, incomplete owner or recovery guard is treated conservatively; age alone never proves abandonment. For an unknown lock, inspect `reports/assets/.write-lock/owner.json` and any recovery guard and confirm no writer is active before manual cleanup. This is failure recovery, not a routine permission gate. Remaining legacy exporters do not use this lock and must not race writes to their live files.
 
 ## Toolchain and evidence
 
@@ -105,16 +105,25 @@ Sharp 0.35.5 is a pinned development dependency. Candidate preparation has been 
 
 A preview proves processing/identity, not subjective style, fair danger, touch behavior or device quality. Keep normal interim reports ignored. When an actual visual acceptance needs durable evidence, preserve a compact accepted comparison and, for integrated assets, representative in-game evidence under `docs/asset-evidence/<id>/<fingerprint>/`, with tested integration/build identity, device/render context, scoped decision and review link. Do not manufacture acceptance records for every candidate. Relevant changes require updated evidence; editorial changes alone do not.
 
-## Remaining managed-runtime contract
+## Managed runtime build
 
-Use the current manual integration route for an independently authorized game change until the managed runtime path exists. An unavailable future command is not a prerequisite for that work.
+```bash
+bun run assets:build
+bun run assets:validate --runtime
+```
 
-Tasks 3–5 implement these boundaries; the following are targets, not available commands:
+The full builder reads the complete active recipe set, checks source identities and derives immutable output under ignored `assets/processed/mgd/<fingerprint>/`. `src/generated/assets.ts` contains named exports such as `ASSET_MOLTEN_SPIKE_TRIAL` with URL and canvas dimensions. Static Vite `?no-inline` imports own content hashes and base handling; there is no additional runtime URL manifest. Game loaders choose texture keys and presentation retains its own anchors and collision geometry.
 
-- Full build derives the small active set from versioned recipes into ignored `assets/processed` plus `src/generated/assets.ts` with static Vite imports. Vite owns URL/base/content-hash handling; no second cache-busting manifest. Sources, previews and tooling stay outside shipped Web/Android packages. `assets/raw` is an optional local inbox, not required source storage.
-- Generated runtime output and registry publish as one validated generation. Failed processing/source drift cannot silently leave an old generation presented as success. Cleanup removes only builder-owned outputs; removal/deactivation must resolve real consumers. Prepared assets stay out of packages.
-- Dev, typecheck, tests and builds, including direct supported entrypoints, prepare required runtime output from a fresh checkout. A running dev server permits candidate previews; full runtime replacement needs a deliberate stop/restart, with no hidden texture hot-reload promise.
-- Spike and then Missile migrate through actual Phaser loading/presentation while preserving gameplay geometry and existing direction/flip semantics. Compare Sharp/Pillow visually rather than requiring encoder byte equality. Remove the Spike special exporter when its replacement is accepted; any temporary exception names an owner/reason and is reconsidered by Gate C.
-- Existing CI checks and path filters include source/recipe/tool changes, bounded preview artifacts and actual packaged loader tests under production subpaths. Android packing, update/restart and Windows/Linux differences receive evidence tied to the tested build. Missing hardware leaves the affected acceptance open without blocking independent implementation.
+All media are processed before the registry is atomically switched. Input drift, failed decoding or interruption leaves the previous published registry intact and reports failure. Validation verifies current inputs, toolchain, registry and every media hash. Repeated unchanged builds reuse verified output. Old-generation cleanup removes only recorded builder files; unknown files are retained. Prepared images, sources, previews and tooling are not imported into the game bundle.
+
+`bun run dev`, `bun run typecheck`, `bun run test` and `bun run build` prepare required output from a fresh checkout. Direct Vite dev/build and direct Vitest runs also prepare through their configs. Finite consumers hold the shared lock through completion and verify afterwards; their child processes inherit verified ownership without a nested lock. Bare upstream `tsc` has no preparation hook: use the repository typecheck command. Tests with a different fixture root acquire their own lock.
+
+A running dev server records its PID/host/token and permits candidate work and unchanged runtime verification. Changed or damaged runtime output requires stopping the server before rebuilding/restarting; textures are not silently hot-replaced. Confirmed dead local dev markers recover automatically. Foreign/unknown/live markers remain conservative, with actionable restart or inspection messages rather than another approval workflow.
+
+The Spike preserves its existing 256 × 256 canvas, visible bounds, 72 × 72 logical display, horizontal flip and 48 × 48 collision box. The Sharp/Pillow comparison permits small sampling differences; matching encoded bytes are not the goal. Its existing approved trial direction is preserved; final art/device acceptance remains separate.
+
+## Remaining pilot work
+
+Task 4 migrates the existing non-pixel Missile through the same loader path without changing gameplay or direction semantics. Task 5 covers CI path filters, bounded preview artifacts, production-subpath packaged loader evidence and Android/update/device evidence. Windows/native installation and physical device checks remain outstanding; missing hardware does not block independent implementation. `assets/raw` remains an optional local inbox.
 
 The native Vite import target refines technical delivery for managed images; it does not change product art decisions or migrate legacy `public` files early. Future audio, animation, atlas, UI/background profiles or storage changes require actual consumers and their own scoped task. For live remaining criteria, use #494's acceptance matrix and task-status comments rather than treating this document as a passed pilot report.

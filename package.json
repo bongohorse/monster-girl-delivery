@@ -20,17 +20,18 @@
     "assets:validate": "bun scripts/assets/cli.ts validate",
     "assets:preview": "bun scripts/assets/cli.ts preview",
     "dev": "vite --host 0.0.0.0 --config vite/config.dev.mjs",
-    "build": "vite build --config vite/config.prod.mjs",
+    "build": "bun scripts/assets/run.ts build build --config vite/config.prod.mjs",
     "preview": "vite preview --host 0.0.0.0 --port 8080 --config vite/config.prod.mjs",
     "check": "biome check --write .",
     "ci:check": "biome ci .",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "test:coverage": "node ./node_modules/vitest/vitest.mjs run --coverage.enabled",
+    "typecheck": "bun scripts/assets/run.ts typecheck --noEmit",
+    "test": "bun scripts/assets/run.ts test run",
+    "test:coverage": "bun scripts/assets/run.ts test run --coverage.enabled",
     "test:mutation:collectibles": "stryker run stryker.collectibles.config.mjs",
     "android:sync": "bun run build && node scripts/verify-android-launcher-assets.mjs && cap sync android",
     "android:open": "bun run android:sync && cap open android",
-    "android:debug": "bun run android:sync && node scripts/android-gradle.mjs assembleDebug"
+    "android:debug": "bun run android:sync && node scripts/android-gradle.mjs assembleDebug",
+    "assets:build": "bun scripts/assets/cli.ts build"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.14",
