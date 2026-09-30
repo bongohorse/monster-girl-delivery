@@ -37,6 +37,7 @@ import {
   selectLiveEncounterCandidates,
   stepLiveEncounterPolicyState,
 } from './LiveEncounterPolicy';
+import { selectMoltenSpikeHeightCatalog } from './M6MoltenSpikeTrial';
 import {
   type LogicalHazardSpawnInstance,
   PROTOTYPE_MAX_PATTERN_CANDIDATE_ATTEMPTS,
@@ -507,7 +508,7 @@ const fillPolicySpawnWindow = (
     policyIterations += 1;
 
     const laneCatalog = selectPrototypeLaserLaneCatalog(
-      context.catalog,
+      selectMoltenSpikeHeightCatalog(context.catalog, baseConstraints, generationState.prngState),
       baseConstraints,
       generationState.prngState,
     );
