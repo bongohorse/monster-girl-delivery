@@ -89,6 +89,8 @@ describe('Foundation M5 Missile resize integration', () => {
     expect(getTelegraphedHazardLifecycle(telegraphedState, missile)?.phase).toBe('lock');
 
     const playerPresentation = {
+      setFlightVelocity: vi.fn(),
+      resetFlightPose: vi.fn(),
       setPosition: vi.fn(),
       setRotation: vi.fn(),
       setScale: vi.fn(),

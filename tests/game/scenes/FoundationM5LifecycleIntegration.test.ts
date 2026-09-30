@@ -157,6 +157,8 @@ const createHarness = () => {
   const generatedCollectiblePresentation = { destroy: vi.fn(), sync: vi.fn() };
   const generatedHazardPresentation = { destroy: vi.fn(), sync: vi.fn() };
   const playerPresentation = {
+    setFlightVelocity: vi.fn(),
+    resetFlightPose: vi.fn(),
     destroy: vi.fn(),
     setPosition: vi.fn(),
     setRotation: vi.fn(),
