@@ -48,6 +48,8 @@ Test one hypothesis at a time.
 
 Prefer debugger/inspection or targeted measurements over broad logging. For performance regressions, establish a repeatable baseline and profile/measure before changing code.
 
+For MGD performance symptoms or an assigned optimization comparison, use [the existing performance investigation workflow](../../../docs/PERFORMANCE_MOBILE_EVIDENCE.md#investigation-and-comparison-procedure) for metric selection, matched build/device conditions and measurement limits. It routes NP/ZP, MEM and specialized profiling without a separate benchmark stack. An investigation/comparison request does not authorize an implementation fix; return the evidence when that is the assigned scope.
+
 Temporary instrumentation must be clearly marked and removed before completion.
 
 ## 5. Lock the bug down and fix it

@@ -1,8 +1,43 @@
-# Mobile performance evidence workflow
+# MGD performance investigation and mobile evidence
 
-Issues: #323, #332
+Issues: #323, #332; reuse audit: #503
 
-This workflow records repeatable real-device evidence without turning browser FPS into gameplay authority.
+## Inventory and reuse decision (#503)
+
+Existing tools cover MGD performance work; extend this guide instead of adding a competing `mgd-performance` skill. Use [diagnosing-bugs](../.agents/skills/diagnosing-bugs/SKILL.md) for ambiguous symptoms and [TEST_QUALITY](TEST_QUALITY.md#evidence-selection-matrix) for evidence selection. Ordinary UI/art/text changes do not trigger a benchmark audit. This inventory is a routing aid, not a task to repeat before every investigation.
+
+| Question | Existing tool/source and limit |
+|---|---|
+| Representative run frame pressure | [PerformanceSampler](../src/devtools/PerformanceSampler.ts), [PerformanceEvidence](../src/devtools/PerformanceEvidence.ts), [DirectorPerformanceHud](../src/devtools/DirectorPerformanceHud.ts): NP/ZP automatic windows and CP snapshots. These measure game-step wall-clock intervals, not CPU/GPU time. |
+| Heap trends/allocation | [Allocation evidence](ALLOCATION_CHURN_EVIDENCE.md#mobile-memory-evidence-harness), [MemoryEvidenceSampler](../src/devtools/MemoryEvidenceSampler.ts): MEM's 60-second active-wall-clock window. Heap endpoints do not measure allocations, GC events or GPU/process memory. |
+| Historical Android allocation comparison | [Paired Android comparison](329_APK_COMPARISON.md) and [workflow](../.github/workflows/android-memory-comparison.yml): #329's pinned BEFORE/current AFTER; not an arbitrary A/B pipeline. |
+| Android/Web test context | [Android distribution](ANDROID_DISTRIBUTION.md#hidden-production-diagnostics), [PWA](PWA_ANDROID.md#hosted-test-build): build modes, diagnostics and export. DEV Director, Director-enabled APK and normal production are different conditions. |
+
+[MASTER_SPEC §19](../MASTER_SPEC.md#19-performance) owns product performance decisions; [ARCHITECTURE §11](../ARCHITECTURE.md#11-directordeveloper-tools) owns instrumentation boundaries. Existing sampler thresholds and historical results are not new universal device budgets.
+
+## Investigation and comparison procedure
+
+Use for a performance symptom, assigned measurement or relevant optimization comparison. Follow the task's scope: an investigation returns findings; an authorized fix continues through implementation and verification. Choose tools and measurement details autonomously from the question.
+
+1. **Select the question and metric.** Identify the real loading/play/restart path and symptom. Distinguish compressed/network/package bytes, decoded texture storage and runtime residency. A smaller PNG does not by itself establish less GPU memory or faster gameplay.
+2. **Establish a comparable baseline.** Record source/artifact and mode, relevant local changes, device/browser, workload/seed and capture settings. Match conditions that affect the chosen metric: frame comparisons need viewport/render scale, FPS limit, diagnostics, warm-up, duration and repeated captures; startup comparisons need cold/warm cache state. Include Android shell identity when bundles differ. Reuse metadata already in reports instead of copying it into a separate form.
+3. **Measure with the appropriate existing tool.** NP/ZP answer run-frame questions; MEM answers bounded heap trends. Startup requires loading traces; CPU/GPU attribution requires a suitable profiler. Keep intrusive profiling separate from unprofiled timing baselines. Preserve raw evidence and enough samples/repetitions to reveal noise or rare stalls.
+4. **Test and compare.** Isolate the suspected change on the supported path. Compare matched A/B captures, report variation and distributions rather than average FPS alone. Work counters can show fewer evaluations, not a device speedup. A short P99 window, rising heap endpoint or one fast run is insufficient for a broad claim.
+5. **Report the finding and finish authorized work.** Link raw captures/traces with reproducible steps, relevant conditions and results. Separate observation from hypothesis and state noise/mismatches. Verify an authorized optimization against the original scenario and normal correctness checks. Additional lifetime/scene-teardown checks apply when the symptom involves repeated use or retention, not to every performance change.
+
+### When the required measurement is unavailable
+
+Continue source investigation and other authorized work. State the specific untested claim and provide the minimum reproduction: source/artifact, target context, scenario/seed/actions, relevant warm-up/duration/repetitions, tool and export steps. Missing target hardware restricts device claims, not artifact delivery or the whole workflow. An inconclusive comparison is valid evidence. Preserve exported evidence before any separately authorized reinstall/clear-data operation.
+
+## Request walkthroughs
+
+These examples describe measurement choices, not results already obtained.
+
+| Request | Focused route |
+|---|---|
+| Large texture causes stutters | Locate download, decode/upload, first display or sustained-play cost. Use loading traces for startup and matched frame/profiling evidence for runtime. Compressed size differs from decoded memory; estimates need assumptions. No automatic pipeline overhaul. |
+| Compare optimization A with B | Match actual sources/modes/device/workload and relevant capture settings; preserve raw captures and variation. Use NP/ZP/MEM only if they measure the question; #329's historical baseline is not arbitrary A. Missing tooling limits the comparison claim. |
+| Memory grows after restarts | Reproduce supported retry/restart/scene actions at equivalent checkpoints. Inspect heap/retaining paths over repeated cycles, separating caches and GC timing from persistent retention. Normal retry may reuse resources; MEM alone is not a restart-leak test. Keep GPU textures and process memory separate. |
 
 ## Scope
 
@@ -13,6 +48,7 @@ The **NP** and **ZP** controls run standardized 60 FPS benchmarks and automatica
 The report records:
 
 - build commit and build mode;
+- production-diagnostics enabled state;
 - capture timestamp;
 - logical viewport size;
 - device pixel ratio;
@@ -34,7 +70,7 @@ The report records:
 - primitive-hazard, Laser, and Zapper presentation-family counts;
 - Phaser Scene Display List Game Object count.
 
-Every exported report is also persisted as the latest performance evidence in browser local storage. Automated benchmark captures additionally request a JSON download using a filename containing the preset, commit, and timestamp. Clipboard copy is still attempted; if it is unavailable, the JSON is also written to the browser console.
+Every exported report is also persisted as the latest performance evidence in browser local storage. The browser path requests a JSON download for automated captures, with preset, commit and timestamp in its filename; clipboard/console fallback is also available. The [Android wrapper](../android/app/src/main/java/com/bongohorse/monstergirldelivery/MainActivity.java) intercepts evidence Blob requests and shares the persisted payload through the existing native export plugin. This implementation path is not proof of successful export on a device. Follow the platform export instructions linked above and preserve the report before uninstalling or clearing data; runtime identity alone does not prove download/share succeeded.
 
 ## Measurement rules
 
@@ -49,7 +85,7 @@ For before/after comparisons:
 7. preserve the raw JSON evidence rather than transcribing only the headline FPS;
 8. treat development/Director results as development evidence, not as a production-build certification.
 
-The current sampler window is 300 valid game-step wall-clock interval samples. Standard NP/ZP benchmarks force a 60 FPS game-step limit, so a full window represents about five seconds. The JSON explicitly records sample count/capacity and the automated target count. Schema version 6 records `timingSource: "game-step-wall-clock"`, `trigger`, and `targetSampleCount` in addition to benchmark identity, tuning/runtime state, bounded workload/presentation counts, and cumulative broadphase work required to reject mismatched captures.
+The current sampler window is 300 valid game-step wall-clock interval samples. Standard NP/ZP benchmarks force a 60 FPS game-step limit, so a full window represents about five seconds. The JSON explicitly records sample count/capacity and the automated target count. The current schema version 7 adds `diagnosticsEnabled` to the schema-v6 evidence described by the historical matched references below. Schema version 6 records `timingSource: "game-step-wall-clock"`, `trigger`, and `targetSampleCount` in addition to benchmark identity, tuning/runtime state, bounded workload/presentation counts, and cumulative broadphase work required to reject mismatched captures.
 
 Phaser's RAF-level `game.loop.actualFps` and `game.loop.rawDelta` are intentionally not used for capped benchmark evidence. In Phaser 4.2.1 the FPS-limited loop can still update those values on every browser RAF callback even when the actual game callback runs less frequently. Director evidence instead timestamps actual Foundation game-step callbacks and derives both FPS and frame-interval statistics from those timestamps.
 
