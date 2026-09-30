@@ -44,7 +44,7 @@ Use one task-leading skill; load supporting skills only for the parts that need 
 
 | Skill | Read/use when |
 |---|---|
-| [`diagnosing-bugs`](.agents/skills/diagnosing-bugs/SKILL.md) | A bug/regression is non-obvious, flaky, timing/physics/collision related, performance-sensitive, or otherwise needs evidence before a fix. Build a realistic red-capable reproduction loop before committing to a theory. |
+| [`diagnosing-bugs`](.agents/skills/diagnosing-bugs/SKILL.md) | A bug/regression is non-obvious, flaky, timing/physics/collision related, performance-sensitive, or otherwise needs evidence before a fix. Build a realistic red-capable reproduction loop before committing to a theory; performance investigations/comparisons use the [existing MGD measurement workflow](docs/PERFORMANCE_MOBILE_EVIDENCE.md#investigation-and-comparison-procedure). |
 | [`tdd`](.agents/skills/tdd/SKILL.md) | Implementing deterministic gameplay/application behavior or a reproducible bug fix where a meaningful regression test can protect the behavior. Choose routine test seams autonomously; do not ask the Director to choose them. |
 | [`codebase-design`](.agents/skills/codebase-design/SKILL.md) | Adding/reshaping an abstraction, module/interface, architecture seam, shared ownership boundary, or testability structure. Do not invoke it for routine local changes that do not present a design decision. |
 | [`graphify`](.agents/skills/graphify/SKILL.md) | A task depends on relationships across multiple modules, call/import paths, subsystem ownership, or change blast radius. Use the graph to narrow investigation, then verify material conclusions in current source/tests. Do not invoke it for small local edits or treat graph output as authoritative. |
@@ -54,6 +54,8 @@ Use one task-leading skill; load supporting skills only for the parts that need 
 | [`mgd-art`](.agents/skills/mgd-art/SKILL.md) | Creating or visually revising MGD characters, hazards, parcels, backgrounds, UI graphics or animation/gallery variants. Uses `docs/ART_DIRECTION.md`; unchanged image integration and gameplay/hitboxes belong to their own workflows. |
 | [`mgd-asset-integration`](.agents/skills/mgd-asset-integration/SKILL.md) | Importing/updating image sources, inspecting exports or connecting images to real presentation. Use current tooling; future pipeline tooling is not a prerequisite. |
 | [`mgd-hazards`](.agents/skills/mgd-hazards/SKILL.md) | Creating/changing individual hazards, spawn, motion, collision or artwork affecting visual fairness. Verify real admission, geometry and consequences; scale regression checks to affected paths. |
+| [`mgd-acceptance`](.agents/skills/mgd-acceptance/SKILL.md) | Explicitly assessing a game change or reconciling acceptance evidence. Ordinary implementation does not automatically require a separate acceptance handoff. |
+| [`mgd-gameplay`](.agents/skills/mgd-gameplay/SKILL.md) | Changing flight, collectibles, deliveries, scoring or encounter-wide rules. Individual hazard behavior and presentation-only UI use their own leading skill. |
 | [`mgd-ui`](.agents/skills/mgd-ui/SKILL.md) | Changing HUD, controls, results or Director interfaces. Reuse authoritative state, existing layout and supported input paths; verify the affected flow. |
 | [`writing-for-agents`](.agents/skills/writing-for-agents/SKILL.md) | Creating/editing `AGENTS.md`, skills, worker prompts, automation prompts, reviewer instructions, or other documents primarily consumed by agents. Keep triggers sharp and canonical rules singular. |
 

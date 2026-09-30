@@ -34,7 +34,8 @@ GitHub Milestones and focused Issues/PRs are the live execution trail. Completed
 | Review the deeper Jetpack Joyride systems/content-grammar analysis | [`JETPACK_JOYRIDE_WIKI_DEEP_DIVE.md`](JETPACK_JOYRIDE_WIKI_DEEP_DIVE.md) |
 | Understand technical boundaries | [`../ARCHITECTURE.md`](../ARCHITECTURE.md) |
 | See commands, CI, testing, Codespaces, or closeout workflow | [`../DEVELOPMENT.md`](../DEVELOPMENT.md) |
-| Choose test-quality evidence for a gameplay-authority change | [`TEST_QUALITY.md`](TEST_QUALITY.md) |
+| Choose test-quality evidence for a gameplay-authority change | [`PERFORMANCE_MOBILE_EVIDENCE.md`](PERFORMANCE_MOBILE_EVIDENCE.md) | reusable performance investigation/comparison entry and existing frame-evidence procedures; routes specialized allocation/Android evidence | product budgets, gameplay authority, unmeasured device results |
+| [`TEST_QUALITY.md`](TEST_QUALITY.md) |
 | See human ↔ AI orchestration | [`AI_WORKFLOW.md`](AI_WORKFLOW.md) |
 | Use Jules as a GitHub-native assistant safely | [`JULES_WORKFLOW.md`](JULES_WORKFLOW.md) |
 | Review AI GitHub authentication/permissions | [`GITHUB_AI_ACCESS.md`](GITHUB_AI_ACCESS.md) |
