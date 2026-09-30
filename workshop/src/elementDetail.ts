@@ -1,3 +1,4 @@
+import { assetGallery } from './assetGallery';
 import type { Catalog, Element, Fact } from './catalog';
 import {
   documentationLabels,
@@ -84,14 +85,7 @@ function sources(element: Element): HTMLElement {
     );
     list.append(item);
   }
-  panel.append(
-    list,
-    node(
-      'p',
-      'Vollständige Assetgalerien und Assetreview-/Verwendungszustände folgen in Aufgabe 4.',
-      'scope-note',
-    ),
-  );
+  panel.append(list);
   return panel;
 }
 
@@ -171,6 +165,7 @@ export function elementDetail(element: Element, data: Catalog, preview: HTMLElem
   tabs.setAttribute('aria-label', 'Elementdetails');
   const entries = [
     { id: 'information', name: 'Informationen', panel: information(element) },
+    { id: 'gallery', name: 'Galerie / Medien', panel: assetGallery(element, data) },
     { id: 'sources', name: 'Verwendung / Quellen', panel: sources(element) },
     {
       id: 'relationships',

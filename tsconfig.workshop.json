@@ -1,5 +1,7 @@
 {
   "extends": "./tsconfig.json",
-  "compilerOptions": { "resolveJsonModule": true },
-  "include": ["workshop/src", "workshop/data", "tests/workshop"]
+  "compilerOptions": {
+    "resolveJsonModule": true
+  },
+  "include": ["workshop/src", "workshop/data", "tests/workshop", "scripts/workshop"]
 }

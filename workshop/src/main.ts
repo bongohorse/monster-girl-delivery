@@ -1,39 +1,20 @@
-import missilePreview from '../../assets/source/district-01/hazards/red-monster-missile-gpt-image.png?url';
-import courierPreview from '../../public/assets/art-gate/pose-a-concept-preview.png?url';
+import { assetDetail } from './assetGallery';
 import { catalog, type Element } from './catalog';
 import { elementDetail } from './elementDetail';
+import { mediaImage } from './media';
 import { resolveRoute, sections } from './navigation';
 import { documentationLabels, link, node, repository } from './ui';
 import './styles.css';
 
-const previews: Record<string, string> = {
-  'public/assets/art-gate/pose-a-concept-preview.png': courierPreview,
-  'assets/source/district-01/hazards/red-monster-missile-gpt-image.png': missilePreview,
-};
 function preview(element: Element): HTMLElement {
-  const url = element.previewPath && previews[element.previewPath];
-  if (!url) {
-    return node(
-      'div',
-      element.type === 'Mechanik'
-        ? 'Mechanik · keine eigene Bilddatei'
-        : 'Codegrafik · kein separates Bild',
-      'media media-empty',
-    );
-  }
-  const image = node('img', '', 'media');
-  image.src = url;
-  image.alt = `${element.name} · vorhandene Konzeptquelle`;
-  image.loading = 'lazy';
-  image.decoding = 'async';
-  image.addEventListener(
-    'error',
-    () => {
-      image.replaceWith(node('div', 'Vorschau nicht verfügbar', 'media media-empty'));
-    },
-    { once: true },
+  if (element.previewArtifactId) return mediaImage(element.previewArtifactId, element.name);
+  return node(
+    'div',
+    element.type === 'Mechanik'
+      ? 'Mechanik · keine eigene Bilddatei'
+      : 'Codegrafik · kein separates Bild',
+    'media media-empty',
   );
-  return image;
 }
 
 function elementCard(element: Element): HTMLAnchorElement {
@@ -168,6 +149,8 @@ function render(moveFocus = false): void {
     );
   } else if (route.kind === 'element') {
     view.append(elementDetail(route.element, catalog, preview(route.element)));
+  } else if (route.kind === 'asset') {
+    view.append(assetDetail(route.asset, catalog));
   } else {
     view.append(
       node(

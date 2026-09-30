@@ -69,7 +69,6 @@
       },
       "implementation": "partial",
       "archived": false,
-      "previewPath": "public/assets/art-gate/pose-a-concept-preview.png",
       "sources": [
         {
           "id": "1",
@@ -92,8 +91,7 @@
       ],
       "relatedElementIds": [],
       "openQuestions": [
-        "Originaldateien und vollständiger Prompt sind im derzeitigen Bestand nicht belegt.",
-        "Galerie und Assetreview werden in Aufgabe 4 separat dokumentiert."
+        "Originaldateien und vollständiger Prompt sind im derzeitigen Bestand nicht belegt."
       ],
       "sourceConflicts": [
         "Art-Brief beschreibt A als stabile Baseline und B/C als Experimente; der Runtime-Code wechselt automatisch zwischen den drei Posen."
@@ -116,7 +114,9 @@
             }
           ]
         }
-      ]
+      ],
+      "assetIds": ["courier-pose-a", "courier-pose-b", "courier-pose-c"],
+      "previewArtifactId": "courier-pose-a-preview"
     },
     {
       "id": "red-missile",
@@ -128,13 +128,12 @@
       "documentation": {
         "state": "checked",
         "date": "2026-09-30",
-        "notes": "Bestandsaufnahme von Quelle, Rezept, Loader und Director-Pfad. Vollständige Galerie und Nutzungsnachweise folgen in Aufgabe 4.",
+        "notes": "Quelle, Rezept, Loader, Director-Zulassung und aktive Darstellung belegt. Finale Art-/Geräteabnahme bleibt offen.",
         "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
         "coverage": "Quelle/Rezept und Director-Abgrenzung; keine vollständige Hazard-Lifecycle-Dokumentation."
       },
       "implementation": "partial",
       "archived": false,
-      "previewPath": "assets/source/district-01/hazards/red-monster-missile-gpt-image.png",
       "sources": [
         {
           "id": "1",
@@ -157,8 +156,7 @@
       ],
       "relatedElementIds": [],
       "openQuestions": [
-        "Bewegung, Warnphasen und Kollision sind hier noch nicht vollständig dokumentiert.",
-        "Vollständige Asset-/Verwendungsnachweise folgen in Aufgabe 4."
+        "Bewegung, Warnphasen und Kollision sind hier noch nicht vollständig dokumentiert."
       ],
       "sourceConflicts": [],
       "detailSections": [
@@ -179,7 +177,9 @@
             }
           ]
         }
-      ]
+      ],
+      "assetIds": ["red-monster-missile"],
+      "previewArtifactId": "red-monster-missile-original"
     },
     {
       "id": "delivery-arrow",
@@ -197,7 +197,6 @@
       },
       "implementation": "partial",
       "archived": false,
-      "previewPath": null,
       "sources": [
         {
           "id": "spec",
@@ -306,7 +305,9 @@
             }
           ]
         }
-      ]
+      ],
+      "assetIds": [],
+      "previewArtifactId": null
     },
     {
       "id": "parcel",
@@ -324,7 +325,6 @@
       },
       "implementation": "partial",
       "archived": false,
-      "previewPath": null,
       "sources": [
         {
           "id": "spec",
@@ -448,7 +448,9 @@
         "Tragephysik, Gewicht und Paketstapel sind außerhalb der bestätigten Slice-Entscheidung.",
         "Der Zustand carrying ist umgesetzt, aber FirstDeliveryPresentation zeigt derzeit kein getragenes Paket. Der dekorative Hero-Paketanteil belegt diesen Zustand nicht."
       ],
-      "sourceConflicts": []
+      "sourceConflicts": [],
+      "assetIds": [],
+      "previewArtifactId": null
     },
     {
       "id": "delivery-recipient",
@@ -466,7 +468,6 @@
       },
       "implementation": "partial",
       "archived": false,
-      "previewPath": null,
       "sources": [
         {
           "id": "spec",
@@ -591,7 +592,9 @@
       ],
       "sourceConflicts": [
         "MASTER_SPEC fordert einen kurzen Paketwurf hinter die Kurierin nach verpasster Übergabe. FirstDeliveryPresentation entfernt die Grafik bei missed; ein solcher Paketwurf ist an der Prüfrevision nicht belegt."
-      ]
+      ],
+      "assetIds": [],
+      "previewArtifactId": null
     },
     {
       "id": "parcel-delivery",
@@ -609,7 +612,6 @@
       },
       "implementation": "partial",
       "archived": false,
-      "previewPath": null,
       "sources": [
         {
           "id": "spec",
@@ -784,7 +786,394 @@
       ],
       "sourceConflicts": [
         "MASTER_SPEC fordert einen kurzen Paketwurf hinter die Kurierin nach verpasster Übergabe. FirstDeliveryPresentation entfernt die Grafik bei missed; ein solcher Paketwurf ist an der Prüfrevision nicht belegt."
+      ],
+      "assetIds": [],
+      "previewArtifactId": null
+    }
+  ],
+  "assets": [
+    {
+      "id": "courier-pose-a",
+      "name": "Pose A · Ausgangspose",
+      "description": "Vorhandene Art-Gate-Konzeptpose der provisorischen Kurierin.",
+      "elementIds": ["courier-art-gate"],
+      "artifactIds": ["courier-pose-a-preview"],
+      "variant": "Pose A · Ausgangspose",
+      "review": {
+        "state": "selected",
+        "date": "2026-09-29",
+        "reason": "Nur als vorläufige Live-Posen akzeptiert (#489). Auffällige Wechsel bleiben ein bekannter Trial-Befund; keine finale Produktionsart- oder Gerätefreigabe.",
+        "sourceUrl": "https://github.com/bongohorse/monster-girl-delivery/pull/489"
+      },
+      "usage": {
+        "state": "default-game",
+        "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+        "reason": "A ist Start-/Resetpose; B/C werden abhängig vom Flugzustand ausgewählt. Alle drei sind vorab ladbar. Primitive Ersatzgrafik bei fehlender A-Textur.",
+        "evidence": [
+          {
+            "id": "loader",
+            "path": "src/game/scenes/Preloader.ts",
+            "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+            "kind": "code",
+            "symbol": "preload"
+          },
+          {
+            "id": "presentation",
+            "path": "src/entities/PrototypePlayerPresentation.ts",
+            "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+            "kind": "code",
+            "symbol": "constructor / setFlightVelocity / resetFlightPose"
+          },
+          {
+            "id": "admission",
+            "path": "src/game/scenes/Foundation.ts",
+            "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+            "kind": "code",
+            "symbol": "create / flight pose update"
+          }
+        ]
+      },
+      "archived": false,
+      "history": [
+        {
+          "id": "courier-pose-a-introduced",
+          "revision": "8eeccfc41c71874da0e68daad41fafa980572091",
+          "path": "public/assets/art-gate/pose-a-concept-preview.png",
+          "date": "2026-09-29",
+          "note": "Vorläufige A/B/C-Posen aus #489 im Spiel übernommen. Eine frühere Originalfassung ist hier nicht belegt."
+        }
+      ],
+      "openQuestions": [
+        "Original und vollständiger Generierungsprompt sind nicht im Bestand belegt.",
+        "Finale Gestaltung, subtile Übergänge und Produktions-/Geräteabnahme bleiben offen."
       ]
+    },
+    {
+      "id": "courier-pose-b",
+      "name": "Pose B · Aufstieg",
+      "description": "Vorhandene Art-Gate-Konzeptpose der provisorischen Kurierin.",
+      "elementIds": ["courier-art-gate"],
+      "artifactIds": ["courier-pose-b-preview"],
+      "variant": "Pose B · Aufstieg",
+      "review": {
+        "state": "selected",
+        "date": "2026-09-29",
+        "reason": "Nur als vorläufige Live-Posen akzeptiert (#489). Auffällige Wechsel bleiben ein bekannter Trial-Befund; keine finale Produktionsart- oder Gerätefreigabe.",
+        "sourceUrl": "https://github.com/bongohorse/monster-girl-delivery/pull/489"
+      },
+      "usage": {
+        "state": "conditional",
+        "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+        "reason": "A ist Start-/Resetpose; B/C werden abhängig vom Flugzustand ausgewählt. Alle drei sind vorab ladbar. Primitive Ersatzgrafik bei fehlender A-Textur.",
+        "evidence": [
+          {
+            "id": "loader",
+            "path": "src/game/scenes/Preloader.ts",
+            "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+            "kind": "code",
+            "symbol": "preload"
+          },
+          {
+            "id": "presentation",
+            "path": "src/entities/PrototypePlayerPresentation.ts",
+            "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+            "kind": "code",
+            "symbol": "constructor / setFlightVelocity / resetFlightPose"
+          },
+          {
+            "id": "admission",
+            "path": "src/game/scenes/Foundation.ts",
+            "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+            "kind": "code",
+            "symbol": "create / flight pose update"
+          }
+        ]
+      },
+      "archived": false,
+      "history": [
+        {
+          "id": "courier-pose-b-introduced",
+          "revision": "8eeccfc41c71874da0e68daad41fafa980572091",
+          "path": "public/assets/art-gate/pose-b-concept-preview.png",
+          "date": "2026-09-29",
+          "note": "Vorläufige A/B/C-Posen aus #489 im Spiel übernommen. Eine frühere Originalfassung ist hier nicht belegt."
+        }
+      ],
+      "openQuestions": [
+        "Original und vollständiger Generierungsprompt sind nicht im Bestand belegt.",
+        "Finale Gestaltung, subtile Übergänge und Produktions-/Geräteabnahme bleiben offen."
+      ]
+    },
+    {
+      "id": "courier-pose-c",
+      "name": "Pose C · Abstieg",
+      "description": "Vorhandene Art-Gate-Konzeptpose der provisorischen Kurierin.",
+      "elementIds": ["courier-art-gate"],
+      "artifactIds": ["courier-pose-c-preview"],
+      "variant": "Pose C · Abstieg",
+      "review": {
+        "state": "selected",
+        "date": "2026-09-29",
+        "reason": "Nur als vorläufige Live-Posen akzeptiert (#489). Auffällige Wechsel bleiben ein bekannter Trial-Befund; keine finale Produktionsart- oder Gerätefreigabe.",
+        "sourceUrl": "https://github.com/bongohorse/monster-girl-delivery/pull/489"
+      },
+      "usage": {
+        "state": "conditional",
+        "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+        "reason": "A ist Start-/Resetpose; B/C werden abhängig vom Flugzustand ausgewählt. Alle drei sind vorab ladbar. Primitive Ersatzgrafik bei fehlender A-Textur.",
+        "evidence": [
+          {
+            "id": "loader",
+            "path": "src/game/scenes/Preloader.ts",
+            "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+            "kind": "code",
+            "symbol": "preload"
+          },
+          {
+            "id": "presentation",
+            "path": "src/entities/PrototypePlayerPresentation.ts",
+            "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+            "kind": "code",
+            "symbol": "constructor / setFlightVelocity / resetFlightPose"
+          },
+          {
+            "id": "admission",
+            "path": "src/game/scenes/Foundation.ts",
+            "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+            "kind": "code",
+            "symbol": "create / flight pose update"
+          }
+        ]
+      },
+      "archived": false,
+      "history": [
+        {
+          "id": "courier-pose-c-introduced",
+          "revision": "8eeccfc41c71874da0e68daad41fafa980572091",
+          "path": "public/assets/art-gate/pose-c-concept-preview.png",
+          "date": "2026-09-29",
+          "note": "Vorläufige A/B/C-Posen aus #489 im Spiel übernommen. Eine frühere Originalfassung ist hier nicht belegt."
+        }
+      ],
+      "openQuestions": [
+        "Original und vollständiger Generierungsprompt sind nicht im Bestand belegt.",
+        "Finale Gestaltung, subtile Übergänge und Produktions-/Geräteabnahme bleiben offen."
+      ]
+    },
+    {
+      "id": "red-monster-missile",
+      "name": "Red Monster Missile",
+      "description": "Director-approved GPT-Image-Upload für den bestehenden Missile-Trial; verwalteter Runtime-Export.",
+      "elementIds": ["red-missile"],
+      "artifactIds": ["red-monster-missile-original", "red-monster-missile-runtime"],
+      "variant": "Nach links ausgerichtete Monster-Missile",
+      "review": {
+        "state": "selected",
+        "date": "2026-09-29",
+        "reason": "Upload für den Missile-Trial ausgewählt (#493). Browser-/Buildnachweise sind keine finale Freigabe von Größe, Bewegung oder mobiler Gefahrlesbarkeit.",
+        "sourceUrl": "https://github.com/bongohorse/monster-girl-delivery/pull/493#issuecomment-5894320223"
+      },
+      "usage": {
+        "state": "debug-workshop",
+        "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+        "reason": "Rezept aktiv und Textur vorab ladbar. Director-Missile erzeugt die Darstellung nur in Active; normale AUTO-Auswahl schließt Missile aus. Bei Start von links wird horizontal gespiegelt. Original wird als Quelle genutzt, nicht vom Spiel geladen.",
+        "evidence": [
+          {
+            "id": "recipe",
+            "path": "assets/metadata/red-monster-missile.json",
+            "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+            "kind": "code"
+          },
+          {
+            "id": "builder",
+            "path": "scripts/assets/AssetRuntime.ts",
+            "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+            "kind": "code",
+            "symbol": "buildRuntimeLocked / registry"
+          },
+          {
+            "id": "loader",
+            "path": "src/game/scenes/Preloader.ts",
+            "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+            "kind": "code",
+            "symbol": "ASSET_RED_MONSTER_MISSILE"
+          },
+          {
+            "id": "admission",
+            "path": "src/game/scenes/Foundation.ts",
+            "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+            "kind": "code",
+            "symbol": "spawnDirectorMissile → spawnDirectorPattern"
+          },
+          {
+            "id": "catalog",
+            "path": "src/generation/M5LiveEncounterCatalog.ts",
+            "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+            "kind": "code",
+            "symbol": "Missile excluded from AUTO"
+          },
+          {
+            "id": "presentation",
+            "path": "src/entities/PrototypeHazardPresentation.ts",
+            "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+            "kind": "code",
+            "symbol": "Active image / launch-side flip"
+          }
+        ]
+      },
+      "archived": false,
+      "history": [
+        {
+          "id": "missile-original-introduced",
+          "revision": "4db392edff8ca62a4b3d71316847fcea31018c29",
+          "path": "assets/source/district-01/hazards/red-monster-missile-gpt-image.png",
+          "date": "2026-09-29",
+          "note": "Originalupload unverändert aus #493."
+        },
+        {
+          "id": "missile-legacy-export",
+          "revision": "4db392edff8ca62a4b3d71316847fcea31018c29",
+          "path": "public/assets/m6/red-monster-missile.png",
+          "date": "2026-09-29",
+          "note": "Historischer manueller Runtime-Export aus #493; aktuelle Datei durch verwaltete Generation ersetzt. Nur revisionsgebundener Quellenlink, keine neue Kopie."
+        },
+        {
+          "id": "missile-managed-export",
+          "revision": "cd4ca88b66261cf110333c067469ab6c7204a160",
+          "path": "assets/metadata/red-monster-missile.json",
+          "date": "2026-09-30",
+          "note": "Verwaltetes Rezept aus #524; aktuelle Runtime-Bytes/Generation werden beim Workshop-Build aus der bestehenden Pipeline gelesen."
+        }
+      ],
+      "openQuestions": [
+        "Finale Art-/Geräteabnahme für Phone/Pad-6-Bewegung und Gefahrlesbarkeit bleibt offen.",
+        "Vollständiger Generierungsprompt/zusätzliche Referenzmedien sind nicht im Bestand belegt."
+      ]
+    }
+  ],
+  "artifacts": [
+    {
+      "id": "courier-pose-a-preview",
+      "assetId": "courier-pose-a",
+      "sourcePath": "public/assets/art-gate/pose-a-concept-preview.png",
+      "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+      "sha256": "46e458e965ede28ac5df42a096a5d5bf5a5acabc92836dcd19a756e30168cc3d",
+      "role": "preview",
+      "runtimeAssetId": null,
+      "recipe": null,
+      "derivedFromArtifactId": null,
+      "metadata": {
+        "format": "png",
+        "width": 1254,
+        "height": 1254,
+        "hasAlpha": true,
+        "durationSeconds": null
+      },
+      "provenance": {
+        "text": "Vorhandene transparente Trial-Konzeptdatei; Einführung/Interimakzeptanz in #489 belegt. Separate Original-/Ableitungsstufe unbekannt.",
+        "prompt": null,
+        "referenceUrls": ["https://github.com/bongohorse/monster-girl-delivery/pull/489"]
+      }
+    },
+    {
+      "id": "courier-pose-b-preview",
+      "assetId": "courier-pose-b",
+      "sourcePath": "public/assets/art-gate/pose-b-concept-preview.png",
+      "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+      "sha256": "7d2b06c69e2af6097d6b6b6c545a6d31a8c1328ec3844e78b825e4d3aece4ef1",
+      "role": "preview",
+      "runtimeAssetId": null,
+      "recipe": null,
+      "derivedFromArtifactId": null,
+      "metadata": {
+        "format": "png",
+        "width": 1254,
+        "height": 1254,
+        "hasAlpha": true,
+        "durationSeconds": null
+      },
+      "provenance": {
+        "text": "Vorhandene transparente Trial-Konzeptdatei; Einführung/Interimakzeptanz in #489 belegt. Separate Original-/Ableitungsstufe unbekannt.",
+        "prompt": null,
+        "referenceUrls": ["https://github.com/bongohorse/monster-girl-delivery/pull/489"]
+      }
+    },
+    {
+      "id": "courier-pose-c-preview",
+      "assetId": "courier-pose-c",
+      "sourcePath": "public/assets/art-gate/pose-c-concept-preview.png",
+      "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+      "sha256": "72e5180e6498eb0f61c56cd5e9db3aaa4b8db4f69925d27b645268df4901d433",
+      "role": "preview",
+      "runtimeAssetId": null,
+      "recipe": null,
+      "derivedFromArtifactId": null,
+      "metadata": {
+        "format": "png",
+        "width": 1254,
+        "height": 1254,
+        "hasAlpha": true,
+        "durationSeconds": null
+      },
+      "provenance": {
+        "text": "Vorhandene transparente Trial-Konzeptdatei; Einführung/Interimakzeptanz in #489 belegt. Separate Original-/Ableitungsstufe unbekannt.",
+        "prompt": null,
+        "referenceUrls": ["https://github.com/bongohorse/monster-girl-delivery/pull/489"]
+      }
+    },
+    {
+      "id": "red-monster-missile-original",
+      "assetId": "red-monster-missile",
+      "sourcePath": "assets/source/district-01/hazards/red-monster-missile-gpt-image.png",
+      "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+      "sha256": "a656027aa3eb4be15f2884bf56e215201f6ff1f02597364e10280447733f8687",
+      "role": "original",
+      "runtimeAssetId": null,
+      "recipe": null,
+      "derivedFromArtifactId": null,
+      "metadata": {
+        "format": "png",
+        "width": 1526,
+        "height": 1031,
+        "hasAlpha": true,
+        "durationSeconds": null
+      },
+      "provenance": {
+        "text": "Exakter Director-approved GPT-Image-Upload aus #493, linksgerichtet. Aktives Rezept enthält Quellhash und Provenienz.",
+        "prompt": null,
+        "referenceUrls": [
+          "https://github.com/bongohorse/monster-girl-delivery/pull/493",
+          "https://github.com/bongohorse/monster-girl-delivery/blob/1fafb9e71a704ae2848bb5215c65328cb422441a/assets/source/district-01/hazards/README.md"
+        ]
+      }
+    },
+    {
+      "id": "red-monster-missile-runtime",
+      "assetId": "red-monster-missile",
+      "sourcePath": null,
+      "revision": null,
+      "sha256": null,
+      "role": "runtime",
+      "runtimeAssetId": "red-monster-missile",
+      "recipe": {
+        "id": "missile-recipe",
+        "path": "assets/metadata/red-monster-missile.json",
+        "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+        "kind": "manifest"
+      },
+      "derivedFromArtifactId": "red-monster-missile-original",
+      "metadata": {
+        "format": "png",
+        "width": 512,
+        "height": 330,
+        "hasAlpha": true,
+        "durationSeconds": null
+      },
+      "provenance": {
+        "text": "Bestehende Asset-Pipeline: alpha > 0 trimmen, Lanczos3, transparente 512 × 330 Canvas, keine Spiegelung. Spieldarstellung 112 × 60 über 64 × 48 logischer Hitbox; keine neue Geometrie.",
+        "prompt": null,
+        "referenceUrls": ["https://github.com/bongohorse/monster-girl-delivery/pull/524"]
+      }
     }
   ]
 }
