@@ -1223,7 +1223,7 @@
       "date": "2026-10-01",
       "changeNote": "Erste Motion-Studie mit drei Pfeilkonzepten, gemeinsamem Zeitablauf und wirksamen Reglern.",
       "entry": "prototypes/delivery-arrow/v1/index.html",
-      "sourceRevision": null,
+      "sourceRevision": "cabd1edb15eed1469b6a99c7733076ee233ca550",
       "sourcePaths": [
         "workshop/prototypes/delivery-arrow/v1/model.ts",
         "workshop/prototypes/delivery-arrow/v1/view.ts",
