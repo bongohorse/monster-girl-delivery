@@ -1,9 +1,13 @@
 # MGD Workshop — lokales Grundgerüst
 
-Stand: Aufgabe 2 aus [#522](https://github.com/bongohorse/monster-girl-delivery/issues/522).
-Vier Bereiche, zwölf Kategorien und drei echte Elementkarten sind navigierbar.
+Stand: Aufgabe 3 aus [#522](https://github.com/bongohorse/monster-girl-delivery/issues/522).
+Vier Bereiche, zwölf Kategorien und sechs echte Elementkarten sind navigierbar.
 Leere Kategorien und noch nicht umgesetzte Bereiche sind sichtbar gekennzeichnet.
-Die Quellen der Stichprobe sind an die im Katalog genannte Spielrevision gebunden.
+Elementseiten zeigen typabhängige Fakten mit Einheiten und Belegen, eigene Prüfrevisionen,
+Quellenkonflikte, Dokumentationsabdeckung, offene Angaben und verknüpfte Elemente.
+Die Liefergruppe umfasst Paket, Empfänger, Lieferpfeil und Liefermechanik.
+Informationen, Quellen und Beziehungen lassen sich per Maus/Touch oder Tastatur-Tabs öffnen.
+PROTOTYPE-Tuning bleibt als solches markiert; finale Art/Economy sind nicht behauptet.
 
 ```bash
 bun run workshop:dev
@@ -22,7 +26,7 @@ werden daraus erzeugt. Das Datenformat wird erst mit den jeweiligen Verbrauchern
 externe Import-/Katalogvalidierung folgt in Aufgabe 5/6. Beispielvorschauen ersetzen keine
 vollständige Assetgalerie oder belegte Assetreview-/Integrationsentscheidung.
 
-Noch nicht umgesetzt: vollständige Elementdetails (3), Assetgalerien (4), Suche/Filter und
+Noch nicht umgesetzt: Assetgalerien (4), Suche/Filter und
 Katalogprüfung (5), lokale Ideen/Presets/Import (6), interaktiver Pilot (7), Versionen/Review (8),
 Handoff (9) und Pages-Anbindung (10). Es liegt kein Live-Deployment vor.
 Der [technische Plan](../docs/WORKSHOP_PLAN.md) beschreibt diese folgenden Schritte.

@@ -1,41 +1,25 @@
 import missilePreview from '../../assets/source/district-01/hazards/red-monster-missile-gpt-image.png?url';
 import courierPreview from '../../public/assets/art-gate/pose-a-concept-preview.png?url';
 import { catalog, type Element } from './catalog';
+import { elementDetail } from './elementDetail';
 import { resolveRoute, sections } from './navigation';
+import { documentationLabels, link, node, repository } from './ui';
 import './styles.css';
 
 const previews: Record<string, string> = {
   'public/assets/art-gate/pose-a-concept-preview.png': courierPreview,
   'assets/source/district-01/hazards/red-monster-missile-gpt-image.png': missilePreview,
 };
-const repository = 'https://github.com/bongohorse/monster-girl-delivery';
-
-function node<K extends keyof HTMLElementTagNameMap>(
-  tag: K,
-  text = '',
-  className = '',
-): HTMLElementTagNameMap[K] {
-  const result = document.createElement(tag);
-  result.textContent = text;
-  result.className = className;
-  return result;
-}
-
-function link(text: string, href: string, className = ''): HTMLAnchorElement {
-  const result = node('a', text, className);
-  result.href = href;
-  return result;
-}
-
-function sourceLink(path: string): HTMLAnchorElement {
-  const encoded = path.split('/').map(encodeURIComponent).join('/');
-  return link(path, `${repository}/blob/${catalog.codeReviewRevision}/${encoded}`);
-}
-
 function preview(element: Element): HTMLElement {
   const url = element.previewPath && previews[element.previewPath];
   if (!url) {
-    return node('div', 'Codegrafik · kein separates Bild', 'media media-empty');
+    return node(
+      'div',
+      element.type === 'Mechanik'
+        ? 'Mechanik · keine eigene Bilddatei'
+        : 'Codegrafik · kein separates Bild',
+      'media media-empty',
+    );
   }
   const image = node('img', '', 'media');
   image.src = url;
@@ -51,18 +35,6 @@ function preview(element: Element): HTMLElement {
   );
   return image;
 }
-
-const implementationLabels: Record<string, string> = {
-  planned: 'geplant',
-  partial: 'teilweise umgesetzt',
-  implemented: 'umgesetzt',
-};
-
-const documentationLabels: Record<string, string> = {
-  checked: 'Dokumentation geprüft',
-  'source-conflict': 'Quellenkonflikt',
-  unchecked: 'Dokumentation ungeprüft',
-};
 
 function elementCard(element: Element): HTMLAnchorElement {
   const card = link('', `#/element/${element.id}`, 'card element-card');
@@ -91,7 +63,7 @@ function elementGrid(elements: Element[]): HTMLElement {
 function documentation(): HTMLElement[] {
   const intro = node(
     'p',
-    'Vorhandene Elemente, Quellen und fachliche Kategorien. Die Stichprobe enthält eine Kurierin, Red Missile und den Lieferpfeil.',
+    'Vorhandene Elemente, Quellen und fachliche Kategorien. Die Stichprobe umfasst Kurierin, Red Missile sowie Paket, Empfänger, Lieferpfeil und Liefermechanik.',
     'lead',
   );
   const heading = node('h2', 'Kategorien');
@@ -101,7 +73,10 @@ function documentation(): HTMLElement[] {
     const card = link('', `#/documentation/${category.id}`, 'category-card');
     card.append(
       node('strong', category.name),
-      node('span', count ? `${count} Element` : 'Noch nicht dokumentiert'),
+      node(
+        'span',
+        count ? `${count} ${count === 1 ? 'Element' : 'Elemente'}` : 'Noch nicht dokumentiert',
+      ),
     );
     categories.append(card);
   }
@@ -192,42 +167,7 @@ function render(moveFocus = false): void {
       elementGrid(elements),
     );
   } else if (route.kind === 'element') {
-    const element = route.element;
-    const panel = node('section', '', 'detail-panel');
-    panel.append(preview(element), node('p', element.description, 'lead'));
-    const status = node('p', '', 'status-row');
-    status.append(
-      node(
-        'span',
-        documentationLabels[element.documentation.state] ?? 'Dokumentation ungeprüft',
-        'tag',
-      ),
-      node(
-        'span',
-        `Implementierung: ${implementationLabels[element.implementation] ?? 'ungeprüft'}`,
-        'tag',
-      ),
-    );
-    panel.append(
-      status,
-      node('p', `${element.documentation.date} · ${element.documentation.notes}`),
-      node('h2', 'Quellen der Stichprobe'),
-    );
-    const sources = node('ul', '', 'source-list');
-    for (const source of element.sources) {
-      const item = node('li');
-      item.append(sourceLink(source.path));
-      sources.append(item);
-    }
-    panel.append(
-      sources,
-      node(
-        'p',
-        'Vollständige typabhängige Details folgen in Aufgabe 3, Assetgalerien und getrennte Assetzustände in Aufgabe 4.',
-        'scope-note',
-      ),
-    );
-    view.append(panel);
+    view.append(elementDetail(route.element, catalog, preview(route.element)));
   } else {
     view.append(
       node(
