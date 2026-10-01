@@ -31,7 +31,10 @@
     "android:sync": "bun run build && node scripts/verify-android-launcher-assets.mjs && cap sync android",
     "android:open": "bun run android:sync && cap open android",
     "android:debug": "bun run android:sync && node scripts/android-gradle.mjs assembleDebug",
-    "assets:build": "bun scripts/assets/cli.ts build"
+    "assets:build": "bun scripts/assets/cli.ts build",
+    "workshop:dev": "vite --config vite/config.workshop.mjs",
+    "workshop:build": "vite build --config vite/config.workshop.mjs",
+    "workshop:typecheck": "tsc --project tsconfig.workshop.json --noEmit"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.14",

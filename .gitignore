@@ -40,3 +40,7 @@ src/generated/assets.ts
 
 # Local production/browser CI evidence
 reports/browser-runtime-smoke/
+
+# Separate Workshop and composed Pages output
+dist-workshop/
+dist-pages/
