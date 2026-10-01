@@ -4,6 +4,20 @@
 
 GitHub Actions is the canonical Android test-build environment. The `Android CI` workflow:
 
+Automatic runs first classify the complete event diff, before dependency installation,
+Java setup or Gradle. A PR uses its merge base and head; a main push uses the event's
+`before` and head, including every commit in a multi-commit push. Missing history fails
+the scope check instead of starting an APK build.
+
+Game/native inputs, dependencies and lockfiles, shared Vite configuration, production
+asset tooling, and the Android workflows/scope checker remain Android-relevant.
+Only `workshop:*` and `pages:*` commands are ignored when comparing `package.json`;
+any other package change still requires Android CI. The dedicated Workshop Vite config
+and browser-only package-smoke script are excluded. General CI and Pages retain their
+own triggers. An explicit manual Android CI dispatch still requests a build.
+
+When the scope check selects an Android build, the workflow:
+
 1. checks out the workflow ref and records the exact checked-out commit with `git rev-parse HEAD`;
 2. records the PR head separately when the event is `pull_request`;
 3. installs the locked Bun dependencies;
@@ -125,7 +139,7 @@ For each release:
 6. Verify launch, package identity, landscape/touch/back-gesture behavior and the device features required for the release.
 7. Before calling the update path proven, publish a later version signed by the same stable key and verify that Obtainium/Android performs a real in-place update without uninstalling the prior stable-key release.
 
-A `package.json` edit that keeps an already-published version does not publish another release. If the intended version tag already exists on a different commit, the workflow fails rather than moving or reusing it. The automated release/tag is created only after the APK has passed the release checks, so a failed build does not consume a version.
+A main push that edits `package.json` without changing its version finishes the release-intent check successfully without building or publishing an APK. The workflow compares the event's `before` version with the checked-out version **before** checking existing tags. A real version change to an already-used tag still fails rather than moving or reusing it. Tag-triggered releases retain their existing checks. The automated release/tag is created only after the APK has passed the release checks, so a failed build does not consume a version.
 
 Do not move or reuse a published version tag for different source code. Do not overwrite an existing GitHub Release. Publish a new version instead.
 
