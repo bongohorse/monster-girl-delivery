@@ -186,7 +186,7 @@
       "name": "Lieferpfeil / GPS",
       "type": "UI-Element",
       "categoryId": "deliveries",
-      "tags": ["Lieferung", "Vorwarnung", "Pfeil"],
+      "tags": ["Lieferung", "Vorwarnung", "Pfeil", "Effekt"],
       "description": "Die bestehende Lieferdarstellung zeichnet Pfeile mit Phaser-Primitiven: über dem Paket und als Vorwarnung auf Empfängerhöhe. Eine eigenständige GPS-Bilddatei ist nicht belegt.",
       "documentation": {
         "state": "checked",
@@ -1174,6 +1174,31 @@
         "prompt": null,
         "referenceUrls": ["https://github.com/bongohorse/monster-girl-delivery/pull/524"]
       }
+    }
+  ],
+  "references": [
+    {
+      "id": "art-gate-reference",
+      "name": "Art Gate · visuelle Referenzregeln",
+      "purpose": "Vorhandene Referenz für Kurierin und Missile: provisorische Trial-Auswahl von finaler Produktions-/Geräteabnahme trennen. Kein neuer Eigentümer von Spielregeln.",
+      "categoryId": "gallery",
+      "tags": ["Art Gate", "Referenz", "Kurierin", "Missile"],
+      "elementIds": ["courier-art-gate", "red-missile"],
+      "assetIds": ["courier-pose-a", "courier-pose-b", "courier-pose-c", "red-monster-missile"],
+      "sources": [
+        {
+          "id": "art-direction",
+          "path": "docs/ART_DIRECTION.md",
+          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "kind": "doc"
+        },
+        {
+          "id": "scene-brief",
+          "path": "docs/M6_ASSET_SCENE_BRIEF.md",
+          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "kind": "doc"
+        }
+      ]
     }
   ]
 }

@@ -1,5 +1,6 @@
 import { assetDetail } from './assetGallery';
 import { catalog, type Element } from './catalog';
+import { backlinkView, referenceDetail, searchForm, searchView, specialView } from './catalogViews';
 import { elementDetail } from './elementDetail';
 import { mediaImage } from './media';
 import { resolveRoute, sections } from './navigation';
@@ -117,6 +118,7 @@ function render(moveFocus = false): void {
     if ('subtitle' in section) item.append(node('small', section.subtitle));
     navigation.append(item);
   }
+  navigation.append(searchForm(), link('Referenzen', '#/references'), link('Effekte', '#/effects'));
   const list = node('ol');
   for (const crumb of route.breadcrumbs) {
     const item = node('li');
@@ -148,9 +150,18 @@ function render(moveFocus = false): void {
       elementGrid(elements),
     );
   } else if (route.kind === 'element') {
-    view.append(elementDetail(route.element, catalog, preview(route.element)));
+    view.append(
+      elementDetail(route.element, catalog, preview(route.element)),
+      backlinkView(route.element.id),
+    );
   } else if (route.kind === 'asset') {
-    view.append(assetDetail(route.asset, catalog));
+    view.append(assetDetail(route.asset, catalog), backlinkView(route.asset.id));
+  } else if (route.kind === 'search') {
+    view.append(...searchView(catalog, window.location.hash));
+  } else if (route.kind === 'reference') {
+    view.append(...referenceDetail(route.reference));
+  } else if (route.kind === 'references' || route.kind === 'effects') {
+    view.append(...specialView(catalog, route.kind));
   } else {
     view.append(
       node(

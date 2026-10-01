@@ -1,4 +1,5 @@
 import data from '../data/catalog.json' with { type: 'json' };
+import { assertCatalog } from './catalogValidation.ts';
 
 export interface Category {
   id: string;
@@ -88,6 +89,17 @@ export interface PublishedArtifact extends Artifact {
   generation: string | null;
 }
 
+export interface Reference {
+  id: string;
+  name: string;
+  purpose: string;
+  categoryId: string;
+  tags: string[];
+  elementIds: string[];
+  assetIds: string[];
+  sources: Source[];
+}
+
 export interface Catalog {
   schemaVersion: number;
   codeReviewRevision: string;
@@ -96,7 +108,9 @@ export interface Catalog {
   elements: Element[];
   assets: Asset[];
   artifacts: Artifact[];
+  references: Reference[];
 }
 
-// This checked-in sample is typed here. Runtime import/schema validation belongs to task 5.
+// Reject malformed authored data before either Vite or the browser consumes it.
+assertCatalog(data);
 export const catalog: Catalog = data;

@@ -423,3 +423,40 @@ button:focus-visible,
   padding: 12px 0;
   cursor: pointer;
 }
+
+.search-form {
+  display: grid;
+  gap: 0.75rem;
+  margin-block: 1rem;
+}
+.search-form label {
+  display: grid;
+  gap: 0.25rem;
+}
+.search-form input,
+.search-form select,
+.search-form button {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0.5rem;
+  font: inherit;
+  color: inherit;
+  background: #16202c;
+  border: 1px solid #6c7c8e;
+  border-radius: 6px;
+}
+.search-form .search-help {
+  grid-column: 1 / -1;
+}
+.search-results {
+  padding-left: 1.25rem;
+}
+.search-results li {
+  margin-block: 1rem;
+}
+@media (min-width: 760px) {
+  #view .search-form {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
