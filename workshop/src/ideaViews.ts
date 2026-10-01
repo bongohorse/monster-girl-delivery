@@ -11,6 +11,7 @@ import {
   serializeLocalData,
 } from './localData';
 import { workshopDrafts as localDrafts } from './localSession';
+import { importedVariantHash } from './prototypeConfiguration';
 import { link, node, repository, sourceLink } from './ui';
 import { devLog, versionPicker } from './versionViews';
 
@@ -143,7 +144,13 @@ export function dataTransfer(
     if (!result.ok) {
       status.textContent = result.errors.join(' ');
       status.setAttribute('role', 'alert');
-    } else refresh();
+    } else {
+      if (currentConfig) {
+        const hash = importedVariantHash(result.data, currentConfig().versionId, location.hash);
+        history.replaceState(null, '', `${location.pathname}${location.search}${hash}`);
+      }
+      refresh();
+    }
   });
   panel.append(form, status);
   return panel;

@@ -120,7 +120,7 @@ function relationships(element: Element, data: Catalog): HTMLElement {
     node('h2', 'Ideen & Integration'),
     node(
       'p',
-      'Verknüpfte Repository-Ideen und lokale Entwürfe stehen unter „Verknüpfte Ideen“ unterhalb der Dokumentation. Prototypauswahl und Spielintegration sind noch nicht umgesetzt.',
+      'Verknüpfte Repository-Ideen und lokale Entwürfe stehen unter „Verknüpfte Ideen“ unterhalb der Dokumentation. Prototypen unterstützen lokale Bewertungen und publizierte Reviewentscheidungen. Spielintegration wird separat beauftragt.',
     ),
   );
   return panel;

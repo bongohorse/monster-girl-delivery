@@ -3,6 +3,12 @@
 Stand: Aufgabe 10 aus [#522](https://github.com/bongohorse/monster-girl-delivery/issues/522).
 Die Werkstatt ist eine Browserstudie; Spielintegration und Veröffentlichung bleiben separate Aufträge.
 
+**Umfang:** Die zehn Aufgaben liefern die technische Workshop-Grundlage mit einem kleinen
+Beispielkatalog: sechs Elemente, vier Assets, die Lieferpfeilversionen v1/v2 und eine
+unabhängige Pickup-Studie. Die vollständige Erfassung aller vorhandenen Spielelemente
+ist noch offen und wird anschließend separat erweitert. Leere Kategorien sind keine
+Bestätigung, dass das Spiel dort keine Inhalte besitzt.
+
 ## Konkreten Stand übergeben
 
 1. Eine Idee und ihre ausführbare Version öffnen, Konzept wählen und Regler einstellen.
@@ -38,6 +44,34 @@ Geschützt sind **Szenendarstellung, Ablauf/Parameterauflösung und Defaults** e
 - **Live bleibt die ausdrücklich begrenzte Datengrenze:** ein zentraler Workshop-Store, validierter Import/Export und aktuelle Katalogmetadaten. Dadurch kann auch eine alte Ansicht heutige gemischte Bundles sichern. Alte Werte werden weiterhin durch ihre unveränderten versionsspezifischen Validatoren geprüft; der gebundene Legacy-Adapter erhält Reihenfolge und passende Presets sowie fremde neue Datensätze beim Schreiben. Änderungen dieser Datenschnittstelle müssen ihre Kompatibilität erhalten.
 
 Die neue Supportbindung sichert den überprüften Darstellungsstand der bestehenden v1/v2 nachträglich ab; sie behauptet nicht, dass ihre früheren PRs schon vollständige gemeinsame Abhängigkeiten archiviert hatten. Git-Tests ändern aktuelle Helfer/Styles und prüfen unveränderte historische Ausgabe. Browserprüfungen vergleichen v1/v2 und versuchen äußere CSS-Überschreibungen; diese verändern die isolierte Szene nicht.
+
+Die Importgrenze stellt nach einem gültigen JSON-Import das Konzept des letzten passenden
+importierten Presets vor dem erneuten Öffnen der Studie wieder her. Explizite Konzept- und
+Reglerwerte im Link behalten Vorrang; Presets anderer Versionen werden nicht übernommen.
+Diese Korrektur betrifft den gemeinsamen Datentransport, nicht die gebundenen Szenenquellen.
+
+## PR-Kette später zusammenführen
+
+Empfohlene Reihenfolge: **#527 → #528 → #529 → #530 → #531 → #532 → #533 → #534 → #535 → #536**.
+Nach jedem vorausgehenden Merge den nächsten PR auf `main` umstellen und Diff sowie
+Prüfungen auf dem dann tatsächlich zu mergenden Stand kontrollieren. Die Drafts bleiben
+bis zur ausdrücklichen Merge-/Veröffentlichungsbeauftragung offen.
+
+Für diese Kette **Merge-Commits verwenden**, keine Squash-/Rebase-Merges und keine
+Umschreibung der Quellcommits. `sourceRevision` und `renderSupportRevision` verweisen
+auf ursprüngliche Commits; `fetch-depth: 0` allein holt keine nicht mehr aus `main`
+erreichbaren Branchcommits. Merge-Commits erhalten diese Abstammung auch nach späterem
+Löschen der Arbeitsbranches. PR-interne GitHub-Refs sind kein dauerhafter Buildvertrag.
+
+Abschlussprüfung am 01.10.2026: Eine ausschließlich lokale Git-Objektsimulation der zehn
+Merge-Commits und ein frischer Single-Branch-Checkout enthielten alle acht referenzierten
+Revisionen als Vorfahren; die tatsächliche Katalog-Dateiprüfung bestand. Beim entsprechenden
+Squash-Checkout fehlten vier Revisionen: Lieferpfeil-v1/v2, Pickup-v1 und Render-Support.
+Dabei wurde kein Repository-PR gemergt und nichts veröffentlicht.
+
+Der abschließende Merge nach `main` löst den bestehenden Pages-Deployworkflow automatisch
+aus. Die spätere Beauftragung muss diese Veröffentlichung abdecken. Die aktuelle
+Abschlussprüfung erlaubt weder Merge noch Deployment und schließt #522 nicht.
 
 ## Pages bauen und aktualisieren (Aufgabe 10)
 

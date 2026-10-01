@@ -141,17 +141,36 @@ async function observePages(mount: string, versionId: string | null) {
       button('Notiz lokal speichern');
       const bundle = localStorage.getItem('mgd:workshop:v1:local');
       assert(bundle?.includes('Pages roundtrip'), 'Local note not persisted');
+      const imported = JSON.parse(bundle ?? '{}');
+      imported.presets.push({
+        id: 'pages-exported-preview',
+        name: 'Exportierte Vorschau',
+        ideaId: 'pickup-ring-study',
+        versionId: 'pickup-ring-v1',
+        variantId: 'disc',
+        values: { radius: 32, duration: 0.6 },
+        date: '2026-10-01T12:00:00.000Z',
+      });
+      input('[name="local-json"]', JSON.stringify(imported));
+      button('JSON importieren und lokale Daten ersetzen');
+      await wait(() => find('.pickup-scene')?.getAttribute('data-variant') === 'disc');
+      assert(
+        find('.pickup-scene')?.getAttribute('data-values') === '{"radius":32,"duration":0.6}',
+        'Imported concept loses its effective values',
+      );
+      proof.importedConcept = true;
+      const importedBundle = localStorage.getItem('mgd:workshop:v1:local');
       input('[name="local-json"]', '{broken');
       button('JSON importieren und lokale Daten ersetzen');
       assert(
-        localStorage.getItem('mgd:workshop:v1:local') === bundle,
+        localStorage.getItem('mgd:workshop:v1:local') === importedBundle,
         'Invalid import changed data',
       );
-      input('[name="local-json"]', bundle ?? '');
+      input('[name="local-json"]', importedBundle ?? '');
       button('JSON importieren und lokale Daten ersetzen');
       await wait(() => find('.pickup-scene'));
       assert(
-        localStorage.getItem('mgd:workshop:v1:local') === bundle,
+        localStorage.getItem('mgd:workshop:v1:local') === importedBundle,
         'JSON roundtrip changed data',
       );
       assert(

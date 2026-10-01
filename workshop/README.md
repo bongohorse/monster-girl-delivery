@@ -1,6 +1,8 @@
 # MGD Workshop — Browserwerkstatt
 
 Stand: Aufgabe 10 aus [#522](https://github.com/bongohorse/monster-girl-delivery/issues/522).
+Die zehn Aufgaben liefern die technische Workshop-Grundlage mit einem kleinen Beispielkatalog.
+Die vollständige Erfassung aller vorhandenen Spielelemente ist noch offen.
 Vier Bereiche, zwölf Kategorien und sechs echte Elementkarten sind navigierbar.
 Leere Kategorien und noch nicht umgesetzte Bereiche sind sichtbar gekennzeichnet.
 Elementseiten zeigen typabhängige Fakten mit Einheiten und Belegen, eigene Prüfrevisionen,
