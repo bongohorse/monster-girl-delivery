@@ -1,10 +1,11 @@
-import { type ArrowValues, controlPreview } from '../prototypes/delivery-arrow/controls-v0/model';
+import { controlPreview } from '../prototypes/delivery-arrow/controls-v0/model';
 import { controlsPreview } from '../prototypes/delivery-arrow/controls-v0/view';
 import type { Catalog, Idea } from './catalog';
 import { downloadText } from './download';
 import {
   createDraft,
   type Draft,
+  type LocalConfiguration,
   maxImportBytes,
   parseLocalData,
   serializeLocalData,
@@ -57,14 +58,14 @@ export function elementIdeas(data: Catalog, elementId: string): HTMLElement {
 export function dataTransfer(
   data: Catalog,
   refresh: () => void,
-  currentValues?: () => ArrowValues,
+  currentConfig?: () => LocalConfiguration,
 ): HTMLElement {
   const panel = node('section', '', 'local-transfer');
   panel.append(node('h2', 'Lokale Daten sichern / importieren'));
   panel.append(
     node(
       'p',
-      currentValues
+      currentConfig
         ? 'JSON sichert Entwürfe, Notizen, Presets und den aktuellen Reglerstand als zusätzliches Preset „Exportierte Vorschau“. Alles bleibt lokal/unveröffentlicht.'
         : 'JSON sichert gespeicherte lokale Entwürfe, Notizen und Presets. Es schreibt nichts ins Repository.',
     ),
@@ -78,14 +79,11 @@ export function dataTransfer(
   panel.append(
     button('JSON exportieren', () => {
       const bundle = localDrafts.snapshot();
-      if (currentValues)
+      if (currentConfig)
         bundle.presets.push({
           id: crypto.randomUUID(),
           name: 'Exportierte Vorschau',
-          ideaId: controlPreview.ideaId,
-          versionId: controlPreview.versionId,
-          variantId: controlPreview.variantId,
-          values: currentValues(),
+          ...currentConfig(),
           date: new Date().toISOString(),
         });
       const json = serializeLocalData(bundle);
@@ -181,7 +179,7 @@ export function ideasOverview(data: Catalog, refresh: () => void): HTMLElement[]
     dataTransfer(data, refresh),
   ];
 }
-function notes(ideaId: string, currentValues?: () => ArrowValues): HTMLElement {
+export function localNotes(ideaId: string, currentConfig?: () => LocalConfiguration): HTMLElement {
   const panel = node('section');
   panel.append(node('h2', 'Lokale Notizen · unveröffentlicht'));
   const list = node('ul', '', 'local-notes');
@@ -222,9 +220,9 @@ function notes(ideaId: string, currentValues?: () => ArrowValues): HTMLElement {
       ideaId,
       text: text.value.trim(),
       date: new Date().toISOString(),
-      versionId: currentValues ? controlPreview.versionId : null,
-      variantId: currentValues ? controlPreview.variantId : null,
-      values: currentValues?.() ?? null,
+      versionId: currentConfig?.().versionId ?? null,
+      variantId: currentConfig?.().variantId ?? null,
+      values: currentConfig?.().values ?? null,
     });
     const result = localDrafts.update(bundle);
     status.textContent = result.ok ? localDrafts.message : result.errors.join(' ');
@@ -272,7 +270,19 @@ export function ideaDetail(idea: Idea, data: Catalog, refresh: () => void): HTML
       : null;
   if (preview) result.push(preview.element);
   else result.push(node('p', 'Für diese Idee ist noch kein ausführbarer Prototyp registriert.'));
-  result.push(notes(idea.id, preview?.values), dataTransfer(data, refresh, preview?.values));
+  const currentConfig = preview
+    ? () => ({
+        ideaId: controlPreview.ideaId,
+        versionId: controlPreview.versionId,
+        variantId: controlPreview.variantId,
+        values: preview.values(),
+      })
+    : undefined;
+  result.push(localNotes(idea.id, currentConfig), dataTransfer(data, refresh, currentConfig));
+  for (const version of data.versions.filter((v) => v.ideaId === idea.id))
+    result.push(
+      link(`Interaktiver Pilot: ${version.name}`, `#/version/${version.id}`, 'pilot-link'),
+    );
   return result;
 }
 export function draftCommand(draft: Draft, data: Catalog): string {
@@ -424,7 +434,7 @@ export function draftDetail(draft: Draft, data: Catalog, refresh: () => void): H
       downloadText(`${draft.id}-codex-auftrag.md`, draftCommand(draft, data), 'text/markdown'),
     ),
     sources,
-    notes(draft.id),
+    localNotes(draft.id),
     dataTransfer(data, refresh),
   ];
 }

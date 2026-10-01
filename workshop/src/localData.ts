@@ -3,6 +3,7 @@ import {
   controlPreview,
   validArrowValues,
 } from '../prototypes/delivery-arrow/controls-v0/model';
+import { isVariant, pilotV1, validPilotValues } from '../prototypes/delivery-arrow/v1/model.ts';
 import type { Catalog, Source } from './catalog';
 import { safeRepositoryPath } from './catalogValidation';
 
@@ -36,6 +37,8 @@ export interface LocalNote {
   text: string;
   date: string;
 }
+export type LocalConfiguration = Pick<LocalPreset, 'ideaId' | 'versionId' | 'variantId' | 'values'>;
+
 export interface LocalData {
   schemaVersion: 1;
   kind: 'mgd-workshop-local';
@@ -154,14 +157,17 @@ export function parseLocalData(json: string, data: Catalog): LocalResult {
       fail(path, 'ISO-Datum erwartet');
   };
   const configuration = (r: Record<string, unknown>, path: string) => {
-    if (
-      r.ideaId !== controlPreview.ideaId ||
-      r.versionId !== controlPreview.versionId ||
-      r.variantId !== controlPreview.variantId
-    )
+    if (r.ideaId !== controlPreview.ideaId) {
       fail(path, 'Unbekannte oder nicht passende Idee/Controls-Version/Variante');
-    if (!validArrowValues(r.values))
-      fail(path, 'Unbekannte Controls oder ungültige Reglerwerte/Grenzen/Schritte');
+      return;
+    }
+    if (r.versionId === controlPreview.versionId && r.variantId === controlPreview.variantId) {
+      if (!validArrowValues(r.values))
+        fail(path, 'Unbekannte Controls oder ungültige Reglerwerte/Grenzen/Schritte');
+    } else if (r.versionId === pilotV1.versionId && isVariant(r.variantId)) {
+      if (!validPilotValues(r.values))
+        fail(path, 'Unbekannte Controls oder ungültige Reglerwerte/Grenzen/Schritte');
+    } else fail(path, 'Unbekannte oder nicht passende Idee/Controls-Version/Variante');
   };
   const root = record(input, 'Import', ['schemaVersion', 'kind', 'drafts', 'presets', 'feedback']);
   if (!root) return { ok: false, errors };

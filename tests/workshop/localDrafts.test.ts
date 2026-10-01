@@ -69,7 +69,7 @@ it('rejects unsupported schemas, versions, variants, unknown controls and nonfin
     date: '2026-09-30T12:00:00.000Z',
   };
   for (const wrong of [
-    { ...preset, versionId: 'delivery-arrow-v1' },
+    { ...preset, versionId: 'delivery-arrow-v2' },
     { ...preset, variantId: 'future' },
     { ...preset, values: { ...preset.values, size: 17 } },
     { ...preset, values: { ...preset.values, blinkHz: 0 } },
@@ -141,4 +141,26 @@ it('keeps work exportable when storage throws and preserves corrupt stored data 
   expect(persisted).toBe('broken');
   expect(corrupt.importJSON(serializeLocalData(data)).ok).toBe(true);
   expect(persisted).toBe(serializeLocalData(data));
+});
+
+it('keeps v0 and v1 presets version/variant bound through the same JSON roundtrip', () => {
+  const data = {
+    ...emptyLocalData(),
+    presets: [
+      {
+        id: 'pilot-one',
+        name: 'v1 tracking',
+        ideaId: 'delivery-arrow-study',
+        versionId: 'delivery-arrow-v1',
+        variantId: 'tracking-arrow',
+        values: { size: 36, blinkHz: 1.5, warningSeconds: 3, scrollSpeed: 180 },
+        date: '2026-10-01T12:00:00.000Z',
+      },
+    ],
+  };
+  expect(parseLocalData(serializeLocalData(data), catalog)).toEqual({ ok: true, data });
+  data.presets[0].variantId = 'preview';
+  expect(parseLocalData(serializeLocalData(data), catalog).ok).toBe(false);
+  data.presets[0].versionId = 'delivery-arrow-controls-v0';
+  expect(parseLocalData(serializeLocalData(data), catalog).ok).toBe(true);
 });

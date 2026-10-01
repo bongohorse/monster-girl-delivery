@@ -1,6 +1,6 @@
 # MGD Workshop — lokales Grundgerüst
 
-Stand: Aufgabe 6 aus [#522](https://github.com/bongohorse/monster-girl-delivery/issues/522).
+Stand: Aufgabe 7 aus [#522](https://github.com/bongohorse/monster-girl-delivery/issues/522).
 Vier Bereiche, zwölf Kategorien und sechs echte Elementkarten sind navigierbar.
 Leere Kategorien und noch nicht umgesetzte Bereiche sind sichtbar gekennzeichnet.
 Elementseiten zeigen typabhängige Fakten mit Einheiten und Belegen, eigene Prüfrevisionen,
@@ -36,7 +36,7 @@ Metadaten, getrennte Review-/Verwendungszustände und vorhandene revisionsgebund
 Generierte Runtime-Dateien erhalten keinen vorgetäuschten GitHub-Dateilink; ihr Rezept,
 Original und Generation/Outputhash sind sichtbar. Eine Trial-Auswahl ist keine finale Artabnahme.
 
-Noch nicht umgesetzt: vollständiger interaktiver Pilot (7), Versionen/Review (8),
+Noch nicht umgesetzt: zweite Pilotversion, Vergleich/Review (8),
 Handoff (9) und Pages-Anbindung (10). Es liegt kein Live-Deployment vor.
 Der [technische Plan](../docs/WORKSHOP_PLAN.md) beschreibt diese folgenden Schritte.
 
@@ -82,3 +82,24 @@ abgelehnt; keine automatische Migration oder Script-/HTML-Ausführung.
 Speicherfehler lassen Arbeit und Export im Arbeitsspeicher zu. Beschädigte vorhandene
 Speicherdaten werden nicht automatisch überschrieben; erst ein gültiger ausdrücklicher
 Import darf sie ersetzen. Ohne Backend gibt es keine Synchronisierung zwischen Geräten.
+
+
+`#/version/delivery-arrow-v1` öffnet die erste Motion-Studie. Eigenständiger Einstieg:
+`prototypes/delivery-arrow/v1/index.html`. Vite baut beide HTML-Seiten; der verschachtelte
+Einstieg nutzt denselben v1-Code. Drei Konzepte: Höhenpfeil, folgender Pfeil und Randmarker.
+Alle nutzen dieselbe Szene/Zeit: Anflug → Aufnahme bei 2 s → parametrierte Vorwarnung →
+inszenierte Übergabe bei 8 s → Ende bei 10 s. Diese Werte sind Studiendesign, keine Spielwerte.
+Play/Pause, 0,5×/1×/2×, Loop, Zeit-Scrubber und Timeline-Marker steuern denselben Playhead.
+Scrubbing pausiert; ein Konzeptwechsel behält die aktuelle Zeit und Reglerwerte.
+Restart setzt nur die Zeit zurück und behält Wiedergabezustand/Parameter; Reset pausiert und setzt
+Zeit, Geschwindigkeit, Loop und v1-Reglerdefaults zurück, behält aber das gewählte Konzept.
+Hintergrund/Pagehide pausiert ohne nachgeholte Zeit. Navigation/Import beendet den alten RAF
+und Lifecycle-Listener. SVG-Objekte werden einmal erstellt und beim Rendern aktualisiert.
+Es gibt kein Audio oder simulierte Gameplay-Kollision.
+
+v1-Presets/Notizen/JSON sind an `delivery-arrow-v1` und das konkrete Konzept gebunden.
+Die Controls-Vorschau v0 und ihre Daten bleiben separat erreichbar. Der v1-Ordner besitzt
+Modell, Defaults, Controls, Renderer, Einstieg und Styling. Die Katalog-Prüfrevision bindet
+diese Quellen; der Workshop-Build lehnt Änderungen ihrer Bytes an derselben Versions-ID ab.
+Verhaltensänderungen erhalten eine neue Version. Die zweite Version und A/B folgen erst
+mit Aufgabe 8. Spielintegration und Pages-Deployment bleiben separat beauftragt.

@@ -22,6 +22,14 @@ export default defineConfig(({ command }) => ({
   build: {
     outDir: fileURLToPath(new URL('../dist-workshop', import.meta.url)),
     emptyOutDir: true,
+    rolldownOptions: {
+      input: [
+        fileURLToPath(new URL('../workshop/index.html', import.meta.url)),
+        ...catalog.versions.map((v) =>
+          fileURLToPath(new URL(`../workshop/${v.entry}`, import.meta.url)),
+        ),
+      ],
+    },
   },
   server: { host: '0.0.0.0', port: 8081, strictPort: true },
 }));
