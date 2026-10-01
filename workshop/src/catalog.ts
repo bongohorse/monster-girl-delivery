@@ -113,6 +113,19 @@ export interface Idea {
   prototypeId: string | null;
 }
 
+export interface PrototypeVersion {
+  id: string;
+  ideaId: string;
+  name: string;
+  date: string;
+  changeNote: string;
+  entry: string;
+  sourceRevision: string | null;
+  sourcePaths: string[];
+  capabilities: string[];
+  limitations: string[];
+}
+
 export interface Catalog {
   schemaVersion: number;
   codeReviewRevision: string;
@@ -123,6 +136,7 @@ export interface Catalog {
   artifacts: Artifact[];
   references: Reference[];
   ideas: Idea[];
+  versions: PrototypeVersion[];
 }
 
 // Reject malformed authored data before either Vite or the browser consumes it.

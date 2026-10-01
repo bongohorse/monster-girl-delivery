@@ -5,7 +5,7 @@ export interface SearchEntry {
   id: string;
   name: string;
   description: string;
-  kind: 'element' | 'asset' | 'reference' | 'idea' | 'draft';
+  kind: 'element' | 'asset' | 'reference' | 'idea' | 'draft' | 'version';
   section: 'documentation' | 'ideas';
   ideaReview?: string;
   categoryIds: string[];
@@ -101,6 +101,21 @@ export function createCatalogIndex(data: Catalog): CatalogIndex {
         archived: idea.archived,
       }),
     ),
+    ...data.versions.map((version): SearchEntry => {
+      const owner = data.ideas.find((idea) => idea.id === version.ideaId);
+      return {
+        id: version.id,
+        name: version.name,
+        description: version.changeNote,
+        kind: 'version',
+        section: 'ideas',
+        type: 'Prototypversion',
+        tags: owner?.tags ?? [],
+        categoryIds: owner ? [owner.categoryId] : [],
+        href: `#/version/${version.id}`,
+        archived: owner?.archived ?? false,
+      };
+    }),
   ];
   const backlinks: CatalogIndex['backlinks'] = {};
   const add = (sourceId: string, targets: string[]) => {
@@ -117,6 +132,7 @@ export function createCatalogIndex(data: Catalog): CatalogIndex {
   for (const a of data.assets) add(a.id, a.elementIds);
   for (const r of data.references) add(r.id, [...r.elementIds, ...r.assetIds]);
   for (const idea of data.ideas) add(idea.id, [...idea.elementIds, ...idea.referenceIds]);
+  for (const version of data.versions) add(version.id, [version.ideaId]);
   return { entries, backlinks };
 }
 

@@ -1,4 +1,5 @@
 import { controlPreview } from '../prototypes/delivery-arrow/controls-v0/model.ts';
+import { pilotV1 } from '../prototypes/delivery-arrow/v1/model.ts';
 import type { Catalog } from './catalog.ts';
 
 const idPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -235,6 +236,24 @@ export function validateCatalog(input: unknown): string[] {
     if (r.prototypeId === controlPreview.versionId && r.id !== controlPreview.ideaId)
       fail(p, 'Controls-Vorläufer gehört zu anderer Idee');
   });
+  records('versions', (r, p) => {
+    fields(r, ['ideaId', 'name', 'date', 'changeNote'], p);
+    if (r.id !== pilotV1.versionId || r.ideaId !== pilotV1.ideaId)
+      fail(p, 'Nicht unterstützte Pilotversion');
+    repoPath(r.entry, `${p}.entry`);
+    revision(r.sourceRevision, `${p}.sourceRevision`, true);
+    if (r.entry !== 'prototypes/delivery-arrow/v1/index.html')
+      fail(p, 'Unbekannter Versions-Einstieg');
+    for (const key of ['sourcePaths', 'capabilities', 'limitations'])
+      strings(r[key], `${p}.${key}`);
+    for (const path of list(r.sourcePaths, `${p}.sourcePaths`))
+      if (
+        typeof path !== 'string' ||
+        !safeRepositoryPath(path) ||
+        !path.startsWith('workshop/prototypes/delivery-arrow/v1/')
+      )
+        fail(p, 'Unsicherer Versionsquellpfad');
+  });
   // Relationship checks only follow structurally valid records.
   if (errors.length) return errors;
   const data = input as Catalog;
@@ -246,6 +265,7 @@ export function validateCatalog(input: unknown): string[] {
     data.artifacts,
     data.references,
     data.ideas,
+    data.versions,
   ])
     for (const record of records) {
       if (ids.has(record.id)) fail(record.id, 'Doppelte ID');
@@ -316,6 +336,7 @@ export function validateCatalog(input: unknown): string[] {
     for (const id of idea.elementIds) exists(id, data.elements, idea.id);
     for (const id of idea.referenceIds) exists(id, data.references, idea.id);
   }
+  for (const version of data.versions) exists(version.ideaId, data.ideas, version.id);
   return errors;
 }
 

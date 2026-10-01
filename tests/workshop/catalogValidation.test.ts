@@ -1,10 +1,10 @@
 import { execFileSync } from 'node:child_process';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { validateCatalogFiles } from '../../scripts/workshop/CatalogFiles';
-import { catalog } from '../../workshop/src/catalog';
+import { type Catalog, catalog } from '../../workshop/src/catalog';
 import { safeRepositoryPath, validateCatalog } from '../../workshop/src/catalogValidation';
 
 const roots: string[] = [];
@@ -18,7 +18,12 @@ async function historyFixture() {
     execFileSync('git', args, { cwd: root, encoding: 'utf8' }).trim();
   git('init', '-q');
   await writeFile(join(root, 'history.md'), 'Historical source');
-  git('add', 'history.md');
+  await mkdir(join(root, 'workshop/prototypes/delivery-arrow/v1'), { recursive: true });
+  await writeFile(
+    join(root, 'workshop/prototypes/delivery-arrow/v1/index.html'),
+    '<main>v1</main>',
+  );
+  git('add', '.');
   git(
     '-c',
     'user.name=Workshop Test',
@@ -39,13 +44,14 @@ async function historyFixture() {
     '-qm',
     'remove source',
   );
-  const data = {
+  const data: Catalog = {
     ...catalog,
     codeReviewRevision: git('rev-parse', 'HEAD'),
     elements: [],
     assets: [],
     artifacts: [],
     ideas: [],
+    versions: [],
     references: [
       {
         ...catalog.references[0],
@@ -117,4 +123,21 @@ it('rejects an idea ID colliding with an element or another idea before index co
   expect(validateCatalog(data).join('\n')).toContain('Doppelte ID');
   data.ideas[1] = { ...data.ideas[0], prototypeId: null };
   expect(validateCatalog(data).join('\n')).toContain('Doppelte ID');
+});
+
+it('protects pinned prototype bytes and requires the standalone entry', async () => {
+  const { root, data } = await historyFixture();
+  const path = 'workshop/prototypes/delivery-arrow/v1/index.html';
+  data.versions = [
+    {
+      ...catalog.versions[0],
+      sourceRevision: data.references[0].sources[0].revision,
+      sourcePaths: [path],
+    },
+  ];
+  expect(validateCatalogFiles(root, data)).toEqual([]);
+  await writeFile(join(root, path), '<main>changed historical v1</main>');
+  expect(validateCatalogFiles(root, data).join('\n')).toContain('Versionsquelle verändert');
+  await rm(join(root, path));
+  expect(validateCatalogFiles(root, data).join('\n')).toContain('Fehlender Versions-Einstieg');
 });

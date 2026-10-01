@@ -72,3 +72,13 @@ it('opens a repository idea and a local draft without pretending the draft exist
   });
   expect(resolveRoute('#/idea/not-known', catalog).kind).toBe('not-found');
 });
+
+it('opens the first executable pilot version directly beneath its owning idea', () => {
+  const route = resolveRoute('#/version/delivery-arrow-v1?variant=tracking-arrow', catalog);
+  expect(route).toMatchObject({ kind: 'version', section: 'ideas', title: 'Lieferpfeil v1' });
+  expect(route.breadcrumbs).toContainEqual({
+    label: 'Lieferpfeil · Lesbarkeit untersuchen',
+    href: '#/idea/delivery-arrow-study',
+  });
+  expect(resolveRoute('#/version/unknown', catalog).kind).toBe('not-found');
+});

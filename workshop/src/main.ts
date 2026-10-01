@@ -1,3 +1,4 @@
+import { mountPilot } from '../prototypes/delivery-arrow/v1/view';
 import { assetDetail } from './assetGallery';
 import { catalog, type Element } from './catalog';
 import { backlinkView, referenceDetail, searchForm, searchView, specialView } from './catalogViews';
@@ -105,8 +106,12 @@ revision.append(
   ),
 );
 
+let disposeCurrent: (() => void) | undefined;
+
 function render(moveFocus = false): void {
   if (!view || !navigation || !breadcrumbs || !main) return;
+  disposeCurrent?.();
+  disposeCurrent = undefined;
   const route = resolveRoute(window.location.hash, catalog);
   document.title = `${route.title} · MGD Workshop`;
   navigation.replaceChildren();
@@ -157,6 +162,19 @@ function render(moveFocus = false): void {
     );
   } else if (route.kind === 'asset') {
     view.append(assetDetail(route.asset, catalog), backlinkView(route.asset.id));
+  } else if (route.kind === 'version') {
+    const pilot = mountPilot(catalog, () => render(true));
+    disposeCurrent = pilot.dispose;
+    view.append(
+      node('p', route.version.changeNote),
+      node(
+        'p',
+        `Quellrevision: ${route.version.sourceRevision ?? 'Arbeitsstand; noch nicht festgehalten'}`,
+      ),
+      link('Eigenständige v1-Seite öffnen', route.version.entry),
+      pilot.element,
+    );
+    for (const limitation of route.version.limitations) view.append(node('p', limitation));
   } else if (route.kind === 'idea') {
     view.append(...ideaDetail(route.idea, catalog, () => render(true)));
   } else if (route.kind === 'draft') {

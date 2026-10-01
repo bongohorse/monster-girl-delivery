@@ -1,4 +1,12 @@
-import type { Asset, Catalog, Category, Element, Idea, Reference } from './catalog';
+import type {
+  Asset,
+  Catalog,
+  Category,
+  Element,
+  Idea,
+  PrototypeVersion,
+  Reference,
+} from './catalog';
 
 export const sections = [
   { id: 'documentation', name: 'Dokumentation' },
@@ -18,6 +26,7 @@ type RouteContent =
   | { kind: 'search' | 'references' | 'effects' }
   | { kind: 'reference'; reference: Reference }
   | { kind: 'idea'; idea: Idea }
+  | { kind: 'version'; version: PrototypeVersion }
   | { kind: 'draft'; draftId: string }
   | { kind: 'category'; category: Category }
   | { kind: 'element'; element: Element; category: Category }
@@ -54,6 +63,21 @@ export function resolveRoute(hash: string, data: Catalog): Route {
       title: 'Lokaler Entwurf',
       breadcrumbs: [{ label: 'Ideen & Prototypen', href: '#/ideas' }, { label: 'Lokaler Entwurf' }],
     };
+  const version = data.versions.find((item) => path === `/version/${item.id}`);
+  if (version) {
+    const owner = data.ideas.find((idea) => idea.id === version.ideaId);
+    return {
+      kind: 'version',
+      version,
+      section: 'ideas',
+      title: version.name,
+      breadcrumbs: [
+        { label: 'Ideen & Prototypen', href: '#/ideas' },
+        { label: owner?.name ?? version.ideaId, href: `#/idea/${version.ideaId}` },
+        { label: version.name },
+      ],
+    };
+  }
   const idea = data.ideas.find((item) => path === `/idea/${item.id}`);
   if (idea)
     return {

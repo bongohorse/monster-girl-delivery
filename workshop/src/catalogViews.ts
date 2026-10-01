@@ -58,6 +58,7 @@ export function searchForm(data?: Catalog, filters: SearchFilters = {}): HTMLFor
       ['reference', 'Referenz'],
       ['idea', 'Repository-Idee'],
       ['draft', 'Lokaler Entwurf'],
+      ['version', 'Prototypversion'],
     ]);
     select(
       'type',

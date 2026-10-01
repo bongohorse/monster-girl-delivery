@@ -1214,5 +1214,33 @@
       "archived": false,
       "prototypeId": "delivery-arrow-controls-v0"
     }
+  ],
+  "versions": [
+    {
+      "id": "delivery-arrow-v1",
+      "ideaId": "delivery-arrow-study",
+      "name": "Lieferpfeil v1",
+      "date": "2026-10-01",
+      "changeNote": "Erste Motion-Studie mit drei Pfeilkonzepten, gemeinsamem Zeitablauf und wirksamen Reglern.",
+      "entry": "prototypes/delivery-arrow/v1/index.html",
+      "sourceRevision": "cabd1edb15eed1469b6a99c7733076ee233ca550",
+      "sourcePaths": [
+        "workshop/prototypes/delivery-arrow/v1/model.ts",
+        "workshop/prototypes/delivery-arrow/v1/view.ts",
+        "workshop/prototypes/delivery-arrow/v1/index.html",
+        "workshop/prototypes/delivery-arrow/v1/entry.ts",
+        "workshop/prototypes/delivery-arrow/v1/styles.css"
+      ],
+      "capabilities": [
+        "Play/Pause, Restart, Scrubber, 0,5×/1×/2× und Loop",
+        "Drei Konzepte auf gleicher Szene und Zeit",
+        "Lokale versiongebundene Presets, Notizen und JSON-Roundtrip"
+      ],
+      "limitations": [
+        "Schematische Zeitstudie ohne Gameplay-Kollisionen oder Inputsimulation",
+        "Vorgeschlagene Geometrie und Sekundenwerte, kein Spieltuning",
+        "Kein Audio, keine Auswahlentscheidung, v2/A-B-Vergleich folgt erst in Aufgabe 8"
+      ]
+    }
   ]
 }
