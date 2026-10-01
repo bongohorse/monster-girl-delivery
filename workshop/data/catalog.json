@@ -1249,7 +1249,7 @@
       "date": "2026-10-01",
       "changeNote": "Weiches Pulsieren statt harter Blinkwechsel; folgender Pfeil zeigt am Rand horizontal zum noch unsichtbaren Ziel und erst über dem sichtbaren Empfänger nach unten. Eigene Defaults: 40 px, 1 Hz, 4 s, 180 px/s.",
       "entry": "prototypes/delivery-arrow/v2/index.html",
-      "sourceRevision": null,
+      "sourceRevision": "a4e1d3bfa511c0d1d91358082ebf01d5ecd4d928",
       "sourcePaths": [
         "workshop/prototypes/delivery-arrow/v2/model.ts",
         "workshop/prototypes/delivery-arrow/v2/view.ts",
