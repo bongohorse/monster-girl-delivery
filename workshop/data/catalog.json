@@ -1213,6 +1213,18 @@
       "reviewState": "draft",
       "archived": false,
       "prototypeId": "delivery-arrow-controls-v0"
+    },
+    {
+      "id": "pickup-ring-study",
+      "name": "Pickup-Ring · Effektdauer untersuchen",
+      "question": "Welche Ringgröße und Dauer machen ein Pickup-Feedback lesbar?",
+      "categoryId": "vfx",
+      "tags": ["Effekt", "Pickup", "unabhängige Beispielidee"],
+      "elementIds": ["parcel"],
+      "referenceIds": [],
+      "reviewState": "draft",
+      "archived": false,
+      "prototypeId": null
     }
   ],
   "versions": [
@@ -1240,7 +1252,8 @@
         "Schematische Zeitstudie ohne Gameplay-Kollisionen oder Inputsimulation",
         "Vorgeschlagene Geometrie und Sekundenwerte, kein Spieltuning",
         "Kein Audio, keine Auswahlentscheidung, v2/A-B-Vergleich folgt erst in Aufgabe 8"
-      ]
+      ],
+      "renderSupportRevision": null
     },
     {
       "id": "delivery-arrow-v2",
@@ -1264,7 +1277,30 @@
       ],
       "limitations": [
         "Schematische Studie mit vorgeschlagenen Zeiten/Geometrie, ohne Spielintegration."
-      ]
+      ],
+      "renderSupportRevision": null
+    },
+    {
+      "id": "pickup-ring-v1",
+      "ideaId": "pickup-ring-study",
+      "name": "Pickup-Ring v1",
+      "date": "2026-10-01",
+      "changeNote": "Unabhängige Beispielidee: wachsender Ring oder Scheibe mit eigenen Reglern für Endradius und Dauer. Keine Lieferpfeil-Regler oder Spielintegration.",
+      "entry": "prototypes/pickup-ring/v1/index.html",
+      "sourceRevision": null,
+      "renderSupportRevision": null,
+      "sourcePaths": [
+        "workshop/prototypes/pickup-ring/v1/model.ts",
+        "workshop/prototypes/pickup-ring/v1/view.ts",
+        "workshop/prototypes/pickup-ring/v1/styles.css",
+        "workshop/prototypes/pickup-ring/v1/entry.ts",
+        "workshop/prototypes/pickup-ring/v1/index.html"
+      ],
+      "capabilities": [
+        "Play/Pause, Restart und Scrubber",
+        "Eigene Radius-/Dauerparameter und Konfigurationsexport"
+      ],
+      "limitations": ["Schematisches Feedback; reale Pickup-Anbindung und Skalierung sind offen."]
     }
   ],
   "reviews": []

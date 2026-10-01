@@ -1,7 +1,9 @@
+import { handoffView } from './handoff';
+import { comparisonIdeas } from './prototypes';
 import './versionViews.css';
-import type { Catalog, PrototypeVersion } from './catalog';
+import type { Catalog } from './catalog';
 import type { LocalConfiguration } from './localData';
-import { localDrafts } from './localSession';
+import { workshopDrafts as localDrafts } from './localSession';
 import { type ReviewDetails, validConfiguration } from './prototypeConfiguration';
 import { link, node, repository } from './ui';
 
@@ -19,7 +21,9 @@ export function versionPicker(data: Catalog, ideaId: string, current?: string): 
   select.addEventListener('change', () => {
     window.location.hash = `/version/${select.value}`;
   });
-  label.append(select, link('A/B auf gemeinsamer Zeit vergleichen', `#/compare/${ideaId}`));
+  label.append(select);
+  if (comparisonIdeas.includes(ideaId))
+    label.append(link('A/B auf gemeinsamer Zeit vergleichen', `#/compare/${ideaId}`));
   return label;
 }
 export function devLog(data: Catalog, ideaId: string): HTMLElement {
@@ -54,24 +58,7 @@ export function shareConfiguration(configuration: LocalConfiguration, origin: st
   url.hash = `/version/${configuration.versionId}?${params}`;
   return url.href;
 }
-export function versionTools(
-  version: PrototypeVersion,
-  pilot: HTMLElement,
-  data: Catalog,
-): HTMLElement {
-  const current = (): LocalConfiguration => ({
-    ideaId: version.ideaId,
-    versionId: version.id,
-    variantId: pilot.querySelector<HTMLSelectElement>('[name="variant"]')?.value ?? '',
-    values: {
-      size: Number(pilot.querySelector<HTMLInputElement>('[name="size"]')?.value),
-      blinkHz: Number(pilot.querySelector<HTMLInputElement>('[name="blinkHz"]')?.value),
-      warningSeconds: Number(
-        pilot.querySelector<HTMLInputElement>('[name="warningSeconds"]')?.value,
-      ),
-      scrollSpeed: Number(pilot.querySelector<HTMLInputElement>('[name="scrollSpeed"]')?.value),
-    },
-  });
+export function versionTools(current: () => LocalConfiguration, data: Catalog): HTMLElement {
   const panel = node('section', '', 'version-tools');
   panel.append(
     node('h2', 'Konfiguration teilen'),
@@ -94,7 +81,7 @@ export function versionTools(
     open.href = input.value;
     open.hidden = false;
   });
-  panel.append(prepare, label, open, reviewForm(current, data));
+  panel.append(prepare, label, open, reviewForm(current, data), handoffView(current, data));
   return panel;
 }
 export function reviewForm(current: () => LocalConfiguration, data: Catalog): HTMLElement {

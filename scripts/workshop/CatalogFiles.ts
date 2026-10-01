@@ -5,7 +5,19 @@ import type { Catalog } from '../../workshop/src/catalog.ts';
 
 /** Historical paths are checked at their recorded commit, including files since removed. */
 export function validateCatalogFiles(root: string, data: Catalog): string[] {
+  const supportPaths = [
+    'workshop/src/ui.ts',
+    'workshop/src/ideaViews.ts',
+    'workshop/src/download.ts',
+    'workshop/src/legacyStore.ts',
+    'workshop/src/styles.css',
+  ];
   const sources = [
+    ...data.versions.flatMap((v) =>
+      v.renderSupportRevision
+        ? supportPaths.map((path) => ({ path, revision: v.renderSupportRevision as string }))
+        : [],
+    ),
     ...data.elements.flatMap((e) => e.sources),
     ...data.references.flatMap((r) => r.sources),
     ...data.assets.flatMap((a) => [...a.usage.evidence, ...a.history]),

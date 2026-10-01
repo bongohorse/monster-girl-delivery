@@ -1,14 +1,13 @@
-import { mountPilot } from '../prototypes/delivery-arrow/v1/view';
-import { mountPilot as mountPilotV2 } from '../prototypes/delivery-arrow/v2/view';
 import { mountComparison } from './arrowComparison';
 import { assetDetail } from './assetGallery';
 import { catalog, type Element } from './catalog';
 import { backlinkView, referenceDetail, searchForm, searchView, specialView } from './catalogViews';
 import { elementDetail } from './elementDetail';
 import { draftDetail, elementIdeas, ideaDetail, ideasOverview } from './ideaViews';
-import { localDrafts } from './localSession';
+import { workshopDrafts as localDrafts } from './localSession';
 import { mediaImage } from './media';
 import { resolveRoute, sections } from './navigation';
+import { mountPrototype } from './prototypeLoader';
 import { documentationLabels, link, node, repository } from './ui';
 import { devLog, reviewsOverview, versionPicker, versionTools } from './versionViews';
 import './styles.css';
@@ -78,15 +77,21 @@ function pendingSection(section: string): HTMLElement[] {
       'Feedback und Entscheidungen folgen in Aufgabe 8. Es liegt keine Workshop-Auswahlentscheidung vor.',
     ],
     integration: [
-      'Noch kein Integrations-Handoff',
-      'Exporte aus konkreten Prototyp-Einstellungen folgen in Aufgabe 9. Eine Spielintegration wird separat beauftragt.',
+      'Integration vorbereiten',
+      'Handoffs stehen in jeder konkreten Version unter „Integration vorbereiten“. Eine Spielintegration wird separat beauftragt.',
     ],
   };
   const content = copy[section];
   if (!content) return [];
   const panel = node('section', '', 'empty-panel');
   panel.append(
-    node('span', 'Noch nicht umgesetzt', 'tag'),
+    node(
+      'span',
+      section === 'integration'
+        ? 'Handoff verfügbar · keine Spielintegration'
+        : 'Noch nicht umgesetzt',
+      'tag',
+    ),
     node('h2', content[0]),
     node('p', content[1]),
     link('Zur dokumentierten Stichprobe →', '#/documentation'),
@@ -111,7 +116,9 @@ revision.append(
 
 let disposeCurrent: (() => void) | undefined;
 
-function render(moveFocus = false): void {
+let renderGeneration = 0;
+async function render(moveFocus = false): Promise<void> {
+  const generation = ++renderGeneration;
   if (!view || !navigation || !breadcrumbs || !main) return;
   disposeCurrent?.();
   disposeCurrent = undefined;
@@ -176,10 +183,13 @@ function render(moveFocus = false): void {
       devLog(catalog, route.idea.id),
     );
   } else if (route.kind === 'version') {
-    const pilot = (route.version.id === 'delivery-arrow-v2' ? mountPilotV2 : mountPilot)(
-      catalog,
-      () => render(true),
-    );
+    const pilot = await mountPrototype(route.version.id, catalog, () => {
+      void render(true);
+    });
+    if (generation !== renderGeneration) {
+      pilot.dispose();
+      return;
+    }
     disposeCurrent = pilot.dispose;
     view.append(
       node('p', route.version.changeNote),
@@ -190,7 +200,7 @@ function render(moveFocus = false): void {
       versionPicker(catalog, route.version.ideaId, route.version.id),
       link(`Eigenständige ${route.version.name}-Seite öffnen`, route.version.entry),
       pilot.element,
-      versionTools(route.version, pilot.element, catalog),
+      versionTools(pilot.configuration, catalog),
       devLog(catalog, route.version.ideaId),
     );
     for (const limitation of route.version.limitations) view.append(node('p', limitation));

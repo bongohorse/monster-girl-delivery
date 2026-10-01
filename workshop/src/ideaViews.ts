@@ -10,7 +10,7 @@ import {
   parseLocalData,
   serializeLocalData,
 } from './localData';
-import { localDrafts } from './localSession';
+import { workshopDrafts as localDrafts } from './localSession';
 import { link, node, repository, sourceLink } from './ui';
 import { devLog, versionPicker } from './versionViews';
 
@@ -270,13 +270,14 @@ export function ideaDetail(idea: Idea, data: Catalog, refresh: () => void): HTML
       ? controlsPreview(localDrafts, window.location.hash)
       : null;
   if (preview) result.push(preview.element);
-  else result.push(node('p', 'Für diese Idee ist noch kein ausführbarer Prototyp registriert.'));
+  else if (!data.versions.some((v) => v.ideaId === idea.id))
+    result.push(node('p', 'Für diese Idee ist noch kein ausführbarer Prototyp registriert.'));
   const currentConfig = preview
     ? () => ({
         ideaId: controlPreview.ideaId,
         versionId: controlPreview.versionId,
         variantId: controlPreview.variantId,
-        values: preview.values(),
+        values: { ...preview.values() },
       })
     : undefined;
   result.push(localNotes(idea.id, currentConfig), dataTransfer(data, refresh, currentConfig));

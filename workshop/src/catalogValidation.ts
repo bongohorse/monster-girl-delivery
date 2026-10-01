@@ -1,7 +1,7 @@
 import { controlPreview } from '../prototypes/delivery-arrow/controls-v0/model.ts';
-import { pilotV1 } from '../prototypes/delivery-arrow/v1/model.ts';
 import type { Catalog } from './catalog.ts';
 import { validConfiguration, validReviewDetails } from './prototypeConfiguration.ts';
+import { definitionFor } from './prototypes.ts';
 
 const idPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const revisionPattern = /^[a-f0-9]{40}$/;
@@ -239,26 +239,27 @@ export function validateCatalog(input: unknown): string[] {
   });
   records('versions', (r, p) => {
     fields(r, ['ideaId', 'name', 'date', 'changeNote'], p);
-    if (
-      !['delivery-arrow-v1', 'delivery-arrow-v2'].includes(r.id as string) ||
-      r.ideaId !== pilotV1.ideaId
-    )
+    const definition = typeof r.id === 'string' ? definitionFor(r.id) : undefined;
+    if (!definition?.entry || r.ideaId !== definition.ideaId)
       fail(p, 'Nicht unterstützte Pilotversion');
     repoPath(r.entry, `${p}.entry`);
     revision(r.sourceRevision, `${p}.sourceRevision`, true);
-    if (
-      r.entry !== `prototypes/delivery-arrow/${r.id === pilotV1.versionId ? 'v1' : 'v2'}/index.html`
-    )
-      fail(p, 'Unbekannter Versions-Einstieg');
+    revision(r.renderSupportRevision, `${p}.renderSupportRevision`, true);
+    if (r.entry !== definition?.entry) fail(p, 'Unbekannter Versions-Einstieg');
     for (const key of ['sourcePaths', 'capabilities', 'limitations'])
       strings(r[key], `${p}.${key}`);
+    if (definition?.entry && Array.isArray(r.sourcePaths)) {
+      const directory = `workshop/${definition.entry.replace('index.html', '')}`;
+      for (const file of ['index.html', 'entry.ts', 'view.ts', 'model.ts', 'styles.css'])
+        if (!r.sourcePaths.includes(directory + file))
+          fail(p, `Versionsquelle nicht gebunden: ${directory + file}`);
+    }
     for (const path of list(r.sourcePaths, `${p}.sourcePaths`))
       if (
         typeof path !== 'string' ||
         !safeRepositoryPath(path) ||
-        !path.startsWith(
-          `workshop/prototypes/delivery-arrow/${r.id === pilotV1.versionId ? 'v1' : 'v2'}/`,
-        )
+        !definition?.entry ||
+        !path.startsWith(`workshop/${definition.entry.replace('index.html', '')}`)
       )
         fail(p, 'Unsicherer Versionsquellpfad');
   });

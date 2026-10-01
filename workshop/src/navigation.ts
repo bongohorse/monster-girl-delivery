@@ -7,6 +7,7 @@ import type {
   PrototypeVersion,
   Reference,
 } from './catalog';
+import { comparisonIdeas } from './prototypes';
 
 export const sections = [
   { id: 'documentation', name: 'Dokumentation' },
@@ -65,7 +66,7 @@ export function resolveRoute(hash: string, data: Catalog): Route {
       breadcrumbs: [{ label: 'Ideen & Prototypen', href: '#/ideas' }, { label: 'Lokaler Entwurf' }],
     };
   const comparisonIdea = data.ideas.find(
-    (item) => path === `/compare/${item.id}` && item.id === 'delivery-arrow-study',
+    (item) => path === `/compare/${item.id}` && comparisonIdeas.includes(item.id),
   );
   if (comparisonIdea)
     return {

@@ -19,7 +19,10 @@ export function resolvePreviewValues(
     ? candidates.find((p) => p.id === params.get('preset'))
     : candidates[candidates.length - 1];
   const fallback = {
-    values: { ...(preset?.values ?? controlPreview.defaults) },
+    values:
+      preset && validArrowValues(preset.values)
+        ? { ...preset.values }
+        : { ...controlPreview.defaults },
     origin: preset ? `Lokales Preset: ${preset.name}` : 'Dokumentierte Vorschau-Defaults',
   };
   const keys = controlPreview.controls.map((c) => c.id);
@@ -235,7 +238,7 @@ export function controlsPreview(
     const preset = store
       .snapshot()
       .presets.find((p) => p.id === presets.value && p.versionId === controlPreview.versionId);
-    if (!preset) {
+    if (!preset || !validArrowValues(preset.values)) {
       status.textContent = 'Bitte ein passendes Preset wählen.';
       return;
     }
