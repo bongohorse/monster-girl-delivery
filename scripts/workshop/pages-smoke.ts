@@ -266,6 +266,7 @@ async function main() {
       const { stdout, stderr } = await browserDom(
         chrome,
         `http://127.0.0.1:${address.port}${mount}workshop/${path}`,
+        resolve(reports, `${id}-chrome-failure.json`),
       );
       await writeFile(resolve(reports, `${id}-dom.html`), stdout);
       await writeFile(resolve(reports, `${id}-chrome.log`), stderr);

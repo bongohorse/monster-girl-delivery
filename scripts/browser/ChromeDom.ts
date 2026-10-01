@@ -1,5 +1,5 @@
-import { spawn } from 'node:child_process';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { execFileSync, spawn } from 'node:child_process';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 
@@ -7,7 +7,23 @@ import { resolve } from 'node:path';
 export async function browserDom(
   chrome: string,
   url: string,
+  failureReport?: string,
 ): Promise<{ stdout: string; stderr: string }> {
+  const launchedAt = Date.now();
+  let phase = 'startup';
+  let portContents: string | undefined;
+  let portReadError: string | undefined;
+  let navigation: Record<string, unknown> | undefined;
+  let lastPage: { status?: string; url: string; readyState: string } | undefined;
+  const processEvents: {
+    event: string;
+    elapsedMs: number;
+    code?: number | null;
+    signal?: string | null;
+  }[] = [];
+  const recordProcess = (event: string, code?: number | null, signal?: string | null) => {
+    processEvents.push({ event, elapsedMs: Date.now() - launchedAt, code, signal });
+  };
   const profile = await mkdtemp(resolve(tmpdir(), 'mgd-package-chrome-'));
   const child = spawn(
     chrome,
@@ -28,15 +44,28 @@ export async function browserDom(
     { stdio: ['ignore', 'ignore', 'pipe'] },
   );
   let stderr = '';
+  let stderrBytes = 0;
   child.stderr?.on('data', (bytes: Buffer) => {
-    stderr += bytes.toString();
+    stderrBytes += bytes.length;
+    stderr = (stderr + bytes.toString()).slice(-16384);
   });
   let processError: Error | undefined;
+  child.once('spawn', () => recordProcess('spawn'));
   child.once('error', (error) => {
     processError = error;
+    recordProcess('error');
   });
-  const exited = new Promise<void>((done) => child.once('close', () => done()));
-  const watchdog = setTimeout(() => child.kill('SIGKILL'), 30000);
+  child.once('exit', (code, signal) => recordProcess('exit', code, signal));
+  const exited = new Promise<void>((done) =>
+    child.once('close', (code, signal) => {
+      recordProcess('close', code, signal);
+      done();
+    }),
+  );
+  const watchdog = setTimeout(() => {
+    recordProcess('watchdog');
+    child.kill('SIGKILL');
+  }, 30000);
   let socket: WebSocket | undefined;
   try {
     const started = Date.now();
@@ -46,13 +75,15 @@ export async function browserDom(
       if (child.exitCode !== null || Date.now() - started > 10000)
         throw new Error(`Chrome startup failed: ${stderr}`);
       try {
-        port = Number(
-          (await readFile(resolve(profile, 'DevToolsActivePort'), 'utf8')).split('\n')[0],
-        );
-      } catch {
+        portContents = await readFile(resolve(profile, 'DevToolsActivePort'), 'utf8');
+        port = Number(portContents.split('\n')[0]);
+        portReadError = undefined;
+      } catch (error) {
+        portReadError = String(error);
         await new Promise((done) => setTimeout(done, 50));
       }
     }
+    phase = 'debugger-connect';
     const version = (await (await fetch(`http://127.0.0.1:${port}/json/version`)).json()) as {
       webSocketDebuggerUrl: string;
     };
@@ -106,7 +137,9 @@ export async function browserDom(
     if (typeof attached.sessionId !== 'string') throw new Error('Chrome session missing');
     const sessionId = attached.sessionId;
     await command('Page.enable', {}, sessionId);
-    await command('Page.navigate', { url }, sessionId);
+    phase = 'navigation';
+    navigation = await command('Page.navigate', { url }, sessionId);
+    phase = 'page-condition';
     const deadline = Date.now() + 15000;
     let stdout = '';
     while (Date.now() < deadline) {
@@ -114,20 +147,70 @@ export async function browserDom(
         'Runtime.evaluate',
         {
           expression:
-            'JSON.stringify({status:document.documentElement.dataset.packageSmoke,html:document.documentElement.outerHTML})',
+            'JSON.stringify({status:document.documentElement.dataset.packageSmoke,url:location.href,readyState:document.readyState,html:document.documentElement.outerHTML})',
           returnByValue: true,
         },
         sessionId,
       );
       const result = evaluation.result as { value?: string } | undefined;
       if (typeof result?.value === 'string') {
-        const page = JSON.parse(result.value) as { status?: string; html: string };
+        const page = JSON.parse(result.value) as {
+          status?: string;
+          url: string;
+          readyState: string;
+          html: string;
+        };
+        lastPage = { status: page.status, url: page.url, readyState: page.readyState };
         stdout = page.html;
         if (page.status === 'passed' || page.status === 'failed') break;
       }
       await new Promise((done) => setTimeout(done, 100));
     }
     return { stdout, stderr };
+  } catch (error) {
+    let processState: string;
+    try {
+      processState =
+        child.pid === undefined
+          ? 'No PID'
+          : execFileSync('ps', ['-o', 'pid,ppid,stat,etime,comm', '-p', String(child.pid)], {
+              encoding: 'utf8',
+              timeout: 1000,
+            }).trim();
+    } catch {
+      processState = 'Process absent or ps unavailable';
+    }
+    const report = JSON.stringify(
+      {
+        error: String(error).slice(-16384),
+        phase,
+        url,
+        elapsedMs: Date.now() - launchedAt,
+        pid: child.pid,
+        exitCode: child.exitCode,
+        signalCode: child.signalCode,
+        killed: child.killed,
+        processEvents,
+        processState,
+        portContents: portContents?.slice(0, 256),
+        portReadError,
+        navigation,
+        lastPage,
+        stderrBytes,
+        stderrTail: stderr.slice(-16384),
+      },
+      null,
+      2,
+    );
+    console.error(`Chrome failure diagnostic (before cleanup): ${report}`);
+    if (failureReport) {
+      try {
+        await writeFile(failureReport, `${report}\n`);
+      } catch (writeError) {
+        console.error(`Could not save Chrome diagnostic: ${String(writeError)}`);
+      }
+    }
+    throw error;
   } finally {
     socket?.close();
     child.kill('SIGKILL');

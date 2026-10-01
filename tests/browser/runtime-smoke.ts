@@ -69,18 +69,33 @@ function assert(condition: unknown, message: string): asserts condition {
 const delay = (milliseconds: number): Promise<void> =>
   new Promise((resolve) => window.setTimeout(resolve, milliseconds));
 
+let lastWait:
+  | { condition: string; timeoutMs: number; elapsedMs: number; polls: number; completed: boolean }
+  | undefined;
+
 const waitFor = async (
   predicate: () => boolean,
   message: string,
   timeoutMilliseconds = 5_000,
 ): Promise<void> => {
   const startedAt = performance.now();
+  lastWait = {
+    condition: message,
+    timeoutMs: timeoutMilliseconds,
+    elapsedMs: 0,
+    polls: 0,
+    completed: false,
+  };
   while (!predicate()) {
+    lastWait.elapsedMs = performance.now() - startedAt;
+    lastWait.polls++;
     if (performance.now() - startedAt > timeoutMilliseconds) {
       throw new Error(message);
     }
     await delay(16);
   }
+  lastWait.elapsedMs = performance.now() - startedAt;
+  lastWait.completed = true;
 };
 
 const dispatchSpace = (type: 'keydown' | 'keyup'): void => {
@@ -126,6 +141,49 @@ const assertPlayerWorldSize = (probe: FoundationRuntimeProbe): void => {
 
 let controller: RenderResolutionController | undefined;
 let game: ReturnType<typeof StartGame> | undefined;
+
+// Failure-only observations; never change scene state, loader timing or the wait predicate.
+const failureDiagnostic = () => {
+  try {
+    return {
+      lastWait,
+      navigation: {
+        url: location.href,
+        readyState: document.readyState,
+        visibility: document.visibilityState,
+      },
+      clocks: { performanceMs: performance.now(), dateMs: Date.now() },
+      game: game && {
+        booted: game.isBooted,
+        running: game.isRunning,
+        rendererType: game.renderer?.type,
+      },
+      loop: game?.loop && { running: game.loop.running, frame: game.loop.frame },
+      scenes: game?.scene?.getScenes(false).map((scene) => ({
+        key: scene.sys.settings.key,
+        status: scene.sys.settings.status,
+        active: scene.sys.isActive(),
+        loader: scene.load && {
+          state: scene.load.state,
+          progress: scene.load.progress,
+          total: scene.load.totalToLoad,
+          complete: scene.load.totalComplete,
+          failed: scene.load.totalFailed,
+          pending: scene.load.list?.size,
+          inflight: scene.load.inflight?.size,
+          processing: scene.load.queue?.size,
+        },
+      })),
+      backgroundTexture: game?.textures?.exists('background'),
+      resources: performance
+        .getEntriesByType('resource')
+        .slice(-20)
+        .map((entry) => ({ name: entry.name, durationMs: entry.duration })),
+    };
+  } catch (error) {
+    return { lastWait, diagnosticError: String(error) };
+  }
+};
 
 const run = async (): Promise<SmokeEvidence> => {
   game = StartGame('game-container', { directorMode: false, renderScaleCap: 1 });
@@ -284,7 +342,11 @@ void run()
   .catch((error: unknown) => {
     const message = error instanceof Error ? (error.stack ?? error.message) : String(error);
     document.body.dataset.smokeStatus = 'failed';
-    resultElement.textContent = JSON.stringify({ error: message, runtimeErrors });
+    resultElement.textContent = JSON.stringify({
+      error: message,
+      runtimeErrors,
+      diagnostic: failureDiagnostic(),
+    });
   })
   .finally(() => {
     controller?.destroy();
