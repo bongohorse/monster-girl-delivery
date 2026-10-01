@@ -40,6 +40,7 @@ GitHub Milestones and focused Issues/PRs are the live execution trail. Completed
 | Use Jules as a GitHub-native assistant safely | [`JULES_WORKFLOW.md`](JULES_WORKFLOW.md) |
 | Review AI GitHub authentication/permissions | [`GITHUB_AI_ACCESS.md`](GITHUB_AI_ACCESS.md) |
 | Find visual references, scoped acceptance and art profiles | [`ART_DIRECTION.md`](ART_DIRECTION.md) |
+| Add a Workshop idea and export a concrete handoff | [`WORKSHOP_GUIDE.md`](WORKSHOP_GUIDE.md) |
 | Find the scoped MGD Workshop implementation plan | [`WORKSHOP_PLAN.md`](WORKSHOP_PLAN.md) |
 | Prepare/import images or inspect isolated candidates | [`ASSET_WORKFLOW.md`](ASSET_WORKFLOW.md) |
 | Review current Art Gate scene and asset trials | [`M6_ASSET_SCENE_BRIEF.md`](M6_ASSET_SCENE_BRIEF.md) |
@@ -96,6 +97,7 @@ A **current explicit Game Director decision** controls product intent. Living do
 |---|---|---|
 | [`../MASTER_SPEC.md`](../MASTER_SPEC.md) | durable product/game decisions, decision states, platform/game constraints | milestone sequence, development commands, AI workflow |
 | [`M6_ASSET_SCENE_BRIEF.md`](M6_ASSET_SCENE_BRIEF.md) | current Art Gate trial composition, source handoff and factual trial status | final production art approval, asset pipeline implementation |
+| [`WORKSHOP_GUIDE.md`](WORKSHOP_GUIDE.md) | implemented Workshop registration, historical rendering contract and handoff use | game rules, product selection, deployment approval |
 | [`WORKSHOP_PLAN.md`](WORKSHOP_PLAN.md) | technical inventory and incremental implementation plan for Workshop #522 | game rules, production art approval, implemented Workshop features |
 | [`ASSET_WORKFLOW.md`](ASSET_WORKFLOW.md) | image source/recipe identity, candidate processing, runtime target and scoped asset evidence | product art decisions, automatic acceptance, game collision/interaction authority |
 | [`ART_DIRECTION.md`](ART_DIRECTION.md) | visual reference register, scoped acceptance and asset-type art profiles | product decision states, technical asset tooling, automatic Art Gate approval |

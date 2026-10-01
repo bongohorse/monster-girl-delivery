@@ -1,5 +1,5 @@
 import type { Catalog, Reference } from './catalog';
-import { localDrafts } from './localSession';
+import { workshopDrafts as localDrafts } from './localSession';
 import { sections } from './navigation';
 import { type CatalogIndex, type SearchFilters, searchCatalog, withLocalDrafts } from './search';
 import { link, node, sourceLink } from './ui';

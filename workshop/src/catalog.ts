@@ -123,6 +123,7 @@ export interface PrototypeVersion {
   changeNote: string;
   entry: string;
   sourceRevision: string | null;
+  renderSupportRevision: string | null;
   sourcePaths: string[];
   capabilities: string[];
   limitations: string[];

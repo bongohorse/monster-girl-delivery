@@ -1,0 +1,26 @@
+.pickup-study {
+  color: #eaf0fa;
+  font-family: system-ui, sans-serif;
+}
+.pickup-study label {
+  display: grid;
+  gap: 0.5rem;
+  margin-block: 1rem;
+}
+.pickup-study svg {
+  display: block;
+  width: 100%;
+  max-width: 600px;
+  background: #16202c;
+}
+.pickup-study input,
+.pickup-study button,
+.pickup-study select,
+.pickup-study textarea {
+  min-height: 44px;
+  max-width: 100%;
+  font: inherit;
+}
+.pickup-study input[type="range"] {
+  width: 100%;
+}

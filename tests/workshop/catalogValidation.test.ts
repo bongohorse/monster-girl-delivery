@@ -131,6 +131,7 @@ it('protects pinned prototype bytes and requires the standalone entry', async ()
   data.versions = [
     {
       ...catalog.versions[0],
+      renderSupportRevision: null,
       sourceRevision: data.references[0].sources[0].revision,
       sourcePaths: [path],
     },

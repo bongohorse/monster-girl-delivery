@@ -136,3 +136,21 @@ Prototypmodule besitzen explizit Start/Dispose für die tatsächlich benötigten
 | 10 | Gemeinsames Pages-Artefakt, Workflow/Pfadtrigger, Abschlussprüfung | PWA-Spielpaket isoliert, echte Unterpfad-/Versions-/Medienlinks, Worker/Storage, Tastatur/Touch/Landscape; fehlende Geräteprüfung benennen |
 
 Aufgabe 1 endet mit diesem Dokument und Draft-PR. Validierung: Quellen/Dateipfade, Bildmetadaten, Linkziele und Diff prüfen; keine neue Runtime, daher keine Spieltests/Builds als lokale Pflicht. Es wurden keine Browser-/Geräte-/Live-Pages-Tests durchgeführt. Die revisionsgebundene Medienausgabe und Prüfung der deployten Revision sind ausdrücklich noch Umsetzungsschritte, keine vorhandenen Funktionen. **Nächster Auftrag: Aufgabe 2.**
+
+## Ergänzung aus Aufgabe 9: Erweiterbarkeit und historische Renderabhängigkeiten
+
+Die Aufgaben-1-Bestandsaufnahme oben bleibt historischer Plan. Seit Aufgabe 9 besitzt
+`workshop/src/prototypes.ts` die explizite Zuordnung von Versions-ID zu Definition,
+Einstieg und Konfigurationsprüfung; `prototypeLoader.ts` verbindet diese mit dem
+jeweiligen `view.ts`. Pickup-Ring ist der unabhängige Nachweis mit anderen Controls.
+Navigation und Spielcode brauchen für weitere Registrierungen keine Fallunterscheidung.
+
+Die ursprüngliche Prüfung nur eigener Versionsordner genügte nicht für gemeinsame
+Renderabhängigkeiten. Zusätzlich bindet `renderSupportRevision` DOM-/Downloadhelfer,
+Notiz-/Datentransferdarstellung, Legacy-Datenadapter und Basisstyles an Gitfassungen.
+Root und Standalone verwenden isolierte Shadow-DOM-Flächen. Aktuelle Speicherung
+und validierter JSON-Transport bleiben ein gemeinsamer kompatibler Datenzugang;
+Szenenlogik, Parameterauflösung und Defaults bleiben versionsgebunden. Der vollständige
+implementierte Vertrag, Erweiterungsweg und Handoff-Ablauf stehen in
+[WORKSHOP_GUIDE.md](WORKSHOP_GUIDE.md). Aufgabe 10 bleibt für Pages/Historien-Checkout
+und tatsächliche PWA-/Cacheprüfung offen.

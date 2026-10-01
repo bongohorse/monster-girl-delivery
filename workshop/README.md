@@ -1,6 +1,6 @@
 # MGD Workshop — lokales Grundgerüst
 
-Stand: Aufgabe 8 aus [#522](https://github.com/bongohorse/monster-girl-delivery/issues/522).
+Stand: Aufgabe 9 aus [#522](https://github.com/bongohorse/monster-girl-delivery/issues/522).
 Vier Bereiche, zwölf Kategorien und sechs echte Elementkarten sind navigierbar.
 Leere Kategorien und noch nicht umgesetzte Bereiche sind sichtbar gekennzeichnet.
 Elementseiten zeigen typabhängige Fakten mit Einheiten und Belegen, eigene Prüfrevisionen,
@@ -36,7 +36,7 @@ Metadaten, getrennte Review-/Verwendungszustände und vorhandene revisionsgebund
 Generierte Runtime-Dateien erhalten keinen vorgetäuschten GitHub-Dateilink; ihr Rezept,
 Original und Generation/Outputhash sind sichtbar. Eine Trial-Auswahl ist keine finale Artabnahme.
 
-Noch nicht umgesetzt: Handoff (9) und Pages-Anbindung (10). Es liegt kein Live-Deployment vor.
+Noch nicht umgesetzt: Pages-Anbindung (10). Es liegt kein Live-Deployment vor.
 Der [technische Plan](../docs/WORKSHOP_PLAN.md) beschreibt diese folgenden Schritte.
 
 Suche (`#/search`) erfasst Namen, Beschreibungen und Tags von Elementen, Assets und
@@ -133,4 +133,21 @@ zeigt publizierte Repository-Reviews getrennt von lokalen Browserreviews. Es gib
 noch keine belegte publizierte Nutzerentscheidung; die leere Liste bleibt ehrlich.
 Lokale Reviews werden im bestehenden JSON-Roundtrip gesichert; alte Notizen und
 v0/v1-Presets bleiben gültig. Veröffentlichung erfolgt durch Repositorypflege,
-nicht durch einen Browserbutton. Integrations-Handoff folgt erst in Aufgabe 9.
+nicht durch einen Browserbutton. Integrations-Handoff ist seit Aufgabe 9 verfügbar.
+
+## Handoff und Erweiterung (Aufgabe 9)
+
+Eine weitere Idee ist ausführbar: `#/version/pickup-ring-v1`, eigener Endradius und
+Effektdauer statt Lieferpfeilparametern. `prototypes.ts` ist die explizite Zuordnung
+für Definition, Einstieg und Werteprüfung; der generische Loader und die Navigation
+brauchen bei weiteren Ideen keine neue Fallunterscheidung. Handoffs als Markdown/JSON
+stehen in jeder Version unter „Integration vorbereiten“ und lesen die tatsächlichen
+aktuellen Controls. Lokale Auswahl bleibt Entwurf; ausgewählte Handoffs benötigen
+eine passende publizierte Reviewquelle.
+
+Historische Renderhilfen und Styles sind zusätzlich über `renderSupportRevision`
+gebunden; Root/Standalone isolieren sie in Shadow DOM. Der aktuelle gemeinsame
+Store bleibt als kompatible Datengrenze verfügbar, damit neue und alte Versionen
+gemeinsam exportierbar bleiben. Der Build lehnt ungebundene Szene-Imports ab.
+Die [kurze Anleitung und genaue Historiengrenze](../docs/WORKSHOP_GUIDE.md) beschreiben
+Registrierung, konkreten Nachweis, Quellebindung und die noch offene Aufgabe 10.

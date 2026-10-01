@@ -24,8 +24,10 @@ describe('Workshop catalog search', () => {
     expect(ids({ type: 'Mechanik' })).toEqual(['parcel-delivery']);
     expect(ids({ section: 'ideas' })).toEqual([
       'delivery-arrow-study',
+      'pickup-ring-study',
       'delivery-arrow-v1',
       'delivery-arrow-v2',
+      'pickup-ring-v1',
     ]);
     expect(ids({ query: 'nichtvorhanden' })).toEqual([]);
     expect(ids({ categoryId: 'audio' })).toEqual([]);

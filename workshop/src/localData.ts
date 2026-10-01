@@ -1,4 +1,3 @@
-import type { ArrowValues } from '../prototypes/delivery-arrow/controls-v0/model';
 import type { Catalog, Source } from './catalog';
 import { safeRepositoryPath } from './catalogValidation';
 import {
@@ -25,7 +24,7 @@ export interface LocalPreset {
   ideaId: string;
   versionId: string;
   variantId: string;
-  values: ArrowValues;
+  values: Record<string, number>;
   date: string;
 }
 export interface LocalNote {
@@ -34,7 +33,7 @@ export interface LocalNote {
   ideaId: string;
   versionId: string | null;
   variantId: string | null;
-  values: ArrowValues | null;
+  values: Record<string, number> | null;
   text: string;
   date: string;
 }
