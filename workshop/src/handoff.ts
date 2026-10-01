@@ -23,7 +23,16 @@ export function buildHandoff(
     r.variantId === config.variantId &&
     Object.keys(r.values).length === Object.keys(config.values).length &&
     Object.entries(config.values).every(([k, v]) => r.values[k] === v);
-  const selected = data.reviews.find((r) => same(r) && r.review.decision === 'selected');
+  let latestDecision: Catalog['reviews'][number] | undefined;
+  for (const review of data.reviews) {
+    if (
+      same(review) &&
+      review.review.decision !== 'open' &&
+      (!latestDecision || Date.parse(review.date) >= Date.parse(latestDecision.date))
+    )
+      latestDecision = review;
+  }
+  const selected = latestDecision?.review.decision === 'selected' ? latestDecision : undefined;
   const elements = data.elements.filter((e) => idea.elementIds.includes(e.id));
   const assetIds = new Set(elements.flatMap((e) => e.assetIds));
   return {

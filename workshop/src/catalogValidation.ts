@@ -265,6 +265,8 @@ export function validateCatalog(input: unknown): string[] {
   });
   records('reviews', (r, p) => {
     fields(r, ['date', 'text'], p);
+    if (typeof r.date !== 'string' || !Number.isFinite(Date.parse(r.date)))
+      fail(p, 'Ungültiges Reviewdatum');
     url(r.sourceUrl, `${p}.sourceUrl`);
     if (!validConfiguration(r) || !validReviewDetails(r.review))
       fail(p, 'Ungültiges Review/Konfiguration oder fehlende Entscheidungsquelle');

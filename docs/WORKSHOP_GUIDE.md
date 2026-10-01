@@ -11,7 +11,7 @@ Die Werkstatt ist eine Browserstudie; Spielintegration und Veröffentlichung ble
 4. Unter „Integration vorbereiten“ gewünschtes Verhalten/Aussehen eintragen und Markdown sowie JSON herunterladen. Beide enthalten tatsächliche Werte/Einheiten, Quellen-/Supportrevision, Ausgangselemente, Assets, vorgeschlagene Timeline/Trigger, Lifecycle, Abnahmekriterien, Annahmen und offene Punkte.
 5. Beide Dateien als konkrete **separat beauftragte Spielaufgabe** übergeben. Der Export verändert das Spiel nicht.
 
-Lokales Feedback/„Ausgewählt“ bleibt ein Entwurfs-Handoff. Nur eine passende publizierte Reviewentscheidung mit belegter Quelle, gleicher Version, gleichem Konzept und genau denselben Werten erzeugt einen ausgewählten Handoff. Andere Reglerwerte brauchen eine eigene Auswahl. Unbekannte deployte Spielrevisionen bleiben ausdrücklich unbekannt.
+Lokales Feedback/„Ausgewählt“ bleibt ein Entwurfs-Handoff. Nur eine passende publizierte Reviewentscheidung mit belegter Quelle, gleicher Version, gleichem Konzept und genau denselben Werten erzeugt einen ausgewählten Handoff. Maßgeblich ist die neueste publizierte Auswahl/Ablehnung nach Reviewdatum für genau diese Konfiguration. Eine spätere Ablehnung hebt die frühere Freigabe auf; reine Feedbackeinträge verändern sie nicht. Bei gleichem Zeitpunkt gilt die zuletzt im Katalog aufgeführte Entscheidung. Historische Reviews bleiben erhalten. Andere Reglerwerte brauchen eine eigene Auswahl. Unbekannte deployte Spielrevisionen bleiben ausdrücklich unbekannt.
 
 ## Element oder unabhängige Idee hinzufügen
 
