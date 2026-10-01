@@ -1241,6 +1241,31 @@
         "Vorgeschlagene Geometrie und Sekundenwerte, kein Spieltuning",
         "Kein Audio, keine Auswahlentscheidung, v2/A-B-Vergleich folgt erst in Aufgabe 8"
       ]
+    },
+    {
+      "id": "delivery-arrow-v2",
+      "ideaId": "delivery-arrow-study",
+      "name": "Lieferpfeil v2",
+      "date": "2026-10-01",
+      "changeNote": "Weiches Pulsieren statt harter Blinkwechsel; folgender Pfeil zeigt am Rand horizontal zum noch unsichtbaren Ziel und erst über dem sichtbaren Empfänger nach unten. Eigene Defaults: 40 px, 1 Hz, 4 s, 180 px/s.",
+      "entry": "prototypes/delivery-arrow/v2/index.html",
+      "sourceRevision": "a4e1d3bfa511c0d1d91358082ebf01d5ecd4d928",
+      "sourcePaths": [
+        "workshop/prototypes/delivery-arrow/v2/model.ts",
+        "workshop/prototypes/delivery-arrow/v2/view.ts",
+        "workshop/prototypes/delivery-arrow/v2/index.html",
+        "workshop/prototypes/delivery-arrow/v2/entry.ts",
+        "workshop/prototypes/delivery-arrow/v2/styles.css"
+      ],
+      "capabilities": [
+        "Play/Pause, Restart, Scrubber, 0,5×/1×/2× und Loop",
+        "Drei Konzepte auf gleicher Szene und Zeit",
+        "Lokale versiongebundene Presets, Notizen und JSON-Roundtrip"
+      ],
+      "limitations": [
+        "Schematische Studie mit vorgeschlagenen Zeiten/Geometrie, ohne Spielintegration."
+      ]
     }
-  ]
+  ],
+  "reviews": []
 }

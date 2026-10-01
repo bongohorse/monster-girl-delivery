@@ -1,5 +1,7 @@
 import data from '../data/catalog.json' with { type: 'json' };
 import { assertCatalog } from './catalogValidation.ts';
+import type { LocalConfiguration } from './localData.ts';
+import type { ReviewDetails } from './prototypeConfiguration.ts';
 
 export interface Category {
   id: string;
@@ -126,6 +128,14 @@ export interface PrototypeVersion {
   limitations: string[];
 }
 
+export interface PublishedReview extends LocalConfiguration {
+  id: string;
+  date: string;
+  text: string;
+  review: ReviewDetails;
+  sourceUrl: string;
+}
+
 export interface Catalog {
   schemaVersion: number;
   codeReviewRevision: string;
@@ -137,6 +147,7 @@ export interface Catalog {
   references: Reference[];
   ideas: Idea[];
   versions: PrototypeVersion[];
+  reviews: PublishedReview[];
 }
 
 // Reject malformed authored data before either Vite or the browser consumes it.

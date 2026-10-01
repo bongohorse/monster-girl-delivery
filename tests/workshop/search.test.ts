@@ -22,7 +22,11 @@ describe('Workshop catalog search', () => {
     expect(ids({ query: 'Phaser-Primitiven GPS' })).toEqual(['delivery-arrow']);
     expect(ids({ kind: 'reference' })).toEqual(['art-gate-reference']);
     expect(ids({ type: 'Mechanik' })).toEqual(['parcel-delivery']);
-    expect(ids({ section: 'ideas' })).toEqual(['delivery-arrow-study', 'delivery-arrow-v1']);
+    expect(ids({ section: 'ideas' })).toEqual([
+      'delivery-arrow-study',
+      'delivery-arrow-v1',
+      'delivery-arrow-v2',
+    ]);
     expect(ids({ query: 'nichtvorhanden' })).toEqual([]);
     expect(ids({ categoryId: 'audio' })).toEqual([]);
     expect(ids({ archive: 'archived' })).toEqual([]);

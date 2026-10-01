@@ -1,0 +1,49 @@
+.version-picker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-block: 1rem;
+}
+.version-picker select,
+.version-tools input,
+.version-tools button,
+.local-review select {
+  min-height: 44px;
+  min-width: 0;
+  max-width: 100%;
+  padding: 0.5rem;
+  color: inherit;
+  background: #16202c;
+  border: 1px solid #6c7c8e;
+  border-radius: 6px;
+  font: inherit;
+}
+.version-tools > label {
+  display: grid;
+  gap: 0.5rem;
+  margin-block: 0.75rem;
+}
+.version-tools input {
+  width: 100%;
+}
+.dev-log article {
+  margin-block: 1.5rem;
+}
+.dev-log article > a {
+  display: inline-block;
+  margin-right: 1rem;
+  padding-block: 0.5rem;
+}
+.dev-log details a {
+  display: block;
+  overflow-wrap: anywhere;
+  padding-block: 0.25rem;
+}
+.version-picker select:focus-visible,
+.version-tools input:focus-visible,
+.version-tools button:focus-visible,
+.local-review select:focus-visible {
+  outline: 3px solid #ffd08b;
+  outline-offset: 3px;
+}

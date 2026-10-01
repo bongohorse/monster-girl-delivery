@@ -12,6 +12,7 @@ import {
 } from './localData';
 import { localDrafts } from './localSession';
 import { link, node, repository, sourceLink } from './ui';
+import { devLog, versionPicker } from './versionViews';
 
 const button = (text: string, action: () => void) => {
   const item = node('button', text);
@@ -283,6 +284,8 @@ export function ideaDetail(idea: Idea, data: Catalog, refresh: () => void): HTML
     result.push(
       link(`Interaktiver Pilot: ${version.name}`, `#/version/${version.id}`, 'pilot-link'),
     );
+  if (data.versions.some((v) => v.ideaId === idea.id))
+    result.push(versionPicker(data, idea.id), devLog(data, idea.id));
   return result;
 }
 export function draftCommand(draft: Draft, data: Catalog): string {
