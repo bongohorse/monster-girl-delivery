@@ -26,6 +26,7 @@ type RouteContent =
   | { kind: 'search' | 'references' | 'effects' }
   | { kind: 'reference'; reference: Reference }
   | { kind: 'idea'; idea: Idea }
+  | { kind: 'compare'; idea: Idea }
   | { kind: 'version'; version: PrototypeVersion }
   | { kind: 'draft'; draftId: string }
   | { kind: 'category'; category: Category }
@@ -62,6 +63,21 @@ export function resolveRoute(hash: string, data: Catalog): Route {
       section: 'ideas',
       title: 'Lokaler Entwurf',
       breadcrumbs: [{ label: 'Ideen & Prototypen', href: '#/ideas' }, { label: 'Lokaler Entwurf' }],
+    };
+  const comparisonIdea = data.ideas.find(
+    (item) => path === `/compare/${item.id}` && item.id === 'delivery-arrow-study',
+  );
+  if (comparisonIdea)
+    return {
+      kind: 'compare',
+      idea: comparisonIdea,
+      section: 'ideas',
+      title: 'Lieferpfeil · A/B-Vergleich',
+      breadcrumbs: [
+        { label: 'Ideen & Prototypen', href: '#/ideas' },
+        { label: comparisonIdea.name, href: `#/idea/${comparisonIdea.id}` },
+        { label: 'A/B-Vergleich' },
+      ],
     };
   const version = data.versions.find((item) => path === `/version/${item.id}`);
   if (version) {

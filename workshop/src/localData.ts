@@ -1,11 +1,11 @@
-import {
-  type ArrowValues,
-  controlPreview,
-  validArrowValues,
-} from '../prototypes/delivery-arrow/controls-v0/model';
-import { isVariant, pilotV1, validPilotValues } from '../prototypes/delivery-arrow/v1/model.ts';
+import type { ArrowValues } from '../prototypes/delivery-arrow/controls-v0/model';
 import type { Catalog, Source } from './catalog';
 import { safeRepositoryPath } from './catalogValidation';
+import {
+  type ReviewDetails,
+  validConfiguration,
+  validReviewDetails,
+} from './prototypeConfiguration';
 
 export interface Draft {
   id: string;
@@ -29,6 +29,7 @@ export interface LocalPreset {
   date: string;
 }
 export interface LocalNote {
+  review?: ReviewDetails;
   id: string;
   ideaId: string;
   versionId: string | null;
@@ -144,6 +145,8 @@ export function parseLocalData(json: string, data: Catalog): LocalResult {
           ...data.assets,
           ...data.artifacts,
           ...data.references,
+          ...data.versions,
+          ...data.reviews,
         ].some((e) => e.id === r.id)
       )
         fail(path, `Doppelte oder reservierte ID ${r.id}`);
@@ -157,17 +160,11 @@ export function parseLocalData(json: string, data: Catalog): LocalResult {
       fail(path, 'ISO-Datum erwartet');
   };
   const configuration = (r: Record<string, unknown>, path: string) => {
-    if (r.ideaId !== controlPreview.ideaId) {
-      fail(path, 'Unbekannte oder nicht passende Idee/Controls-Version/Variante');
-      return;
-    }
-    if (r.versionId === controlPreview.versionId && r.variantId === controlPreview.variantId) {
-      if (!validArrowValues(r.values))
-        fail(path, 'Unbekannte Controls oder ungültige Reglerwerte/Grenzen/Schritte');
-    } else if (r.versionId === pilotV1.versionId && isVariant(r.variantId)) {
-      if (!validPilotValues(r.values))
-        fail(path, 'Unbekannte Controls oder ungültige Reglerwerte/Grenzen/Schritte');
-    } else fail(path, 'Unbekannte oder nicht passende Idee/Controls-Version/Variante');
+    if (!validConfiguration(r))
+      fail(
+        path,
+        'Unbekannte oder nicht passende Idee/Controls-Version/Variante oder ungültige Reglerwerte/Grenzen/Schritte',
+      );
   };
   const root = record(input, 'Import', ['schemaVersion', 'kind', 'drafts', 'presets', 'feedback']);
   if (!root) return { ok: false, errors };
@@ -258,10 +255,15 @@ export function parseLocalData(json: string, data: Catalog): LocalResult {
       'values',
       'text',
       'date',
+      'review',
     ]);
     if (!r) return;
     identity(r, path);
     text(r.text, `${path}.text`);
+    if (r.review !== undefined && !validReviewDetails(r.review))
+      fail(path, 'Ungültiges Review oder fehlende Entscheidungsquelle');
+    if (r.review !== undefined && r.versionId === null)
+      fail(path, 'Review benötigt konkrete Version und Konfiguration');
     if (!knownIdeas.includes(r.ideaId)) fail(path, 'Unbekannte Idee');
     if (r.versionId === null && r.variantId === null && r.values === null) return;
     configuration(r, path);

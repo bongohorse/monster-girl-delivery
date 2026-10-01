@@ -1,6 +1,6 @@
 # MGD Workshop — lokales Grundgerüst
 
-Stand: Aufgabe 7 aus [#522](https://github.com/bongohorse/monster-girl-delivery/issues/522).
+Stand: Aufgabe 8 aus [#522](https://github.com/bongohorse/monster-girl-delivery/issues/522).
 Vier Bereiche, zwölf Kategorien und sechs echte Elementkarten sind navigierbar.
 Leere Kategorien und noch nicht umgesetzte Bereiche sind sichtbar gekennzeichnet.
 Elementseiten zeigen typabhängige Fakten mit Einheiten und Belegen, eigene Prüfrevisionen,
@@ -36,12 +36,11 @@ Metadaten, getrennte Review-/Verwendungszustände und vorhandene revisionsgebund
 Generierte Runtime-Dateien erhalten keinen vorgetäuschten GitHub-Dateilink; ihr Rezept,
 Original und Generation/Outputhash sind sichtbar. Eine Trial-Auswahl ist keine finale Artabnahme.
 
-Noch nicht umgesetzt: zweite Pilotversion, Vergleich/Review (8),
-Handoff (9) und Pages-Anbindung (10). Es liegt kein Live-Deployment vor.
+Noch nicht umgesetzt: Handoff (9) und Pages-Anbindung (10). Es liegt kein Live-Deployment vor.
 Der [technische Plan](../docs/WORKSHOP_PLAN.md) beschreibt diese folgenden Schritte.
 
 Suche (`#/search`) erfasst Namen, Beschreibungen und Tags von Elementen, Assets und
-Referenzen, Repository-Ideen und lokale Entwürfe. Filter sind kombinierbar; Review/Verwendung und Dokumentationsstand/Umsetzung
+Referenzen, Repository-Ideen, ausführbare Versionen und lokale Entwürfe. Filter sind kombinierbar; Review/Verwendung und Dokumentationsstand/Umsetzung
 bleiben eigene Achsen. Filter und Suchbegriffe stehen im Direktlink und bleiben bei Reload
 erhalten. `#/references` und `#/effects` sind Ansichten derselben Katalogdatensätze;
 Rückverweise werden aus den kanonischen Beziehungen abgeleitet. Der Suchindex wird beim
@@ -85,7 +84,7 @@ Import darf sie ersetzen. Ohne Backend gibt es keine Synchronisierung zwischen G
 
 
 `#/version/delivery-arrow-v1` öffnet die erste Motion-Studie. Eigenständiger Einstieg:
-`prototypes/delivery-arrow/v1/index.html`. Vite baut beide HTML-Seiten; der verschachtelte
+`prototypes/delivery-arrow/v1/index.html`. Vite baut Root und alle registrierten HTML-Versionsseiten; der verschachtelte
 Einstieg nutzt denselben v1-Code. Drei Konzepte: Höhenpfeil, folgender Pfeil und Randmarker.
 Alle nutzen dieselbe Szene/Zeit: Anflug → Aufnahme bei 2 s → parametrierte Vorwarnung →
 inszenierte Übergabe bei 8 s → Ende bei 10 s. Diese Werte sind Studiendesign, keine Spielwerte.
@@ -101,5 +100,37 @@ v1-Presets/Notizen/JSON sind an `delivery-arrow-v1` und das konkrete Konzept geb
 Die Controls-Vorschau v0 und ihre Daten bleiben separat erreichbar. Der v1-Ordner besitzt
 Modell, Defaults, Controls, Renderer, Einstieg und Styling. Die Katalog-Prüfrevision bindet
 diese Quellen; der Workshop-Build lehnt Änderungen ihrer Bytes an derselben Versions-ID ab.
-Verhaltensänderungen erhalten eine neue Version. Die zweite Version und A/B folgen erst
-mit Aufgabe 8. Spielintegration und Pages-Deployment bleiben separat beauftragt.
+Verhaltensänderungen erhalten eine neue Version. Die zweite Version und A/B sind seit Aufgabe 8 verfügbar. Spielintegration und Pages-Deployment bleiben separat beauftragt.
+
+## Versionen, Vergleich und Review (Aufgabe 8)
+
+`#/version/delivery-arrow-v2` und `prototypes/delivery-arrow/v2/index.html` führen
+zur eigenständigen v2. Ihre Pfeile pulsieren weich zwischen 0,3 und 1 statt hart
+zu blinken. Der folgende Pfeil zeigt bei einem Ziel außerhalb der Szene nach rechts
+und erst über dem sichtbaren Empfänger nach unten. Eigene Defaults: 40 px, 1 Hz,
+4 s Vorwarnung, 180 px/s. Kurier-/Paket-/Empfängerablauf und Dauer bleiben vergleichbar.
+Die unveränderten v1-Dateien und Defaults werden weiterhin gegen ihre gebundene
+Quellrevision geprüft; v2 erhält eine eigene Bindung. Kein gemeinsam veränderliches
+Verhaltensmodell und keine Spielintegration.
+
+Versionsdropdowns und Dev Log verlinken beide ausführbaren Versionen, ihre Daten,
+Änderungsnotizen und Quellen. `#/compare/delivery-arrow-study` verwendet einen
+Playhead und Renderer mit den unabhängigen Zustandsfunktionen von v1 und v2.
+A/B wechselt bei gleicher Zeit, Skala, Ausgangslage und identischen Reglerwerten.
+Die gemeinsame Basis sind ausdrücklich die v1-Defaults; Versionspresets werden
+im Vergleich nicht automatisch gemischt. Play/Pause, Scrubber, Restart, Reset,
+0,5×/1×/2× und Loop funktionieren auch dort; Reset setzt Zeit/Regler/Geschwindigkeit/Loop
+zurück. Verlassen/Import/Lifecycle beendet den jeweiligen Renderloop.
+
+„Share-Link erzeugen“ auf einer Version schreibt Version, Konzept und alle aktuellen
+Werte in einen kopierbaren Link ohne lokale Preset-ID. Vergleichslinks enthalten
+zusätzlich Zeit und A/B-Seite. Ungültige Linkwerte werden nicht übernommen.
+
+Strukturiertes Feedback erfasst Gefallen, Störung, gewünschte Änderung und eine
+optionale lokale Entscheidung mit Entscheidungsquelle, Datum und effektiver
+Konfiguration. Auswahl/Verwerfung ohne Quelle wird abgelehnt. Review & Entscheidungen
+zeigt publizierte Repository-Reviews getrennt von lokalen Browserreviews. Es gibt
+noch keine belegte publizierte Nutzerentscheidung; die leere Liste bleibt ehrlich.
+Lokale Reviews werden im bestehenden JSON-Roundtrip gesichert; alte Notizen und
+v0/v1-Presets bleiben gültig. Veröffentlichung erfolgt durch Repositorypflege,
+nicht durch einen Browserbutton. Integrations-Handoff folgt erst in Aufgabe 9.

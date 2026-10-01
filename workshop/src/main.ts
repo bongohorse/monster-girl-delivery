@@ -1,4 +1,6 @@
 import { mountPilot } from '../prototypes/delivery-arrow/v1/view';
+import { mountPilot as mountPilotV2 } from '../prototypes/delivery-arrow/v2/view';
+import { mountComparison } from './arrowComparison';
 import { assetDetail } from './assetGallery';
 import { catalog, type Element } from './catalog';
 import { backlinkView, referenceDetail, searchForm, searchView, specialView } from './catalogViews';
@@ -8,6 +10,7 @@ import { localDrafts } from './localSession';
 import { mediaImage } from './media';
 import { resolveRoute, sections } from './navigation';
 import { documentationLabels, link, node, repository } from './ui';
+import { devLog, reviewsOverview, versionPicker, versionTools } from './versionViews';
 import './styles.css';
 
 function preview(element: Element): HTMLElement {
@@ -140,7 +143,9 @@ function render(moveFocus = false): void {
         ? documentation()
         : route.section === 'ideas'
           ? ideasOverview(catalog, () => render(true))
-          : pendingSection(route.section ?? '')),
+          : route.section === 'reviews'
+            ? reviewsOverview(catalog)
+            : pendingSection(route.section ?? '')),
     );
   } else if (route.kind === 'category') {
     const elements = catalog.elements.filter((element) => element.categoryId === route.category.id);
@@ -162,8 +167,19 @@ function render(moveFocus = false): void {
     );
   } else if (route.kind === 'asset') {
     view.append(assetDetail(route.asset, catalog), backlinkView(route.asset.id));
+  } else if (route.kind === 'compare') {
+    const comparison = mountComparison();
+    disposeCurrent = comparison.dispose;
+    view.append(
+      versionPicker(catalog, route.idea.id),
+      comparison.element,
+      devLog(catalog, route.idea.id),
+    );
   } else if (route.kind === 'version') {
-    const pilot = mountPilot(catalog, () => render(true));
+    const pilot = (route.version.id === 'delivery-arrow-v2' ? mountPilotV2 : mountPilot)(
+      catalog,
+      () => render(true),
+    );
     disposeCurrent = pilot.dispose;
     view.append(
       node('p', route.version.changeNote),
@@ -171,8 +187,11 @@ function render(moveFocus = false): void {
         'p',
         `Quellrevision: ${route.version.sourceRevision ?? 'Arbeitsstand; noch nicht festgehalten'}`,
       ),
-      link('Eigenständige v1-Seite öffnen', route.version.entry),
+      versionPicker(catalog, route.version.ideaId, route.version.id),
+      link(`Eigenständige ${route.version.name}-Seite öffnen`, route.version.entry),
       pilot.element,
+      versionTools(route.version, pilot.element, catalog),
+      devLog(catalog, route.version.ideaId),
     );
     for (const limitation of route.version.limitations) view.append(node('p', limitation));
   } else if (route.kind === 'idea') {
