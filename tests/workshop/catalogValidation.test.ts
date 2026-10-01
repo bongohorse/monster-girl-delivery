@@ -1,12 +1,71 @@
-import { describe, expect, it } from 'vitest';
+import { execFileSync } from 'node:child_process';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterEach, describe, expect, it } from 'vitest';
 import { validateCatalogFiles } from '../../scripts/workshop/CatalogFiles';
 import { catalog } from '../../workshop/src/catalog';
 import { safeRepositoryPath, validateCatalog } from '../../workshop/src/catalogValidation';
 
+const roots: string[] = [];
+afterEach(async () => {
+  await Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
+});
+async function historyFixture() {
+  const root = await mkdtemp(join(tmpdir(), 'mgd-workshop-catalog-'));
+  roots.push(root);
+  const git = (...args: string[]) =>
+    execFileSync('git', args, { cwd: root, encoding: 'utf8' }).trim();
+  git('init', '-q');
+  await writeFile(join(root, 'history.md'), 'Historical source');
+  git('add', 'history.md');
+  git(
+    '-c',
+    'user.name=Workshop Test',
+    '-c',
+    'user.email=workshop@example.invalid',
+    'commit',
+    '-qm',
+    'source',
+  );
+  const revision = git('rev-parse', 'HEAD');
+  git('rm', '-q', 'history.md');
+  git(
+    '-c',
+    'user.name=Workshop Test',
+    '-c',
+    'user.email=workshop@example.invalid',
+    'commit',
+    '-qm',
+    'remove source',
+  );
+  const data = {
+    ...catalog,
+    codeReviewRevision: git('rev-parse', 'HEAD'),
+    elements: [],
+    assets: [],
+    artifacts: [],
+    ideas: [],
+    references: [
+      {
+        ...catalog.references[0],
+        elementIds: [],
+        assetIds: [],
+        sources: [{ id: 'historical', path: 'history.md', revision, kind: 'doc' }],
+      },
+    ],
+  };
+  return { root, data };
+}
+
 describe('authored Workshop catalog boundary', () => {
-  it('accepts the real catalog including a historical source removed from the current checkout', () => {
+  it('accepts the real catalog structure and a historical source removed from its checkout', async () => {
     expect(validateCatalog(catalog)).toEqual([]);
-    expect(validateCatalogFiles(process.cwd(), catalog)).toEqual([]);
+    const { root, data } = await historyFixture();
+    expect(validateCatalog(data)).toEqual([]);
+    expect(validateCatalogFiles(root, data)).toEqual([]);
+    data.references[0].sources[0].revision = data.codeReviewRevision;
+    expect(validateCatalogFiles(root, data).join('\n')).toContain('history.md');
   });
   it('rejects duplicate IDs and dangling relationships', () => {
     const data = structuredClone(catalog);
@@ -34,7 +93,7 @@ describe('authored Workshop catalog boundary', () => {
     expect(errors).toContain('nicht gegenseitig');
     expect(errors).toContain('Zyklische Ableitung');
   });
-  it('rejects unsafe repository paths and missing files at the cited revision', () => {
+  it('rejects unsafe repository paths and missing files at the cited revision', async () => {
     for (const path of [
       '../secret',
       '/etc/passwd',
@@ -44,11 +103,9 @@ describe('authored Workshop catalog boundary', () => {
       'https://example.org/a',
     ])
       expect(safeRepositoryPath(path)).toBe(false);
-    const data = structuredClone(catalog);
+    const { root, data } = await historyFixture();
     data.references[0].sources[0].path = 'docs/nonexistent-reference.md';
-    expect(validateCatalogFiles(process.cwd(), data).join('\n')).toContain(
-      'docs/nonexistent-reference.md',
-    );
+    expect(validateCatalogFiles(root, data).join('\n')).toContain('docs/nonexistent-reference.md');
     data.references[0].sources[0].path = '../outside';
     expect(validateCatalog(data).join('\n')).toContain('Repository-Pfad');
   });
