@@ -1253,7 +1253,7 @@
         "Vorgeschlagene Geometrie und Sekundenwerte, kein Spieltuning",
         "Kein Audio, keine Auswahlentscheidung, v2/A-B-Vergleich folgt erst in Aufgabe 8"
       ],
-      "renderSupportRevision": null
+      "renderSupportRevision": "64b33b9a72b18dcf2b2101d86e0c4a2e5436d6ee"
     },
     {
       "id": "delivery-arrow-v2",
@@ -1278,7 +1278,7 @@
       "limitations": [
         "Schematische Studie mit vorgeschlagenen Zeiten/Geometrie, ohne Spielintegration."
       ],
-      "renderSupportRevision": null
+      "renderSupportRevision": "64b33b9a72b18dcf2b2101d86e0c4a2e5436d6ee"
     },
     {
       "id": "pickup-ring-v1",
@@ -1287,8 +1287,8 @@
       "date": "2026-10-01",
       "changeNote": "Unabhängige Beispielidee: wachsender Ring oder Scheibe mit eigenen Reglern für Endradius und Dauer. Keine Lieferpfeil-Regler oder Spielintegration.",
       "entry": "prototypes/pickup-ring/v1/index.html",
-      "sourceRevision": null,
-      "renderSupportRevision": null,
+      "sourceRevision": "68b04ae0e52f407b33979215b0a00037817405eb",
+      "renderSupportRevision": "64b33b9a72b18dcf2b2101d86e0c4a2e5436d6ee",
       "sourcePaths": [
         "workshop/prototypes/pickup-ring/v1/model.ts",
         "workshop/prototypes/pickup-ring/v1/view.ts",
