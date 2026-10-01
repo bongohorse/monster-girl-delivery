@@ -186,7 +186,10 @@ export async function buildHistorySupport(
                 '  const shadow = host.attachShadow({ mode: "open" });',
                 '  const style = document.createElement("style");',
                 `  style.textContent = historyStyles(${JSON.stringify(version.id)});`,
-                '  shadow.append(style, mounted.element);',
+                '  const frame = document.createElement("div");',
+                '  frame.className = "workshop-history-frame";',
+                '  frame.append(mounted.element);',
+                '  shadow.append(style, frame);',
                 '  return { element: host, dispose: () => mounted.dispose() };',
                 '}',
                 '',
@@ -205,8 +208,13 @@ export async function buildHistorySupport(
           ideaViews: normalizePath(join(directory, 'ideaViews.ts')),
           localSession: normalizePath(join(directory, 'localSession.ts')),
           viewAdapter: viewPath ? normalizePath(join(directory, 'viewAdapter.ts')) : null,
-          // A shadow tree has no document :root. Bind archived global defaults to its host.
-          styles: `${rootStyles.replace(/:root\b/g, ':host')}\n\n${ownStyles}`,
+          // Reset inherited defaults inside the shadow so current outer typography cannot leak in.
+          // rem otherwise follows the live document root even inside a shadow tree.
+          styles:
+            `.workshop-history-frame { all: initial; display: block; font-size: 16px; line-height: normal; direction: ltr; }\n${rootStyles.replace(/:root\b/g, '.workshop-history-frame')}\n\n${ownStyles}`.replace(
+              /(-?(?:\d*\.\d+|\d+))rem\b/g,
+              (_match, value: string) => `${Number(value) * 16}px`,
+            ),
         },
       ] as const;
     }),

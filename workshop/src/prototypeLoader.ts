@@ -30,6 +30,9 @@ export async function mountPrototype(versionId: string, data: Catalog, refresh: 
   const shadow = host.attachShadow({ mode: 'open' });
   const style = document.createElement('style');
   style.textContent = historyStyles(versionId);
-  shadow.append(style, mounted.element);
+  const frame = document.createElement('div');
+  frame.className = 'workshop-history-frame';
+  frame.append(mounted.element);
+  shadow.append(style, frame);
   return { element: host, dispose: mounted.dispose, configuration: current };
 }

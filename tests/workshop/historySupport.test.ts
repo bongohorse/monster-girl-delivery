@@ -43,7 +43,7 @@ async function fixture() {
       join(source, 'styles.css'),
       ':root { color-scheme: dark; font-family: historical; }\n.historical { color: red; }',
     ),
-    writeFile(join(own, 'styles.css'), '.own { width: 32px; }'),
+    writeFile(join(own, 'styles.css'), '.own { width: 32px; gap: 0.75rem; padding: .5rem 1rem; }'),
     writeFile(join(own, 'view.ts'), 'export function mountPilot() {}'),
   ]);
   execFileSync('git', ['init', '-q'], { cwd: root });
@@ -101,9 +101,16 @@ describe('historical Workshop rendering support', () => {
     expect(await readFile(after.ideaViews, 'utf8')).toBe(originalFacade);
     expect(after.styles).toBe(before.styles);
     expect(after.styles).toContain('color: red');
-    expect(after.styles).toContain(':host { color-scheme: dark; font-family: historical; }');
+    expect(after.styles).toContain(
+      '.workshop-history-frame { color-scheme: dark; font-family: historical; }',
+    );
+    expect(after.styles).toContain(
+      'all: initial; display: block; font-size: 16px; line-height: normal; direction: ltr;',
+    );
     expect(after.styles).not.toContain(':root');
     expect(after.styles).toContain('width: 32px');
+    expect(after.styles).toContain('gap: 12px; padding: 8px 16px;');
+    expect(after.styles).not.toContain('rem');
   });
 
   it('extracts only the required historical render functions and connects them to one live store', async () => {
@@ -139,7 +146,9 @@ describe('historical Workshop rendering support', () => {
     expect(adapter).toContain(join(root, 'workshop/prototypes/example/v1/view.ts'));
     expect(adapter).toContain('host.attachShadow({ mode: "open" })');
     expect(adapter).toContain('historyStyles("example-v1")');
-    expect(adapter).toContain('shadow.append(style, mounted.element)');
+    expect(adapter).toContain('frame.className = "workshop-history-frame"');
+    expect(adapter).toContain('frame.append(mounted.element)');
+    expect(adapter).toContain('shadow.append(style, frame)');
     expect(adapter).toContain('dispose: () => mounted.dispose()');
   });
 
