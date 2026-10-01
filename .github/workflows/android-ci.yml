@@ -11,8 +11,12 @@ on:
       - 'public/**'
       - 'assets/**'
       - 'scripts/assets/**'
+      - '!scripts/assets/package-smoke.ts'
       - 'src/**'
       - 'vite/**'
+      - '!vite/config.workshop.mjs'
+      - 'scripts/android-change-scope.ts'
+      - 'scripts/android-gradle.mjs'
       - 'scripts/android-release-version.mjs'
       - 'scripts/verify-android-launcher-assets.mjs'
       - 'scripts/verify-web-package.mjs'
@@ -32,8 +36,12 @@ on:
       - 'public/**'
       - 'assets/**'
       - 'scripts/assets/**'
+      - '!scripts/assets/package-smoke.ts'
       - 'src/**'
       - 'vite/**'
+      - '!vite/config.workshop.mjs'
+      - 'scripts/android-change-scope.ts'
+      - 'scripts/android-gradle.mjs'
       - 'scripts/android-release-version.mjs'
       - 'scripts/verify-android-launcher-assets.mjs'
       - 'scripts/verify-web-package.mjs'
@@ -47,7 +55,27 @@ permissions:
   contents: read
 
 jobs:
+  android-scope:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      build_android: ${{ steps.scope.outputs.build_android }}
+    steps:
+      - name: Check out complete event history
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .bun-version
+      - name: Check Android relevance before any APK build
+        id: scope
+        run: bun scripts/android-change-scope.ts ci >> "$GITHUB_OUTPUT"
+
   android-debug-build:
+    needs: android-scope
+    if: needs.android-scope.outputs.build_android == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
