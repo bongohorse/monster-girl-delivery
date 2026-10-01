@@ -1,4 +1,4 @@
-import type { Asset, Catalog, Category, Element, Reference } from './catalog';
+import type { Asset, Catalog, Category, Element, Idea, Reference } from './catalog';
 
 export const sections = [
   { id: 'documentation', name: 'Dokumentation' },
@@ -17,6 +17,8 @@ type RouteContent =
   | { kind: 'section' }
   | { kind: 'search' | 'references' | 'effects' }
   | { kind: 'reference'; reference: Reference }
+  | { kind: 'idea'; idea: Idea }
+  | { kind: 'draft'; draftId: string }
   | { kind: 'category'; category: Category }
   | { kind: 'element'; element: Element; category: Category }
   | { kind: 'asset'; asset: Asset }
@@ -43,6 +45,23 @@ export function resolveRoute(hash: string, data: Catalog): Route {
       title: special[1],
       section: 'documentation',
       breadcrumbs: [{ label: 'Dokumentation', href: '#/documentation' }, { label: special[1] }],
+    };
+  if (/^\/draft\/[a-z0-9]+(?:-[a-z0-9]+)*$/.test(path))
+    return {
+      kind: 'draft',
+      draftId: path.slice('/draft/'.length),
+      section: 'ideas',
+      title: 'Lokaler Entwurf',
+      breadcrumbs: [{ label: 'Ideen & Prototypen', href: '#/ideas' }, { label: 'Lokaler Entwurf' }],
+    };
+  const idea = data.ideas.find((item) => path === `/idea/${item.id}`);
+  if (idea)
+    return {
+      kind: 'idea',
+      idea,
+      section: 'ideas',
+      title: idea.name,
+      breadcrumbs: [{ label: 'Ideen & Prototypen', href: '#/ideas' }, { label: idea.name }],
     };
   const reference = data.references.find((item) => path === `/reference/${item.id}`);
   if (reference)

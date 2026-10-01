@@ -59,3 +59,16 @@ describe('Workshop shared links', () => {
     }
   });
 });
+
+it('opens a repository idea and a local draft without pretending the draft exists on another device', () => {
+  expect(resolveRoute('#/idea/delivery-arrow-study?size=48', catalog)).toMatchObject({
+    kind: 'idea',
+    section: 'ideas',
+  });
+  expect(resolveRoute('#/draft/local-one', catalog)).toMatchObject({
+    kind: 'draft',
+    draftId: 'local-one',
+    section: 'ideas',
+  });
+  expect(resolveRoute('#/idea/not-known', catalog).kind).toBe('not-found');
+});

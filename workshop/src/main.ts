@@ -2,6 +2,8 @@ import { assetDetail } from './assetGallery';
 import { catalog, type Element } from './catalog';
 import { backlinkView, referenceDetail, searchForm, searchView, specialView } from './catalogViews';
 import { elementDetail } from './elementDetail';
+import { draftDetail, elementIdeas, ideaDetail, ideasOverview } from './ideaViews';
+import { localDrafts } from './localSession';
 import { mediaImage } from './media';
 import { resolveRoute, sections } from './navigation';
 import { documentationLabels, link, node, repository } from './ui';
@@ -67,10 +69,6 @@ function documentation(): HTMLElement[] {
 
 function pendingSection(section: string): HTMLElement[] {
   const copy: Record<string, [string, string]> = {
-    ideas: [
-      'Prototype Lab',
-      'Freie Ideen und interaktive Studien folgen ab Aufgabe 6. Der Lieferpfeil-Pilot ist noch nicht ausführbar.',
-    ],
     reviews: [
       'Noch keine veröffentlichten Reviews',
       'Feedback und Entscheidungen folgen in Aufgabe 8. Es liegt keine Workshop-Auswahlentscheidung vor.',
@@ -135,7 +133,9 @@ function render(moveFocus = false): void {
     view.append(
       ...(route.section === 'documentation'
         ? documentation()
-        : pendingSection(route.section ?? '')),
+        : route.section === 'ideas'
+          ? ideasOverview(catalog, () => render(true))
+          : pendingSection(route.section ?? '')),
     );
   } else if (route.kind === 'category') {
     const elements = catalog.elements.filter((element) => element.categoryId === route.category.id);
@@ -152,10 +152,28 @@ function render(moveFocus = false): void {
   } else if (route.kind === 'element') {
     view.append(
       elementDetail(route.element, catalog, preview(route.element)),
+      elementIdeas(catalog, route.element.id),
       backlinkView(route.element.id),
     );
   } else if (route.kind === 'asset') {
     view.append(assetDetail(route.asset, catalog), backlinkView(route.asset.id));
+  } else if (route.kind === 'idea') {
+    view.append(...ideaDetail(route.idea, catalog, () => render(true)));
+  } else if (route.kind === 'draft') {
+    const draft = localDrafts.snapshot().drafts.find((d) => d.id === route.draftId);
+    if (draft) {
+      document.title = `${draft.name} · MGD Workshop`;
+      const heading = view.querySelector('h1');
+      if (heading) heading.textContent = draft.name;
+      view.append(...draftDetail(draft, catalog, () => render(true)));
+    } else
+      view.append(
+        node(
+          'p',
+          'Dieser lokale Entwurf ist in diesem Browser nicht vorhanden. Er kann über seinen JSON-Export importiert werden.',
+        ),
+        ...ideasOverview(catalog, () => render(true)),
+      );
   } else if (route.kind === 'search') {
     view.append(...searchView(catalog, window.location.hash));
   } else if (route.kind === 'reference') {

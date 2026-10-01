@@ -1,3 +1,4 @@
+import { controlPreview } from '../prototypes/delivery-arrow/controls-v0/model.ts';
 import type { Catalog } from './catalog.ts';
 
 const idPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -224,6 +225,16 @@ export function validateCatalog(input: unknown): string[] {
     for (const key of ['tags', 'elementIds', 'assetIds']) strings(r[key], `${p}.${key}`);
     sources(r.sources, `${p}.sources`);
   });
+  records('ideas', (r, p) => {
+    fields(r, ['name', 'question', 'categoryId'], p);
+    for (const key of ['tags', 'elementIds', 'referenceIds']) strings(r[key], `${p}.${key}`);
+    choice(r.reviewState, ['draft', 'in-review', 'selected', 'rejected'], `${p}.reviewState`);
+    bool(r.archived, `${p}.archived`);
+    if (r.prototypeId !== null && r.prototypeId !== controlPreview.versionId)
+      fail(p, 'Unbekannter Controls-Vorläufer');
+    if (r.prototypeId === controlPreview.versionId && r.id !== controlPreview.ideaId)
+      fail(p, 'Controls-Vorläufer gehört zu anderer Idee');
+  });
   // Relationship checks only follow structurally valid records.
   if (errors.length) return errors;
   const data = input as Catalog;
@@ -234,6 +245,7 @@ export function validateCatalog(input: unknown): string[] {
     data.assets,
     data.artifacts,
     data.references,
+    data.ideas,
   ])
     for (const record of records) {
       if (ids.has(record.id)) fail(record.id, 'Doppelte ID');
@@ -298,6 +310,11 @@ export function validateCatalog(input: unknown): string[] {
     exists(r.categoryId, data.categories, r.id);
     for (const id of r.elementIds) exists(id, data.elements, r.id);
     for (const id of r.assetIds) exists(id, data.assets, r.id);
+  }
+  for (const idea of data.ideas) {
+    exists(idea.categoryId, data.categories, idea.id);
+    for (const id of idea.elementIds) exists(id, data.elements, idea.id);
+    for (const id of idea.referenceIds) exists(id, data.references, idea.id);
   }
   return errors;
 }

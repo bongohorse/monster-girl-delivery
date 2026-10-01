@@ -22,7 +22,7 @@ describe('Workshop catalog search', () => {
     expect(ids({ query: 'Phaser-Primitiven GPS' })).toEqual(['delivery-arrow']);
     expect(ids({ kind: 'reference' })).toEqual(['art-gate-reference']);
     expect(ids({ type: 'Mechanik' })).toEqual(['parcel-delivery']);
-    expect(ids({ section: 'ideas' })).toEqual([]);
+    expect(ids({ section: 'ideas' })).toEqual(['delivery-arrow-study']);
     expect(ids({ query: 'nichtvorhanden' })).toEqual([]);
     expect(ids({ categoryId: 'audio' })).toEqual([]);
     expect(ids({ archive: 'archived' })).toEqual([]);
@@ -39,4 +39,24 @@ describe('Workshop catalog search', () => {
       searchCatalog(catalog, { kind: 'asset' }),
     );
   });
+});
+
+import { createDraft } from '../../workshop/src/localData';
+import { withLocalDrafts } from '../../workshop/src/search';
+
+it('adds local drafts to search and backlinks without altering the generated repository index', () => {
+  const index = createCatalogIndex(catalog);
+  const draft = createDraft(catalog, ['parcel'], 'local-one', '2026-09-30T12:00:00.000Z');
+  draft.question = 'Grelles Paket?';
+  const combined = withLocalDrafts(index, [draft]);
+  expect(
+    searchCatalog(
+      catalog,
+      { kind: 'draft', query: 'Grelles', section: 'ideas', ideaReview: 'draft' },
+      combined,
+    ).map((e) => e.id),
+  ).toEqual(['local-one']);
+  expect(searchCatalog(catalog, { kind: 'draft', ideaReview: 'selected' }, combined)).toEqual([]);
+  expect(combined.backlinks.parcel.some((link) => link.id === draft.id)).toBe(true);
+  expect(index.backlinks.parcel.some((link) => link.id === draft.id)).toBe(false);
 });

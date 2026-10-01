@@ -100,6 +100,19 @@ export interface Reference {
   sources: Source[];
 }
 
+export interface Idea {
+  id: string;
+  name: string;
+  question: string;
+  categoryId: string;
+  tags: string[];
+  elementIds: string[];
+  referenceIds: string[];
+  reviewState: string;
+  archived: boolean;
+  prototypeId: string | null;
+}
+
 export interface Catalog {
   schemaVersion: number;
   codeReviewRevision: string;
@@ -109,6 +122,7 @@ export interface Catalog {
   assets: Asset[];
   artifacts: Artifact[];
   references: Reference[];
+  ideas: Idea[];
 }
 
 // Reject malformed authored data before either Vite or the browser consumes it.
