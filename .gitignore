@@ -44,3 +44,6 @@ reports/browser-runtime-smoke/
 # Separate Workshop and composed Pages output
 dist-workshop/
 dist-pages/
+
+# Automatically generated Workshop media snapshots
+workshop/.generated/

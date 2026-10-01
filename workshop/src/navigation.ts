@@ -1,4 +1,4 @@
-import type { Catalog, Category, Element } from './catalog';
+import type { Asset, Catalog, Category, Element } from './catalog';
 
 export const sections = [
   { id: 'documentation', name: 'Dokumentation' },
@@ -17,6 +17,7 @@ type RouteContent =
   | { kind: 'section' }
   | { kind: 'category'; category: Category }
   | { kind: 'element'; element: Element; category: Category }
+  | { kind: 'asset'; asset: Asset }
   | { kind: 'not-found' };
 export type Route = RouteContent & {
   section: SectionId | null;
@@ -59,6 +60,24 @@ export function resolveRoute(hash: string, data: Catalog): Route {
         root,
         { label: owner.name, href: `#/documentation/${owner.id}` },
         { label: element.name },
+      ],
+    };
+  }
+  const asset = data.assets.find((item) => path === `/asset/${item.id}`);
+  const assetOwner = asset && data.elements.find((item) => item.assetIds.includes(asset.id));
+  const assetCategory =
+    assetOwner && data.categories.find((item) => item.id === assetOwner.categoryId);
+  if (asset && assetOwner && assetCategory) {
+    return {
+      kind: 'asset',
+      asset,
+      section: 'documentation',
+      title: asset.name,
+      breadcrumbs: [
+        root,
+        { label: assetCategory.name, href: `#/documentation/${assetCategory.id}` },
+        { label: assetOwner.name, href: `#/element/${assetOwner.id}` },
+        { label: asset.name },
       ],
     };
   }

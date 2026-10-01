@@ -15,6 +15,17 @@ describe('Workshop shared links', () => {
     ]);
   });
 
+  it('opens an asset directly with its element and category breadcrumbs', () => {
+    const route = resolveRoute('#/asset/red-monster-missile', catalog);
+    expect(route.kind).toBe('asset');
+    expect(route.breadcrumbs).toEqual([
+      { label: 'Dokumentation', href: '#/documentation' },
+      { label: 'Hazards', href: '#/documentation/hazards' },
+      { label: 'Red Missile', href: '#/element/red-missile' },
+      { label: 'Red Monster Missile' },
+    ]);
+  });
+
   it('keeps empty categories navigable and discovers new categories from data', () => {
     const data = {
       ...catalog,

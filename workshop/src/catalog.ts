@@ -1,4 +1,4 @@
-import data from '../data/catalog.json';
+import data from '../data/catalog.json' with { type: 'json' };
 
 export interface Category {
   id: string;
@@ -38,12 +38,54 @@ export interface Element {
   };
   implementation: string;
   archived: boolean;
-  previewPath: string | null;
+  previewArtifactId: string | null;
+  assetIds: string[];
   sources: Source[];
   detailSections: { title: string; facts: Fact[] }[];
   relatedElementIds: string[];
   openQuestions: string[];
   sourceConflicts: string[];
+}
+
+export interface Asset {
+  id: string;
+  name: string;
+  description: string;
+  elementIds: string[];
+  artifactIds: string[];
+  variant: string;
+  review: { state: string; date: string; reason: string; sourceUrl: string };
+  usage: { state: string; revision: string; reason: string; evidence: Source[] };
+  archived: boolean;
+  history: { id: string; revision: string; path: string; date: string; note: string }[];
+  openQuestions: string[];
+}
+
+export interface Artifact {
+  id: string;
+  assetId: string;
+  sourcePath: string | null;
+  revision: string | null;
+  sha256: string | null;
+  role: string;
+  runtimeAssetId: string | null;
+  recipe: Source | null;
+  derivedFromArtifactId: string | null;
+  metadata: {
+    format: string;
+    width: number;
+    height: number;
+    hasAlpha: boolean;
+    durationSeconds: number | null;
+  };
+  provenance: { text: string; prompt: string | null; referenceUrls: string[] };
+}
+
+export interface PublishedArtifact extends Artifact {
+  url: string;
+  path: string;
+  sha256: string;
+  generation: string | null;
 }
 
 export interface Catalog {
@@ -52,6 +94,8 @@ export interface Catalog {
   deployedGameRevision: string | null;
   categories: Category[];
   elements: Element[];
+  assets: Asset[];
+  artifacts: Artifact[];
 }
 
 // This checked-in sample is typed here. Runtime import/schema validation belongs to task 5.

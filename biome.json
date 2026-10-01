@@ -11,7 +11,8 @@
       "!assets/processed",
       "!src/generated/assets.ts",
       "!dist-workshop",
-      "!dist-pages"
+      "!dist-pages",
+      "!workshop/.generated"
     ]
   },
   "formatter": {
