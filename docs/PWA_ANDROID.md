@@ -35,7 +35,7 @@ Expected project URL:
 
 `https://bongohorse.github.io/monster-girl-delivery/`
 
-The Pages workflow builds the normal Vite production output and deploys only `dist/`. Pull requests build the same artifact but do not deploy it.
+The Pages workflow builds the normal Vite production game output in `dist/` and the independent Workshop in `dist-workshop/`. It composes both into `dist-pages/`: game at root, Workshop under `workshop/`. Android continues to package only `dist/`. Pull requests build and upload a reviewable preview without deploying it; main publication uses the composed Pages artifact. See [Workshop build and cache evidence](WORKSHOP_GUIDE.md#pages-bauen-und-aktualisieren-aufgabe-10).
 
 Repository Settings → Pages → Source must be **GitHub Actions**. Branch/Jekyll publishing is not supported: it can overwrite `dist/` with uncompiled repository sources. The deployment job reads the Pages `build_type` and fails with setup instructions unless it is `workflow`.
 

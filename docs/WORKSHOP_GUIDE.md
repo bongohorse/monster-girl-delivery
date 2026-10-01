@@ -1,7 +1,13 @@
 # MGD Workshop — Idee ausprobieren und Spielaufgabe übergeben
 
-Stand: Aufgabe 9 aus [#522](https://github.com/bongohorse/monster-girl-delivery/issues/522).
+Stand: Aufgabe 10 aus [#522](https://github.com/bongohorse/monster-girl-delivery/issues/522).
 Die Werkstatt ist eine Browserstudie; Spielintegration und Veröffentlichung bleiben separate Aufträge.
+
+**Umfang:** Die zehn Aufgaben liefern die technische Workshop-Grundlage mit einem kleinen
+Beispielkatalog: sechs Elemente, vier Assets, die Lieferpfeilversionen v1/v2 und eine
+unabhängige Pickup-Studie. Die vollständige Erfassung aller vorhandenen Spielelemente
+ist noch offen und wird anschließend separat erweitert. Leere Kategorien sind keine
+Bestätigung, dass das Spiel dort keine Inhalte besitzt.
 
 ## Konkreten Stand übergeben
 
@@ -39,6 +45,51 @@ Geschützt sind **Szenendarstellung, Ablauf/Parameterauflösung und Defaults** e
 
 Die neue Supportbindung sichert den überprüften Darstellungsstand der bestehenden v1/v2 nachträglich ab; sie behauptet nicht, dass ihre früheren PRs schon vollständige gemeinsame Abhängigkeiten archiviert hatten. Git-Tests ändern aktuelle Helfer/Styles und prüfen unveränderte historische Ausgabe. Browserprüfungen vergleichen v1/v2 und versuchen äußere CSS-Überschreibungen; diese verändern die isolierte Szene nicht.
 
-## Noch offen: Aufgabe 10
+Die Importgrenze stellt nach einem gültigen JSON-Import das Konzept des letzten passenden
+importierten Presets vor dem erneuten Öffnen der Studie wieder her. Explizite Konzept- und
+Reglerwerte im Link behalten Vorrang; Presets anderer Versionen werden nicht übernommen.
+Diese Korrektur betrifft den gemeinsamen Datentransport, nicht die gebundenen Szenenquellen.
 
-Pages muss Spiel und Workshop in einem gemeinsamen Artefakt veröffentlichen, ohne Workshop-Code ins Spiel-/APK-Paket zu übernehmen. Der Checkout muss alle registrierten historischen Commits enthalten; fehlende SHA/Pfade brechen den Workshop-Build ab. Workflowtrigger, PR-Builds, echter Pages-Unterpfad sowie tatsächlicher PWA-/Service-Worker-Cache und Spielstandsisolation sind in Aufgabe 10 zu prüfen. Der lokale Produktions-Smoke-Test ist kein Live-Publikationsnachweis.
+## PR-Kette später zusammenführen
+
+Empfohlene Reihenfolge: **#527 → #528 → #529 → #530 → #531 → #532 → #533 → #534 → #535 → #536**.
+Nach jedem vorausgehenden Merge den nächsten PR auf `main` umstellen und Diff sowie
+Prüfungen auf dem dann tatsächlich zu mergenden Stand kontrollieren. Die Drafts bleiben
+bis zur ausdrücklichen Merge-/Veröffentlichungsbeauftragung offen.
+
+Für diese Kette **Merge-Commits verwenden**, keine Squash-/Rebase-Merges und keine
+Umschreibung der Quellcommits. `sourceRevision` und `renderSupportRevision` verweisen
+auf ursprüngliche Commits; `fetch-depth: 0` allein holt keine nicht mehr aus `main`
+erreichbaren Branchcommits. Merge-Commits erhalten diese Abstammung auch nach späterem
+Löschen der Arbeitsbranches. PR-interne GitHub-Refs sind kein dauerhafter Buildvertrag.
+
+Abschlussprüfung am 01.10.2026: Eine ausschließlich lokale Git-Objektsimulation der zehn
+Merge-Commits und ein frischer Single-Branch-Checkout enthielten alle acht referenzierten
+Revisionen als Vorfahren; die tatsächliche Katalog-Dateiprüfung bestand. Beim entsprechenden
+Squash-Checkout fehlten vier Revisionen: Lieferpfeil-v1/v2, Pickup-v1 und Render-Support.
+Dabei wurde kein Repository-PR gemergt und nichts veröffentlicht.
+
+Der abschließende Merge nach `main` löst den bestehenden Pages-Deployworkflow automatisch
+aus. Die spätere Beauftragung muss diese Veröffentlichung abdecken. Die aktuelle
+Abschlussprüfung erlaubt weder Merge noch Deployment und schließt #522 nicht.
+
+## Pages bauen und aktualisieren (Aufgabe 10)
+
+```bash
+bun run build
+bun run workshop:typecheck
+bun run workshop:check
+bun run workshop:build
+bun run pages:assemble
+MGD_CHROME_PATH=/pfad/zu/chrome bun run pages:smoke
+```
+
+Die Builds nacheinander ausführen: beide verwenden die vorhandene geschützte Asset-Pipeline. `dist` bleibt das Spiel-/Capacitor-Paket, `dist-workshop` die separate Browserwerkstatt. `pages:assemble` erstellt eine frische Ausgabe `dist-pages`: Spiel am Root, Workshop ausschließlich unter `workshop/`. Fehlende Eingaben oder ein belegter `dist/workshop`-Pfad brechen vor Ersetzen der Ausgabe ab. Beide Eingaben bleiben unverändert.
+
+Der vorhandene `.github/workflows/pages-deploy.yml` holt die vollständige Git-Historie (`fetch-depth: 0`), prüft die referenzierten historischen Quellen, baut beide Pakete, verifiziert Spiel-PWA/Assets und prüft die zusammengesetzte Ausgabe in Chromium unter `/monster-girl-delivery/`. Workshop-, Script-, Test- und Dokumentationspfade lösen den Workflow aus. PRs liefern ein `pages-preview-<sha>`-Artefakt und Browsernachweise für 14 Tage; sie veröffentlichen nicht. Berechtigte main-Läufe laden `dist-pages` als ein Pages-Artefakt hoch. Merge/Veröffentlichung folgt weiterhin dem ausdrücklich beauftragten Scope.
+
+Der automatisierte Pages-Smoke öffnet das echte Spiel und den Workshop auf derselben Origin, prüft Galerie/Medien, unabhängige Controls, Share-Link, Vergleich, JSON-Roundtrip, fehlerhaften Import, getrennte lokale Daten und jeden registrierten Standalone-Einstieg. Worker-Controller, Registrierungen und CacheStorage werden vor/nach dem Workshop geprüft. Der vorhandene Spiel-Paket-Smoke verwendet denselben Chromium-Runner; die Beobachter sind ausschließlich im Testserver injiziert und werden nicht ausgeliefert.
+
+**Cachegrenze und Live-Nachweis:** MGD registriert gemäß [PWA_ANDROID.md](PWA_ANDROID.md#deliberate-no-service-worker-policy) bewusst keinen Service Worker; ein Manifest-Scope ist keine Worker- oder Cachefunktion. Am 01.10.2026 um 14:41:58 UTC zeigte die tatsächliche Pages-Origin im frischen Chromium-Kontext nach Spielstart und Reload: kein Controller, keine Registrierungen, CacheStorage leer; alle 33 beobachteten Antworten kamen ohne Service Worker. `/workshop/` lieferte dort noch HTTP 404. Deployment-Metadaten ordneten das Live-Spiel `1fafb9e71a704ae2848bb5215c65328cb422441a` zu ([Workflow](https://github.com/bongohorse/monster-girl-delivery/actions/runs/36781553761)); das geladene Bundle hatte SHA256 `c4667a85895092da6d9fd6ed8366d100a7f1ce9019d41656500f656e9d82d4ac`.
+
+Das ist ein Nachweis für diese frische Sitzung, keine Prüfung fremder bestehender Benutzerprofile oder HTTP-/CDN-Caches. Die neue gemeinsame Ausgabe wird lokal und im PR geprüft; sie ist bis zur beauftragten Veröffentlichung kein Live-Workshop-Nachweis. Nach Veröffentlichung unter der echten Pages-URL Direktlink/Reload, Medien, Standalones und Worker-/CacheStoragezustand erneut prüfen. Echte Geräte-/Installationsprüfung bleibt gesonderte Evidenz; Touch-/Landscape-Emulation beweist keinen Gerätetest.

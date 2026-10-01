@@ -112,7 +112,23 @@ function historicalNotesFacade(source: string, root: string): string {
         item.declaration.id?.name === name,
     );
     if (!statement) throw new Error(`Workshop-Historienfunktion fehlt: ideaViews.${name}`);
-    return source.slice(statement.start, statement.end);
+    if (name !== 'dataTransfer') return source.slice(statement.start, statement.end);
+    const id =
+      statement.type === 'ExportNamedDeclaration' &&
+      statement.declaration?.type === 'FunctionDeclaration' &&
+      statement.declaration.id;
+    if (!id) throw new Error('Workshop-Historienimportfunktion fehlt');
+    // Wrap the live import transport while retaining the historical form and scene sources.
+    return `${source.slice(statement.start, id.start)}historicalDataTransfer${source.slice(id.end, statement.end)}
+export function dataTransfer(data: Catalog, refresh: () => void = () => {}, currentConfig?: () => LocalConfiguration): HTMLElement {
+  return historicalDataTransfer(data, () => {
+    if (currentConfig) {
+      const hash = importedVariantHash(localDrafts.snapshot(), currentConfig().versionId, location.hash);
+      history.replaceState(null, '', location.pathname + location.search + hash);
+    }
+    refresh();
+  }, currentConfig);
+}`;
   });
   if (!button) throw new Error('Workshop-Historienfunktion fehlt: ideaViews.button');
   const live = (name: string) => JSON.stringify(normalizePath(join(root, `workshop/src/${name}`)));
@@ -122,6 +138,7 @@ function historicalNotesFacade(source: string, root: string): string {
     `import type { Catalog } from ${live('catalog.ts')};`,
     `import { type LocalConfiguration, maxImportBytes, parseLocalData, serializeLocalData } from ${live('localData.ts')};`,
     `import { workshopDrafts as localDrafts } from ${live('localSession.ts')};`,
+    `import { importedVariantHash } from ${live('prototypeConfiguration.ts')};`,
     source.slice(button.start, button.end),
     ...helpers,
   ].join('\n\n');

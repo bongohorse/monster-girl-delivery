@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
 import { effectAt, pickupRing } from '../../workshop/prototypes/pickup-ring/v1/model';
-import { validConfiguration } from '../../workshop/src/prototypeConfiguration';
+import { importedVariantHash, validConfiguration } from '../../workshop/src/prototypeConfiguration';
 
 it('validates an independent idea with its own controls without delivery defaults', () => {
   expect(
@@ -33,6 +33,31 @@ it('validates an independent idea with its own controls without delivery default
 import { catalog } from '../../workshop/src/catalog';
 import { buildHandoff, handoffMarkdown } from '../../workshop/src/handoff';
 import { emptyLocalData, parseLocalData, serializeLocalData } from '../../workshop/src/localData';
+
+it('restores an imported concept on a bare version link without overriding explicit link values', () => {
+  const data = emptyLocalData();
+  data.presets.push({
+    id: 'exported-preview',
+    name: 'Exportierte Vorschau',
+    ideaId: pickupRing.ideaId,
+    versionId: pickupRing.versionId,
+    variantId: 'disc',
+    values: { radius: 32, duration: 0.6 },
+    date: '2026-10-01T12:00:00.000Z',
+  });
+  expect(importedVariantHash(data, pickupRing.versionId, '#/version/pickup-ring-v1')).toBe(
+    '#/version/pickup-ring-v1?variant=disc',
+  );
+  expect(importedVariantHash(data, pickupRing.versionId, '')).toBe('#?variant=disc');
+  const explicit = '#/version/pickup-ring-v1?variant=ring&radius=48&duration=1';
+  expect(importedVariantHash(data, pickupRing.versionId, explicit)).toBe(explicit);
+  expect(
+    importedVariantHash(data, pickupRing.versionId, '#/version/pickup-ring-v1?radius=48'),
+  ).toBe('#/version/pickup-ring-v1?radius=48&variant=disc');
+  expect(importedVariantHash(data, 'delivery-arrow-v1', '#/version/delivery-arrow-v1')).toBe(
+    '#/version/delivery-arrow-v1',
+  );
+});
 
 it('exports the independent idea from its effective values, sources and own units', () => {
   const config = {

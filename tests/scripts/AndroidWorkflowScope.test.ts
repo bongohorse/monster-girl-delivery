@@ -17,6 +17,8 @@ function fixture() {
     scripts: Record<string, string>;
     dependencies: Record<string, string>;
   } = JSON.parse(readFileSync('package.json', 'utf8'));
+  delete manifest.scripts['workshop:check'];
+  delete manifest.scripts['pages:assemble'];
   const git = (...args: string[]) =>
     execFileSync('git', args, { cwd: root, encoding: 'utf8' }).trim();
   git('init', '-q');

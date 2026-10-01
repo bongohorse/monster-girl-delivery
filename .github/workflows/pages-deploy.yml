@@ -12,6 +12,13 @@ on:
       - 'assets/**'
       - 'scripts/assets/**'
       - 'src/**'
+      - 'workshop/**'
+      - 'scripts/workshop/**'
+      - 'scripts/browser/**'
+      - 'tests/workshop/**'
+      - 'docs/**'
+      - '*.md'
+      - 'tsconfig.workshop.json'
       - 'vite/**'
       - 'scripts/verify-web-package.mjs'
       - 'tsconfig.json'
@@ -26,6 +33,13 @@ on:
       - 'assets/**'
       - 'scripts/assets/**'
       - 'src/**'
+      - 'workshop/**'
+      - 'scripts/workshop/**'
+      - 'scripts/browser/**'
+      - 'tests/workshop/**'
+      - 'docs/**'
+      - '*.md'
+      - 'tsconfig.workshop.json'
       - 'vite/**'
       - 'scripts/verify-web-package.mjs'
       - 'tsconfig.json'
@@ -47,6 +61,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       - name: Set up Bun
         uses: oven-sh/setup-bun@v2
@@ -59,16 +75,56 @@ jobs:
       - name: Build production web app
         run: bun run build
 
+      # Source-image exclusion belongs to game dist; Workshop galleries intentionally show originals.
       - name: Verify production PWA package
         run: |
           node scripts/verify-web-package.mjs dist
           bun scripts/assets/check-package.ts dist
 
+      - name: Check Workshop types and historical catalog
+        run: |
+          bun run workshop:typecheck
+          bun run workshop:check
+
+      - name: Build independent Workshop
+        run: bun run workshop:build
+
+      - name: Assemble game and Workshop Pages package
+        run: |
+          bun run pages:assemble
+          node scripts/verify-web-package.mjs dist-pages
+          diff --recursive --brief --exclude=workshop dist dist-pages
+
+      - name: Check composed Pages in real Chromium
+        env:
+          MGD_PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          export MGD_CHROME_PATH="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)"
+          bun run pages:smoke
+
+      - name: Upload Pages browser evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: pages-browser-${{ github.sha }}
+          path: reports/browser-runtime-smoke/pages/
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload reviewable Pages package
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v7
+        with:
+          name: pages-preview-${{ github.sha }}
+          path: dist-pages/
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Upload GitHub Pages artifact
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@v5
         with:
-          path: dist
+          path: dist-pages
 
   deploy:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'

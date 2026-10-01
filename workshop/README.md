@@ -1,6 +1,8 @@
-# MGD Workshop — lokales Grundgerüst
+# MGD Workshop — Browserwerkstatt
 
-Stand: Aufgabe 9 aus [#522](https://github.com/bongohorse/monster-girl-delivery/issues/522).
+Stand: Aufgabe 10 aus [#522](https://github.com/bongohorse/monster-girl-delivery/issues/522).
+Die zehn Aufgaben liefern die technische Workshop-Grundlage mit einem kleinen Beispielkatalog.
+Die vollständige Erfassung aller vorhandenen Spielelemente ist noch offen.
 Vier Bereiche, zwölf Kategorien und sechs echte Elementkarten sind navigierbar.
 Leere Kategorien und noch nicht umgesetzte Bereiche sind sichtbar gekennzeichnet.
 Elementseiten zeigen typabhängige Fakten mit Einheiten und Belegen, eigene Prüfrevisionen,
@@ -36,8 +38,8 @@ Metadaten, getrennte Review-/Verwendungszustände und vorhandene revisionsgebund
 Generierte Runtime-Dateien erhalten keinen vorgetäuschten GitHub-Dateilink; ihr Rezept,
 Original und Generation/Outputhash sind sichtbar. Eine Trial-Auswahl ist keine finale Artabnahme.
 
-Noch nicht umgesetzt: Pages-Anbindung (10). Es liegt kein Live-Deployment vor.
-Der [technische Plan](../docs/WORKSHOP_PLAN.md) beschreibt diese folgenden Schritte.
+Pages baut Spiel und Workshop als gemeinsames `dist-pages`-Artefakt. `dist` bleibt das separate Spiel-/Android-Paket. PRs veröffentlichen nicht; es liegt noch kein Live-Workshop-Deployment vor.
+Die [kurze Anleitung](../docs/WORKSHOP_GUIDE.md#pages-bauen-und-aktualisieren-aufgabe-10) beschreibt Assembly, Browserprüfung, historische Git-Quellen und Veröffentlichung über den bestehenden Workflow.
 
 Suche (`#/search`) erfasst Namen, Beschreibungen und Tags von Elementen, Assets und
 Referenzen, Repository-Ideen, ausführbare Versionen und lokale Entwürfe. Filter sind kombinierbar; Review/Verwendung und Dokumentationsstand/Umsetzung
@@ -52,7 +54,7 @@ Ableitungszyklen. Fehlende Quellen oder ungültige Einträge brechen mit Dateipf
 Die Prüfung bestätigt die Existenz der Belege, nicht automatisch die Richtigkeit ihrer Aussagen.
 
 
-`#/ideas` zeigt eine Repository-Idee und lokale, unveröffentlichte Entwürfe.
+`#/ideas` zeigt Repository-Ideen und lokale, unveröffentlichte Entwürfe.
 „Freie Idee anlegen“ arbeitet ohne Ausgangselement; „Idee aus diesem Element“ hält
 Element-ID, Dokumentationsrevision und Quellen fest. Im Entwurf lassen sich weitere
 Ausgangselemente, Frage, gewünschte Änderung, zu bewahrende Eigenschaften, Kategorie,
@@ -150,4 +152,4 @@ gebunden; Root/Standalone isolieren sie in Shadow DOM. Der aktuelle gemeinsame
 Store bleibt als kompatible Datengrenze verfügbar, damit neue und alte Versionen
 gemeinsam exportierbar bleiben. Der Build lehnt ungebundene Szene-Imports ab.
 Die [kurze Anleitung und genaue Historiengrenze](../docs/WORKSHOP_GUIDE.md) beschreiben
-Registrierung, konkreten Nachweis, Quellebindung und die noch offene Aufgabe 10.
+Registrierung, konkreten Nachweis, Quellenbindung und die Pages-Anbindung.

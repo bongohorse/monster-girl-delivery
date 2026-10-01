@@ -1251,7 +1251,7 @@
       "limitations": [
         "Schematische Zeitstudie ohne Gameplay-Kollisionen oder Inputsimulation",
         "Vorgeschlagene Geometrie und Sekundenwerte, kein Spieltuning",
-        "Kein Audio, keine Auswahlentscheidung, v2/A-B-Vergleich folgt erst in Aufgabe 8"
+        "Kein Audio und keine publizierte Auswahlentscheidung; v2/A-B-Vergleich ist im Workshop verfügbar"
       ],
       "renderSupportRevision": "64b33b9a72b18dcf2b2101d86e0c4a2e5436d6ee"
     },

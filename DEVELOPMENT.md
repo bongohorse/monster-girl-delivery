@@ -39,6 +39,11 @@ Current package scripts:
 | `bun run ci:check` | Run non-modifying Biome CI validation |
 | `bun run typecheck` | Run `tsc --noEmit` |
 | `bun run test` | Run Vitest once |
+| `bun run workshop:dev` | Start the independent Workshop at port 8081 |
+| `bun run workshop:typecheck`, `bun run workshop:check` | Validate Workshop types and revision-bound catalogue |
+| `bun run workshop:build` | Build only the Workshop into `dist-workshop` |
+| `bun run pages:assemble` | Compose existing game and Workshop builds into `dist-pages` |
+| `bun run pages:smoke` | Check the composed Pages package in Chromium (`MGD_CHROME_PATH` required) |
 
 The project standard is **Vitest**; do not substitute `bun test` for the documented test command.
 
@@ -192,7 +197,7 @@ install
 
 Additional path-filtered or manual evidence workflows are not part of every PR by default. In particular, the browser-runtime smoke runs for browser/runtime-relevant paths, while coverage, mutation and stability audits remain targeted diagnostics under [`docs/TEST_QUALITY.md`](docs/TEST_QUALITY.md).
 
-`main` may additionally deploy the validated web build to GitHub Pages.
+`main` may additionally deploy the validated game/Workshop Pages package to GitHub Pages. The Pages workflow fetches complete history for the Workshop catalogue, validates both builds and runs a production browser smoke. PRs upload a reviewable `pages-preview-<sha>` artifact and evidence without publishing. Build the two inputs sequentially because both use the asset writer lock; see [Workshop hosting instructions](docs/WORKSHOP_GUIDE.md#pages-bauen-und-aktualisieren-aufgabe-10).
 
 ## 9. Dependencies
 
