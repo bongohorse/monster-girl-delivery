@@ -1,6 +1,6 @@
 ---
 name: mgd-acceptance
-description: "Assess a concrete MGD game change or prepare reviewable evidence for the Director. Use for explicit acceptance/review tasks or evidence needing reconciliation; ordinary implementation completion does not automatically require another handoff."
+description: "Assess acceptance criteria for a concrete MGD game change or reconcile evidence for the Director. Diff/PR reviews use code-review; ordinary implementation completion does not automatically require another handoff."
 ---
 
 # MGD Acceptance
@@ -11,7 +11,7 @@ Make it clear what was checked and what remains unknown. [AGENTS](../../../AGENT
 
 Identify the concrete task/change, intended result and in-scope acceptance criteria. Read only relevant product/architecture rules and changed source/tests. Separate this stage's requirements from future work: an image pilot does not need a future audio/gallery pipeline.
 
-Lead with this skill when the request is to assess a change. During implementation, use its guidance only if evidence needs reconciliation; keep the development skill in charge. Consult a domain skill only for a material domain question rather than loading every skill mentioned by the diff.
+Lead acceptance-criteria assessment and evidence reconciliation with this skill. [code-review](../code-review/SKILL.md) leads engineering and spec/runtime review of a diff/PR, including its evidence checks; do not add a separate acceptance handoff to that review. During implementation, use this guidance only if evidence needs reconciliation; keep the development skill in charge. Consult a domain skill only for a material domain question rather than loading every skill mentioned by the diff.
 
 ## Choose the smallest useful evidence
 
@@ -20,6 +20,8 @@ Lead with this skill when the request is to assess a change. During implementati
 3. Run or verify applicable checks under [DEVELOPMENT](../../../DEVELOPMENT.md#3-required-verification). Reuse matching evidence after confirming its scope and state; skipped jobs and screenshots from another build are not passing evidence. Source inspection can establish wiring, but cannot be reported as an executed game test.
 4. Exercise the actual domain behavior where needed. A helper test/exported file/rendered button alone does not prove live integration or interaction. After an authorized correction, repeat affected checks and required baseline checks; broaden testing only for a new change, failure or concrete unresolved concern.
 5. Record passed, failed or not checked for material criteria. Combine criteria with the same evidence; split technical and manual parts when their outcomes differ. Keep automated results, agent observations and explicit Director decisions distinct. Green CI does not prove game feel or grant product approval.
+
+For missing input or tool/check failures, identify the affected criterion and cause. Correct an identified cause only within existing authorization and repeat affected checks. If no supported correction is available, or the same cause persists without new evidence, stop that dependent path and continue independent assessment.
 
 Missing tools/device access do not stop independent implementation or checks. Mark the specific result **not checked**, explain why and provide precise replay steps. It limits the corresponding acceptance claim. An explicitly required check or approval still conditions the action that requires it; do not invent additional gates or claim that pending evidence passed.
 
@@ -31,7 +33,7 @@ Missing tools/device access do not stop independent implementation or checks. Ma
 | Image source/export | Verify the preview/export matches current source and processing inputs. Check relevant alpha/pivot/scale and reachable runtime use; preserve gameplay geometry. Use the existing asset conventions/tools, or describe a supported manual path if automation is absent. |
 | UI/input | Perform the action and observe its result through supported input. Check propagation/blocking and lifecycle/viewport behavior where affected. Headless success does not prove real touch ergonomics. |
 
-For Android artifacts, read [ANDROID_DISTRIBUTION](../../../docs/ANDROID_DISTRIBUTION.md#canonical-build) when needed: the built commit may differ from the PR head (for example a synthetic merge). A successful Android build is not an Android device test. For asset identity, use the actual current workflow rather than historical pipeline promises.
+For Android artifacts, read [ANDROID_DISTRIBUTION](../../../docs/ANDROID_DISTRIBUTION.md#canonical-build) when needed: the built commit may differ from the PR head (for example a synthetic merge). A successful Android build is not an Android device test. For asset identity/freshness, use [ASSET_WORKFLOW's current identity contract](../../../docs/ASSET_WORKFLOW.md#identity-isolation-and-concurrent-work).
 
 ## Report in the existing review trail
 
