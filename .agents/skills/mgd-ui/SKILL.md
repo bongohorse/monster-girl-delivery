@@ -1,11 +1,13 @@
 ---
 name: mgd-ui
-description: "Create or change MGD HUD, menus, buttons, results or Director interfaces using existing UI, input and layout ownership. Use for presentation and interaction, not artwork creation or changed game rules."
+description: "Create or change MGD game HUD, menus, buttons, results or Director controls and diagnostics attached to the game. Use existing UI, input and layout ownership. Workshop web shell, catalog, search, storage and import/export use the Workshop workflow; art and game rules use their owners."
 ---
 
 # MGD UI
 
 Implement the requested flow using existing components and styling. [AGENTS.md](../../../AGENTS.md) and the assigned task control scope and authorization. Choose routine layout, test and input details autonomously.
+
+Workshop web shell, catalog, search, storage and import/export belong to the planned `mgd-workshop` workflow; until that skill exists, follow [WORKSHOP_GUIDE](../../../docs/WORKSHOP_GUIDE.md) for those requests. The game's Director controls and DOM diagnostics remain within this skill.
 
 ## Find the existing path
 
