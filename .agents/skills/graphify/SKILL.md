@@ -41,7 +41,7 @@ Graphify output is **supporting evidence only**.
 - Never treat a missing graph edge as proof that a runtime relationship does not exist.
 - Never let Graphify widen the assigned scope by itself.
 
-The normal precedence in `AGENTS.md` still applies.
+Follow [MGD source precedence](../../../AGENTS.md#3-instruction-and-source-precedence) and the [canonical documentation map](../../../docs/README.md) for the decision being made.
 
 ## Default MGD workflow
 
@@ -49,7 +49,9 @@ The normal precedence in `AGENTS.md` still applies.
 
 MGD's default use is structural TypeScript/code analysis only. This avoids semantic processing of docs/assets and does not require an API key.
 
-If `graphify-out/graph.json` is missing or clearly stale for the code under investigation, rebuild the local code graph from the repository root:
+For an existing graph, check its source root, relevant file coverage and any recorded revision/fingerprints against the current sources. A timestamp alone does not establish freshness; missing identity information leaves freshness uncertain. Even a current graph can have incorrect or missing edges.
+
+When CLI use would help, check availability and the installed version/help before relying on command examples. These examples match the upstream version recorded below, not necessarily the installed CLI. If the graph is missing or stale, rebuild from the repository root only when a compatible CLI is available and extraction serves the assigned investigation; otherwise use the source-search fallback:
 
 ```bash
 graphify extract . --code-only
@@ -77,6 +79,8 @@ Read the relevant implementation and tests identified by the graph. Check `ARCHI
 
 For bug/review findings, establish the real supported runtime path required by the `AGENTS.md` evidence and realism gate.
 
+For dynamic paths, follow registration, dispatch and loading in current source even when the graph omits them. Report graph hints, source-verified relationships and actually executed CLI/runtime checks separately, with material limits; inspecting a saved graph is not an executed Graphify command.
+
 ### 4. Continue with the task-specific skill
 
 Graphify does not replace other procedures. Compose it with the relevant skill when needed, for example:
@@ -96,14 +100,14 @@ architecture/refactor question
 
 ## Installation and version
 
-Graphify is optional and is not installed by devcontainer setup. For an investigation that benefits from it, install it on demand with an available `uv`:
+Graphify is optional and is not installed by devcontainer setup. Installation or upgrade is tool setup, not a prerequisite for completing an investigation. When tool setup is within the assigned scope, the [official upstream installation guidance](https://github.com/Graphify-Labs/graphify/blob/67f99bd0059dd1bac9e44382907ef9f10098b39f/README.md#install) uses an available `uv`:
 
 ```bash
-uv tool install --upgrade 'graphifyy@latest'
+uv tool install graphifyy
 ```
 
-If `uv` is unavailable, follow its [official installation instructions](https://docs.astral.sh/uv/getting-started/installation/) or use the search fallback below. The runtime CLI is intentionally not version-pinned.
+If `uv` is unavailable, use its [official installation instructions](https://docs.astral.sh/uv/getting-started/installation/) only for assigned tool setup; otherwise use the search fallback below. Do not automatically install or upgrade tools for a documentation/review task. The runtime CLI is intentionally not version-pinned.
 
-The committed MGD-specific guidance was originally adapted against Graphify upstream version `0.9.56`, commit `67f99bd0059dd1bac9e44382907ef9f10098b39f` (2026-09-07). That provenance describes the origin of this skill, not the version of the Graphify CLI installed on demand. Provenance is recorded in `.agents/skills/THIRD_PARTY_NOTICES.md`.
+The committed MGD-specific guidance was originally adapted against Graphify upstream version `0.9.56`, commit `67f99bd0059dd1bac9e44382907ef9f10098b39f` (2026-09-07). That provenance describes the origin of this skill, not the version of the Graphify CLI installed on demand. Provenance is recorded in [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md#graphify).
 
-If Graphify is unavailable, do not block the task. Fall back to normal repository search and direct source inspection, and report the tooling limitation only when it materially affected the investigation.
+If Graphify is unavailable or a command fails, do not block the task. Inspect the specific failure and retry only when new evidence justifies a changed attempt; otherwise continue with `rg` and direct source inspection. Report the tooling limitation only when it materially affected the investigation.
