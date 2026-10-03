@@ -7,6 +7,8 @@ description: "Use for hard bugs, regressions, flaky failures, collision/physics/
 
 Use this skill for defects where the cause is not already obvious from a compiler error or a single local mistake. `AGENTS.md`, the assigned Issue/PR, and MGD's owning docs always take precedence over this procedure.
 
+Establish the reported symptom, source/artifact and relevant reproduction conditions from the task and available evidence. A diagnosis/review request returns findings and limits; proceed to the fix phase only when the task authorizes implementation.
+
 The core rule is: **build a tight feedback loop that can go red on the reported bug before committing to a hypothesis or production fix.**
 
 ## 1. Establish a realistic red-capable loop
@@ -26,7 +28,9 @@ A useful loop is:
 - **tight** — fast enough to run repeatedly;
 - **deterministic** where possible — pin simulation time, seeded PRNG, viewport inputs, fixtures, and other sources of variation.
 
-For flaky bugs, raise the reproduction rate with repeated/stress runs and controlled timing until the signal is useful.
+Choose the loop using [TEST_QUALITY's evidence-selection matrix](../../../docs/TEST_QUALITY.md#evidence-selection-matrix). Check needed tool availability; when unavailable, use a supported alternative that can substantiate the narrower claim and report the missing tool, untested claim and minimum remaining reproduction steps.
+
+For flaky bugs, bound repeated/stress runs and vary timing, ordering or process/isolation conditions where relevant. Record conditions and failures/attempts; end the affected path when the same failure or blocker recurs without new evidence. A green sample does not establish absence of the bug; an inconclusive diagnosis is a valid result.
 
 Do not turn an impossible synthetic state into production work. Apply the Evidence and realism gate from `AGENTS.md` before treating a scenario as a defect.
 
@@ -52,7 +56,7 @@ For MGD performance symptoms or an assigned optimization comparison, use [the ex
 
 Temporary instrumentation must be clearly marked and removed before completion.
 
-## 5. Lock the bug down and fix it
+## 5. Lock the bug down and fix it when authorized
 
 When a correct deterministic seam exists:
 
@@ -67,6 +71,8 @@ If no honest automated seam can reproduce the defect, do not add a fake-confiden
 Use the `tdd` skill for the red/green implementation slice when appropriate, and `codebase-design` if the absence of a testable seam exposes a genuine design problem.
 
 ## 6. Completion gate
+
+For diagnosis/review, report the examined source/artifact and conditions, supported path, reproduction commands/results, evidence for or against the hypotheses, and unresolved tool/manual/device limits. State whether the symptom and cause are confirmed, narrowed or unconfirmed; finish the investigation without claiming a fix or creating speculative production work.
 
 Before reporting the bug fixed:
 
