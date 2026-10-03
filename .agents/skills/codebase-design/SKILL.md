@@ -9,6 +9,8 @@ Use this skill when design structure is genuinely part of the task. Do not invok
 
 MGD's established vocabulary and architecture (`TimeService`, `InputService`, gameplay systems, scenes, etc.) remain authoritative. The concepts below help reason about design; they do not authorize renaming established project concepts or introducing new layers.
 
+Start from the current task's outcome and authorization (design/review or implementation), the affected owner, existing public contracts and actual caller paths. Read the relevant [architecture ownership](../../../ARCHITECTURE.md#3-ownership-model) and [change rule](../../../ARCHITECTURE.md#15-architecture-change-rule); inspect current source/tests before proposing a seam. A design/review request alone does not authorize implementation.
+
 ## Core concepts
 
 - **Module** — a cohesive unit with an interface and implementation. In MGD this may already be called a service, system, manager, scene, helper or module; keep established names when they are clear.
@@ -26,7 +28,7 @@ Before adding an abstraction or changing a seam, ask:
 
 ### 1. Existing-owner test
 
-Does an existing MGD system already own this responsibility? Prefer extending the correct owner over creating a parallel helper/system.
+Does an existing MGD system already own this responsibility? Prefer extending the correct owner over creating a parallel helper/system. Before proposing custom code, apply the [existing-capability reuse criteria](../../../AGENTS.md#7-implementation-quality) to suitable built-ins, Phaser/Web APIs and approved dependencies.
 
 ### 2. Deletion test
 
@@ -63,18 +65,22 @@ When a task requires a meaningful new seam or module shape and multiple designs 
 
 Compare alternatives on:
 
-- fit with `ARCHITECTURE.md` ownership;
+- fit with architecture ownership and actual callers' contracts;
 - interface size and depth;
 - locality of future changes;
 - deterministic testability;
 - runtime/per-frame cost;
-- migration complexity;
+- migration complexity, including each affected caller and removal of replaced paths;
 - amount of speculative machinery.
 
 Choose the smallest design that satisfies the current task and leaves ownership clearer than before.
 
 ## Completion
 
-A design change is complete only when the real callers use the intended seam, obsolete parallel paths are removed when safely in scope, tests exercise meaningful behavior, and the architecture is not more complicated than the task requires.
+A design/review task is complete with a justified recommendation (including no structural change when appropriate), relevant alternatives, a concrete caller/migration/verification plan where a seam changes, and unresolved assumptions. Implementation remains subject to the actual task authorization.
+
+For an authorized implementation, a design change is complete only when the real callers use the intended seam, obsolete parallel paths are removed when safely in scope, tests exercise meaningful behavior, and the architecture is not more complicated than the task requires. Select proportionate checks from the [test-evidence policy](../../../docs/TEST_QUALITY.md#evidence-selection-matrix).
+
+Report source/design reasoning separately from executed integration checks and measurements. A cost estimate is not a measured improvement; performance claims use the [existing measurement workflow](../../../docs/PERFORMANCE_MOBILE_EVIDENCE.md#investigation-and-comparison-procedure). Identify missing contracts, unavailable checks and failed checks with their affected claim; use supported alternative evidence where useful without declaring the untested claim complete. After an authorized correction, repeat the affected check; stop that path when the same unresolved cause yields no new evidence, and report what remains open.
 
 Adapted for MGD from Matt Pocock's `codebase-design` skill (`mattpocock/skills`, MIT).
