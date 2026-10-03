@@ -29,13 +29,15 @@ Do not test Phaser internals unless MGD depends on a specific integration contra
 Work one vertical slice at a time:
 
 1. **Red** — write one focused test whose expected result comes from the Issue/spec, a known-good example, or another independent source of truth. Run it and confirm it fails for the intended missing/broken behavior.
-2. **Green** — implement only the smallest coherent production change needed to make that slice work through the real runtime/integration path.
+2. **Green** — implement only the smallest coherent production change needed to make that slice work through the real runtime/integration path. Rerun the same test and observe it pass before refactoring.
 3. **Refactor** — simplify duplication/naming/structure only when it improves the in-scope change and preserves green behavior.
 4. Repeat for the next independently valuable behavior.
 
 Do not write a large horizontal batch of speculative tests before learning from the first slice.
 
 ## Test quality rules
+
+Choose proportionate evidence using [TEST_QUALITY's evidence-selection matrix](../../../docs/TEST_QUALITY.md#evidence-selection-matrix); review material tests with its [test-review checklist](../../../docs/TEST_QUALITY.md#test-review-checklist).
 
 Good MGD tests:
 
@@ -68,6 +70,8 @@ If the correct seam cannot reproduce the bug honestly, do not force a shallow re
 ## Completion
 
 During iteration, run the narrowest useful test command. Once implementation is stable, run the repository-required completion checks from `AGENTS.md` / `DEVELOPMENT.md`.
+
+Report the independent expectation, observed red/green commands/results and supported path actually exercised. A passing isolated test does not establish runtime wiring; when the task requires integration, verify the changed rule through its real caller, distinguish executed evidence from source inspection and state untested limits.
 
 A passing test is evidence for the behavior it actually exercises; it is not proof of subjective feel, visual quality, touch ergonomics, or device lifecycle behavior outside that seam.
 
