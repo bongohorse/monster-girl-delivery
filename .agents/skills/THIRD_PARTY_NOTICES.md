@@ -38,6 +38,14 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
+### mgd-prototype
+
+The MGD [`mgd-prototype`](mgd-prototype/SKILL.md) skill adapts selected principles from Matt Pocock's [`prototype/SKILL.md`](https://github.com/mattpocock/skills/blob/d81f3a183412e71a5b1e84ca21bc1a35eea03a60/skills/engineering/prototype/SKILL.md) and its [`LOGIC.md`](https://github.com/mattpocock/skills/blob/d81f3a183412e71a5b1e84ca21bc1a35eea03a60/skills/engineering/prototype/LOGIC.md) / [`UI.md`](https://github.com/mattpocock/skills/blob/d81f3a183412e71a5b1e84ca21bc1a35eea03a60/skills/engineering/prototype/UI.md) references, pinned to upstream commit `d81f3a183412e71a5b1e84ca21bc1a35eea03a60`. This separate adaptation does not change the `3cca18b368ae95cdbdebbff572ccafa662551015` provenance of the existing skills listed above.
+
+The adapted principles are a focused design question, reuse of suitable existing context, visible relevant configuration/state, and durable capture of the question, evidence and answer. MGD retains its Workshop contracts, validation and canonical owners; it does not adopt the upstream artifact/router prescriptions, test omission, throwaway-branch archive requirement or automatic production integration. No upstream orchestration is installed.
+
+Upstream [`LICENSE` at this commit](https://github.com/mattpocock/skills/blob/d81f3a183412e71a5b1e84ca21bc1a35eea03a60/LICENSE) is MIT, Copyright (c) 2026 Matt Pocock. The complete MIT notice above also applies to this adaptation.
+
 ## Graphify
 
 The committed MGD [`graphify`](graphify/SKILL.md) skill is based on the public behavior and usage documented by [`Graphify-Labs/graphify`](https://github.com/Graphify-Labs/graphify), originally adapted against upstream version `0.9.56`, commit `67f99bd0059dd1bac9e44382907ef9f10098b39f` (2026-09-07).
