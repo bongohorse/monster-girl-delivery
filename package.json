@@ -40,20 +40,20 @@
     "pages:smoke": "bun scripts/workshop/pages-smoke.ts"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.14",
-    "@capacitor/cli": "8.5.2",
+    "@biomejs/biome": "2.5.15",
+    "@capacitor/cli": "8.5.3",
     "@stryker-mutator/core": "10.0.0",
-    "@types/node": "26.6.3",
-    "@vitest/coverage-istanbul": "5.0.2",
+    "@types/node": "26.6.5",
+    "@vitest/coverage-istanbul": "5.0.3",
     "sharp": "0.35.5",
     "terser": "^5.51.2",
     "typescript": "7.0.2",
     "vite": "^8.1.0",
-    "vitest": "5.0.2"
+    "vitest": "5.0.3"
   },
   "dependencies": {
-    "@capacitor/android": "8.5.2",
-    "@capacitor/core": "8.5.2",
+    "@capacitor/android": "8.5.3",
+    "@capacitor/core": "8.5.3",
     "phaser": "4.2.1"
   }
 }
