@@ -15,6 +15,8 @@ A **seam** is the public boundary through which the behavior can be exercised wi
 
 Before writing a test, identify the narrowest meaningful seam that reaches the real behavior. The coding agent chooses this engineering seam autonomously from the codebase and architecture. Do not interrupt the Game Director for routine test-placement decisions; ask only if the choice would materially change architecture or product behavior.
 
+For each relevant chosen seam, add a brief note to the existing test plan or PR stating what failures it can detect and what lies outside its evidence. Keep the note specific to that public boundary.
+
 Prefer seams that:
 
 - survive internal refactors;

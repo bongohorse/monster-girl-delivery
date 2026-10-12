@@ -7,6 +7,7 @@ The following MGD-adapted skills are derived from [`mattpocock/skills`](https://
 - `diagnosing-bugs`
 - `code-review`
 - `tdd`
+  Selected follow-up guidance from upstream [`tdd`](https://github.com/mattpocock/skills/blob/49dd158d1076134a641b33efb035946536778336/skills/engineering/tdd/SKILL.md) at commit `49dd158d1076134a641b33efb035946536778336` adds a brief statement of what each relevant chosen public test seam catches and misses. MGD retains autonomous routine seam selection rather than upstream's mandatory user confirmation. The original adaptation pin above remains unchanged; the MIT notice below also applies to this addition.
 - `codebase-design`
 - `resolving-merge-conflicts`
 - `research`
