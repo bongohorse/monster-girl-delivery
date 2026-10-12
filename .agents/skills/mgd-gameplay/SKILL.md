@@ -13,7 +13,7 @@ Read the assigned task, relevant rules in [MASTER_SPEC](../../../MASTER_SPEC.md)
 
 Choose routine reversible details autonomously. Ask only when an unresolved decision materially changes product behavior or architecture; continue independent work. A coin request does not implicitly authorize a new economy or scoring system.
 
-This skill leads changes to rules or interactions across systems. Let `mgd-hazards` lead individual hazard behavior, UI guidance lead presentation-only interactions and diagnosis/performance guidance lead an investigation. Add a supporting skill only to resolve a relevant need; missing optional skills are not implementation blockers.
+This skill leads changes to rules or interactions across systems. Let [mgd-hazards](../mgd-hazards/SKILL.md) lead individual hazard behavior, [mgd-ui](../mgd-ui/SKILL.md) lead presentation-only interactions and [diagnosing-bugs](../diagnosing-bugs/SKILL.md) lead diagnosis/performance investigation. Add a supporting skill only to resolve a relevant need; missing optional skills are not implementation blockers.
 
 ## Trace, implement, validate
 
@@ -46,5 +46,7 @@ If current constraints cannot admit the intended combination, identify the concr
 - **Coin valuation:** distinguish pickup count/value, earned reward and score; current PrototypeRunResult score is distance-based. Follow changed values to final snapshot/display, checking single award and death ordering where affected. Use hand-counted results; do not add a records store to demonstrate the change.
 - **Delivery flow:** express allowed state transitions, then follow pickup/carry/handoff or miss and the next route as relevant. Check completion/reward once and restart clearing route-local/carried state, retaining protected approach and run continuation.
 - **Multi-hazard encounter:** trace shared timing/admission and individual effective shapes, then validate joint reachability/transition/readability and delivery protection. Test affected existing consumers and a representative seeded live run. A fair isolated pattern or attractive manual fixture does not prove a fair admitted sequence.
+
+For missing input or a failed tool/check, identify the affected rule or evidence claim. Fix an identified in-scope cause and rerun the relevant check. If no supported correction is available, or the same cause persists without new evidence, stop that dependent path and continue independent work. Report source inspection and planned checks separately from executed gameplay, fairness, seed, collision or device evidence.
 
 Complete authorized implementation and available checks even if a browser/device or subjective playtest is unavailable. State exactly which criterion remains unverified with replay instructions; automated results cannot establish feel or visual acceptance. Missing evidence limits its corresponding claim/action under the task's existing conditions, without creating an extra implementation gate. Completion means the requested behavior is integrated, relevant results/reset/fairness paths are accounted for, and actual checks and remaining limits are clear.
