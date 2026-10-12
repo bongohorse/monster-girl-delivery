@@ -28,6 +28,8 @@ When the Game Director asks for implementation or repository changes, the respon
 
 Do not stop after saying what could be done, writing a plan, or implementing an isolated helper if the requested outcome still requires wiring or validation.
 
+Before starting work from a supplied ticket reference, read its current body, relevant discussion and status; identify it by title and repository-qualified ID or URL. Resolve an ambiguous reference before acting on it.
+
 ### 3. Questions are for consequential ambiguity
 
 Do not interrupt routine execution for choices that can be resolved from existing code, architecture, conventions, or a reversible default.
@@ -41,6 +43,8 @@ Before asking, complete all useful work that does not depend on the answer so th
 Do not duplicate the full repository rules into Issues, PRs, skills, or prompts. Link to canonical sources instead.
 
 Skills and references support execution. They do not independently authorize product features or override `AGENTS.md`, the current task, or the owning source of truth.
+
+Read a skill's actual `SKILL.md` before describing its capabilities or deciding to omit its steps; a catalogue summary alone is not enough.
 
 ### 5. Evidence before agent confidence
 
@@ -134,6 +138,10 @@ Do not infer implementation scope from an idea/reference document.
 
 ## Writing high-value tasks
 
+Before continuing a spec, planning or handoff request, check its existing artifacts, linked Issues/PRs and active work for the current state. Update or continue that work rather than creating a parallel duplicate.
+
+When turning a discussion into a feature task, distinguish approved rules, unresolved decisions and ideas using [MASTER_SPEC's decision states](../MASTER_SPEC.md#0-decision-states). Keep open questions and necessary assumptions explicit; do not silently present unresolved points or ideas as decided scope.
+
 A focused coding task should normally state:
 
 1. **Goal** — what changes for the game/user/developer when this is done?
@@ -182,6 +190,8 @@ Do **not** create separate Issues merely for:
 
 This keeps Jules/Codex/other agents from consuming time on administratively neat but low-value fragments.
 
+When publishing approved task units, use their actual published IDs for cross-references and blocking links; create the referenced Issues before wiring those links. A parent/sub-issue relationship groups scope and does not imply a blocking dependency. Record genuine blockers separately using native blocking relationships where available, otherwise explicit references to the blocking Issues.
+
 ---
 
 ## Milestone planning
@@ -213,6 +223,8 @@ Useful discoveries outside scope become follow-up Issues/backlog notes only when
 ### Agent dispatch discipline
 
 A coding-agent label or assignment is an execution mechanism, not a scope decision.
+
+Creating a research or decision Issue does not make it implementation-ready. Keep its investigative outcome distinct; implementation readiness requires resolved decisions, approved scope and actionable acceptance criteria.
 
 Before dispatching a focused Issue to an eligible agent:
 
@@ -374,3 +386,16 @@ A useful agent completion report is short and evidence-based. It should state:
 - real blockers or follow-ups, if any.
 
 Do not add generic praise, repeat the full task, list every command/file touched, or invent optional next work just to end with a recommendation.
+
+### Handoff to a new agent run
+
+For an explicitly requested handoff to a new agent run, extend the existing completion record with the context needed to continue:
+
+- repository, branch and checked revision;
+- existing user work and ongoing operations;
+- the completed outcome and authoritative decisions that govern continuation;
+- actual checks with the revision each applies to and remaining evidence limits;
+- relevant Issue, PR and source links;
+- exactly the next authorized task and its stop boundary.
+
+Link durable results in their owning Issues/PRs instead of maintaining a parallel status report. A handoff conveys existing authorization; it does not expand it.
