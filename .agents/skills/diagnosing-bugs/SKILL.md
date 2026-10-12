@@ -61,7 +61,7 @@ Temporary instrumentation must be clearly marked and removed before completion.
 When a correct deterministic seam exists:
 
 1. turn the minimised repro into a failing regression test;
-2. observe it fail for the intended reason;
+2. observe it fail for the intended reason; if red was forced by mutating code or a fixture, inspect a diff against the unchanged starting version to prove that exactly the intended mutation was applied before trusting the result;
 3. implement the smallest coherent fix through the real runtime path;
 4. observe the regression test pass;
 5. rerun the original, less-minimised reproduction.
