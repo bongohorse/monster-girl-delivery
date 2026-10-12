@@ -33,6 +33,8 @@ Use, in order:
 
 ### Engineering standards
 
+Search the repository for additional standards relevant to the diff, including `CODING_STANDARDS.md` and `CONTRIBUTING.md` wherever present. Include these sources in the review context alongside the canonical owners below.
+
 Use the relevant parts of:
 
 - [AGENTS.md](../../../AGENTS.md);
@@ -46,7 +48,7 @@ Skip style findings already enforced by Biome/typechecking unless the diff revea
 
 ## 3. Review on two independent axes
 
-When subagents are available, run the two axes independently/parallel so one conclusion does not bias the other. Otherwise keep them separate in the review.
+Use independent review agents when available and useful; otherwise assess the axes separately yourself. Give both axes the exact head/base, diff, task and repository sources needed for their conclusions. When using agents, wait for their actual reports and reconcile the findings before reporting completion, keeping the two axes' conclusions distinct.
 
 ### Axis A — Standards / engineering quality
 
