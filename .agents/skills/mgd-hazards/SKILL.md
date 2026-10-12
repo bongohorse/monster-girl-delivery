@@ -11,7 +11,9 @@ Deliver the requested hazard change through the real game path. [AGENTS](../../.
 
 Identify the hazard, intended normal/Director entry point, expected behavior and what must remain unchanged. Read the assigned task, relevant [hazard/fairness rules](../../../MASTER_SPEC.md#8-hazards-and-fairness), [architecture](../../../ARCHITECTURE.md) sections and current implementation/tests. Choose ordinary reversible details from existing patterns; ask only when a missing product decision materially changes the result.
 
-This skill leads a wall-bouncing ball or a Missile-image replacement. Add asset integration only for technical image/runtime work and art only for image creation/restyling. Use supporting diagnosis, tests, design or review guidance when their actual triggers apply. Missing optional skills/tools are not a reason to stop supported work or build substitutes.
+This skill leads a wall-bouncing ball or a Missile-image replacement. Use [mgd-gameplay](../mgd-gameplay/SKILL.md) for encounter-wide pacing/spawn rules, [mgd-asset-integration](../mgd-asset-integration/SKILL.md) for technical image/runtime work and [mgd-art](../mgd-art/SKILL.md) for image creation/restyling. Use supporting diagnosis, tests, design or review guidance when their actual triggers apply. Missing optional skills/tools are not a reason to stop supported work or build substitutes.
+
+For image work, locate the actual supplied source and its existing integration under [ASSET_WORKFLOW](../../../docs/ASSET_WORKFLOW.md). A described but absent replacement blocks replacement, not inspection of retained wiring/geometry; do not fabricate substitute artwork or successful exports. Existing or supplied bitmaps stay raster: no automatic SVG conversion or vector recreation, including for Phaser integration. A medium change requires an explicit user request; technical crop, scale, padding, optimization and raster export remain allowed. Edit existing SVG/vector assets in their native medium.
 
 Useful source entry points, as needed:
 
@@ -43,5 +45,7 @@ Verify radius-aware center limits, reflection on each axis, corner/high-speed/re
 - **Change shared hazard update:** identify actual callers, then test representative affected static/patrol, Missile and timed/rotating paths. Check relevant phase, consequence and identity/reset behavior; do not impose one lifecycle on all types.
 
 Report the changed behavior, supported entry point, effective hitbox and collision/consequence status, relevant regression results and short playtest steps. Account for motion, cleanup/reset and visuals to the extent affected. Keep evidence in the existing PR; no extra report/template is required.
+
+If an input, tool or check fails, report the cause and affected deliverable. Correct an identified in-scope cause and rerun the affected check; stop that path when the same unresolved cause repeats without new evidence, while continuing independent work. Separate inspected wiring and planned checks from executed gameplay, collision and visual results.
 
 Finish authorized implementation and independent checks even when visual/device evidence is unavailable. Mark the specific unverified criterion and give replay steps; it limits that acceptance claim, not all implementation work. A disconnected collision path remains a real integration defect. Merge/release and any required Director acceptance follow existing authorization and task conditions, with no new approval chain from this skill.
