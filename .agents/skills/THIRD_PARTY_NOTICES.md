@@ -6,6 +6,7 @@ The following MGD-adapted skills are derived from [`mattpocock/skills`](https://
 
 - `diagnosing-bugs`
 - `code-review`
+  Selected follow-up guidance from upstream [`code-review`](https://github.com/mattpocock/skills/blob/49dd158d1076134a641b33efb035946536778336/skills/engineering/code-review/SKILL.md) at commit `49dd158d1076134a641b33efb035946536778336` adds repository standards discovery and aggregation of actual completed reviewer reports. MGD keeps delegation optional and supplies both axes with the sources they need. The original adaptation pin above remains unchanged; the MIT notice below also applies to this addition.
 - `tdd`
 - `codebase-design`
 - `resolving-merge-conflicts`
