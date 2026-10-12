@@ -140,6 +140,8 @@ Do not infer implementation scope from an idea/reference document.
 
 Before continuing a spec, planning or handoff request, check its existing artifacts, linked Issues/PRs and active work for the current state. Update or continue that work rather than creating a parallel duplicate.
 
+When turning a discussion into a feature task, distinguish approved rules, unresolved decisions and ideas using [MASTER_SPEC's decision states](../MASTER_SPEC.md#0-decision-states). Keep open questions and necessary assumptions explicit; do not silently present unresolved points or ideas as decided scope.
+
 A focused coding task should normally state:
 
 1. **Goal** — what changes for the game/user/developer when this is done?
@@ -384,3 +386,16 @@ A useful agent completion report is short and evidence-based. It should state:
 - real blockers or follow-ups, if any.
 
 Do not add generic praise, repeat the full task, list every command/file touched, or invent optional next work just to end with a recommendation.
+
+### Handoff to a new agent run
+
+For an explicitly requested handoff to a new agent run, extend the existing completion record with the context needed to continue:
+
+- repository, branch and checked revision;
+- existing user work and ongoing operations;
+- the completed outcome and authoritative decisions that govern continuation;
+- actual checks with the revision each applies to and remaining evidence limits;
+- relevant Issue, PR and source links;
+- exactly the next authorized task and its stop boundary.
+
+Link durable results in their owning Issues/PRs instead of maintaining a parallel status report. A handoff conveys existing authorization; it does not expand it.
