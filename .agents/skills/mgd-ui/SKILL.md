@@ -7,7 +7,7 @@ description: "Create or change MGD game HUD, menus, buttons, results or Director
 
 Implement the requested flow using existing components and styling. [AGENTS.md](../../../AGENTS.md) and the assigned task control scope and authorization. Choose routine layout, test and input details autonomously.
 
-Workshop web shell, catalog, search, storage, import/export and technical study registration use [mgd-workshop](../mgd-workshop/SKILL.md) when present in the checkout; otherwise consult the [reviewed, unmerged Draft #557 source](https://github.com/bongohorse/monster-girl-delivery/blob/70bb024457fe984ac67872ec6f499d1915908808/.agents/skills/mgd-workshop/SKILL.md) and [WORKSHOP_GUIDE](../../../docs/WORKSHOP_GUIDE.md). The game's Director controls and DOM diagnostics remain within this skill. An open design question uses [mgd-prototype](../mgd-prototype/SKILL.md) when present, otherwise the [reviewed, unmerged Draft #558 source](https://github.com/bongohorse/monster-girl-delivery/blob/c4b1a7ee05e64bcf5620d0a5dd8c1bf6f5a05176/.agents/skills/mgd-prototype/SKILL.md); a specified UI task needs no extra design experiment. Missing skills do not require creating them.
+Workshop web shell, catalog, search, storage, import/export and technical study registration use [mgd-workshop](../mgd-workshop/SKILL.md) and [WORKSHOP_GUIDE](../../../docs/WORKSHOP_GUIDE.md). The game's Director controls and DOM diagnostics remain within this skill. An open design question uses [mgd-prototype](../mgd-prototype/SKILL.md); a specified UI task needs no extra design experiment.
 
 ## Find the existing path
 

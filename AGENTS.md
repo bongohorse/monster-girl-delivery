@@ -53,12 +53,16 @@ Use one task-leading skill; load supporting skills only for the parts that need 
 | [`research`](.agents/skills/research/SKILL.md) | The task depends on external/current technical facts, Phaser/platform/API behavior, source investigation, or reference-game evidence. Prefer primary sources and distinguish facts from inference. |
 | [`mgd-art`](.agents/skills/mgd-art/SKILL.md) | Creating or visually revising MGD characters, hazards, parcels, backgrounds, UI graphics or animation/gallery variants. Uses `docs/ART_DIRECTION.md`; unchanged image integration and gameplay/hitboxes belong to their own workflows. |
 | [`mgd-asset-integration`](.agents/skills/mgd-asset-integration/SKILL.md) | Importing/updating image sources, inspecting exports or connecting images to real presentation. Use current tooling; future pipeline tooling is not a prerequisite. |
+| [`mgd-workshop`](.agents/skills/mgd-workshop/SKILL.md) | Maintaining the Workshop web shell, catalogue/details, search/navigation, local data, validated import/export, sharelinks or technical study registration. Apply `docs/WORKSHOP_GUIDE.md`; game UI, open design questions, artwork and image preparation retain their own owners. |
+| [`mgd-prototype`](.agents/skills/mgd-prototype/SKILL.md) | Answering an open design question through a bounded comparable experiment, reusing suitable studies and recording evidence, limits and the next decision. Technical Workshop work uses `mgd-workshop`; specified implementation proceeds directly to its owner. |
 | [`mgd-hazards`](.agents/skills/mgd-hazards/SKILL.md) | Creating/changing individual hazards, spawn, motion, collision or artwork affecting visual fairness. Verify real admission, geometry and consequences; scale regression checks to affected paths. |
 | [`mgd-acceptance`](.agents/skills/mgd-acceptance/SKILL.md) | Explicitly assessing a game change or reconciling acceptance evidence. Ordinary implementation does not automatically require a separate acceptance handoff. |
 | [`mgd-gameplay`](.agents/skills/mgd-gameplay/SKILL.md) | Changing flight, collectibles, deliveries, scoring or encounter-wide rules. Individual hazard behavior and presentation-only UI use their own leading skill. |
-| [`mgd-ui`](.agents/skills/mgd-ui/SKILL.md) | Changing HUD, controls, results or Director interfaces. Reuse authoritative state, existing layout and supported input paths; verify the affected flow. |
+| [`mgd-ui`](.agents/skills/mgd-ui/SKILL.md) | Changing game HUD, controls, results or game-side Director controls/diagnostics. Reuse authoritative state, existing layout and supported input paths; verify the affected flow. Workshop application work uses `mgd-workshop`; artwork and game rules retain their own owners. |
 | [`mgd-build-release`](.agents/skills/mgd-build-release/SKILL.md) | Creating/delivering APK or web test artifacts, or executing an assigned release. Use existing build paths and exact artifact identity; retain existing publication authorization boundaries. |
 | [`writing-for-agents`](.agents/skills/writing-for-agents/SKILL.md) | Creating/editing `AGENTS.md`, skills, worker prompts, automation prompts, reviewer instructions, or other documents primarily consumed by agents. Keep triggers sharp and canonical rules singular. |
+
+Use the relevant [Workshop Guide](docs/WORKSHOP_GUIDE.md) contract for supported technical work. An experiment, local selection or handoff does not authorize game integration, rule changes or publication.
 
 Common compositions:
 
