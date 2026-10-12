@@ -23,6 +23,8 @@ An unchanged integration request preserves the supplied image and background. A 
 
 For an unchanged image or technical export, use [mgd-asset-integration](../mgd-asset-integration/SKILL.md). Individual hazard behavior, such as “make this volleyball bounce off walls,” is led by [mgd-hazards](../mgd-hazards/SKILL.md); encounter-wide rules use [mgd-gameplay](../mgd-gameplay/SKILL.md). Art contributes only the visual work needed by the request. Load other skills only for their actual triggers, rather than treating them as a prerequisite chain.
 
+Workshop catalogue/gallery links and study registration use [mgd-workshop](../mgd-workshop/SKILL.md) when present in the checkout; otherwise consult the [reviewed, unmerged Draft #557 source](https://github.com/bongohorse/monster-girl-delivery/blob/70bb024457fe984ac67872ec6f499d1915908808/.agents/skills/mgd-workshop/SKILL.md) and [WORKSHOP_GUIDE](../../../docs/WORKSHOP_GUIDE.md). This skill retains artwork creation/revision; a catalogue link is not an art decision or game-integration instruction. A missing Workshop skill does not require creating one.
+
 ## Completion
 
 The requested candidate/revision is reviewable, originals are recoverable, and performed checks and any concrete limitations are clear. Verification follows [DEVELOPMENT.md](../../../DEVELOPMENT.md#3-required-verification); Art Gate approval remains a separate recorded Director decision.
