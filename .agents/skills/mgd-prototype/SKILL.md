@@ -9,7 +9,7 @@ Produce an experiment report that makes one open design question, its evidence a
 
 ## Choose the owner
 
-- Technical Workshop maintenance, catalogue/data work or study registration → [mgd-workshop](../mgd-workshop/SKILL.md) when present in the checkout; otherwise consult the [reviewed, unmerged Draft #557 source](https://github.com/bongohorse/monster-girl-delivery/blob/70bb024457fe984ac67872ec6f499d1915908808/.agents/skills/mgd-workshop/SKILL.md) and the [WORKSHOP_GUIDE](../../../docs/WORKSHOP_GUIDE.md). Its absence does not require creating a skill. A fully specified Workshop task needs no extra design experiment or interview.
+- Technical Workshop maintenance, catalogue/data work or study registration → [mgd-workshop](../mgd-workshop/SKILL.md) and the [WORKSHOP_GUIDE](../../../docs/WORKSHOP_GUIDE.md). A fully specified Workshop task needs no extra design experiment or interview.
 - Decided game implementation → [mgd-gameplay](../mgd-gameplay/SKILL.md), [mgd-hazards](../mgd-hazards/SKILL.md) or [mgd-ui](../mgd-ui/SKILL.md), according to the affected system. Follow an already authorized implementation directly; a proposed experiment cannot reopen decided rules.
 - Artwork creation/revision → [mgd-art](../mgd-art/SKILL.md); image preparation/integration → [mgd-asset-integration](../mgd-asset-integration/SKILL.md). Use these procedures only for an actual authorized part of the experiment.
 

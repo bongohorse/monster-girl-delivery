@@ -32,7 +32,7 @@ On a missing input or failed check, report the command, cause and affected deliv
 
 Image creation/revision uses [mgd-art](../mgd-art/SKILL.md). Individual hazard behavior, including a supplied image requested as a bouncing hazard, is led by [mgd-hazards](../mgd-hazards/SKILL.md); encounter-wide rules use [mgd-gameplay](../mgd-gameplay/SKILL.md). Support only the image work actually needed. An unchanged image needs no preparation merely because its gameplay behavior changes.
 
-Workshop catalogue/gallery links and study registration use [mgd-workshop](../mgd-workshop/SKILL.md) when present in the checkout; otherwise consult the [reviewed, unmerged Draft #557 source](https://github.com/bongohorse/monster-girl-delivery/blob/70bb024457fe984ac67872ec6f499d1915908808/.agents/skills/mgd-workshop/SKILL.md) and [WORKSHOP_GUIDE](../../../docs/WORKSHOP_GUIDE.md). This skill retains image-source/export and authorized presentation integration; a catalogue link does not authorize game integration. A missing Workshop skill does not require creating one.
+Workshop catalogue/gallery links and study registration use [mgd-workshop](../mgd-workshop/SKILL.md) and [WORKSHOP_GUIDE](../../../docs/WORKSHOP_GUIDE.md). This skill retains image-source/export and authorized presentation integration; a catalogue link does not authorize game integration.
 
 For an authorized removal, inspect actual consumers and update them with the runtime output/state. Age alone is not a reason to remove sources or assets. Retain still-needed content and accepted evidence; source deletion must be within the requested removal scope.
 

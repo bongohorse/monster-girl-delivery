@@ -10,7 +10,7 @@ Deliver the requested Workshop change through the existing application. [AGENTS.
 ## Choose the owner
 
 - Game HUD, menus, results and game-side Director controls → [mgd-ui](../mgd-ui/SKILL.md).
-- An open design question → [mgd-prototype](../mgd-prototype/SKILL.md) when present in the checkout; otherwise consult the [reviewed, unmerged Draft #558 source](https://github.com/bongohorse/monster-girl-delivery/blob/ed90229d175504d3d99fe8a01fe3210a5786a63e/.agents/skills/mgd-prototype/SKILL.md). Its absence does not require creating a skill. Workshop supports only the technical registration/data work needed by the authorized experiment. A fully specified study needs no extra design interview or experiment.
+- An open design question → [mgd-prototype](../mgd-prototype/SKILL.md). Workshop supports only the technical registration/data work needed by the authorized experiment. A fully specified study needs no extra design interview or experiment.
 - Artwork creation/revision → [mgd-art](../mgd-art/SKILL.md); image-source/export preparation or asset integration → [mgd-asset-integration](../mgd-asset-integration/SKILL.md). Workshop owns catalogue/gallery links, not those asset procedures.
 - Separately requested game integration → [mgd-gameplay](../mgd-gameplay/SKILL.md), [mgd-hazards](../mgd-hazards/SKILL.md) or the relevant UI/asset owner, according to the actual change. Workshop configuration remains reference material.
 - Requested build delivery or explicitly authorized publication → [mgd-build-release](../mgd-build-release/SKILL.md). Ordinary Workshop checks stay with this task and confer no merge/deploy permission.
