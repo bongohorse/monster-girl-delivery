@@ -1079,6 +1079,13 @@
           "path": "assets/source/district-01/hazards/README.md",
           "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
           "kind": "doc"
+        },
+        {
+          "id": "director-hud",
+          "path": "src/devtools/DirectorPerformanceHud.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code",
+          "symbol": "spikeButton SP → handleSpikeClick → spawnSpike"
         }
       ],
       "detailSections": [
@@ -1087,9 +1094,9 @@
           "facts": [
             {
               "label": "Spielverwendung",
-              "value": "AUTO: PROTOTYPE_M6_TRIAL_HAZARD_PATTERN_CATALOG ergänzt den M5-Katalog um M6_MOLTEN_SPIKE_TRIAL. Director S verwendet denselben Height-Selector.",
+              "value": "AUTO: PROTOTYPE_M6_TRIAL_HAZARD_PATTERN_CATALOG ergänzt den M5-Katalog um M6_MOLTEN_SPIKE_TRIAL. Director-Button SP verwendet denselben Height-Selector.",
               "certainty": "confirmed",
-              "sourceIds": ["live", "domain", "foundation", "fixtures"]
+              "sourceIds": ["trial", "domain", "foundation", "director-hud"]
             },
             {
               "label": "Technischer Typ",
@@ -1110,9 +1117,9 @@
             },
             {
               "label": "Authored / AUTO / Director-Höhen",
-              "value": "m6-trial-molten-spike-upper: 48×48 Hitbox, Basiszentrum Y 110. selectMoltenSpikeHeightCatalog verteilt AUTO und Director S deterministisch über verfügbare obere/untere Höhenintervalle, hält die Safe-Guide-Coinroute frei. Höhen sind Datenvarianten desselben Hazards, keine Bildvarianten.",
+              "value": "m6-trial-molten-spike-upper: 48×48 Hitbox, Basiszentrum Y 110. selectMoltenSpikeHeightCatalog verteilt AUTO und Director-Button SP deterministisch über verfügbare obere/untere Höhenintervalle, hält die Safe-Guide-Coinroute frei. Höhen sind Datenvarianten desselben Hazards, keine Bildvarianten.",
               "certainty": "confirmed",
-              "sourceIds": ["trial", "foundation"],
+              "sourceIds": ["trial", "foundation", "director-hud"],
               "maturity": "prototype"
             },
             {
@@ -1877,7 +1884,7 @@
       "type": "Hazard",
       "categoryId": "hazards",
       "tags": ["Bestand #539", "Historischer Prototyp"],
-      "description": "Historischer bewegter geometrischer Placeholder; der heute gleich benannte Live-Slot enthält einen rotierenden Zapper.",
+      "description": "Historischer bewegter geometrischer Placeholder; eine spätere Baseline-Fixture mit gleicher Pattern-ID enthält einen rotierenden Zapper. Beide fehlen im aktuellen AUTO-Katalog.",
       "documentation": {
         "state": "checked",
         "date": "2026-10-13",
@@ -2005,9 +2012,9 @@
             },
             {
               "label": "ID-Abgrenzung",
-              "value": "prototype-vertical-patrol bezeichnet sowohl die alte Patrol-Fixture als auch den späteren rotierenden Zapper-Slot. PROTOTYPE_ZAPPER_PATTERN ist ein Alias von PROTOTYPE_ROTATING_ZAPPER_PATTERN, keine zusätzliche Patrol.",
+              "value": "prototype-vertical-patrol bezeichnet sowohl die alte Patrol-Fixture als auch die spätere rotierende Zapper-Baseline-Fixture. PROTOTYPE_ZAPPER_PATTERN ist ein Alias von PROTOTYPE_ROTATING_ZAPPER_PATTERN, keine zusätzliche Patrol. Die aktuelle AUTO-Auswahl verwendet eigene m5-segment-/m5-pressure-IDs statt dieser Fixture-ID.",
               "certainty": "confirmed",
-              "sourceIds": ["fixtures"]
+              "sourceIds": ["fixtures", "live"]
             }
           ]
         },
@@ -2158,7 +2165,7 @@
           "facts": [
             {
               "label": "Spielverwendung",
-              "value": "PROTOTYPE_TIMED_PULSE_PATTERN / M4-Fixture; aktueller gleichnamiger Slot nutzt Laser.",
+              "value": "PROTOTYPE_TIMED_PULSE_PATTERN / M4-Fixture, nicht im aktuellen AUTO-Katalog. Die M5-Laser-Baseline-Fixture verwendet dieselbe Pattern-ID; aktuelle AUTO-Laser besitzen eigene Segment-/Pressure-IDs.",
               "certainty": "confirmed",
               "sourceIds": ["live", "domain", "foundation", "fixtures"]
             },
@@ -2188,9 +2195,9 @@
             },
             {
               "label": "ID-Abgrenzung",
-              "value": "prototype-timed-pulse ist auch die Pattern-ID der M5-Laser-Baseline. kind pulse und kind laser sind getrennte Implementierungen.",
+              "value": "prototype-timed-pulse ist auch die Pattern-ID der M5-Laser-Baseline-Fixture. kind pulse und kind laser sind getrennte Implementierungen. Weder diese Pulse- noch diese Laser-Fixture-ID ist im aktuellen AUTO-Katalog registriert.",
               "certainty": "confirmed",
-              "sourceIds": ["fixtures"]
+              "sourceIds": ["fixtures", "live"]
             }
           ]
         },
@@ -2684,7 +2691,7 @@
       "usage": {
         "state": "default-game",
         "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
-        "reason": "M6-Trial-Slot im aktuellen AUTO-Katalog und Director S. Rezept aktiv; Preloader lädt Export; GeneratedHazardPresentation dispatcht molten-spike an MoltenSpikePresentation. Height-Selector variiert Platzierung, nicht das Asset. Keine deployte Revision behauptet.",
+        "reason": "M6-Trial-Slot im aktuellen AUTO-Katalog und Director-Button SP. Rezept aktiv; Preloader lädt Export; GeneratedHazardPresentation dispatcht molten-spike an MoltenSpikePresentation. Height-Selector variiert Platzierung, nicht das Asset. Keine deployte Revision behauptet.",
         "evidence": [
           {
             "id": "recipe",
@@ -2728,6 +2735,13 @@
             "path": "src/entities/MoltenSpikePresentation.ts",
             "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
             "kind": "code"
+          },
+          {
+            "id": "director-hud",
+            "path": "src/devtools/DirectorPerformanceHud.ts",
+            "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+            "kind": "code",
+            "symbol": "SP → spawnSpike"
           }
         ]
       },
