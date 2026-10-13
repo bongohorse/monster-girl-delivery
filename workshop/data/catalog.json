@@ -627,9 +627,9 @@
             },
             {
               "label": "Sichtbare Pickup-Grafik",
-              "value": "26 × 22 Bildschirm-Pixel im aktuellen Zeichenpfad; nicht identisch mit der autoritativen Kontaktfläche.",
+              "value": "26 × 22 logische Darstellungseinheiten im Graphics-Zeichenpfad, vor Kamera-/Renderauflösung; nicht identisch mit der autoritativen 28 × 28 Kontaktfläche oder physischen Displaypixeln.",
               "certainty": "confirmed",
-              "sourceIds": ["presentation"]
+              "sourceIds": ["presentation", "integration"]
             }
           ]
         },

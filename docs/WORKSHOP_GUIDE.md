@@ -19,6 +19,11 @@ Verwendung in belegten Elementfakten. Fehlende Bilddateien bedeuten nicht fehlen
 Die Prüfrevision belegt Repository-Code, keine aktuelle Live-Spielrevision.
 Es gibt keine zweite manuell gepflegte Bestandsliste.
 
+Die Kategorie ist eine primäre Zuordnung, kein Nachweis über das Fehlen verwandten Verhaltens:
+Posenwechsel, Tumble und Ladebewegung stehen bei Figur bzw. UI, Pfeil-/Blinkdarstellung beim
+Lieferpfeil. Leere Animation-/VFX-Kategorien erfordern deshalb keinen zweiten Eintrag derselben
+Darstellung. Plattformverpackung und Framework-Internals sind keine zusätzlichen Spielelemente.
+
 ## Konkreten Stand übergeben
 
 1. Eine Idee und ihre ausführbare Version öffnen, Konzept wählen und Regler einstellen.
