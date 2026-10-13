@@ -3,11 +3,19 @@
 Stand: Aufgabe 10 aus [#522](https://github.com/bongohorse/monster-girl-delivery/issues/522).
 Die Werkstatt ist eine Browserstudie; Spielintegration und Veröffentlichung bleiben separate Aufträge.
 
-**Umfang:** Die zehn Aufgaben liefern die technische Workshop-Grundlage mit einem kleinen
-Beispielkatalog: sechs Elemente, vier Assets, die Lieferpfeilversionen v1/v2 und eine
-unabhängige Pickup-Studie. Die vollständige Erfassung aller vorhandenen Spielelemente
-ist noch offen und wird anschließend separat erweitert. Leere Kategorien sind keine
+**Umfang:** Die zehn Aufgaben lieferten die technische Workshop-Grundlage mit einem kleinen
+Beispielkatalog. Der erste Teil von [#539](https://github.com/bongohorse/monster-girl-delivery/issues/539)
+ergänzt die implementierten Hazards einschließlich authored Varianten und ungenutzter Codeoptionen.
+Die übrigen Spielelemente und Kategorien bleiben Folgearbeit. Leere Kategorien sind keine
 Bestätigung, dass das Spiel dort keine Inhalte besitzt.
+
+Die kompakte Hazard-Übersicht entsteht aus `catalog.json` unter „Dokumentation → Hazards“;
+„Informationen“ enthält je Eintrag Verwendung, Varianten und Abdeckung, „Beziehungen / offene
+Angaben“ die verbleibenden Lücken. Suche/Archivfilter machen historische Einträge sichtbar.
+`archived` kennzeichnet hier historische Katalogdokumentation, keine Löschung von Spielfixtures.
+Assetreview und Assetverwendung bleiben getrennt; bei Codegrafiken steht die Verwendung in
+belegten Elementfakten. Die Prüfrevision belegt Repository-Code, keine aktuelle Live-Spielrevision.
+Es gibt keine zweite manuell gepflegte Bestandsliste.
 
 ## Konkreten Stand übergeben
 
