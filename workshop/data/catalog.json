@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "codeReviewRevision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+  "codeReviewRevision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
   "deployedGameRevision": null,
   "categories": [
     {
@@ -58,38 +58,62 @@
       "name": "Kurierin · Art Gate",
       "type": "Hero",
       "categoryId": "heros",
-      "tags": ["Kurierin", "Art Gate", "Pose"],
+      "tags": ["Kurierin", "Art Gate", "Pose", "Posenwechsel", "Animation"],
       "description": "Provisorische Kurierin aus dem Art-Gate-Trial. Der aktuelle Code lädt drei Konzeptposen und wechselt abhängig vom Flugzustand. Endgültige Produktionsart ist noch nicht belegt.",
       "documentation": {
         "state": "source-conflict",
-        "date": "2026-09-30",
+        "date": "2026-10-13",
         "notes": "Art-Brief beschreibt A als stabile Baseline und B/C als Experimente; der Runtime-Code wechselt automatisch zwischen den drei Posen.",
-        "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
-        "coverage": "Posenauswahl und provisorischer Art-Gate-Stand; keine vollständige Hero-/Animationsdokumentation."
+        "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+        "coverage": "Aktive Verwendung, bestehende Varianten und Zuständigkeiten am aktuellen main geprüft; fehlende Medien/Produktgrenzen bleiben sichtbar."
       },
-      "implementation": "partial",
+      "implementation": "implemented",
       "archived": false,
       "sources": [
         {
           "id": "1",
           "path": "src/entities/PrototypePlayerPresentation.ts",
-          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
           "kind": "code"
         },
         {
           "id": "2",
           "path": "src/game/scenes/Preloader.ts",
-          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
           "kind": "code"
         },
         {
           "id": "3",
           "path": "docs/M6_ASSET_SCENE_BRIEF.md",
-          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
           "kind": "doc"
+        },
+        {
+          "id": "flight",
+          "path": "src/systems/VerticalFlightSimulation.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "layout",
+          "path": "src/game/PrototypeFlightLayout.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "collision",
+          "path": "src/systems/HazardCollision.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "foundation",
+          "path": "src/game/scenes/Foundation.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
         }
       ],
-      "relatedElementIds": [],
+      "relatedElementIds": ["flight-controls", "run-results"],
       "openQuestions": [
         "Originaldateien und vollständiger Prompt sind im derzeitigen Bestand nicht belegt."
       ],
@@ -111,6 +135,37 @@
               "value": "Endgültige Produktionsfigur und reale Geräteabnahme sind nicht belegt.",
               "certainty": "unknown",
               "sourceIds": ["3"]
+            }
+          ]
+        },
+        {
+          "title": "Aktive Spielfigur / Varianten",
+          "facts": [
+            {
+              "label": "Laufzeitanschluss",
+              "value": "Foundation erzeugt die Darstellung; logische Flugposition und Run-Fortschritt besitzen die Simulation. Phaser projiziert Position/Rotation/Skalierung, Bilder und Alpha definieren keine Hitbox.",
+              "certainty": "confirmed",
+              "sourceIds": ["foundation", "flight", "layout", "collision"]
+            },
+            {
+              "label": "Posenauswahl / Animation",
+              "value": "A Start/Reset; B bei velocityY < -90, C bei > 90, sonst A. Neue Pose braucht 0.12 s Beruhigung und 0.18 s Mindesthaltezeit; fehlende B/C fallen auf A zurück. Einzelbild-/Zustandswechsel, keine Spritesheet- oder Skelettanimation.",
+              "certainty": "confirmed",
+              "sourceIds": ["1"],
+              "maturity": "prototype"
+            },
+            {
+              "label": "Primitive Ersatzfigur",
+              "value": "Nur bei fehlender A-Textur: Graphics-Kurierin mit Flügeln, Hörnern und dekorativem Paket; Darstellungsskalierung 6/7. Der Paketanteil ist unabhängig vom echten carrying-Zustand.",
+              "certainty": "confirmed",
+              "sourceIds": ["1"],
+              "maturity": "prototype"
+            },
+            {
+              "label": "Bildgeometrie",
+              "value": "Sichtbare Alpha-Konturen der vorhandenen 1254×1254-Posen bestimmen Display-Origin/gleichmäßige Skalierung; Floor/Ceiling-Clearance und Collision bleiben logische Autoritäten.",
+              "certainty": "confirmed",
+              "sourceIds": ["1", "layout", "collision"]
             }
           ]
         }
@@ -359,73 +414,73 @@
       "description": "Die bestehende Lieferdarstellung zeichnet Pfeile mit Phaser-Primitiven: über dem Paket und als Vorwarnung auf Empfängerhöhe. Eine eigenständige GPS-Bilddatei ist nicht belegt.",
       "documentation": {
         "state": "checked",
-        "date": "2026-09-30",
-        "notes": "Bestätigte aktuelle Darstellung; Pilotparameter sind keine Spielwerte.",
-        "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
-        "coverage": "Pickup-/Empfänger-Cue und distanzbasierte Vorwarnung; kein separater GPS-Dienst oder fertiger Workshop-Pilot."
+        "date": "2026-10-13",
+        "notes": "Aktiver Pickup-/Empfänger-Cue geprüft; ausführbare Workshop-Studien bleiben von Spielwerten getrennt.",
+        "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+        "coverage": "Aktiver Code-Cue und distanzbasierte Vorwarnung; bestehende Workshop-Versionen und Spielgrafik bleiben getrennt."
       },
-      "implementation": "partial",
+      "implementation": "implemented",
       "archived": false,
       "sources": [
         {
           "id": "spec",
           "path": "MASTER_SPEC.md",
-          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
           "kind": "spec",
           "symbol": "DECIDED release core — Product Gate A"
         },
         {
           "id": "authority",
           "path": "src/systems/ParcelDelivery.ts",
-          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
           "kind": "code",
           "symbol": "stepParcelDelivery"
         },
         {
           "id": "route",
           "path": "src/generation/FirstDeliveryRoute.ts",
-          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
           "kind": "code",
           "symbol": "createFirstDeliveryRoute"
         },
         {
           "id": "tuning",
           "path": "src/config/DeliveryTuning.ts",
-          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
           "kind": "code",
           "symbol": "PROTOTYPE_DELIVERY_TUNING"
         },
         {
           "id": "presentation",
           "path": "src/entities/FirstDeliveryPresentation.ts",
-          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
           "kind": "code",
           "symbol": "FirstDeliveryPresentation.render"
         },
         {
           "id": "integration",
           "path": "src/game/scenes/Foundation.ts",
-          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
           "kind": "code",
           "symbol": "create / update / render / restart"
         },
         {
           "id": "regression",
           "path": "tests/systems/ParcelDelivery.test.ts",
-          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
           "kind": "test"
         },
         {
           "id": "cue-tests",
           "path": "tests/entities/FirstDeliveryPresentation.test.ts",
-          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
           "kind": "test"
         }
       ],
       "relatedElementIds": ["parcel", "delivery-recipient", "parcel-delivery"],
       "openQuestions": [
         "Eine separate Pfeil-/GPS-Bilddatei, SFX oder Animationsdatei ist nicht belegt.",
-        "Drei freie Pfeilkonzepte entstehen erst im späteren Pilot; keine Auswahlentscheidung vorhanden."
+        "Workshop delivery-arrow-v1/v2 sind bestehende unabhängige Studien; ihre Konzepte/Controls sind nicht automatisch ins Spiel integriert."
       ],
       "sourceConflicts": [],
       "detailSections": [
@@ -487,60 +542,60 @@
       "description": "Optionaler Touch-Pickup im Endless-Run. Automatischer Kontakt nimmt das Paket auf; es gibt höchstens ein aktives Paket. Die sichtbare Grafik besteht aus Phaser-Primitiven.",
       "documentation": {
         "state": "checked",
-        "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
-        "date": "2026-09-30",
+        "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+        "date": "2026-10-13",
         "notes": "Produktentscheidung und aktuelle prototypische Implementierung sind getrennt dokumentiert.",
-        "coverage": "Liefergruppe im aktuellen Endless-Prototyp; finale Art, Economy und Geräteabnahme sind nicht belegt."
+        "coverage": "Aktive Verwendung, bestehende Varianten und Zuständigkeiten am aktuellen main geprüft; fehlende Medien/Produktgrenzen bleiben sichtbar."
       },
-      "implementation": "partial",
+      "implementation": "implemented",
       "archived": false,
       "sources": [
         {
           "id": "spec",
           "path": "MASTER_SPEC.md",
-          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
           "kind": "spec",
           "symbol": "DECIDED release core — Product Gate A"
         },
         {
           "id": "authority",
           "path": "src/systems/ParcelDelivery.ts",
-          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
           "kind": "code",
           "symbol": "stepParcelDelivery"
         },
         {
           "id": "route",
           "path": "src/generation/FirstDeliveryRoute.ts",
-          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
           "kind": "code",
           "symbol": "createFirstDeliveryRoute"
         },
         {
           "id": "tuning",
           "path": "src/config/DeliveryTuning.ts",
-          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
           "kind": "code",
           "symbol": "PROTOTYPE_DELIVERY_TUNING"
         },
         {
           "id": "presentation",
           "path": "src/entities/FirstDeliveryPresentation.ts",
-          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
           "kind": "code",
           "symbol": "FirstDeliveryPresentation.render"
         },
         {
           "id": "integration",
           "path": "src/game/scenes/Foundation.ts",
-          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
           "kind": "code",
           "symbol": "create / update / render / restart"
         },
         {
           "id": "regression",
           "path": "tests/systems/ParcelDelivery.test.ts",
-          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
           "kind": "test"
         }
       ],
@@ -611,7 +666,13 @@
           ]
         }
       ],
-      "relatedElementIds": ["delivery-recipient", "delivery-arrow", "parcel-delivery"],
+      "relatedElementIds": [
+        "delivery-recipient",
+        "delivery-arrow",
+        "parcel-delivery",
+        "courier-art-gate",
+        "run-results"
+      ],
       "openQuestions": [
         "Keine separate Paket-Bilddatei oder finale Paketart belegt.",
         "Tragephysik, Gewicht und Paketstapel sind außerhalb der bestätigten Slice-Entscheidung.",
@@ -630,60 +691,60 @@
       "description": "Provisorischer Empfängermarker mit großzügiger Übergabefläche. Während carrying liefert Kontakt automatisch; eine verpasste Übergabe beendet nur den Versuch.",
       "documentation": {
         "state": "source-conflict",
-        "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
-        "date": "2026-09-30",
+        "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+        "date": "2026-10-13",
         "notes": "Produktentscheidung und aktuelle prototypische Implementierung sind getrennt dokumentiert.",
-        "coverage": "Liefergruppe im aktuellen Endless-Prototyp; finale Art, Economy und Geräteabnahme sind nicht belegt."
+        "coverage": "Aktive Verwendung, bestehende Varianten und Zuständigkeiten am aktuellen main geprüft; fehlende Medien/Produktgrenzen bleiben sichtbar."
       },
-      "implementation": "partial",
+      "implementation": "implemented",
       "archived": false,
       "sources": [
         {
           "id": "spec",
           "path": "MASTER_SPEC.md",
-          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
           "kind": "spec",
           "symbol": "DECIDED release core — Product Gate A"
         },
         {
           "id": "authority",
           "path": "src/systems/ParcelDelivery.ts",
-          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
           "kind": "code",
           "symbol": "stepParcelDelivery"
         },
         {
           "id": "route",
           "path": "src/generation/FirstDeliveryRoute.ts",
-          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
           "kind": "code",
           "symbol": "createFirstDeliveryRoute"
         },
         {
           "id": "tuning",
           "path": "src/config/DeliveryTuning.ts",
-          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
           "kind": "code",
           "symbol": "PROTOTYPE_DELIVERY_TUNING"
         },
         {
           "id": "presentation",
           "path": "src/entities/FirstDeliveryPresentation.ts",
-          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
           "kind": "code",
           "symbol": "FirstDeliveryPresentation.render"
         },
         {
           "id": "integration",
           "path": "src/game/scenes/Foundation.ts",
-          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
           "kind": "code",
           "symbol": "create / update / render / restart"
         },
         {
           "id": "regression",
           "path": "tests/systems/ParcelDelivery.test.ts",
-          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
           "kind": "test"
         }
       ],
@@ -755,7 +816,7 @@
           ]
         }
       ],
-      "relatedElementIds": ["parcel", "delivery-arrow", "parcel-delivery"],
+      "relatedElementIds": ["parcel", "delivery-arrow", "parcel-delivery", "run-results"],
       "openQuestions": [
         "Empfängeridentität, finale Bilddatei und Übergabe-VFX/SFX sind nicht belegt."
       ],
@@ -774,10 +835,10 @@
       "description": "Optionaler Ablauf: Pickup → Tragen → Vorwarnung → Übergabe oder Miss → nächste Route. Erfolgreiche Lieferungen ergeben erst am Run-Ende einen prototypischen Coin-Bonus.",
       "documentation": {
         "state": "source-conflict",
-        "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
-        "date": "2026-09-30",
-        "notes": "Produktentscheidung und aktuelle prototypische Implementierung sind getrennt dokumentiert.",
-        "coverage": "Liefergruppe im aktuellen Endless-Prototyp; finale Art, Economy und Geräteabnahme sind nicht belegt."
+        "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+        "date": "2026-10-13",
+        "notes": "Gameplay-Slice aktiv; partial bezeichnet die belegte Produktlücke Paketwurf beim Miss, nicht fehlende finale Artfreigabe.",
+        "coverage": "Aktive Verwendung, bestehende Varianten und Zuständigkeiten am aktuellen main geprüft; fehlende Medien/Produktgrenzen bleiben sichtbar."
       },
       "implementation": "partial",
       "archived": false,
@@ -785,76 +846,76 @@
         {
           "id": "spec",
           "path": "MASTER_SPEC.md",
-          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
           "kind": "spec",
           "symbol": "DECIDED release core — Product Gate A"
         },
         {
           "id": "authority",
           "path": "src/systems/ParcelDelivery.ts",
-          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
           "kind": "code",
           "symbol": "stepParcelDelivery"
         },
         {
           "id": "route",
           "path": "src/generation/FirstDeliveryRoute.ts",
-          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
           "kind": "code",
           "symbol": "createFirstDeliveryRoute"
         },
         {
           "id": "tuning",
           "path": "src/config/DeliveryTuning.ts",
-          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
           "kind": "code",
           "symbol": "PROTOTYPE_DELIVERY_TUNING"
         },
         {
           "id": "presentation",
           "path": "src/entities/FirstDeliveryPresentation.ts",
-          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
           "kind": "code",
           "symbol": "FirstDeliveryPresentation.render"
         },
         {
           "id": "integration",
           "path": "src/game/scenes/Foundation.ts",
-          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
           "kind": "code",
           "symbol": "create / update / render / restart"
         },
         {
           "id": "regression",
           "path": "tests/systems/ParcelDelivery.test.ts",
-          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
           "kind": "test"
         },
         {
           "id": "simulation",
           "path": "src/systems/PrototypeRunSimulation.ts",
-          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
           "kind": "code",
           "symbol": "stepPrototypeRun"
         },
         {
           "id": "result",
           "path": "src/systems/PrototypeRunResult.ts",
-          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
           "kind": "code",
           "symbol": "calculateDeliveryReward / createPrototypeRunResultSnapshot"
         },
         {
           "id": "generation",
           "path": "src/generation/GeneratedHazardStream.ts",
-          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
           "kind": "code",
           "symbol": "getProtectedPatternBoundary"
         },
         {
           "id": "retry",
           "path": "src/systems/PrototypeDeathRetryFlow.ts",
-          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
           "kind": "code",
           "symbol": "stepPrototypeDeathRetryState / Foundation result reveal"
         }
@@ -948,7 +1009,14 @@
           ]
         }
       ],
-      "relatedElementIds": ["parcel", "delivery-recipient", "delivery-arrow"],
+      "relatedElementIds": [
+        "parcel",
+        "delivery-recipient",
+        "delivery-arrow",
+        "run-score",
+        "run-results",
+        "endless-encounters"
+      ],
       "openQuestions": [
         "Finale Economy, Produktionsart und mobile Slice-Abnahme sind nicht bestätigt.",
         "Kein separater Delivery-/Story-Modus. Gewichts-/Stapelphysik bleibt außerhalb dieser Entscheidung."
@@ -2414,6 +2482,1102 @@
         "Keine separate Bitmap-/Audio-/Animationsdatei für diese Codepräsentation im geprüften Hazard-Bestand belegt."
       ],
       "sourceConflicts": []
+    },
+    {
+      "id": "coin",
+      "name": "Münzen / sichtbare Pickups",
+      "type": "Collectible",
+      "categoryId": "collectibles",
+      "tags": ["Bestand #539"],
+      "description": "Prozedurale Münzpunkte aus akzeptierten Encounter-Routen; Kontakt zählt Items, Value und Run-Coins.",
+      "documentation": {
+        "state": "checked",
+        "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+        "date": "2026-10-13",
+        "notes": "Aktuelle Repository-Verwendung und Grenzen quellengebunden erfasst; keine neue Art-/Geräte-/Live-Abnahme.",
+        "coverage": "Verhalten, Zuständigkeit, Verwendung und vorhandene Varianten geprüft. Fehlende Medien und reine Planung ausdrücklich getrennt."
+      },
+      "implementation": "implemented",
+      "archived": false,
+      "previewArtifactId": null,
+      "assetIds": [],
+      "sources": [
+        {
+          "id": "foundation",
+          "path": "src/game/scenes/Foundation.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "presentation",
+          "path": "src/entities/GeneratedCollectiblePresentation.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "generation",
+          "path": "src/generation/GeneratedCollectibles.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "pickup",
+          "path": "src/systems/PrototypeCollectibles.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "simulation",
+          "path": "src/systems/PrototypeRunSimulation.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        }
+      ],
+      "detailSections": [
+        {
+          "title": "Verhalten / Verwendung",
+          "facts": [
+            {
+              "label": "Aktive Verwendung",
+              "value": "Foundation materialisiert Münzen aus akzeptierten AUTO-Hazard-Spawns und dem aktuellen Domain-Katalog; Director AUTO aus entfernt diese Routen. Kein unabhängiger zufälliger Münz-Spawner.",
+              "certainty": "confirmed",
+              "sourceIds": ["foundation", "generation"]
+            },
+            {
+              "label": "Darstellungsvarianten",
+              "value": "safe-guide: türkis 0x6fffe9; risk-reward: gold 0xffd166. Graphics-Kreis Radius 7, beide Intents teilen ein Graphics-Objekt; Scroll ist ein Transform. Verbrauchte IDs werden nicht mehr gezeichnet.",
+              "certainty": "confirmed",
+              "sourceIds": ["presentation"],
+              "maturity": "prototype"
+            },
+            {
+              "label": "Kontakt / Wert",
+              "value": "28×28 logische Kontaktfläche (half-size 14), Wert 1 je Spawn. Kontinuierlicher Kontakt und Tod-/Pickup-Reihenfolge gehören PrototypeCollectibles/PrototypeRunSimulation; Bildkreis ist keine Hitbox.",
+              "certainty": "confirmed",
+              "sourceIds": ["pickup", "generation", "simulation"],
+              "maturity": "prototype"
+            },
+            {
+              "label": "Lifecycle",
+              "value": "Stabile ID aus Pattern/Start/Path/Punkt; Aufnahme einmalig, Retention bis 160 logische Distanz hinter Spieler; kein Pickup-SFX oder separat gerenderter Burst in der bestehenden Präsentation.",
+              "certainty": "confirmed",
+              "sourceIds": ["generation", "pickup", "presentation"]
+            }
+          ]
+        }
+      ],
+      "relatedElementIds": ["coin-formations", "run-score", "endless-encounters"],
+      "openQuestions": [
+        "Aktuelle deployte Spielrevision und physische Geräte-/Touchabnahme in diesem Auftrag nicht geprüft.",
+        "Prozedurale Darstellung oder Regelmodul; kein separates Bild-/Audio-/Animationsmedium im geprüften Bestand belegt."
+      ],
+      "sourceConflicts": []
+    },
+    {
+      "id": "coin-formations",
+      "name": "Münzformationen / Routen",
+      "type": "Routenbestand",
+      "categoryId": "collectibles",
+      "tags": ["Bestand #539"],
+      "description": "Polyline- und Sinus-Routen im aktuellen AUTO; zusätzliche Grid-/ASCII-Generatoren und ältere Teaching-/Recovery-Routen sind implementiert, aber ungenutzt.",
+      "documentation": {
+        "state": "checked",
+        "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+        "date": "2026-10-13",
+        "notes": "Aktuelle Repository-Verwendung und Grenzen quellengebunden erfasst; keine neue Art-/Geräte-/Live-Abnahme.",
+        "coverage": "Verhalten, Zuständigkeit, Verwendung und vorhandene Varianten geprüft. Fehlende Medien und reine Planung ausdrücklich getrennt."
+      },
+      "implementation": "implemented",
+      "archived": false,
+      "previewArtifactId": null,
+      "assetIds": [],
+      "sources": [
+        {
+          "id": "foundation",
+          "path": "src/game/scenes/Foundation.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "formation",
+          "path": "src/generation/CollectibleFormationGenerator.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "single",
+          "path": "src/generation/M5AuthoredSingleEncounterSegments.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "pressure",
+          "path": "src/generation/M5AuthoredPressureEncounterSegments.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "spike",
+          "path": "src/generation/M6MoltenSpikeTrial.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "movement",
+          "path": "src/generation/M5CollectibleMovementPatterns.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "combo",
+          "path": "src/generation/M5AuthoredMultiHazardPatterns.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "live",
+          "path": "src/generation/M5LiveEncounterCatalog.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "domain",
+          "path": "src/generation/PrototypeHazardVerticalDomain.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "validation",
+          "path": "src/generation/CollectiblePathValidator.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        }
+      ],
+      "detailSections": [
+        {
+          "title": "Vorhandene Varianten / Verwendung",
+          "facts": [
+            {
+              "label": "Aktive AUTO-Routen",
+              "value": "Singles: horizontal-lower-route, diagonal-upper-route, rotating-lower-wave (Sinus), vertical-lower-route, timed-lower-route, laser-lower-route. Pressure: low-to-high-route, high-to-low-route, high-laser-center-route, low-laser-center-route, rotating-switch-route. Spike: spike-lower-safe-guide. Alle safe-guide; Spacing 48.",
+              "certainty": "confirmed",
+              "sourceIds": ["single", "pressure", "spike", "live"],
+              "maturity": "prototype"
+            },
+            {
+              "label": "Implementierte Formgeneratoren",
+              "value": "UniformPolyline wird nach Bogenlänge resampled; Sine erzeugt und resampled eine Welle. Grid erzeugt mehrere Zeilen; Bitmap konvertiert ASCII-Daten zu Coin-Zeilen, kein Bildasset. Grid/Bitmap haben keinen aktuellen authored AUTO-Verbraucher.",
+              "certainty": "confirmed",
+              "sourceIds": ["formation", "single", "pressure", "live"]
+            },
+            {
+              "label": "Ungenutzte authored Routen",
+              "value": "M5CollectibleMovementPatterns: teaching-flight-arc, corridor-center-route, offset-graze-route (risk-reward, spacing 44), recovery-wave. applyM5CollectibleMovementPatterns ist im aktuellen Spiel nicht angeschlossen. Ältere Fixture-Routen bleiben erhalten.",
+              "certainty": "confirmed",
+              "sourceIds": ["movement", "live", "domain"],
+              "maturity": "prototype"
+            },
+            {
+              "label": "Ungenutzte Combo-Routen",
+              "value": "M5_MISSILE_ZAPPER_PATTERN: missile-zapper-graze-invite (risk-reward, 32); M5_LASER_ZAPPER_PATTERN: laser-zapper-center-wave (safe-guide Sinus, 32). Missile/Laser-Combo hat keine Coinroute; Combos sind nicht aktuelles AUTO.",
+              "certainty": "confirmed",
+              "sourceIds": ["combo", "live"],
+              "maturity": "prototype"
+            },
+            {
+              "label": "Validierung / Zuständigkeit",
+              "value": "CollectiblePathValidator prüft Routen gegen akzeptierte logische Hazardgeometrie; vertikale Domain adaptiert zukünftige Punkte. Formation/Intent bedeutet keine neue Reward-Art oder automatische Zulassung.",
+              "certainty": "confirmed",
+              "sourceIds": ["validation", "domain", "formation"]
+            }
+          ]
+        }
+      ],
+      "relatedElementIds": ["coin", "endless-encounters", "graze"],
+      "openQuestions": [
+        "Aktuelle deployte Spielrevision und physische Geräte-/Touchabnahme in diesem Auftrag nicht geprüft.",
+        "Prozedurale Darstellung oder Regelmodul; kein separates Bild-/Audio-/Animationsmedium im geprüften Bestand belegt."
+      ],
+      "sourceConflicts": []
+    },
+    {
+      "id": "scrolling-city",
+      "name": "Scrollende Stadt / Boden",
+      "type": "Umgebung",
+      "categoryId": "backgrounds",
+      "tags": ["Bestand #539"],
+      "description": "Aktive prozedurale Skyline und Bodenmarkierungen des Endless-Prototyps; kein fertiger Biome oder Hintergrundbitmap.",
+      "documentation": {
+        "state": "checked",
+        "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+        "date": "2026-10-13",
+        "notes": "Aktuelle Repository-Verwendung und Grenzen quellengebunden erfasst; keine neue Art-/Geräte-/Live-Abnahme.",
+        "coverage": "Verhalten, Zuständigkeit, Verwendung und vorhandene Varianten geprüft. Fehlende Medien und reine Planung ausdrücklich getrennt."
+      },
+      "implementation": "implemented",
+      "archived": false,
+      "previewArtifactId": null,
+      "assetIds": [],
+      "sources": [
+        {
+          "id": "foundation",
+          "path": "src/game/scenes/Foundation.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "presentation",
+          "path": "src/entities/PrototypeScrollingWorldPresentation.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "layout",
+          "path": "src/game/PrototypeScrollingWorldLayout.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "flight",
+          "path": "src/game/PrototypeFlightLayout.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        }
+      ],
+      "detailSections": [
+        {
+          "title": "Darstellung / Verwendung",
+          "facts": [
+            {
+              "label": "Aktive Verwendung",
+              "value": "Foundation erstellt/zeichnet die Umgebung aus autoritativer Run-Distanz und Viewport; Graphics bei Depth -100, Hintergrundfarbe der Spielkamera #121426. Kein Spielimport von bg.png in Foundation.",
+              "certainty": "confirmed",
+              "sourceIds": ["foundation", "presentation"]
+            },
+            {
+              "label": "Varianten / Scroll",
+              "value": "Wiederholende Gebäudehöhen 96/144/112/176, Breite 104, Abstand 128; Bodenhöhe 12, Markerbreite 48/Abstand 96. Wrap-Offset bewegt nach links aus Run-Distanz, kein unabhängiger Animationstimer oder zufällige Gebäudeauswahl.",
+              "certainty": "confirmed",
+              "sourceIds": ["layout"],
+              "maturity": "prototype"
+            },
+            {
+              "label": "Geometriegrenze",
+              "value": "Skyline/Boden folgen der vertikalen Projektion. Gezeichneter Boden besitzt keine Collision; logische Fluggrenzen sind separat in PrototypeFlightLayout/FlightSimulation definiert.",
+              "certainty": "confirmed",
+              "sourceIds": ["layout", "flight", "presentation"]
+            }
+          ]
+        }
+      ],
+      "relatedElementIds": ["flight-controls", "endless-encounters", "loading-screen"],
+      "openQuestions": [
+        "Aktuelle deployte Spielrevision und physische Geräte-/Touchabnahme in diesem Auftrag nicht geprüft.",
+        "Prozedurale Darstellung oder Regelmodul; kein separates Bild-/Audio-/Animationsmedium im geprüften Bestand belegt."
+      ],
+      "sourceConflicts": []
+    },
+    {
+      "id": "loading-screen",
+      "name": "Start / Ladeanzeige",
+      "type": "UI",
+      "categoryId": "ui",
+      "tags": ["Bestand #539"],
+      "description": "Produktiver DOM-Bootschirm und Phaser-Preloader vor Foundation, einschließlich vorhandener Starter-Hintergrunddatei.",
+      "documentation": {
+        "state": "checked",
+        "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+        "date": "2026-10-13",
+        "notes": "Aktuelle Repository-Verwendung und Grenzen quellengebunden erfasst; keine neue Art-/Geräte-/Live-Abnahme.",
+        "coverage": "Verhalten, Zuständigkeit, Verwendung und vorhandene Varianten geprüft. Fehlende Medien und reine Planung ausdrücklich getrennt."
+      },
+      "implementation": "implemented",
+      "archived": false,
+      "previewArtifactId": "starter-background-runtime",
+      "assetIds": ["starter-background"],
+      "sources": [
+        {
+          "id": "foundation",
+          "path": "src/game/scenes/Foundation.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "html",
+          "path": "index.html",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "entry",
+          "path": "src/main.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "boot",
+          "path": "src/game/scenes/Boot.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "preloader",
+          "path": "src/game/scenes/Preloader.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "layout",
+          "path": "src/game/PreloaderLayout.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        }
+      ],
+      "detailSections": [
+        {
+          "title": "Verhalten / Varianten",
+          "facts": [
+            {
+              "label": "Aktive Startfolge",
+              "value": "index.html zeigt MGD/Loading…; src/main.ts setzt Starting… und entfernt Bootschirm nach erstem postrender. Boot lädt background aus public/assets/bg.png; Preloader nutzt es mit Frame/Fill-Ladebalken und startet Foundation.",
+              "certainty": "confirmed",
+              "sourceIds": ["html", "entry", "boot", "preloader"]
+            },
+            {
+              "label": "DOM-Zustände",
+              "value": "Normal, Start verzögert nach 12 s, Start fehlgeschlagen bei error/unhandledrejection; Reload-Button lädt Seite neu. reduced-motion deaktiviert Boot-CSS-Bewegung. Kein Startmenü oder Spiel-Pausebutton.",
+              "certainty": "confirmed",
+              "sourceIds": ["html"]
+            },
+            {
+              "label": "Phaser-Preloader",
+              "value": "Loader-PROGRESS aktualisiert Füllbreite; Resize passt Layout/Background an. Hintergrund wird nur hier verwendet, nicht als aktive Endless-Skyline.",
+              "certainty": "confirmed",
+              "sourceIds": ["preloader", "layout"]
+            },
+            {
+              "label": "Assetreview",
+              "value": "bg.png ist vorhandenes Starter-Medium; keine Director-Artfreigabe oder ursprüngliche Quelldatei/Prompt belegt.",
+              "certainty": "confirmed",
+              "sourceIds": ["boot", "preloader"]
+            }
+          ]
+        }
+      ],
+      "relatedElementIds": ["scrolling-city", "courier-art-gate"],
+      "openQuestions": [
+        "Aktuelle deployte Spielrevision und physische Geräte-/Touchabnahme in diesem Auftrag nicht geprüft."
+      ],
+      "sourceConflicts": []
+    },
+    {
+      "id": "run-results",
+      "name": "Run-Ende / Ergebnisse / Retry",
+      "type": "UI",
+      "categoryId": "ui",
+      "tags": ["Bestand #539", "Tumble", "Animation"],
+      "description": "Produktive Textanzeige nach Tod mit kurzem Tumble, Lieferbonus-Reveal und Ein-Aktions-Retry; kein reguläres laufendes Zahlen-HUD.",
+      "documentation": {
+        "state": "checked",
+        "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+        "date": "2026-10-13",
+        "notes": "Aktuelle Repository-Verwendung und Grenzen quellengebunden erfasst; keine neue Art-/Geräte-/Live-Abnahme.",
+        "coverage": "Verhalten, Zuständigkeit, Verwendung und vorhandene Varianten geprüft. Fehlende Medien und reine Planung ausdrücklich getrennt."
+      },
+      "implementation": "implemented",
+      "archived": false,
+      "previewArtifactId": null,
+      "assetIds": [],
+      "sources": [
+        {
+          "id": "foundation",
+          "path": "src/game/scenes/Foundation.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "retry",
+          "path": "src/systems/PrototypeDeathRetryFlow.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "result",
+          "path": "src/systems/PrototypeRunResult.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "input",
+          "path": "src/input/InputService.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "lifecycle",
+          "path": "src/core/LifecycleService.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "layout",
+          "path": "src/game/PrototypeFlightLayout.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        }
+      ],
+      "detailSections": [
+        {
+          "title": "UI / Lifecycle",
+          "facts": [
+            {
+              "label": "Aktive Anzeige",
+              "value": "Foundation.instructions ist im laufenden Spiel leer (RUNNING_INSTRUCTIONS). Nach Tod: Delivery interrupted, Distanz, Grazes, Items/Value/Coins, bei Lieferungen Anzahl/Bonus, Parcel recovery… bzw. Retry-Hinweis. Laufende Director-Zähler sind Debug-UI, kein reguläres Zahlen-HUD.",
+              "certainty": "confirmed",
+              "sourceIds": ["foundation"]
+            },
+            {
+              "label": "Fail-state / Tumble",
+              "value": "running → fail-state → retry-ready; 0.65 s aus normalisierter Simulationszeit. Foundation projiziert einen Tumble/Rotation aus Fail-state-Progress; kein eigenes Spritesheet, kein Einfluss auf das bereits eingefrorene Ergebnis.",
+              "certainty": "confirmed",
+              "sourceIds": ["retry", "foundation"],
+              "maturity": "prototype"
+            },
+            {
+              "label": "Lieferbonus-Reveal",
+              "value": "0.5 s beschleunigte Anzeige: floor(deliveryCount × progress²). Bei vorhandenen Lieferungen deckt erster akzeptierter Press im Fail-state vollständig auf; Retry verlangt eine weitere frische Aktion aus retry-ready.",
+              "certainty": "confirmed",
+              "sourceIds": ["foundation", "result"],
+              "maturity": "prototype"
+            },
+            {
+              "label": "Retry / Varianten",
+              "value": "Tap, primärer Mausklick oder Space über InputService; kein gedrückter alter Input als automatische Wiederholung. Normaler Retry wählt neue Seed; Touch bei aktiver DiagnosticsAccess wartet auf Release/Gestenentscheidung. Pause verhindert Retry und Fortschritt.",
+              "certainty": "confirmed",
+              "sourceIds": ["foundation", "input", "lifecycle"]
+            },
+            {
+              "label": "Layout / Autorität",
+              "value": "Text wird innerhalb Safe-Area positioniert/umgebrochen; Anzeige liest immutable ResultSnapshot und berechnet nur den sichtbaren Reveal. Keine Coins-/Graze-Hitbox oder persistente Ergebnisliste.",
+              "certainty": "confirmed",
+              "sourceIds": ["foundation", "result"]
+            }
+          ]
+        }
+      ],
+      "relatedElementIds": [
+        "run-score",
+        "parcel-delivery",
+        "courier-art-gate",
+        "director-tools",
+        "flight-controls"
+      ],
+      "openQuestions": [
+        "Aktuelle deployte Spielrevision und physische Geräte-/Touchabnahme in diesem Auftrag nicht geprüft.",
+        "Prozedurale Darstellung oder Regelmodul; kein separates Bild-/Audio-/Animationsmedium im geprüften Bestand belegt."
+      ],
+      "sourceConflicts": []
+    },
+    {
+      "id": "flight-controls",
+      "name": "Flug / Ein-Knopf-Steuerung",
+      "type": "Mechanik",
+      "categoryId": "mechanics",
+      "tags": ["Bestand #539"],
+      "description": "Aktiver Hold-to-thrust/Release-to-fall-Flug mit logischer Zeit, Bounds und horizontalem Run-Fortschritt.",
+      "documentation": {
+        "state": "checked",
+        "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+        "date": "2026-10-13",
+        "notes": "Aktuelle Repository-Verwendung und Grenzen quellengebunden erfasst; keine neue Art-/Geräte-/Live-Abnahme.",
+        "coverage": "Verhalten, Zuständigkeit, Verwendung und vorhandene Varianten geprüft. Fehlende Medien und reine Planung ausdrücklich getrennt."
+      },
+      "implementation": "implemented",
+      "archived": false,
+      "previewArtifactId": null,
+      "assetIds": [],
+      "sources": [
+        {
+          "id": "foundation",
+          "path": "src/game/scenes/Foundation.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "input",
+          "path": "src/input/InputService.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "adapter",
+          "path": "src/input/PhaserInputAdapter.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "flight",
+          "path": "src/systems/VerticalFlightSimulation.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "motion",
+          "path": "src/systems/RunMotionSimulation.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "layout",
+          "path": "src/game/PrototypeFlightLayout.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "tuning",
+          "path": "src/config/FlightTuningConfig.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "run-tuning",
+          "path": "src/config/RunMotionConfig.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "time",
+          "path": "src/core/TimeService.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "lifecycle",
+          "path": "src/core/LifecycleService.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "lifecycle-adapter",
+          "path": "src/core/PhaserLifecycleAdapter.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        }
+      ],
+      "detailSections": [
+        {
+          "title": "Verhalten / Zuständigkeit",
+          "facts": [
+            {
+              "label": "Aktive Verwendung",
+              "value": "Foundation konsumiert InputService.thrustHeld; PhaserInputAdapter besitzt rohe Pointer-/Space-Ereignisse. Vertikale Simulation besitzt Position/Geschwindigkeit, RunMotionSimulation die Run-Distanz; Darstellung projiziert nur.",
+              "certainty": "confirmed",
+              "sourceIds": ["foundation", "input", "adapter", "flight", "motion"]
+            },
+            {
+              "label": "Eingabevarianten",
+              "value": "Ein aktiver Pointer mit ID (Touch/primäre Maus), Space; Hold hebt an, Release fällt. Cancel, UpOutside, Inputblock und Lifecycle-Unterbrechung lösen Held-State. Kein virtuelles Joystick-/Gamepad-Menü implementiert.",
+              "certainty": "confirmed",
+              "sourceIds": ["input", "adapter", "lifecycle-adapter"]
+            },
+            {
+              "label": "Prototype-Defaults",
+              "value": "gravity 1600, thrust 2600, maxFallVelocity 700, maxRiseVelocity 550; baseScrollSpeed 350. LivePolicy koppelt effektive Flugparameter an Geschwindigkeit/Difficulty; Defaults sind keine unveränderlichen Spielwerte.",
+              "certainty": "confirmed",
+              "sourceIds": ["tuning", "run-tuning", "foundation"],
+              "maturity": "prototype"
+            },
+            {
+              "label": "Zeit / Grenzen",
+              "value": "TimeService normalisiert/clamped Delta, pausiert und verwirft erstes Resume-Delta; LifecycleService aggregiert Pausegründe. Logische Floor-/Ceiling-Bounds begrenzen Flug; Kontakt mit Bounds ist nicht als zusätzlicher tödlicher Hazard definiert.",
+              "certainty": "confirmed",
+              "sourceIds": ["time", "lifecycle", "flight", "layout"]
+            }
+          ]
+        }
+      ],
+      "relatedElementIds": [
+        "courier-art-gate",
+        "scrolling-city",
+        "endless-encounters",
+        "run-results"
+      ],
+      "openQuestions": [
+        "Aktuelle deployte Spielrevision und physische Geräte-/Touchabnahme in diesem Auftrag nicht geprüft.",
+        "Prozedurale Darstellung oder Regelmodul; kein separates Bild-/Audio-/Animationsmedium im geprüften Bestand belegt."
+      ],
+      "sourceConflicts": []
+    },
+    {
+      "id": "run-score",
+      "name": "Distanzscore / Run-Coins",
+      "type": "Mechanik",
+      "categoryId": "mechanics",
+      "tags": ["Bestand #539"],
+      "description": "Implementierter Distanzscore und unveränderlicher Run-End-Snapshot mit Pickup- und Lieferbelohnungen; keine gespeicherte Meta-Economy.",
+      "documentation": {
+        "state": "checked",
+        "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+        "date": "2026-10-13",
+        "notes": "Aktuelle Repository-Verwendung und Grenzen quellengebunden erfasst; keine neue Art-/Geräte-/Live-Abnahme.",
+        "coverage": "Verhalten, Zuständigkeit, Verwendung und vorhandene Varianten geprüft. Fehlende Medien und reine Planung ausdrücklich getrennt."
+      },
+      "implementation": "implemented",
+      "archived": false,
+      "previewArtifactId": null,
+      "assetIds": [],
+      "sources": [
+        {
+          "id": "foundation",
+          "path": "src/game/scenes/Foundation.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "result",
+          "path": "src/systems/PrototypeRunResult.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "simulation",
+          "path": "src/systems/PrototypeRunSimulation.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "pickup",
+          "path": "src/systems/PrototypeCollectibles.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "services",
+          "path": "src/core/AppServices.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        }
+      ],
+      "detailSections": [
+        {
+          "title": "Regeln / Verwendung",
+          "facts": [
+            {
+              "label": "Score",
+              "value": "floor(finalDistance), Distanz als einzige implementierte Scorequelle; Grazes/Items/Lieferungen bleiben getrennte Zähler. Keine Multiplikatoren oder Combo-Score aus Präsentation.",
+              "certainty": "confirmed",
+              "sourceIds": ["result"]
+            },
+            {
+              "label": "Belohnungen",
+              "value": "Coin-Pickups erhöhen collectedCount, collectedValue, earnedReward. Result addiert Lieferbonus 100/150/225/338, ab fünfter Lieferung 400; kein Bonus für unfertige Pakete.",
+              "certainty": "confirmed",
+              "sourceIds": ["pickup", "result"],
+              "maturity": "prototype"
+            },
+            {
+              "label": "Autoritativer Endpunkt",
+              "value": "PrototypeRunSimulation erstellt beim ersten tödlichen Kontakt den eingefrorenen Snapshot; post-death Anzeige/Tumble/Reveal ändern keine Spieltotals.",
+              "certainty": "confirmed",
+              "sourceIds": ["simulation", "result"]
+            },
+            {
+              "label": "Persistenz / Planung",
+              "value": "Runlokale Daten; AppServices besitzt keinen SaveManager oder Wallet-/Bestscore-Service. Gallery, Character-Unlocks, dauerhafte Records und tiefe Economy sind keine implementierten Spielinhalte.",
+              "certainty": "confirmed",
+              "sourceIds": ["services", "result"]
+            }
+          ]
+        }
+      ],
+      "relatedElementIds": ["coin", "graze", "parcel-delivery", "run-results"],
+      "openQuestions": [
+        "Aktuelle deployte Spielrevision und physische Geräte-/Touchabnahme in diesem Auftrag nicht geprüft.",
+        "Prozedurale Darstellung oder Regelmodul; kein separates Bild-/Audio-/Animationsmedium im geprüften Bestand belegt."
+      ],
+      "sourceConflicts": []
+    },
+    {
+      "id": "graze",
+      "name": "Graze / Near Miss",
+      "type": "Mechanik",
+      "categoryId": "mechanics",
+      "tags": ["Bestand #539"],
+      "description": "Aktive optionale Near-Miss-Zählung mit separatem tödlichem Kern und deduplizierten Hazard-Occurrences.",
+      "documentation": {
+        "state": "checked",
+        "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+        "date": "2026-10-13",
+        "notes": "Aktuelle Repository-Verwendung und Grenzen quellengebunden erfasst; keine neue Art-/Geräte-/Live-Abnahme.",
+        "coverage": "Verhalten, Zuständigkeit, Verwendung und vorhandene Varianten geprüft. Fehlende Medien und reine Planung ausdrücklich getrennt."
+      },
+      "implementation": "implemented",
+      "archived": false,
+      "previewArtifactId": null,
+      "assetIds": [],
+      "sources": [
+        {
+          "id": "foundation",
+          "path": "src/game/scenes/Foundation.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "graze",
+          "path": "src/systems/PrototypeGraze.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "collision",
+          "path": "src/systems/HazardCollision.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "simulation",
+          "path": "src/systems/PrototypeRunSimulation.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "result",
+          "path": "src/systems/PrototypeRunResult.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        }
+      ],
+      "detailSections": [
+        {
+          "title": "Verhalten / Varianten",
+          "facts": [
+            {
+              "label": "Aktive Verwendung",
+              "value": "PrototypeRunSimulation prüft Graze über dieselbe kontinuierliche Spielertrajektorie wie tödlichen Kontakt/Pickups. Result enthält grazeCount, Foundation zeigt ihn nach Run-Ende bzw. in Director-Diagnosen.",
+              "certainty": "confirmed",
+              "sourceIds": ["simulation", "result", "foundation"]
+            },
+            {
+              "label": "Geometrievarianten",
+              "value": "Legacy-Hazards verwenden erweiterte Spielerzone (left/right 26, top/bottom 32); Zapper erweitern autoritative Beam-/Node-Geometrie um authored Graze-Padding. Laser/Missile besitzen ihre eigenen aktiven Geometrie-/Intervallpfade.",
+              "certainty": "confirmed",
+              "sourceIds": ["graze", "collision"],
+              "maturity": "prototype"
+            },
+            {
+              "label": "Qualifikation / Deduplizierung",
+              "value": "Outer-Kontakt wird vorgemerkt; erst sichere abgeschlossene Gelegenheit (voller Pass oder finales Lethal-Intervall) qualifiziert Near Miss. Core-Kontakt verhindert den Graze desselben Hazards; Award pro logischer Occurrence.",
+              "certainty": "confirmed",
+              "sourceIds": ["graze"]
+            },
+            {
+              "label": "Präsentation / Rewards",
+              "value": "Kein eigener Graze-Burst, SFX, Reward-Multiplier oder Combo-HUD im aktuellen Runtime-Pfad. Implementiert ist die runlokale Zählung, nicht ein weiteres Bildasset.",
+              "certainty": "confirmed",
+              "sourceIds": ["foundation", "graze", "result"]
+            }
+          ]
+        }
+      ],
+      "relatedElementIds": [
+        "run-score",
+        "run-results",
+        "zapper",
+        "laser",
+        "red-missile",
+        "coin-formations"
+      ],
+      "openQuestions": [
+        "Aktuelle deployte Spielrevision und physische Geräte-/Touchabnahme in diesem Auftrag nicht geprüft.",
+        "Prozedurale Darstellung oder Regelmodul; kein separates Bild-/Audio-/Animationsmedium im geprüften Bestand belegt."
+      ],
+      "sourceConflicts": []
+    },
+    {
+      "id": "endless-encounters",
+      "name": "Endless-Encounter / Difficulty / Pacing",
+      "type": "Encounter-System",
+      "categoryId": "encounters",
+      "tags": ["Bestand #539"],
+      "description": "Aktive deterministische Generate→Validate→Spawn-Kette mit distanzbasierten Difficulty-Tiers, Breathers und authored AUTO-Vokabular.",
+      "documentation": {
+        "state": "checked",
+        "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+        "date": "2026-10-13",
+        "notes": "Aktuelle Repository-Verwendung und Grenzen quellengebunden erfasst; keine neue Art-/Geräte-/Live-Abnahme.",
+        "coverage": "Verhalten, Zuständigkeit, Verwendung und vorhandene Varianten geprüft. Fehlende Medien und reine Planung ausdrücklich getrennt."
+      },
+      "implementation": "implemented",
+      "archived": false,
+      "previewArtifactId": null,
+      "assetIds": [],
+      "sources": [
+        {
+          "id": "foundation",
+          "path": "src/game/scenes/Foundation.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "live",
+          "path": "src/generation/M5LiveEncounterCatalog.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "spike",
+          "path": "src/generation/M6MoltenSpikeTrial.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "stream",
+          "path": "src/generation/GeneratedHazardStream.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "policy",
+          "path": "src/generation/LiveEncounterPolicy.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "difficulty",
+          "path": "src/difficulty/DifficultySystem.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "pacing",
+          "path": "src/pacing/PacingSystem.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "generator",
+          "path": "src/generation/PatternGenerator.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "validator",
+          "path": "src/generation/PatternValidator.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "transition",
+          "path": "src/generation/EncounterTransitionValidator.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "readability",
+          "path": "src/generation/EncounterReadabilityBudget.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "variety",
+          "path": "src/generation/EncounterVarietyPolicy.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "seed",
+          "path": "src/generation/SeededPrng.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "route",
+          "path": "src/generation/FirstDeliveryRoute.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        }
+      ],
+      "detailSections": [
+        {
+          "title": "Aktiver Bestand / Varianten",
+          "facts": [
+            {
+              "label": "AUTO-Vokabular",
+              "value": "Sechs M5-Singles (fünf Zapper + Laser), fünf M5-Pressure-Segmente und ein M6-Spike-Trial. Missile, historische M3/M4-Arrays und alte authored MultiHazard-Combos sind nicht aktives AUTO. Einzelhazards/Varianten bleiben in den bestehenden Hazard-Einträgen dokumentiert.",
+              "certainty": "confirmed",
+              "sourceIds": ["live", "spike"]
+            },
+            {
+              "label": "Difficulty / Pacing",
+              "value": "Tiers tier-0..tier-5 ab 0/3000/7000/12000/18000/26000 m, Speed-Multiplikatoren 1/1.12/1.25/1.38/1.5/1.6; Pacing wiederholt breather/low/breather/medium/breather/high/breather/peak mit distanzbasierten Drucklimits.",
+              "certainty": "confirmed",
+              "sourceIds": ["difficulty", "pacing"],
+              "maturity": "prototype"
+            },
+            {
+              "label": "Zuständigkeit / Fairness",
+              "value": "SeededPrng und PatternGenerator wählen; PatternValidator/TransitionValidator/Readability/Variety filtern; GeneratedHazardStream schedult unveränderliche akzeptierte Spawns. Recovery und sichere Reaktion besitzen die logische Policy, nicht Bildschirmrand oder Artwork.",
+              "certainty": "confirmed",
+              "sourceIds": [
+                "seed",
+                "generator",
+                "validator",
+                "transition",
+                "readability",
+                "variety",
+                "stream",
+                "policy"
+              ]
+            },
+            {
+              "label": "Lieferung / Tuning / Wiederstart",
+              "value": "Separat wiederholte Pickup-/Handoff-Schutzintervalle; Carry ist nicht durchgehend hazardfrei. Speed-/Flight-Tuning wird über LivePolicy auf sichere Content-Grenzen verschoben. Normaler Retry neue Seed, Director gleiche Seed oder neue Zufallsseed.",
+              "certainty": "confirmed",
+              "sourceIds": ["route", "policy", "foundation"]
+            }
+          ]
+        }
+      ],
+      "relatedElementIds": [
+        "coin-formations",
+        "flight-controls",
+        "parcel-delivery",
+        "zapper",
+        "laser",
+        "molten-spike",
+        "director-tools"
+      ],
+      "openQuestions": [
+        "Aktuelle deployte Spielrevision und physische Geräte-/Touchabnahme in diesem Auftrag nicht geprüft.",
+        "Prozedurale Darstellung oder Regelmodul; kein separates Bild-/Audio-/Animationsmedium im geprüften Bestand belegt."
+      ],
+      "sourceConflicts": []
+    },
+    {
+      "id": "director-tools",
+      "name": "Director / optionale Produktionsdiagnosen",
+      "type": "Diagnose-UI",
+      "categoryId": "ui",
+      "tags": ["Bestand #539"],
+      "description": "Implementierte Entwickler- und opt-in Produktionsdiagnosen; getrennt von produktiver Spielanzeige und Regeln.",
+      "documentation": {
+        "state": "checked",
+        "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+        "date": "2026-10-13",
+        "notes": "Aktuelle Repository-Verwendung und Grenzen quellengebunden erfasst; keine neue Art-/Geräte-/Live-Abnahme.",
+        "coverage": "Verhalten, Zuständigkeit, Verwendung und vorhandene Varianten geprüft. Fehlende Medien und reine Planung ausdrücklich getrennt."
+      },
+      "implementation": "implemented",
+      "archived": false,
+      "previewArtifactId": null,
+      "assetIds": [],
+      "sources": [
+        {
+          "id": "foundation",
+          "path": "src/game/scenes/Foundation.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "entry",
+          "path": "src/main.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "hud",
+          "path": "src/devtools/DirectorPerformanceHud.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "panel",
+          "path": "src/devtools/DirectorPanel.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "run-controls",
+          "path": "src/devtools/DirectorRunControls.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "tuning",
+          "path": "src/devtools/DirectorTuningControls.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "access",
+          "path": "src/devtools/DiagnosticsAccess.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "overlay",
+          "path": "src/devtools/DirectorDebugOverlay.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "encounter",
+          "path": "src/devtools/DirectorEncounterDiagnostics.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        },
+        {
+          "id": "styles",
+          "path": "public/style.css",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code"
+        }
+      ],
+      "detailSections": [
+        {
+          "title": "Verwendung / Varianten",
+          "facts": [
+            {
+              "label": "Admission",
+              "value": "Entwicklungsstart aktiviert directorMode; Produktionsstart nicht. Opt-in Produktionsdiagnosen nutzen DiagnosticsAccess/Badge/Geste und createDirectorTools(false); vollwertige Tuning-/Director-Controls bleiben separat gegated. Kein pauschales normales Spiel-HUD.",
+              "certainty": "confirmed",
+              "sourceIds": ["entry", "foundation", "access"]
+            },
+            {
+              "label": "Vorhandene Oberflächen",
+              "value": "Phaser-Panel, Tuning/Run-Control-Gruppen; DOM-Performance-HUD (FPS/Frame/Run/Heap/Collision/Encounterwerte, Benchmarks/Exports), Debug-Hitbox-Overlay und Encounterdiagnosen. Alle lesen vorhandene Services/Snapshots; keine parallele Score-/Physikautorität.",
+              "certainty": "confirmed",
+              "sourceIds": [
+                "hud",
+                "panel",
+                "run-controls",
+                "tuning",
+                "overlay",
+                "encounter",
+                "foundation"
+              ]
+            },
+            {
+              "label": "Spieltestvarianten",
+              "value": "Manuelle Hazard-Zyklen M/Z/ZG/L/SP, AUTO/GOD/CLR, Freeze/Resume, Restart/Seed und Tuning sowie Performance-/Memory-Presets je freigeschaltetem Scope. Keine automatisch in AUTO übernommene Workshop-Studie.",
+              "certainty": "confirmed",
+              "sourceIds": ["foundation", "hud", "run-controls", "tuning"]
+            },
+            {
+              "label": "Medien / Persistenzgrenze",
+              "value": "Phaser-Text/Graphics und DOM/CSS; keine separaten UI-Bitmaps. Diagnosezugang/evidence können eigene Storagekeys verwenden; diese Daten sind keine persistente Spielerwallet oder Gallery.",
+              "certainty": "confirmed",
+              "sourceIds": ["foundation", "access", "hud", "styles"]
+            }
+          ]
+        }
+      ],
+      "relatedElementIds": ["run-results", "run-score", "endless-encounters", "flight-controls"],
+      "openQuestions": [
+        "Aktuelle deployte Spielrevision und physische Geräte-/Touchabnahme in diesem Auftrag nicht geprüft.",
+        "Prozedurale Darstellung oder Regelmodul; kein separates Bild-/Audio-/Animationsmedium im geprüften Bestand belegt."
+      ],
+      "sourceConflicts": []
     }
   ],
   "assets": [
@@ -2432,27 +3596,27 @@
       },
       "usage": {
         "state": "default-game",
-        "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+        "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
         "reason": "A ist Start-/Resetpose; B/C werden abhängig vom Flugzustand ausgewählt. Alle drei sind vorab ladbar. Primitive Ersatzgrafik bei fehlender A-Textur.",
         "evidence": [
           {
             "id": "loader",
             "path": "src/game/scenes/Preloader.ts",
-            "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+            "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
             "kind": "code",
             "symbol": "preload"
           },
           {
             "id": "presentation",
             "path": "src/entities/PrototypePlayerPresentation.ts",
-            "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+            "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
             "kind": "code",
             "symbol": "constructor / setFlightVelocity / resetFlightPose"
           },
           {
             "id": "admission",
             "path": "src/game/scenes/Foundation.ts",
-            "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+            "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
             "kind": "code",
             "symbol": "create / flight pose update"
           }
@@ -2488,27 +3652,27 @@
       },
       "usage": {
         "state": "conditional",
-        "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+        "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
         "reason": "A ist Start-/Resetpose; B/C werden abhängig vom Flugzustand ausgewählt. Alle drei sind vorab ladbar. Primitive Ersatzgrafik bei fehlender A-Textur.",
         "evidence": [
           {
             "id": "loader",
             "path": "src/game/scenes/Preloader.ts",
-            "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+            "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
             "kind": "code",
             "symbol": "preload"
           },
           {
             "id": "presentation",
             "path": "src/entities/PrototypePlayerPresentation.ts",
-            "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+            "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
             "kind": "code",
             "symbol": "constructor / setFlightVelocity / resetFlightPose"
           },
           {
             "id": "admission",
             "path": "src/game/scenes/Foundation.ts",
-            "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+            "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
             "kind": "code",
             "symbol": "create / flight pose update"
           }
@@ -2544,27 +3708,27 @@
       },
       "usage": {
         "state": "conditional",
-        "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+        "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
         "reason": "A ist Start-/Resetpose; B/C werden abhängig vom Flugzustand ausgewählt. Alle drei sind vorab ladbar. Primitive Ersatzgrafik bei fehlender A-Textur.",
         "evidence": [
           {
             "id": "loader",
             "path": "src/game/scenes/Preloader.ts",
-            "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+            "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
             "kind": "code",
             "symbol": "preload"
           },
           {
             "id": "presentation",
             "path": "src/entities/PrototypePlayerPresentation.ts",
-            "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+            "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
             "kind": "code",
             "symbol": "constructor / setFlightVelocity / resetFlightPose"
           },
           {
             "id": "admission",
             "path": "src/game/scenes/Foundation.ts",
-            "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+            "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
             "kind": "code",
             "symbol": "create / flight pose update"
           }
@@ -2751,6 +3915,50 @@
         "Finale Art-/Geräteabnahme offen.",
         "Vollständiger Generierungsprompt und weitere Bildvarianten nicht im geprüften Bestand belegt."
       ]
+    },
+    {
+      "id": "starter-background",
+      "name": "Starter-Preloader-Hintergrund",
+      "description": "Vorhandenes bg.png; aktive Preloader-Darstellung, nicht die prozedurale Endless-Stadt.",
+      "elementIds": ["loading-screen"],
+      "artifactIds": ["starter-background-runtime"],
+      "variant": "Starter-PNG · Preloader",
+      "review": {
+        "state": "open",
+        "date": "2026-10-13",
+        "reason": "Vorhandene Nutzung belegt; keine Director-Artreview/-Auswahlentscheidung zur Quelle belegt.",
+        "sourceUrl": "https://github.com/bongohorse/monster-girl-delivery/blob/331821d72badb2cc1b4f5a699a54e7e1606ca1e3/src/game/scenes/Boot.ts"
+      },
+      "usage": {
+        "state": "conditional",
+        "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+        "reason": "Boot lädt background; Preloader zeigt das Bild während Assetloading. Foundation verwendet stattdessen Graphics-Skyline und Kamerafarbe.",
+        "evidence": [
+          {
+            "id": "boot",
+            "path": "src/game/scenes/Boot.ts",
+            "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+            "kind": "code"
+          },
+          {
+            "id": "preloader",
+            "path": "src/game/scenes/Preloader.ts",
+            "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+            "kind": "code"
+          },
+          {
+            "id": "foundation",
+            "path": "src/game/scenes/Foundation.ts",
+            "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+            "kind": "code"
+          }
+        ]
+      },
+      "archived": false,
+      "history": [],
+      "openQuestions": [
+        "Ursprüngliche Quelldatei, Prompt/Provenienz und Artfreigabe unbekannt; nur vorhandene Runtime-PNG belegt."
+      ]
     }
   ],
   "artifacts": [
@@ -2930,6 +4138,29 @@
         "referenceUrls": [
           "https://github.com/bongohorse/monster-girl-delivery/blob/aa2beb6422100d482bddea94fe34922e97bbdb40/assets/source/district-01/hazards/README.md"
         ]
+      }
+    },
+    {
+      "id": "starter-background-runtime",
+      "assetId": "starter-background",
+      "sourcePath": "public/assets/bg.png",
+      "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+      "sha256": "868de612a0040e2a25e14f8b983d1c9fc96f0ac8cc6ed93dba9a74366b6c82e1",
+      "role": "runtime",
+      "runtimeAssetId": null,
+      "recipe": null,
+      "derivedFromArtifactId": null,
+      "metadata": {
+        "format": "png",
+        "width": 1024,
+        "height": 768,
+        "hasAlpha": true,
+        "durationSeconds": null
+      },
+      "provenance": {
+        "text": "Vorhandene Starter-Runtime-Datei public/assets/bg.png; Boot/Preloader belegen Nutzung. Vorgelagerte Quelle und Generierungsprompt nicht belegt.",
+        "prompt": null,
+        "referenceUrls": []
       }
     }
   ],

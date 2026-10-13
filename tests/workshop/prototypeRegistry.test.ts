@@ -77,7 +77,7 @@ it('exports the independent idea from its effective values, sources and own unit
   expect(h.controls.map((c) => c.id)).toEqual(['radius', 'duration']);
   expect(handoffMarkdown(h)).toContain('duration: 0.6 s');
   expect(h.sources[0].elementId).toBe('parcel');
-  expect(handoffMarkdown(h)).toContain('/blob/1fafb9e71a704ae2848bb5215c65328cb422441a/');
+  expect(handoffMarkdown(h)).toContain('/blob/331821d72badb2cc1b4f5a699a54e7e1606ca1e3/');
   const bundle = {
     ...emptyLocalData(),
     presets: [{ id: 'ring-preset', name: 'Ring', ...config, date: h.date }],
