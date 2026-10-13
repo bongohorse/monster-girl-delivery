@@ -33,6 +33,11 @@
     {
       "matchUpdateTypes": ["major"],
       "automerge": false
+    },
+    {
+      "description": "AGP 8.13.x uses internal APIs removed in Gradle 9.6; retain the compatible Gradle line until the Android toolchain migration.",
+      "matchPackageNames": ["gradle"],
+      "allowedVersions": "<9.6.0"
     }
   ]
 }
