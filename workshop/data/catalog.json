@@ -2651,6 +2651,13 @@
           "path": "src/generation/CollectiblePathValidator.ts",
           "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
           "kind": "code"
+        },
+        {
+          "id": "fixtures",
+          "path": "src/generation/PrototypeHazardPatternFixtures.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code",
+          "symbol": "PROTOTYPE_CORRIDOR_PATTERN / PROTOTYPE_OFFSET_PAIR_PATTERN"
         }
       ],
       "detailSections": [
@@ -2672,9 +2679,9 @@
             },
             {
               "label": "Ungenutzte authored Routen",
-              "value": "M5CollectibleMovementPatterns: teaching-flight-arc, corridor-center-route, offset-graze-route (risk-reward, spacing 44), recovery-wave. applyM5CollectibleMovementPatterns ist im aktuellen Spiel nicht angeschlossen. Ältere Fixture-Routen bleiben erhalten.",
+              "value": "M5CollectibleMovementPatterns: teaching-flight-arc, corridor-center-route, offset-graze-route (risk-reward, spacing 44), recovery-wave. applyM5CollectibleMovementPatterns ist im aktuellen Spiel nicht angeschlossen. Historische M3-Fixtures enthalten corridor-safe-guide (safe-guide) und offset-graze-route (risk-reward) als explizite Punktlisten; ebenfalls außerhalb des aktuellen AUTO-Katalogs.",
               "certainty": "confirmed",
-              "sourceIds": ["movement", "live", "domain"],
+              "sourceIds": ["movement", "fixtures", "live", "domain"],
               "maturity": "prototype"
             },
             {
@@ -3062,6 +3069,20 @@
           "path": "src/core/PhaserLifecycleAdapter.ts",
           "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
           "kind": "code"
+        },
+        {
+          "id": "difficulty",
+          "path": "src/difficulty/DifficultySystem.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code",
+          "symbol": "scaleFlightTuningForDifficulty"
+        },
+        {
+          "id": "stream",
+          "path": "src/generation/GeneratedHazardStream.ts",
+          "revision": "331821d72badb2cc1b4f5a699a54e7e1606ca1e3",
+          "kind": "code",
+          "symbol": "planGeneratedHazardMotion / applied flightTuning"
         }
       ],
       "detailSections": [
@@ -3082,9 +3103,9 @@
             },
             {
               "label": "Prototype-Defaults",
-              "value": "gravity 1600, thrust 2600, maxFallVelocity 700, maxRiseVelocity 550; baseScrollSpeed 350. LivePolicy koppelt effektive Flugparameter an Geschwindigkeit/Difficulty; Defaults sind keine unveränderlichen Spielwerte.",
+              "value": "gravity 1600, thrust 2600, maxFallVelocity 700, maxRiseVelocity 550; baseScrollSpeed 350. DifficultySystem skaliert Flugparameter anhand des Tier-Multiplikators; GeneratedHazardStream bindet angewandte Flug-/Scrollparameter an sichere Motion-Segmente. Defaults sind keine unveränderlichen Spielwerte.",
               "certainty": "confirmed",
-              "sourceIds": ["tuning", "run-tuning", "foundation"],
+              "sourceIds": ["tuning", "run-tuning", "difficulty", "stream", "foundation"],
               "maturity": "prototype"
             },
             {
