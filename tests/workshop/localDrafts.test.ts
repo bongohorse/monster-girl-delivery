@@ -14,7 +14,7 @@ describe('Workshop local data boundary', () => {
     const data = { ...emptyLocalData(), drafts: [draft] };
     const result = parseLocalData(serializeLocalData(data), catalog);
     expect(result).toEqual({ ok: true, data });
-    expect(draft.origins[0].revision).toBe('1fafb9e71a704ae2848bb5215c65328cb422441a');
+    expect(draft.origins[0].revision).toBe('331821d72badb2cc1b4f5a699a54e7e1606ca1e3');
     expect(
       draft.origins[0].sources.some((s) => s.path === 'src/entities/FirstDeliveryPresentation.ts'),
     ).toBe(true);

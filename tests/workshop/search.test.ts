@@ -22,7 +22,12 @@ describe('Workshop catalog search', () => {
   it('searches descriptions with all words, exposes references and filters types and areas', () => {
     expect(ids({ query: 'Phaser-Primitiven GPS' })).toEqual(['delivery-arrow']);
     expect(ids({ kind: 'reference' })).toEqual(['art-gate-reference']);
-    expect(ids({ type: 'Mechanik' })).toEqual(['parcel-delivery']);
+    expect(ids({ type: 'Mechanik' })).toEqual([
+      'parcel-delivery',
+      'flight-controls',
+      'run-score',
+      'graze',
+    ]);
     expect(ids({ section: 'ideas' })).toEqual([
       'delivery-arrow-study',
       'pickup-ring-study',

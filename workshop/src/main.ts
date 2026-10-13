@@ -50,7 +50,7 @@ function elementGrid(elements: Element[]): HTMLElement {
 function documentation(): HTMLElement[] {
   const intro = node(
     'p',
-    'Vorhandene Elemente, Quellen und fachliche Kategorien. Hazards einschließlich vorhandener Varianten sind quellengebunden erfasst; übrige Kategorien enthalten weiterhin Beispiele.',
+    'Implementierter Spielbestand mit vorhandenen Varianten und Quellenbelegen. Aktive Verwendung, ungenutzte Implementierungen, historische Prototypen und Entwicklungsdiagnosen sind in den Details getrennt dokumentiert.',
     'lead',
   );
   const heading = node('h2', 'Kategorien');

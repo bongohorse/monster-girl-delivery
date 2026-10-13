@@ -3,19 +3,26 @@
 Stand: Aufgabe 10 aus [#522](https://github.com/bongohorse/monster-girl-delivery/issues/522).
 Die Werkstatt ist eine Browserstudie; Spielintegration und Veröffentlichung bleiben separate Aufträge.
 
-**Umfang:** Die zehn Aufgaben lieferten die technische Workshop-Grundlage mit einem kleinen
-Beispielkatalog. Der erste Teil von [#539](https://github.com/bongohorse/monster-girl-delivery/issues/539)
-ergänzt die implementierten Hazards einschließlich authored Varianten und ungenutzter Codeoptionen.
-Die übrigen Spielelemente und Kategorien bleiben Folgearbeit. Leere Kategorien sind keine
-Bestätigung, dass das Spiel dort keine Inhalte besitzt.
+**Umfang:** Die technische Grundlage aus [#522](https://github.com/bongohorse/monster-girl-delivery/issues/522)
+und die Bestandserfassung aus [#539](https://github.com/bongohorse/monster-girl-delivery/issues/539)
+dokumentieren den tatsächlich implementierten Spielbestand samt Varianten und bekannten Lücken.
+Hazards aus #561 bleiben erhalten; der Folgeteil ergänzt die übrigen Runtime-Inhalte und prüft die
+bestehenden Figur-/Liefereinträge erneut. Geplante Features sind keine vorhandenen Spielelemente.
+Die Prüfrevision bindet den erfassten Quellenstand; neue Spielinhalte brauchen eine neue Erfassung.
 
-Die kompakte Hazard-Übersicht entsteht aus `catalog.json` unter „Dokumentation → Hazards“;
+Die kompakte Abdeckungsübersicht entsteht aus `catalog.json` unter „Dokumentation“ und den Kategorien;
 „Informationen“ enthält je Eintrag Verwendung, Varianten und Abdeckung, „Beziehungen / offene
 Angaben“ die verbleibenden Lücken. Suche/Archivfilter machen historische Einträge sichtbar.
 `archived` kennzeichnet hier historische Katalogdokumentation, keine Löschung von Spielfixtures.
-Assetreview und Assetverwendung bleiben getrennt; bei Codegrafiken steht die Verwendung in
-belegten Elementfakten. Die Prüfrevision belegt Repository-Code, keine aktuelle Live-Spielrevision.
+Assetreview und Assetverwendung bleiben getrennt; bei Codegrafiken und Regelmodulen steht die
+Verwendung in belegten Elementfakten. Fehlende Bilddateien bedeuten nicht fehlende Spielinhalte.
+Die Prüfrevision belegt Repository-Code, keine aktuelle Live-Spielrevision.
 Es gibt keine zweite manuell gepflegte Bestandsliste.
+
+Die Kategorie ist eine primäre Zuordnung, kein Nachweis über das Fehlen verwandten Verhaltens:
+Posenwechsel, Tumble und Ladebewegung stehen bei Figur bzw. UI, Pfeil-/Blinkdarstellung beim
+Lieferpfeil. Leere Animation-/VFX-Kategorien erfordern deshalb keinen zweiten Eintrag derselben
+Darstellung. Plattformverpackung und Framework-Internals sind keine zusätzlichen Spielelemente.
 
 ## Konkreten Stand übergeben
 
