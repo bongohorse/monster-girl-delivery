@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "codeReviewRevision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+  "codeReviewRevision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
   "deployedGameRevision": null,
   "categories": [
     {
@@ -123,63 +123,232 @@
       "name": "Red Missile",
       "type": "Hazard",
       "categoryId": "hazards",
-      "tags": ["Missile", "Director", "Art Gate"],
-      "description": "Rote Monster-Missile mit verwalteter Bildquelle und aktivem Exportrezept. Die Textur ist ladbar; der Hazard wird bedingt über den Director verwendet und ist aus dem normalen AUTO-Katalog ausgeschlossen.",
+      "tags": ["Bestand #539", "Implementiert"],
+      "description": "Rote Monster-Missile mit verwaltetem Trial-Asset. Bait/Lock/Dodge ist implementiert; normale AUTO-Auswahl schließt Missile weiterhin aus.",
       "documentation": {
         "state": "checked",
-        "date": "2026-09-30",
-        "notes": "Quelle, Rezept, Loader, Director-Zulassung und aktive Darstellung belegt. Finale Art-/Geräteabnahme bleibt offen.",
-        "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
-        "coverage": "Quelle/Rezept und Director-Abgrenzung; keine vollständige Hazard-Lifecycle-Dokumentation."
+        "date": "2026-10-13",
+        "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+        "notes": "Quellenbestand geprüft; keine Live-Spiel-, Art- oder Geräteabnahme.",
+        "coverage": "Verhalten, Verwendung, Varianten, Darstellung und Kollisionszuständigkeit quellengebunden erfasst. Fehlende Medien und ungenutzte Codeoptionen ausdrücklich markiert."
       },
-      "implementation": "partial",
+      "implementation": "implemented",
       "archived": false,
+      "previewArtifactId": "red-monster-missile-original",
+      "assetIds": ["red-monster-missile"],
       "sources": [
         {
-          "id": "1",
+          "id": "behavior",
+          "path": "src/hazards/HazardArchetype.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code",
+          "symbol": "HazardBehavior"
+        },
+        {
+          "id": "entry",
+          "path": "src/generation/HazardPattern.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code",
+          "symbol": "HazardPatternEntryType"
+        },
+        {
+          "id": "fixtures",
+          "path": "src/generation/PrototypeHazardPatternFixtures.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "live",
+          "path": "src/generation/M5LiveEncounterCatalog.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code",
+          "symbol": "PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG"
+        },
+        {
+          "id": "domain",
+          "path": "src/generation/PrototypeHazardVerticalDomain.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code",
+          "symbol": "createPrototypeHazardVerticalDomain"
+        },
+        {
+          "id": "foundation",
+          "path": "src/game/scenes/Foundation.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code",
+          "symbol": "createPrototypeHazardVerticalDomain / Director spawn paths"
+        },
+        {
+          "id": "stream",
+          "path": "src/generation/GeneratedHazardStream.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code",
+          "symbol": "advanceGeneratedHazardStream"
+        },
+        {
+          "id": "collision",
+          "path": "src/systems/HazardCollision.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "simulation",
+          "path": "src/systems/PrototypeRunSimulation.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "reaction",
+          "path": "src/hazards/HazardReactionState.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "dispatch",
+          "path": "src/entities/GeneratedHazardPresentation.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "lifecycle",
+          "path": "src/hazards/TelegraphedHazardLifecycle.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "tele-sim",
+          "path": "src/hazards/TelegraphedHazardSimulation.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "presentation",
+          "path": "src/entities/PrototypeHazardPresentation.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "missile",
+          "path": "src/hazards/PrototypeMissileHazard.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "single",
+          "path": "src/generation/M5AuthoredSingleEncounterSegments.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "combo",
+          "path": "src/generation/M5AuthoredMultiHazardPatterns.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "recipe",
           "path": "assets/metadata/red-monster-missile.json",
-          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
           "kind": "manifest"
         },
         {
-          "id": "2",
-          "path": "src/generation/M5LiveEncounterCatalog.ts",
-          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+          "id": "loader",
+          "path": "src/game/scenes/Preloader.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
           "kind": "code"
         },
         {
-          "id": "3",
-          "path": "src/game/scenes/Foundation.ts",
-          "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
-          "kind": "code"
+          "id": "left-test",
+          "path": "tests/hazards/PrototypeMissileHazard.test.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "test"
         }
       ],
-      "relatedElementIds": [],
-      "openQuestions": [
-        "Bewegung, Warnphasen und Kollision sind hier noch nicht vollständig dokumentiert."
-      ],
-      "sourceConflicts": [],
       "detailSections": [
         {
-          "title": "Hazard-Verhalten & Admission",
+          "title": "Bestand / Verwendung",
           "facts": [
             {
-              "label": "Spielzuordnung",
-              "value": "Director-Pfad; nicht Bestandteil des normalen AUTO-Katalogs.",
+              "label": "Spielverwendung",
+              "value": "Director M → PROTOTYPE_MISSILE_PATTERN → spawnDirectorPattern. m5-segment-missile-bait-dodge und authored Missile-Zapper/Missile-Laser-Combos sind vorhanden, aber nicht aktuelles AUTO.",
               "certainty": "confirmed",
-              "sourceIds": ["2", "3"]
+              "sourceIds": ["live", "domain", "foundation", "fixtures"]
             },
             {
-              "label": "Bildverarbeitung",
-              "value": "Aktives Rezept red-monster-missile verbindet Original und generierten Runtime-Export. Aktivierung ist keine pauschale Produktionsfreigabe.",
+              "label": "Technischer Typ",
+              "value": "placeholder-barrier und molten-spike sind Entry-Typen; das Verhalten wird separat über HazardBehavior bestimmt. Pattern-IDs allein belegen keinen Hazard-Typ.",
               "certainty": "confirmed",
-              "sourceIds": ["1"]
+              "sourceIds": ["entry", "behavior", "fixtures"]
+            }
+          ]
+        },
+        {
+          "title": "Verhalten / Varianten",
+          "facts": [
+            {
+              "label": "Lifecycle / Warning / Lock",
+              "value": "Warning 2.2 s: blinkender Randmarker verfolgt Spieler-Y mit maximal 120 logischen Pixel/s. Lock 0.8 s: Zielhöhe eingefroren und deutlich hervorgehoben. Active 3.2 s: Gerade auf Lock-Höhe; Expired sicher. Warning/Lock sind nicht tödlich.",
+              "certainty": "confirmed",
+              "sourceIds": ["fixtures", "tele-sim", "presentation"],
+              "maturity": "prototype"
+            },
+            {
+              "label": "Bewegung / Varianten",
+              "value": "Authored launchSide right: Start außerhalb rechts mit Padding 48, Reise nach links mit 700 logischen Pixel/s. launchSide left: implementierter/testbelegter Gegenpfad nach rechts, kein aktueller authored AUTO-/Director-Eintrag. Kein Post-Lock-Homing.",
+              "certainty": "confirmed",
+              "sourceIds": ["fixtures", "missile", "left-test", "behavior"],
+              "maturity": "prototype"
+            },
+            {
+              "label": "Darstellung / Kollision",
+              "value": "Nur Active verwendet red-monster-missile; beim Start links horizontal gespiegelt. Display 112×60 über logischer 64×48 Hitbox, Warning/Lock bleiben primitive Grafik. Kontinuierliche Missile-Reise und Lethalität gehören der logischen Simulation.",
+              "certainty": "confirmed",
+              "sourceIds": ["presentation", "missile", "tele-sim", "collision"],
+              "maturity": "prototype"
+            },
+            {
+              "label": "Vorhandene authored Varianten",
+              "value": "PROTOTYPE_MISSILE_PATTERN (aktueller Director); M5_SEGMENT_MISSILE_BAIT_DODGE, M5_MISSILE_ZAPPER_PATTERN und M5_MISSILE_LASER_PATTERN (implementiert, nicht im Live-Katalog). Historischer Strike ohne missile gehört zum separaten M4-Eintrag.",
+              "certainty": "confirmed",
+              "sourceIds": ["fixtures", "single", "combo", "live"]
+            },
+            {
+              "label": "Assetreview / Verwendung",
+              "value": "Aktives Rezept und Preloader belegen ladbaren Export. Die Trial-Auswahl des Assets ist keine finale Produktionsfreigabe oder AUTO-Zulassung. Original und Runtime teilen die bestehende Asset-ID.",
+              "certainty": "confirmed",
+              "sourceIds": ["recipe", "loader"]
+            }
+          ]
+        },
+        {
+          "title": "Zuständigkeit / Grenzen",
+          "facts": [
+            {
+              "label": "Kollision / Folgen",
+              "value": "Logische Simulation und HazardCollision besitzen Kontakt/Lethalität; PrototypeRunSimulation beendet den Lauf beim tödlichen Kontakt. Phaser-Darstellung und Bildalpha besitzen keine Kollision.",
+              "certainty": "confirmed",
+              "sourceIds": ["collision", "simulation", "dispatch"]
+            },
+            {
+              "label": "Externe Reaktionen",
+              "value": "active / disabled / destroyed sind von Warning/Lock bzw. OFF/ON getrennte Gameplay-Zustände. Ohne eigene reactionPolicy gilt disable/destroy. Dies belegt eine implementierte Schnittstelle, keinen aktiven Power-up- oder Companion-Verbraucher.",
+              "certainty": "confirmed",
+              "sourceIds": ["reaction", "entry"]
+            },
+            {
+              "label": "Deployte Spielrevision",
+              "value": null,
+              "certainty": "unknown",
+              "sourceIds": []
             }
           ]
         }
       ],
-      "assetIds": ["red-monster-missile"],
-      "previewArtifactId": "red-monster-missile-original"
+      "relatedElementIds": ["target-lock-strike", "zapper", "laser"],
+      "openQuestions": [
+        "Aktuelle deployte Spielverwendung und physische Geräteabnahme nicht geprüft."
+      ],
+      "sourceConflicts": []
     },
     {
       "id": "delivery-arrow",
@@ -789,6 +958,1455 @@
       ],
       "assetIds": [],
       "previewArtifactId": null
+    },
+    {
+      "id": "molten-spike",
+      "name": "Molten Spike · Trial A",
+      "type": "Hazard",
+      "categoryId": "hazards",
+      "tags": ["Bestand #539", "Implementiert"],
+      "description": "Statischer M6-Hazard mit bestehender ausgewählter Bildvariante A; Trial-Auswahl ist keine finale Artfreigabe.",
+      "documentation": {
+        "state": "checked",
+        "date": "2026-10-13",
+        "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+        "notes": "Quellenbestand geprüft; keine Live-Spiel-, Art- oder Geräteabnahme.",
+        "coverage": "Verhalten, Verwendung, Varianten, Darstellung und Kollisionszuständigkeit quellengebunden erfasst. Fehlende Medien und ungenutzte Codeoptionen ausdrücklich markiert."
+      },
+      "implementation": "implemented",
+      "archived": false,
+      "previewArtifactId": "molten-spike-original",
+      "assetIds": ["molten-spike-trial"],
+      "sources": [
+        {
+          "id": "behavior",
+          "path": "src/hazards/HazardArchetype.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code",
+          "symbol": "HazardBehavior"
+        },
+        {
+          "id": "entry",
+          "path": "src/generation/HazardPattern.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code",
+          "symbol": "HazardPatternEntryType"
+        },
+        {
+          "id": "fixtures",
+          "path": "src/generation/PrototypeHazardPatternFixtures.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "live",
+          "path": "src/generation/M5LiveEncounterCatalog.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code",
+          "symbol": "PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG"
+        },
+        {
+          "id": "domain",
+          "path": "src/generation/PrototypeHazardVerticalDomain.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code",
+          "symbol": "createPrototypeHazardVerticalDomain"
+        },
+        {
+          "id": "foundation",
+          "path": "src/game/scenes/Foundation.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code",
+          "symbol": "createPrototypeHazardVerticalDomain / Director spawn paths"
+        },
+        {
+          "id": "stream",
+          "path": "src/generation/GeneratedHazardStream.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code",
+          "symbol": "advanceGeneratedHazardStream"
+        },
+        {
+          "id": "collision",
+          "path": "src/systems/HazardCollision.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "simulation",
+          "path": "src/systems/PrototypeRunSimulation.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "reaction",
+          "path": "src/hazards/HazardReactionState.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "dispatch",
+          "path": "src/entities/GeneratedHazardPresentation.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "trial",
+          "path": "src/generation/M6MoltenSpikeTrial.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "presentation",
+          "path": "src/entities/MoltenSpikePresentation.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "recipe",
+          "path": "assets/metadata/molten-spike-trial.json",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "manifest"
+        },
+        {
+          "id": "loader",
+          "path": "src/game/scenes/Preloader.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "art",
+          "path": "assets/source/district-01/hazards/README.md",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "doc"
+        }
+      ],
+      "detailSections": [
+        {
+          "title": "Bestand / Verwendung",
+          "facts": [
+            {
+              "label": "Spielverwendung",
+              "value": "AUTO: PROTOTYPE_M6_TRIAL_HAZARD_PATTERN_CATALOG ergänzt den M5-Katalog um M6_MOLTEN_SPIKE_TRIAL. Director S verwendet denselben Height-Selector.",
+              "certainty": "confirmed",
+              "sourceIds": ["live", "domain", "foundation", "fixtures"]
+            },
+            {
+              "label": "Technischer Typ",
+              "value": "placeholder-barrier und molten-spike sind Entry-Typen; das Verhalten wird separat über HazardBehavior bestimmt. Pattern-IDs allein belegen keinen Hazard-Typ.",
+              "certainty": "confirmed",
+              "sourceIds": ["entry", "behavior", "fixtures"]
+            }
+          ]
+        },
+        {
+          "title": "Verhalten / Varianten",
+          "facts": [
+            {
+              "label": "Lifecycle / Bewegung",
+              "value": "geometric/static, Entry-Typ molten-spike. Persistent im Stream, keine Warning/Lock-Phasen; nur Run-Scroll, keine Eigenbewegung.",
+              "certainty": "confirmed",
+              "sourceIds": ["trial", "behavior", "stream"]
+            },
+            {
+              "label": "Authored / AUTO / Director-Höhen",
+              "value": "m6-trial-molten-spike-upper: 48×48 Hitbox, Basiszentrum Y 110. selectMoltenSpikeHeightCatalog verteilt AUTO und Director S deterministisch über verfügbare obere/untere Höhenintervalle, hält die Safe-Guide-Coinroute frei. Höhen sind Datenvarianten desselben Hazards, keine Bildvarianten.",
+              "certainty": "confirmed",
+              "sourceIds": ["trial", "foundation"],
+              "maturity": "prototype"
+            },
+            {
+              "label": "Darstellung / Asset A",
+              "value": "Vorhandenes molten-spike-trial, horizontal gespiegelt, Display 1.5× logischer Hitbox (Basis 72×72). Original A → aktives 256×256-Rezept → generierte Preloader-URL → MoltenSpikePresentation. Keine Bildvarianten B/C im geprüften Repository-Bestand belegt.",
+              "certainty": "confirmed",
+              "sourceIds": ["presentation", "recipe", "loader", "art"],
+              "maturity": "prototype"
+            }
+          ]
+        },
+        {
+          "title": "Zuständigkeit / Grenzen",
+          "facts": [
+            {
+              "label": "Kollision / Folgen",
+              "value": "Logische Simulation und HazardCollision besitzen Kontakt/Lethalität; PrototypeRunSimulation beendet den Lauf beim tödlichen Kontakt. Phaser-Darstellung und Bildalpha besitzen keine Kollision.",
+              "certainty": "confirmed",
+              "sourceIds": ["collision", "simulation", "dispatch"]
+            },
+            {
+              "label": "Externe Reaktionen",
+              "value": "active / disabled / destroyed sind von Warning/Lock bzw. OFF/ON getrennte Gameplay-Zustände. Ohne eigene reactionPolicy gilt disable/destroy. Dies belegt eine implementierte Schnittstelle, keinen aktiven Power-up- oder Companion-Verbraucher.",
+              "certainty": "confirmed",
+              "sourceIds": ["reaction", "entry"]
+            },
+            {
+              "label": "Deployte Spielrevision",
+              "value": null,
+              "certainty": "unknown",
+              "sourceIds": []
+            }
+          ]
+        }
+      ],
+      "relatedElementIds": ["placeholder-barrier"],
+      "openQuestions": [
+        "Aktuelle deployte Spielverwendung und physische Geräteabnahme nicht geprüft."
+      ],
+      "sourceConflicts": []
+    },
+    {
+      "id": "zapper",
+      "name": "Zapper",
+      "type": "Hazard",
+      "categoryId": "hazards",
+      "tags": ["Bestand #539", "Implementiert"],
+      "description": "Elektrische Barriere aus zwei Endknoten und einem verbindenden Strahl; statisch, rotierend oder zeitgeschaltet.",
+      "documentation": {
+        "state": "checked",
+        "date": "2026-10-13",
+        "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+        "notes": "Quellenbestand geprüft; keine Live-Spiel-, Art- oder Geräteabnahme.",
+        "coverage": "Verhalten, Verwendung, Varianten, Darstellung und Kollisionszuständigkeit quellengebunden erfasst. Fehlende Medien und ungenutzte Codeoptionen ausdrücklich markiert."
+      },
+      "implementation": "implemented",
+      "archived": false,
+      "previewArtifactId": null,
+      "assetIds": [],
+      "sources": [
+        {
+          "id": "behavior",
+          "path": "src/hazards/HazardArchetype.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code",
+          "symbol": "HazardBehavior"
+        },
+        {
+          "id": "entry",
+          "path": "src/generation/HazardPattern.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code",
+          "symbol": "HazardPatternEntryType"
+        },
+        {
+          "id": "fixtures",
+          "path": "src/generation/PrototypeHazardPatternFixtures.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "live",
+          "path": "src/generation/M5LiveEncounterCatalog.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code",
+          "symbol": "PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG"
+        },
+        {
+          "id": "domain",
+          "path": "src/generation/PrototypeHazardVerticalDomain.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code",
+          "symbol": "createPrototypeHazardVerticalDomain"
+        },
+        {
+          "id": "foundation",
+          "path": "src/game/scenes/Foundation.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code",
+          "symbol": "createPrototypeHazardVerticalDomain / Director spawn paths"
+        },
+        {
+          "id": "stream",
+          "path": "src/generation/GeneratedHazardStream.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code",
+          "symbol": "advanceGeneratedHazardStream"
+        },
+        {
+          "id": "collision",
+          "path": "src/systems/HazardCollision.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "simulation",
+          "path": "src/systems/PrototypeRunSimulation.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "reaction",
+          "path": "src/hazards/HazardReactionState.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "dispatch",
+          "path": "src/entities/GeneratedHazardPresentation.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "zapper",
+          "path": "src/hazards/PrototypeZapperHazard.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "timing",
+          "path": "src/hazards/TimedZapperLifecycle.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "timed-sim",
+          "path": "src/hazards/TimedZapperSimulation.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "timed-fixture",
+          "path": "src/generation/PrototypeTimedZapperFixture.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "director",
+          "path": "src/generation/DirectorZapperCatalog.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "single",
+          "path": "src/generation/M5AuthoredSingleEncounterSegments.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "pressure",
+          "path": "src/generation/M5AuthoredPressureEncounterSegments.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "combo",
+          "path": "src/generation/M5AuthoredMultiHazardPatterns.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "presentation",
+          "path": "src/entities/PrototypeZapperPresentation.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        }
+      ],
+      "detailSections": [
+        {
+          "title": "Bestand / Verwendung",
+          "facts": [
+            {
+              "label": "Spielverwendung",
+              "value": "AUTO: horizontal oben, diagonal unten, rotierend oben, vertikal oben, timed center; dazu fünf Pressure-Segmente mit Zappern/Laser. Director Z/ZG/ZPERF besitzt zusätzliche Varianten.",
+              "certainty": "confirmed",
+              "sourceIds": ["live", "domain", "foundation", "fixtures"]
+            },
+            {
+              "label": "Technischer Typ",
+              "value": "placeholder-barrier und molten-spike sind Entry-Typen; das Verhalten wird separat über HazardBehavior bestimmt. Pattern-IDs allein belegen keinen Hazard-Typ.",
+              "certainty": "confirmed",
+              "sourceIds": ["entry", "behavior", "fixtures"]
+            }
+          ]
+        },
+        {
+          "title": "Verhalten / Darstellung",
+          "facts": [
+            {
+              "label": "Geometrie",
+              "value": "Strahl als Kapsel plus zwei Kreise; Länge zwischen Knotenzentren. Beam 14, Endpoint-Durchmesser 32; Graze-Padding jeweils 8 logische Pixel. Keine rechteckige AABB als endgültige Zapper-Kollisionsform.",
+              "certainty": "confirmed",
+              "sourceIds": ["zapper", "collision"],
+              "maturity": "prototype"
+            },
+            {
+              "label": "Bewegung / Lifecycle",
+              "value": "Ohne timing persistent ON; feste Mitte scrollt mit der Welt. Rotation um Mittelpunkt aus Simulationszeit, clockwise oder counterclockwise. OFF/CHARGE sicher, nur ON tödlich; kein Target-Lock.",
+              "certainty": "confirmed",
+              "sourceIds": ["zapper", "timing", "timed-sim"]
+            },
+            {
+              "label": "Timed-Default",
+              "value": "Zyklisch OFF 0.8 s → CHARGE 1.2 s → ON 1.2 s. One-shot ist eine implementierte Configoption, nicht in den geprüften authored Katalogen ausgewählt.",
+              "certainty": "confirmed",
+              "sourceIds": ["timing", "director", "single"],
+              "maturity": "prototype"
+            },
+            {
+              "label": "Präsentation",
+              "value": "Primitive gold/orange Knoten und Strahl; Zustände on/charge/off/disabled/destroyed aus autoritativer Simulation. Kein Bitmap erforderlich.",
+              "certainty": "confirmed",
+              "sourceIds": ["presentation"]
+            }
+          ]
+        },
+        {
+          "title": "Vorhandene Varianten / Abdeckung",
+          "facts": [
+            {
+              "label": "AUTO-Singles",
+              "value": "m5-segment-zapper-horizontal-upper: 0°/80; diagonal-lower: 45°/80; rotating-upper: 0°/80, clockwise 30°/s; vertical-upper: 90°/80; timed-center: 0°/140.",
+              "certainty": "confirmed",
+              "sourceIds": ["single", "live"],
+              "maturity": "prototype"
+            },
+            {
+              "label": "AUTO-Pressure",
+              "value": "m5-pressure-zapper-switch-low-to-high, -switch-high-to-low, m5-pressure-laser-high-zapper-low, -laser-low-zapper-high, m5-pressure-zapper-rotating-switch. Enthalten statische 0°/±45°/90° und clockwise 30°/s, jeweils Länge 80.",
+              "certainty": "confirmed",
+              "sourceIds": ["pressure", "live"],
+              "maturity": "prototype"
+            },
+            {
+              "label": "Director Z",
+              "value": "director-zapper-h-short (0°/80), -h-long (0°/200), -v (90°/80), -diagonal-up (-45°/80), -diagonal-down (45°/80), -rotate-clockwise, -rotate-counterclockwise (je 80, 30°/s), -timed (0°/140). Alle acht über Foundation-Zyklus erreichbar.",
+              "certainty": "confirmed",
+              "sourceIds": ["director", "foundation"],
+              "maturity": "prototype"
+            },
+            {
+              "label": "Director ZG / ZPERF",
+              "value": "Gruppen: director-zapper-group-horizontal-pair (140/140), -horizontal-diagonal (80/80), -diagonal-corridor (80/80). Performance-v1: 14 Einträge mit langen statischen, rotierenden 30/60/90°/s in beiden Richtungen, diagonalen, timed und vertikalen Barrieren. Diagnosepreset, kein AUTO-Content.",
+              "certainty": "confirmed",
+              "sourceIds": ["director", "foundation"],
+              "maturity": "prototype"
+            },
+            {
+              "label": "Implementiert, aktuell ungenutzt / historische Slots",
+              "value": "PROTOTYPE_STATIC_ZAPPER_PATTERN (0°/140), PROTOTYPE_ROTATING_ZAPPER_PATTERN (45°/80, clockwise 30°/s; Alias PROTOTYPE_ZAPPER_PATTERN), PROTOTYPE_TIMED_ZAPPER_PATTERN (0°/140 zyklisch) sind Fixtures außerhalb aktueller AUTO-Auswahl. M5_MISSILE_ZAPPER_PATTERN und M5_LASER_ZAPPER_PATTERN sind authored Combos außerhalb M5LiveEncounterCatalog.",
+              "certainty": "confirmed",
+              "sourceIds": ["fixtures", "timed-fixture", "combo", "live"]
+            },
+            {
+              "label": "Weitere Codeoptionen",
+              "value": "Längenpresets 80/140/200, Rotationspresets 30/60/90°/s, diagonale Presets -60/-45/-30/30/45/60°. Winkel/Länge sind freie validierte Daten; nicht jede Kombination ist ein vorhandener authored Spawn.",
+              "certainty": "confirmed",
+              "sourceIds": ["zapper", "behavior"],
+              "maturity": "prototype"
+            }
+          ]
+        },
+        {
+          "title": "Zuständigkeit / Grenzen",
+          "facts": [
+            {
+              "label": "Kollision / Folgen",
+              "value": "Logische Simulation und HazardCollision besitzen Kontakt/Lethalität; PrototypeRunSimulation beendet den Lauf beim tödlichen Kontakt. Phaser-Darstellung und Bildalpha besitzen keine Kollision.",
+              "certainty": "confirmed",
+              "sourceIds": ["collision", "simulation", "dispatch"]
+            },
+            {
+              "label": "Externe Reaktionen",
+              "value": "active / disabled / destroyed sind von Warning/Lock bzw. OFF/ON getrennte Gameplay-Zustände. Ohne eigene reactionPolicy gilt disable/destroy. Dies belegt eine implementierte Schnittstelle, keinen aktiven Power-up- oder Companion-Verbraucher.",
+              "certainty": "confirmed",
+              "sourceIds": ["reaction", "entry"]
+            },
+            {
+              "label": "Deployte Spielrevision",
+              "value": null,
+              "certainty": "unknown",
+              "sourceIds": []
+            }
+          ]
+        }
+      ],
+      "relatedElementIds": ["laser", "placeholder-barrier", "vertical-patrol", "red-missile"],
+      "openQuestions": [
+        "Aktuelle deployte Spielverwendung und physische Geräteabnahme nicht geprüft.",
+        "Keine separate Bitmap-/Audio-/Animationsdatei für diese Codepräsentation im geprüften Hazard-Bestand belegt."
+      ],
+      "sourceConflicts": []
+    },
+    {
+      "id": "laser",
+      "name": "Laser",
+      "type": "Hazard",
+      "categoryId": "hazards",
+      "tags": ["Bestand #539", "Implementiert"],
+      "description": "Zeitgeschalteter Strahl mit eigener Fünfphasen-Lifecycle und von Glow getrenntem tödlichem Kern.",
+      "documentation": {
+        "state": "source-conflict",
+        "date": "2026-10-13",
+        "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+        "notes": "Quellenbestand geprüft; keine Live-Spiel-, Art- oder Geräteabnahme.",
+        "coverage": "Verhalten, Verwendung, Varianten, Darstellung und Kollisionszuständigkeit quellengebunden erfasst. Fehlende Medien und ungenutzte Codeoptionen ausdrücklich markiert."
+      },
+      "implementation": "implemented",
+      "archived": false,
+      "previewArtifactId": null,
+      "assetIds": [],
+      "sources": [
+        {
+          "id": "behavior",
+          "path": "src/hazards/HazardArchetype.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code",
+          "symbol": "HazardBehavior"
+        },
+        {
+          "id": "entry",
+          "path": "src/generation/HazardPattern.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code",
+          "symbol": "HazardPatternEntryType"
+        },
+        {
+          "id": "fixtures",
+          "path": "src/generation/PrototypeHazardPatternFixtures.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "live",
+          "path": "src/generation/M5LiveEncounterCatalog.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code",
+          "symbol": "PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG"
+        },
+        {
+          "id": "domain",
+          "path": "src/generation/PrototypeHazardVerticalDomain.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code",
+          "symbol": "createPrototypeHazardVerticalDomain"
+        },
+        {
+          "id": "foundation",
+          "path": "src/game/scenes/Foundation.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code",
+          "symbol": "createPrototypeHazardVerticalDomain / Director spawn paths"
+        },
+        {
+          "id": "stream",
+          "path": "src/generation/GeneratedHazardStream.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code",
+          "symbol": "advanceGeneratedHazardStream"
+        },
+        {
+          "id": "collision",
+          "path": "src/systems/HazardCollision.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "simulation",
+          "path": "src/systems/PrototypeRunSimulation.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "reaction",
+          "path": "src/hazards/HazardReactionState.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "dispatch",
+          "path": "src/entities/GeneratedHazardPresentation.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "laser",
+          "path": "src/hazards/PrototypeLaserHazard.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "timing",
+          "path": "src/hazards/TimedLaserLifecycle.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "lanes",
+          "path": "src/generation/PrototypeLaserLaneCatalog.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "director",
+          "path": "src/generation/DirectorLaserCatalog.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "single",
+          "path": "src/generation/M5AuthoredSingleEncounterSegments.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "pressure",
+          "path": "src/generation/M5AuthoredPressureEncounterSegments.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "combo",
+          "path": "src/generation/M5AuthoredMultiHazardPatterns.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "presentation",
+          "path": "src/entities/PrototypeLaserPresentation.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "tele-sim",
+          "path": "src/hazards/TelegraphedHazardSimulation.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        }
+      ],
+      "detailSections": [
+        {
+          "title": "Bestand / Verwendung",
+          "facts": [
+            {
+              "label": "Spielverwendung",
+              "value": "AUTO: m5-segment-laser-high sowie high/low Laser-Zapper-Pressure. Director L durchläuft fünf horizontale Lanes und sechs Gruppen. Vertikale/finite Codepfade sind nicht im aktuellen Director-Zyklus oder AUTO registriert.",
+              "certainty": "confirmed",
+              "sourceIds": ["live", "domain", "foundation", "fixtures"]
+            },
+            {
+              "label": "Technischer Typ",
+              "value": "placeholder-barrier und molten-spike sind Entry-Typen; das Verhalten wird separat über HazardBehavior bestimmt. Pattern-IDs allein belegen keinen Hazard-Typ.",
+              "certainty": "confirmed",
+              "sourceIds": ["entry", "behavior", "fixtures"]
+            }
+          ]
+        },
+        {
+          "title": "Verhalten / Darstellung",
+          "facts": [
+            {
+              "label": "Lifecycle",
+              "value": "OFF 0.5 s → TELEGRAPH 1.2 s → CHARGE 0.8 s → ON 0.7 s → RECOVERY 0.4 s, Default one-shot. Nur ON tödlich. durations warning/lock/active ist eine Kompatibilitätsprojektion, nicht die echte Laser-Phasenfolge. cyclic ist implementiert, im authored Bestand nicht gewählt.",
+              "certainty": "confirmed",
+              "sourceIds": ["timing", "tele-sim"],
+              "maturity": "prototype"
+            },
+            {
+              "label": "Geometrie / Bewegung",
+              "value": "Horizontal oder vertikal; screen oder finite. Screen-Beams bleiben viewportgebunden während der Sequenz; finite-Beams besitzen Weltanker und scrollen nach links. Lethal 24, Graze-Padding 8, Telegraph 4, Glow 52; Glow ist keine Hitbox. Kein Target-Tracking.",
+              "certainty": "confirmed",
+              "sourceIds": ["laser", "presentation"],
+              "maturity": "prototype"
+            },
+            {
+              "label": "Darstellung",
+              "value": "Primitive Emitter, Telegraph, Charge, Strahlkern und Glow; abgeschlossen unsichtbar. Keine separate Laser-Bitmap belegt.",
+              "certainty": "confirmed",
+              "sourceIds": ["presentation"]
+            }
+          ]
+        },
+        {
+          "title": "Vorhandene Varianten / Abdeckung",
+          "facts": [
+            {
+              "label": "AUTO / feste Lanes",
+              "value": "m5-segment-laser-high und m5-pressure-laser-high-zapper-low: Basis-Y 96; m5-pressure-laser-low-zapper-high: Basis-Y 294. Alle horizontal/screen. Höhen werden an die logische Flight-Domain angepasst.",
+              "certainty": "confirmed",
+              "sourceIds": ["single", "pressure", "domain", "live"],
+              "maturity": "prototype"
+            },
+            {
+              "label": "Director L / fünf Lanes",
+              "value": "low/LOW (294), mid-low/ML (244), middle/MID (195), mid-high/MH (146), high/HIGH (96). Basiswerte, keine festen physischen Bildschirmpixel.",
+              "certainty": "confirmed",
+              "sourceIds": ["lanes", "director", "foundation"],
+              "maturity": "prototype"
+            },
+            {
+              "label": "Director L / sechs Gruppen",
+              "value": "bottom-stack/G-LOW: low+mid-low+middle; top-stack/G-HIGH: middle+mid-high+high; center-corridor/G-MID: low+high; sweep-down/SW-DN: high→middle→low; sweep-up/SW-UP: low→middle→high; alternating-pair/ALT: low→high. Sweep-CHARGE 0.55/1.25/1.95 s, ALT 0.55/1.25 s. Alle im Director erreichbar.",
+              "certainty": "confirmed",
+              "sourceIds": ["lanes", "director", "foundation"],
+              "maturity": "prototype"
+            },
+            {
+              "label": "Generatorfähigkeit ≠ aktive Verwendung",
+              "value": "center-corridor und alternating-pair tragen generatorEligible=true. selectPrototypeLaserLaneCatalog ersetzt jedoch nur Pattern-ID prototype-timed-pulse mit kind laser; diese ID fehlt im aktuellen M5/M6-Live-Katalog. Deshalb werden fünf Lanes/sechs Gruppen dort nicht automatisch ausgewählt. Die übrigen vier Gruppen sind bereits generatorEligible=false.",
+              "certainty": "confirmed",
+              "sourceIds": ["lanes", "stream", "live", "domain"]
+            },
+            {
+              "label": "Implementiert, aktuell ungenutzt",
+              "value": "PROTOTYPE_VERTICAL_LASER_PATTERN: vertical/screen, X-Ratio 0.68; Kommentar „Director-only“ beschreibt keinen aktuellen L-Zyklus. Horizontal/vertical finite werden von Geometry/Presentation unterstützt, ohne authored Katalogeintrag. PROTOTYPE_LASER_PATTERN / M5-Fixture bleibt Baseline-Template; M5_MISSILE_LASER_PATTERN und M5_LASER_ZAPPER_PATTERN sind ungenutzte authored Combos.",
+              "certainty": "confirmed",
+              "sourceIds": ["fixtures", "laser", "presentation", "combo", "director", "live"],
+              "maturity": "prototype"
+            }
+          ]
+        },
+        {
+          "title": "Zuständigkeit / Grenzen",
+          "facts": [
+            {
+              "label": "Kollision / Folgen",
+              "value": "Logische Simulation und HazardCollision besitzen Kontakt/Lethalität; PrototypeRunSimulation beendet den Lauf beim tödlichen Kontakt. Phaser-Darstellung und Bildalpha besitzen keine Kollision.",
+              "certainty": "confirmed",
+              "sourceIds": ["collision", "simulation", "dispatch"]
+            },
+            {
+              "label": "Externe Reaktionen",
+              "value": "active / disabled / destroyed sind von Warning/Lock bzw. OFF/ON getrennte Gameplay-Zustände. Ohne eigene reactionPolicy gilt disable/destroy. Dies belegt eine implementierte Schnittstelle, keinen aktiven Power-up- oder Companion-Verbraucher.",
+              "certainty": "confirmed",
+              "sourceIds": ["reaction", "entry"]
+            },
+            {
+              "label": "Deployte Spielrevision",
+              "value": null,
+              "certainty": "unknown",
+              "sourceIds": []
+            }
+          ]
+        }
+      ],
+      "relatedElementIds": ["zapper", "timed-pulse", "red-missile"],
+      "openQuestions": [
+        "Aktuelle deployte Spielverwendung und physische Geräteabnahme nicht geprüft.",
+        "Keine separate Bitmap-/Audio-/Animationsdatei für diese Codepräsentation im geprüften Hazard-Bestand belegt."
+      ],
+      "sourceConflicts": [
+        "PrototypeHazardPatternFixtures nennt die vertikale Laser-Baseline „Director-only“. Der aktuelle DirectorLaserCatalog registriert ausschließlich horizontale Lanes/Gruppen; vertikaler Code ist implementiert, aber nicht über L erreichbar. PrototypeLaserLaneCatalog beschreibt Generatorgruppen, doch die aktuelle Live-Auswahl enthält die vorausgesetzte Template-ID nicht."
+      ]
+    },
+    {
+      "id": "placeholder-barrier",
+      "name": "Statische Placeholder-Barriere",
+      "type": "Hazard",
+      "categoryId": "hazards",
+      "tags": ["Bestand #539", "Historischer Prototyp"],
+      "description": "Historische rechteckige M2/M3-Barriere; nicht mit heutigen Zappern gleichen Entry-Typs verwechseln.",
+      "documentation": {
+        "state": "checked",
+        "date": "2026-10-13",
+        "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+        "notes": "Quellenbestand geprüft; keine Live-Spiel-, Art- oder Geräteabnahme.",
+        "coverage": "Verhalten, Verwendung, Varianten, Darstellung und Kollisionszuständigkeit quellengebunden erfasst. Fehlende Medien und ungenutzte Codeoptionen ausdrücklich markiert."
+      },
+      "implementation": "implemented",
+      "archived": true,
+      "previewArtifactId": null,
+      "assetIds": [],
+      "sources": [
+        {
+          "id": "behavior",
+          "path": "src/hazards/HazardArchetype.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code",
+          "symbol": "HazardBehavior"
+        },
+        {
+          "id": "entry",
+          "path": "src/generation/HazardPattern.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code",
+          "symbol": "HazardPatternEntryType"
+        },
+        {
+          "id": "fixtures",
+          "path": "src/generation/PrototypeHazardPatternFixtures.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "live",
+          "path": "src/generation/M5LiveEncounterCatalog.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code",
+          "symbol": "PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG"
+        },
+        {
+          "id": "domain",
+          "path": "src/generation/PrototypeHazardVerticalDomain.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code",
+          "symbol": "createPrototypeHazardVerticalDomain"
+        },
+        {
+          "id": "foundation",
+          "path": "src/game/scenes/Foundation.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code",
+          "symbol": "createPrototypeHazardVerticalDomain / Director spawn paths"
+        },
+        {
+          "id": "stream",
+          "path": "src/generation/GeneratedHazardStream.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code",
+          "symbol": "advanceGeneratedHazardStream"
+        },
+        {
+          "id": "collision",
+          "path": "src/systems/HazardCollision.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "simulation",
+          "path": "src/systems/PrototypeRunSimulation.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "reaction",
+          "path": "src/hazards/HazardReactionState.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "dispatch",
+          "path": "src/entities/GeneratedHazardPresentation.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "m2",
+          "path": "src/hazards/PrototypeHazard.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code",
+          "symbol": "PROTOTYPE_PLACEHOLDER_HAZARD"
+        },
+        {
+          "id": "presentation",
+          "path": "src/entities/PrototypeHazardPresentation.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        }
+      ],
+      "detailSections": [
+        {
+          "title": "Bestand / Verwendung",
+          "facts": [
+            {
+              "label": "Spielverwendung",
+              "value": "Nicht im aktuellen AUTO-Katalog. M2-Konstante und M3 line/corridor/offset-pair bleiben als historische Quellen und Testfixtures erhalten.",
+              "certainty": "confirmed",
+              "sourceIds": ["live", "domain", "foundation", "fixtures"]
+            },
+            {
+              "label": "Technischer Typ",
+              "value": "placeholder-barrier und molten-spike sind Entry-Typen; das Verhalten wird separat über HazardBehavior bestimmt. Pattern-IDs allein belegen keinen Hazard-Typ.",
+              "certainty": "confirmed",
+              "sourceIds": ["entry", "behavior", "fixtures"]
+            }
+          ]
+        },
+        {
+          "title": "Verhalten / Varianten",
+          "facts": [
+            {
+              "label": "Lifecycle / Bewegung",
+              "value": "Statische logische Welt-Hitbox, persistent solange im Stream; keine Warning-/Lock-Phasen. Bildschirmbewegung nach links entsteht aus Run-Fortschritt.",
+              "certainty": "confirmed",
+              "sourceIds": ["m2", "behavior", "stream"]
+            },
+            {
+              "label": "M2",
+              "value": "m2-placeholder-barrier: left 1200, right 1248, top 147, bottom 243.",
+              "certainty": "confirmed",
+              "sourceIds": ["m2"],
+              "maturity": "prototype"
+            },
+            {
+              "label": "M3-Fixtures",
+              "value": "prototype-line (drei Barrieren), prototype-corridor (oben/unten), prototype-offset-pair (hoch/tief). Historische M3-Fixtures bleiben auch in den M4/M5-Fixturearrays enthalten; diese Arrays sind nicht der aktuelle Live-Katalog.",
+              "certainty": "confirmed",
+              "sourceIds": ["fixtures", "live"]
+            },
+            {
+              "label": "Darstellung",
+              "value": "Primitive Rechteckdarstellung über PrototypeHazardPresentation; keine eigene Bildquelle.",
+              "certainty": "confirmed",
+              "sourceIds": ["presentation"]
+            }
+          ]
+        },
+        {
+          "title": "Zuständigkeit / Grenzen",
+          "facts": [
+            {
+              "label": "Kollision / Folgen",
+              "value": "Logische Simulation und HazardCollision besitzen Kontakt/Lethalität; PrototypeRunSimulation beendet den Lauf beim tödlichen Kontakt. Phaser-Darstellung und Bildalpha besitzen keine Kollision.",
+              "certainty": "confirmed",
+              "sourceIds": ["collision", "simulation", "dispatch"]
+            },
+            {
+              "label": "Externe Reaktionen",
+              "value": "active / disabled / destroyed sind von Warning/Lock bzw. OFF/ON getrennte Gameplay-Zustände. Ohne eigene reactionPolicy gilt disable/destroy. Dies belegt eine implementierte Schnittstelle, keinen aktiven Power-up- oder Companion-Verbraucher.",
+              "certainty": "confirmed",
+              "sourceIds": ["reaction", "entry"]
+            },
+            {
+              "label": "Deployte Spielrevision",
+              "value": null,
+              "certainty": "unknown",
+              "sourceIds": []
+            }
+          ]
+        }
+      ],
+      "relatedElementIds": [],
+      "openQuestions": [
+        "Aktuelle deployte Spielverwendung und physische Geräteabnahme nicht geprüft.",
+        "Keine separate Bitmap-/Audio-/Animationsdatei für diese Codepräsentation im geprüften Hazard-Bestand belegt."
+      ],
+      "sourceConflicts": []
+    },
+    {
+      "id": "vertical-patrol",
+      "name": "Vertical Patrol · M4",
+      "type": "Hazard",
+      "categoryId": "hazards",
+      "tags": ["Bestand #539", "Historischer Prototyp"],
+      "description": "Historischer bewegter geometrischer Placeholder; der heute gleich benannte Live-Slot enthält einen rotierenden Zapper.",
+      "documentation": {
+        "state": "checked",
+        "date": "2026-10-13",
+        "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+        "notes": "Quellenbestand geprüft; keine Live-Spiel-, Art- oder Geräteabnahme.",
+        "coverage": "Verhalten, Verwendung, Varianten, Darstellung und Kollisionszuständigkeit quellengebunden erfasst. Fehlende Medien und ungenutzte Codeoptionen ausdrücklich markiert."
+      },
+      "implementation": "implemented",
+      "archived": true,
+      "previewArtifactId": null,
+      "assetIds": [],
+      "sources": [
+        {
+          "id": "behavior",
+          "path": "src/hazards/HazardArchetype.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code",
+          "symbol": "HazardBehavior"
+        },
+        {
+          "id": "entry",
+          "path": "src/generation/HazardPattern.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code",
+          "symbol": "HazardPatternEntryType"
+        },
+        {
+          "id": "fixtures",
+          "path": "src/generation/PrototypeHazardPatternFixtures.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "live",
+          "path": "src/generation/M5LiveEncounterCatalog.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code",
+          "symbol": "PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG"
+        },
+        {
+          "id": "domain",
+          "path": "src/generation/PrototypeHazardVerticalDomain.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code",
+          "symbol": "createPrototypeHazardVerticalDomain"
+        },
+        {
+          "id": "foundation",
+          "path": "src/game/scenes/Foundation.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code",
+          "symbol": "createPrototypeHazardVerticalDomain / Director spawn paths"
+        },
+        {
+          "id": "stream",
+          "path": "src/generation/GeneratedHazardStream.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code",
+          "symbol": "advanceGeneratedHazardStream"
+        },
+        {
+          "id": "collision",
+          "path": "src/systems/HazardCollision.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "simulation",
+          "path": "src/systems/PrototypeRunSimulation.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "reaction",
+          "path": "src/hazards/HazardReactionState.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "dispatch",
+          "path": "src/entities/GeneratedHazardPresentation.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "presentation",
+          "path": "src/entities/PrototypeHazardPresentation.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        }
+      ],
+      "detailSections": [
+        {
+          "title": "Bestand / Verwendung",
+          "facts": [
+            {
+              "label": "Spielverwendung",
+              "value": "M4-Fixture PROTOTYPE_VERTICAL_PATROL_PATTERN, nicht aktuelles AUTO oder Director-Zyklus.",
+              "certainty": "confirmed",
+              "sourceIds": ["live", "domain", "foundation", "fixtures"]
+            },
+            {
+              "label": "Technischer Typ",
+              "value": "placeholder-barrier und molten-spike sind Entry-Typen; das Verhalten wird separat über HazardBehavior bestimmt. Pattern-IDs allein belegen keinen Hazard-Typ.",
+              "certainty": "confirmed",
+              "sourceIds": ["entry", "behavior", "fixtures"]
+            }
+          ]
+        },
+        {
+          "title": "Verhalten / Varianten",
+          "facts": [
+            {
+              "label": "Bewegung",
+              "value": "Deterministische vertikale Dreieckswelle relativ zum unveränderlichen Spawn-Anker; Run-Distanz besitzt den Verlauf. amplitudeY 48, cycleDistance 700, phaseOffset 0; beide vertikalen Richtungen.",
+              "certainty": "confirmed",
+              "sourceIds": ["behavior", "fixtures"],
+              "maturity": "prototype"
+            },
+            {
+              "label": "Lifecycle / Darstellung",
+              "value": "Persistent, keine Warning/Lock; primitive bewegte Barriere. Stream räumt vergangene Spawns auf.",
+              "certainty": "confirmed",
+              "sourceIds": ["presentation", "stream"]
+            },
+            {
+              "label": "ID-Abgrenzung",
+              "value": "prototype-vertical-patrol bezeichnet sowohl die alte Patrol-Fixture als auch den späteren rotierenden Zapper-Slot. PROTOTYPE_ZAPPER_PATTERN ist ein Alias von PROTOTYPE_ROTATING_ZAPPER_PATTERN, keine zusätzliche Patrol.",
+              "certainty": "confirmed",
+              "sourceIds": ["fixtures"]
+            }
+          ]
+        },
+        {
+          "title": "Zuständigkeit / Grenzen",
+          "facts": [
+            {
+              "label": "Kollision / Folgen",
+              "value": "Logische Simulation und HazardCollision besitzen Kontakt/Lethalität; PrototypeRunSimulation beendet den Lauf beim tödlichen Kontakt. Phaser-Darstellung und Bildalpha besitzen keine Kollision.",
+              "certainty": "confirmed",
+              "sourceIds": ["collision", "simulation", "dispatch"]
+            },
+            {
+              "label": "Externe Reaktionen",
+              "value": "active / disabled / destroyed sind von Warning/Lock bzw. OFF/ON getrennte Gameplay-Zustände. Ohne eigene reactionPolicy gilt disable/destroy. Dies belegt eine implementierte Schnittstelle, keinen aktiven Power-up- oder Companion-Verbraucher.",
+              "certainty": "confirmed",
+              "sourceIds": ["reaction", "entry"]
+            },
+            {
+              "label": "Deployte Spielrevision",
+              "value": null,
+              "certainty": "unknown",
+              "sourceIds": []
+            }
+          ]
+        }
+      ],
+      "relatedElementIds": ["zapper"],
+      "openQuestions": [
+        "Aktuelle deployte Spielverwendung und physische Geräteabnahme nicht geprüft.",
+        "Keine separate Bitmap-/Audio-/Animationsdatei für diese Codepräsentation im geprüften Hazard-Bestand belegt."
+      ],
+      "sourceConflicts": []
+    },
+    {
+      "id": "timed-pulse",
+      "name": "Timed Pulse · M4",
+      "type": "Hazard",
+      "categoryId": "hazards",
+      "tags": ["Bestand #539", "Historischer Prototyp"],
+      "description": "Historischer nichtreaktiver einmaliger Puls mit fester Position.",
+      "documentation": {
+        "state": "checked",
+        "date": "2026-10-13",
+        "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+        "notes": "Quellenbestand geprüft; keine Live-Spiel-, Art- oder Geräteabnahme.",
+        "coverage": "Verhalten, Verwendung, Varianten, Darstellung und Kollisionszuständigkeit quellengebunden erfasst. Fehlende Medien und ungenutzte Codeoptionen ausdrücklich markiert."
+      },
+      "implementation": "implemented",
+      "archived": true,
+      "previewArtifactId": null,
+      "assetIds": [],
+      "sources": [
+        {
+          "id": "behavior",
+          "path": "src/hazards/HazardArchetype.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code",
+          "symbol": "HazardBehavior"
+        },
+        {
+          "id": "entry",
+          "path": "src/generation/HazardPattern.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code",
+          "symbol": "HazardPatternEntryType"
+        },
+        {
+          "id": "fixtures",
+          "path": "src/generation/PrototypeHazardPatternFixtures.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "live",
+          "path": "src/generation/M5LiveEncounterCatalog.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code",
+          "symbol": "PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG"
+        },
+        {
+          "id": "domain",
+          "path": "src/generation/PrototypeHazardVerticalDomain.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code",
+          "symbol": "createPrototypeHazardVerticalDomain"
+        },
+        {
+          "id": "foundation",
+          "path": "src/game/scenes/Foundation.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code",
+          "symbol": "createPrototypeHazardVerticalDomain / Director spawn paths"
+        },
+        {
+          "id": "stream",
+          "path": "src/generation/GeneratedHazardStream.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code",
+          "symbol": "advanceGeneratedHazardStream"
+        },
+        {
+          "id": "collision",
+          "path": "src/systems/HazardCollision.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "simulation",
+          "path": "src/systems/PrototypeRunSimulation.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "reaction",
+          "path": "src/hazards/HazardReactionState.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "dispatch",
+          "path": "src/entities/GeneratedHazardPresentation.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "lifecycle",
+          "path": "src/hazards/TelegraphedHazardLifecycle.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "tele-sim",
+          "path": "src/hazards/TelegraphedHazardSimulation.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "presentation",
+          "path": "src/entities/PrototypeHazardPresentation.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        }
+      ],
+      "detailSections": [
+        {
+          "title": "Bestand / Verwendung",
+          "facts": [
+            {
+              "label": "Spielverwendung",
+              "value": "PROTOTYPE_TIMED_PULSE_PATTERN / M4-Fixture; aktueller gleichnamiger Slot nutzt Laser.",
+              "certainty": "confirmed",
+              "sourceIds": ["live", "domain", "foundation", "fixtures"]
+            },
+            {
+              "label": "Technischer Typ",
+              "value": "placeholder-barrier und molten-spike sind Entry-Typen; das Verhalten wird separat über HazardBehavior bestimmt. Pattern-IDs allein belegen keinen Hazard-Typ.",
+              "certainty": "confirmed",
+              "sourceIds": ["entry", "behavior", "fixtures"]
+            }
+          ]
+        },
+        {
+          "title": "Verhalten / Varianten",
+          "facts": [
+            {
+              "label": "Lifecycle",
+              "value": "Warning 1.6 s → Lock 0.25 s → Active 0.9 s → Expired. Nur Active tödlich; Warning/Lock sicher. Kein Target-Tracking.",
+              "certainty": "confirmed",
+              "sourceIds": ["fixtures", "lifecycle", "tele-sim"],
+              "maturity": "prototype"
+            },
+            {
+              "label": "Bewegung / Darstellung",
+              "value": "Fester Weltanker; Run-Scroll nach links. Primitive Warn-/Lock-/Aktiv-Rechtecke; Expired unsichtbar.",
+              "certainty": "confirmed",
+              "sourceIds": ["presentation", "behavior"]
+            },
+            {
+              "label": "ID-Abgrenzung",
+              "value": "prototype-timed-pulse ist auch die Pattern-ID der M5-Laser-Baseline. kind pulse und kind laser sind getrennte Implementierungen.",
+              "certainty": "confirmed",
+              "sourceIds": ["fixtures"]
+            }
+          ]
+        },
+        {
+          "title": "Zuständigkeit / Grenzen",
+          "facts": [
+            {
+              "label": "Kollision / Folgen",
+              "value": "Logische Simulation und HazardCollision besitzen Kontakt/Lethalität; PrototypeRunSimulation beendet den Lauf beim tödlichen Kontakt. Phaser-Darstellung und Bildalpha besitzen keine Kollision.",
+              "certainty": "confirmed",
+              "sourceIds": ["collision", "simulation", "dispatch"]
+            },
+            {
+              "label": "Externe Reaktionen",
+              "value": "active / disabled / destroyed sind von Warning/Lock bzw. OFF/ON getrennte Gameplay-Zustände. Ohne eigene reactionPolicy gilt disable/destroy. Dies belegt eine implementierte Schnittstelle, keinen aktiven Power-up- oder Companion-Verbraucher.",
+              "certainty": "confirmed",
+              "sourceIds": ["reaction", "entry"]
+            },
+            {
+              "label": "Deployte Spielrevision",
+              "value": null,
+              "certainty": "unknown",
+              "sourceIds": []
+            }
+          ]
+        }
+      ],
+      "relatedElementIds": ["laser"],
+      "openQuestions": [
+        "Aktuelle deployte Spielverwendung und physische Geräteabnahme nicht geprüft.",
+        "Keine separate Bitmap-/Audio-/Animationsdatei für diese Codepräsentation im geprüften Hazard-Bestand belegt."
+      ],
+      "sourceConflicts": []
+    },
+    {
+      "id": "target-lock-strike",
+      "name": "Target-Lock Strike · M4",
+      "type": "Hazard",
+      "categoryId": "hazards",
+      "tags": ["Bestand #539", "Historischer Prototyp"],
+      "description": "Historischer reaktiver Lane-Strike ohne Missile-Reisebewegung.",
+      "documentation": {
+        "state": "checked",
+        "date": "2026-10-13",
+        "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+        "notes": "Quellenbestand geprüft; keine Live-Spiel-, Art- oder Geräteabnahme.",
+        "coverage": "Verhalten, Verwendung, Varianten, Darstellung und Kollisionszuständigkeit quellengebunden erfasst. Fehlende Medien und ungenutzte Codeoptionen ausdrücklich markiert."
+      },
+      "implementation": "implemented",
+      "archived": true,
+      "previewArtifactId": null,
+      "assetIds": [],
+      "sources": [
+        {
+          "id": "behavior",
+          "path": "src/hazards/HazardArchetype.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code",
+          "symbol": "HazardBehavior"
+        },
+        {
+          "id": "entry",
+          "path": "src/generation/HazardPattern.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code",
+          "symbol": "HazardPatternEntryType"
+        },
+        {
+          "id": "fixtures",
+          "path": "src/generation/PrototypeHazardPatternFixtures.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "live",
+          "path": "src/generation/M5LiveEncounterCatalog.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code",
+          "symbol": "PROTOTYPE_M5_LIVE_HAZARD_PATTERN_CATALOG"
+        },
+        {
+          "id": "domain",
+          "path": "src/generation/PrototypeHazardVerticalDomain.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code",
+          "symbol": "createPrototypeHazardVerticalDomain"
+        },
+        {
+          "id": "foundation",
+          "path": "src/game/scenes/Foundation.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code",
+          "symbol": "createPrototypeHazardVerticalDomain / Director spawn paths"
+        },
+        {
+          "id": "stream",
+          "path": "src/generation/GeneratedHazardStream.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code",
+          "symbol": "advanceGeneratedHazardStream"
+        },
+        {
+          "id": "collision",
+          "path": "src/systems/HazardCollision.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "simulation",
+          "path": "src/systems/PrototypeRunSimulation.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "reaction",
+          "path": "src/hazards/HazardReactionState.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "dispatch",
+          "path": "src/entities/GeneratedHazardPresentation.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "lifecycle",
+          "path": "src/hazards/TelegraphedHazardLifecycle.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "tele-sim",
+          "path": "src/hazards/TelegraphedHazardSimulation.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        },
+        {
+          "id": "presentation",
+          "path": "src/entities/PrototypeHazardPresentation.ts",
+          "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+          "kind": "code"
+        }
+      ],
+      "detailSections": [
+        {
+          "title": "Bestand / Verwendung",
+          "facts": [
+            {
+              "label": "Spielverwendung",
+              "value": "PROTOTYPE_TARGET_LOCK_STRIKE_PATTERN / M4-Fixture, nicht aktuelles AUTO oder Director-Missile.",
+              "certainty": "confirmed",
+              "sourceIds": ["live", "domain", "foundation", "fixtures"]
+            },
+            {
+              "label": "Technischer Typ",
+              "value": "placeholder-barrier und molten-spike sind Entry-Typen; das Verhalten wird separat über HazardBehavior bestimmt. Pattern-IDs allein belegen keinen Hazard-Typ.",
+              "certainty": "confirmed",
+              "sourceIds": ["entry", "behavior", "fixtures"]
+            }
+          ]
+        },
+        {
+          "title": "Verhalten / Varianten",
+          "facts": [
+            {
+              "label": "Lifecycle / Target",
+              "value": "Warning 1.4 s beobachtet Spieler-Y im Band 72..222; Lock 0.4 s friert das Ziel ein; Active 1 s trifft bei festem Welt-X und Strike-Höhe 48; Expired sicher.",
+              "certainty": "confirmed",
+              "sourceIds": ["fixtures", "behavior", "tele-sim"],
+              "maturity": "prototype"
+            },
+            {
+              "label": "Bewegung / Darstellung",
+              "value": "Keine Homing-/Reisebewegung; Weltanker scrollt nach links. Primitive reaktive Warning-/Lock-/Active-Grafik; Expired unsichtbar.",
+              "certainty": "confirmed",
+              "sourceIds": ["presentation", "behavior"]
+            },
+            {
+              "label": "ID-Abgrenzung",
+              "value": "prototype-target-lock-strike wird auch von der M5-Missile-Fixture verwendet. Optionales missile-Motionfeld trennt deren Laufzeitpfad vom historischen Strike.",
+              "certainty": "confirmed",
+              "sourceIds": ["fixtures", "behavior"]
+            }
+          ]
+        },
+        {
+          "title": "Zuständigkeit / Grenzen",
+          "facts": [
+            {
+              "label": "Kollision / Folgen",
+              "value": "Logische Simulation und HazardCollision besitzen Kontakt/Lethalität; PrototypeRunSimulation beendet den Lauf beim tödlichen Kontakt. Phaser-Darstellung und Bildalpha besitzen keine Kollision.",
+              "certainty": "confirmed",
+              "sourceIds": ["collision", "simulation", "dispatch"]
+            },
+            {
+              "label": "Externe Reaktionen",
+              "value": "active / disabled / destroyed sind von Warning/Lock bzw. OFF/ON getrennte Gameplay-Zustände. Ohne eigene reactionPolicy gilt disable/destroy. Dies belegt eine implementierte Schnittstelle, keinen aktiven Power-up- oder Companion-Verbraucher.",
+              "certainty": "confirmed",
+              "sourceIds": ["reaction", "entry"]
+            },
+            {
+              "label": "Deployte Spielrevision",
+              "value": null,
+              "certainty": "unknown",
+              "sourceIds": []
+            }
+          ]
+        }
+      ],
+      "relatedElementIds": ["red-missile"],
+      "openQuestions": [
+        "Aktuelle deployte Spielverwendung und physische Geräteabnahme nicht geprüft.",
+        "Keine separate Bitmap-/Audio-/Animationsdatei für diese Codepräsentation im geprüften Hazard-Bestand belegt."
+      ],
+      "sourceConflicts": []
     }
   ],
   "assets": [
@@ -975,47 +2593,47 @@
       },
       "usage": {
         "state": "debug-workshop",
-        "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
-        "reason": "Rezept aktiv und Textur vorab ladbar. Director-Missile erzeugt die Darstellung nur in Active; normale AUTO-Auswahl schließt Missile aus. Bei Start von links wird horizontal gespiegelt. Original wird als Quelle genutzt, nicht vom Spiel geladen.",
+        "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+        "reason": "Aktives Rezept → generierter Export → Preloader → Director M → Active-Bild. AUTO schließt Missile aus. Start links ist ein implementierter Codepfad, kein aktueller authored Spawn. Original ist Quellenmedium, nicht Spieltextur.",
         "evidence": [
           {
             "id": "recipe",
             "path": "assets/metadata/red-monster-missile.json",
-            "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+            "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
             "kind": "code"
           },
           {
             "id": "builder",
             "path": "scripts/assets/AssetRuntime.ts",
-            "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+            "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
             "kind": "code",
             "symbol": "buildRuntimeLocked / registry"
           },
           {
             "id": "loader",
             "path": "src/game/scenes/Preloader.ts",
-            "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+            "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
             "kind": "code",
             "symbol": "ASSET_RED_MONSTER_MISSILE"
           },
           {
             "id": "admission",
             "path": "src/game/scenes/Foundation.ts",
-            "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+            "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
             "kind": "code",
             "symbol": "spawnDirectorMissile → spawnDirectorPattern"
           },
           {
             "id": "catalog",
             "path": "src/generation/M5LiveEncounterCatalog.ts",
-            "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+            "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
             "kind": "code",
             "symbol": "Missile excluded from AUTO"
           },
           {
             "id": "presentation",
             "path": "src/entities/PrototypeHazardPresentation.ts",
-            "revision": "1fafb9e71a704ae2848bb5215c65328cb422441a",
+            "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
             "kind": "code",
             "symbol": "Active image / launch-side flip"
           }
@@ -1048,6 +2666,76 @@
       "openQuestions": [
         "Finale Art-/Geräteabnahme für Phone/Pad-6-Bewegung und Gefahrlesbarkeit bleibt offen.",
         "Vollständiger Generierungsprompt/zusätzliche Referenzmedien sind nicht im Bestand belegt."
+      ]
+    },
+    {
+      "id": "molten-spike-trial",
+      "name": "Molten Spike · A",
+      "description": "Vorhandene GPT-Image-Quelle A und verwalteter Trial-Export; keine neue Grafik.",
+      "elementIds": ["molten-spike"],
+      "artifactIds": ["molten-spike-original", "molten-spike-runtime"],
+      "variant": "Bildvariante A · horizontal gespiegelt im Spiel",
+      "review": {
+        "state": "selected",
+        "date": "2026-09-29",
+        "reason": "Variante A für In-run-Trial #492 ausgewählt; keine finale Sprite-/M6-Artfreigabe. Umfang im revisionsgebundenen Quellen-README dokumentiert.",
+        "sourceUrl": "https://github.com/bongohorse/monster-girl-delivery/blob/aa2beb6422100d482bddea94fe34922e97bbdb40/assets/source/district-01/hazards/README.md"
+      },
+      "usage": {
+        "state": "default-game",
+        "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+        "reason": "M6-Trial-Slot im aktuellen AUTO-Katalog und Director S. Rezept aktiv; Preloader lädt Export; GeneratedHazardPresentation dispatcht molten-spike an MoltenSpikePresentation. Height-Selector variiert Platzierung, nicht das Asset. Keine deployte Revision behauptet.",
+        "evidence": [
+          {
+            "id": "recipe",
+            "path": "assets/metadata/molten-spike-trial.json",
+            "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+            "kind": "manifest"
+          },
+          {
+            "id": "catalog",
+            "path": "src/generation/M6MoltenSpikeTrial.ts",
+            "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+            "kind": "code"
+          },
+          {
+            "id": "domain",
+            "path": "src/generation/PrototypeHazardVerticalDomain.ts",
+            "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+            "kind": "code"
+          },
+          {
+            "id": "foundation",
+            "path": "src/game/scenes/Foundation.ts",
+            "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+            "kind": "code",
+            "symbol": "spawnDirectorSpike"
+          },
+          {
+            "id": "loader",
+            "path": "src/game/scenes/Preloader.ts",
+            "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+            "kind": "code"
+          },
+          {
+            "id": "dispatch",
+            "path": "src/entities/GeneratedHazardPresentation.ts",
+            "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+            "kind": "code"
+          },
+          {
+            "id": "presentation",
+            "path": "src/entities/MoltenSpikePresentation.ts",
+            "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+            "kind": "code"
+          }
+        ]
+      },
+      "archived": false,
+      "history": [],
+      "openQuestions": [
+        "Finale Art-/Geräteabnahme offen.",
+        "Vollständiger Generierungsprompt und weitere Bildvarianten nicht im geprüften Bestand belegt."
       ]
     }
   ],
@@ -1173,6 +2861,61 @@
         "text": "Bestehende Asset-Pipeline: alpha > 0 trimmen, Lanczos3, transparente 512 × 330 Canvas, keine Spiegelung. Spieldarstellung 112 × 60 über 64 × 48 logischer Hitbox; keine neue Geometrie.",
         "prompt": null,
         "referenceUrls": ["https://github.com/bongohorse/monster-girl-delivery/pull/524"]
+      }
+    },
+    {
+      "id": "molten-spike-original",
+      "assetId": "molten-spike-trial",
+      "sourcePath": "assets/source/district-01/hazards/molten-spike-A-gpt-image.png",
+      "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+      "sha256": "5b63a53fad06da12088863e6b44cc78809ef2c8ac4478561115c1c18340c6975",
+      "role": "original",
+      "runtimeAssetId": null,
+      "recipe": null,
+      "derivedFromArtifactId": null,
+      "metadata": {
+        "format": "png",
+        "width": 1402,
+        "height": 1122,
+        "hasAlpha": true,
+        "durationSeconds": null
+      },
+      "provenance": {
+        "text": "GPT Image Variante A; Trial-Auswahl #492. Unveränderte Quelle.",
+        "prompt": null,
+        "referenceUrls": [
+          "https://github.com/bongohorse/monster-girl-delivery/blob/aa2beb6422100d482bddea94fe34922e97bbdb40/assets/source/district-01/hazards/README.md"
+        ]
+      }
+    },
+    {
+      "id": "molten-spike-runtime",
+      "assetId": "molten-spike-trial",
+      "sourcePath": null,
+      "revision": null,
+      "sha256": null,
+      "role": "runtime",
+      "runtimeAssetId": "molten-spike-trial",
+      "recipe": {
+        "id": "spike-recipe",
+        "path": "assets/metadata/molten-spike-trial.json",
+        "revision": "aa2beb6422100d482bddea94fe34922e97bbdb40",
+        "kind": "manifest"
+      },
+      "derivedFromArtifactId": "molten-spike-original",
+      "metadata": {
+        "format": "png",
+        "width": 256,
+        "height": 256,
+        "hasAlpha": true,
+        "durationSeconds": null
+      },
+      "provenance": {
+        "text": "Bestehende Pipeline: alpha > 24, nearest, Padding 16 auf transparenter 256×256-Canvas; keine neue Aktivierung oder Bildbearbeitung.",
+        "prompt": null,
+        "referenceUrls": [
+          "https://github.com/bongohorse/monster-girl-delivery/blob/aa2beb6422100d482bddea94fe34922e97bbdb40/assets/source/district-01/hazards/README.md"
+        ]
       }
     }
   ],

@@ -1,9 +1,10 @@
 # MGD Workshop — Browserwerkstatt
 
 Stand: Aufgabe 10 aus [#522](https://github.com/bongohorse/monster-girl-delivery/issues/522).
-Die zehn Aufgaben liefern die technische Workshop-Grundlage mit einem kleinen Beispielkatalog.
+Die zehn Aufgaben lieferten die technische Workshop-Grundlage mit einem kleinen Beispielkatalog.
 Die vollständige Erfassung aller vorhandenen Spielelemente ist noch offen.
-Vier Bereiche, zwölf Kategorien und sechs echte Elementkarten sind navigierbar.
+Der erste Teil von #539 ergänzt den implementierten Hazard-Bestand einschließlich Varianten.
+Vier Bereiche und zwölf Kategorien sind navigierbar; die Elementkarten entstehen aus dem Katalog.
 Leere Kategorien und noch nicht umgesetzte Bereiche sind sichtbar gekennzeichnet.
 Elementseiten zeigen typabhängige Fakten mit Einheiten und Belegen, eigene Prüfrevisionen,
 Quellenkonflikte, Dokumentationsabdeckung, offene Angaben und verknüpfte Elemente.
@@ -30,9 +31,9 @@ Workshop-Server neu starten. Git-Revisionen aus dem Katalog müssen lokal verfü
 bei einem flachen Checkout gegebenenfalls die betreffende Historie holen.
 Es gibt keine manuell gepflegten Medienkopien und keinen Workshop-Android-Build.
 
-`data/catalog.json` enthält die kleine echte Stichprobe. Kategorien, Karten und Breadcrumbs
-werden daraus erzeugt. Das Datenformat wird erst mit den jeweiligen Verbrauchern erweitert;
-Der v1-Katalog wird vor Verwendung auf Struktur, IDs, sichere Pfade, Zustände und Beziehungen geprüft. Die drei Hero-Posen und Red Missile
+`data/catalog.json` enthält den quellengebundenen Bestand; weitere Kategorien bleiben Stichproben.
+Kategorien, Karten und Breadcrumbs werden daraus erzeugt. Das Datenformat wird erst mit den jeweiligen Verbrauchern erweitert;
+Der v1-Katalog wird vor Verwendung auf Struktur, IDs, sichere Pfade, Zustände und Beziehungen geprüft. Die drei Hero-Posen, Red Missile und Molten Spike
 besitzen Galerien, Asset-Direktlinks (z. B. `#/asset/red-monster-missile`), native Vollansicht,
 Metadaten, getrennte Review-/Verwendungszustände und vorhandene revisionsgebundene Historie.
 Generierte Runtime-Dateien erhalten keinen vorgetäuschten GitHub-Dateilink; ihr Rezept,

@@ -50,7 +50,7 @@ function elementGrid(elements: Element[]): HTMLElement {
 function documentation(): HTMLElement[] {
   const intro = node(
     'p',
-    'Vorhandene Elemente, Quellen und fachliche Kategorien. Die Stichprobe umfasst Kurierin, Red Missile sowie Paket, Empfänger, Lieferpfeil und Liefermechanik.',
+    'Vorhandene Elemente, Quellen und fachliche Kategorien. Hazards einschließlich vorhandener Varianten sind quellengebunden erfasst; übrige Kategorien enthalten weiterhin Beispiele.',
     'lead',
   );
   const heading = node('h2', 'Kategorien');
@@ -94,7 +94,7 @@ function pendingSection(section: string): HTMLElement[] {
     ),
     node('h2', content[0]),
     node('p', content[1]),
-    link('Zur dokumentierten Stichprobe →', '#/documentation'),
+    link('Zum dokumentierten Bestand →', '#/documentation'),
   );
   return [panel];
 }
@@ -160,7 +160,7 @@ async function render(moveFocus = false): Promise<void> {
       node(
         'p',
         elements.length
-          ? 'Belegte Stichprobe aus dem bestehenden Spiel.'
+          ? 'Belegter Bestand aus dem Spiel; offene Angaben stehen in den Elementdetails.'
           : 'Noch nicht dokumentiert. In dieser Kategorie wurden noch keine Elemente erfasst.',
         'lead',
       ),

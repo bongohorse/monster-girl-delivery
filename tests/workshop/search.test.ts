@@ -15,6 +15,7 @@ describe('Workshop catalog search', () => {
     ]);
     expect(ids({ kind: 'asset', usage: 'default-game', review: 'selected' })).toEqual([
       'courier-pose-a',
+      'molten-spike-trial',
     ]);
     expect(ids({ kind: 'element', review: 'selected' })).toEqual([]);
   });
@@ -31,7 +32,12 @@ describe('Workshop catalog search', () => {
     ]);
     expect(ids({ query: 'nichtvorhanden' })).toEqual([]);
     expect(ids({ categoryId: 'audio' })).toEqual([]);
-    expect(ids({ archive: 'archived' })).toEqual([]);
+    expect(ids({ archive: 'archived' })).toEqual([
+      'placeholder-barrier',
+      'vertical-patrol',
+      'timed-pulse',
+      'target-lock-strike',
+    ]);
   });
   it('derives backlinks and effect results from canonical records', () => {
     const index = createCatalogIndex(catalog);
