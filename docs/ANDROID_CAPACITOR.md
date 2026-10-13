@@ -5,7 +5,7 @@ MGD keeps Phaser/Vite TypeScript as the gameplay authority and uses Capacitor on
 ## Identity
 
 - Capacitor: `8.5.3`
-- Android Gradle Plugin: `9.4.0`
+- Android Gradle Plugin: `9.4.1`
 - Gradle wrapper: `9.8.1`
 - app name: `MGD`
 - Android application id: `com.bongohorse.monstergirldelivery`
