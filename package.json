@@ -40,16 +40,16 @@
     "pages:smoke": "bun scripts/workshop/pages-smoke.ts"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.15",
+    "@biomejs/biome": "2.6.3",
     "@capacitor/cli": "8.5.3",
-    "@stryker-mutator/core": "10.0.0",
+    "@stryker-mutator/core": "10.1.1",
     "@types/node": "26.6.5",
-    "@vitest/coverage-istanbul": "5.0.4",
+    "@vitest/coverage-istanbul": "5.0.5",
     "sharp": "0.35.5",
     "terser": "^5.51.2",
     "typescript": "7.0.2",
     "vite": "^8.1.0",
-    "vitest": "5.0.4"
+    "vitest": "5.0.5"
   },
   "dependencies": {
     "@capacitor/android": "8.5.3",
